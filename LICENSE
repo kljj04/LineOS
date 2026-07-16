@@ -1,0 +1,16 @@
+## License
+
+LineOS is licensed under the MIT License.
+
+Copyright (C) 2026 LineOS Developer kljj04
+
+
+## Third-Party Licenses
+
+This project uses UEFI definitions from EDK II.
+
+EDK II is licensed under the BSD 2-Clause License.
+
+Copyright (c) 2006 - 2026, Intel Corporation. All rights reserved.
+
+SPDX-License-Identifier: BSD-2-Clause
