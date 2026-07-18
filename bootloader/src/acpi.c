@@ -7,41 +7,42 @@
 #include <Library/BaseLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include "acpi.h"
+#include "lineosuefi.h"
 
 LINEOS_ACPI_RSDP *RSDP = NULL;
 
-static BOOLEAN IsGuidEqual(EFI_GUID *A, EFI_GUID *B)
+static BOOLEAN IsGuidEqual(EFI_GUID *a, EFI_GUID *b)
 {
     return
-        A->Data1 == B->Data1 &&
-        A->Data2 == B->Data2 &&
-        A->Data3 == B->Data3 &&
-        A->Data4[0] == B->Data4[0] &&
-        A->Data4[1] == B->Data4[1] &&
-        A->Data4[2] == B->Data4[2] &&
-        A->Data4[3] == B->Data4[3] &&
-        A->Data4[4] == B->Data4[4] &&
-        A->Data4[5] == B->Data4[5] &&
-        A->Data4[6] == B->Data4[6] &&
-        A->Data4[7] == B->Data4[7];
+        a->Data1 == b->Data1 &&
+        a->Data2 == b->Data2 &&
+        a->Data3 == b->Data3 &&
+        a->Data4[0] == b->Data4[0] &&
+        a->Data4[1] == b->Data4[1] &&
+        a->Data4[2] == b->Data4[2] &&
+        a->Data4[3] == b->Data4[3] &&
+        a->Data4[4] == b->Data4[4] &&
+        a->Data4[5] == b->Data4[5] &&
+        a->Data4[6] == b->Data4[6] &&
+        a->Data4[7] == b->Data4[7];
 }
 
-BOOLEAN ACPIInit(void)
+BOOLEAN ACPIInit(VOID)
 {
-    EFI_CONFIGURATION_TABLE *Table;
+    EFI_CONFIGURATION_TABLE *table;
 
-    UINTN Count;
+    UINTN count;
 
-    Table = gST->ConfigurationTable;
-    Count = gST->NumberOfTableEntries;
+    table = UEFISystemTable->ConfigurationTable;
+    count = UEFISystemTable->NumberOfTableEntries;
 
-    for (UINTN i = 0; i < Count; i++)
+    for (UINTN i = 0; i < count; i++)
     {
-        EFI_GUID *Guid = &Table[i].VendorGuid;
+        EFI_GUID *guid = &table[i].VendorGuid;
 
-        if (IsGuidEqual(Guid, &gEfiAcpi20TableGuid))
+        if (IsGuidEqual(guid, &gEfiAcpi20TableGuid))
         {
-            RSDP = (LINEOS_ACPI_RSDP *)Table[i].VendorTable;
+            RSDP = (LINEOS_ACPI_RSDP *)table[i].VendorTable;
             return TRUE;
         }
     }

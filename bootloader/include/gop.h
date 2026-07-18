@@ -7,6 +7,6 @@
 #include <Uefi.h>
 #include <lineos/bootinfo.h>
 
-BOOLEAN GOPInit(void);
+BOOLEAN GOPInit(VOID);
 
 extern LINEOS_GOP GOP;

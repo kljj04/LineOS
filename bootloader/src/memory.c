@@ -5,61 +5,52 @@
 #include <Uefi.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include "memory.h"
+#include "lineosuefi.h"
 
 LINEOS_MEMORY_MAP MemoryMap;
 
-static EFI_MEMORY_DESCRIPTOR *Buffer = NULL;
+static EFI_MEMORY_DESCRIPTOR *buffer = NULL;
 static UINTN BufferSize = 0;
 static UINTN MapKey = 0;
 static EFI_HANDLE LineOSImageHandle = NULL;
 
-void MemorySetImageHandle(EFI_HANDLE Handle)
+VOID MemorySetImageHandle(EFI_HANDLE Handle)
 {
     LineOSImageHandle = Handle;
 }
 
-BOOLEAN MemoryInit(void)
+BOOLEAN MemoryInit(VOID)
 {
-    EFI_STATUS Status;
+    EFI_STATUS status;
     UINTN DescriptorSize;
     UINT32 DescriptorVersion;
 
     BufferSize = 0;
 
-    Status = gBS->GetMemoryMap(
-        &BufferSize,
-        NULL,
-        &MapKey,
-        &DescriptorSize,
-        &DescriptorVersion
-    );
+    status = UEFIBootServices->GetMemoryMap(&BufferSize, NULL, &MapKey, &DescriptorSize, &DescriptorVersion);
 
-    if(Status != EFI_BUFFER_TOO_SMALL)
+    if(status != EFI_BUFFER_TOO_SMALL)
+    {
         return FALSE;
+    }
 
-    BufferSize += DescriptorSize * 16;
+    BufferSize += DescriptorSize * 64;
 
-    Status = gBS->AllocatePool(
-        EfiLoaderData,
-        BufferSize,
-        (VOID **)&Buffer
-    );
+    status = UEFIBootServices->AllocatePool(EfiLoaderData, BufferSize, (VOID **)&buffer);
 
-    if(EFI_ERROR(Status))
+    if(EFI_ERROR(status))
+    {
         return FALSE;
+    }
 
-    Status = gBS->GetMemoryMap(
-        &BufferSize,
-        Buffer,
-        &MapKey,
-        &DescriptorSize,
-        &DescriptorVersion
-    );
+    status = UEFIBootServices->GetMemoryMap(&BufferSize, buffer, &MapKey, &DescriptorSize, &DescriptorVersion);
 
-    if(EFI_ERROR(Status))
+    if(EFI_ERROR(status))
+    {
         return FALSE;
+    }
 
-    MemoryMap.MemoryMap = Buffer;
+    MemoryMap.MemoryMap = buffer;
     MemoryMap.MemoryMapSize = BufferSize;
     MemoryMap.MemoryMapDescriptorSize = DescriptorSize;
     MemoryMap.MemoryMapDescriptorVersion = DescriptorVersion;
@@ -67,9 +58,9 @@ BOOLEAN MemoryInit(void)
     return TRUE;
 }
 
-BOOLEAN ExitBootServices(void)
+BOOLEAN ExitBootServices(VOID)
 {
-    EFI_STATUS Status;
+    EFI_STATUS status;
     UINTN DescriptorSize;
     UINT32 DescriptorVersion;
 
@@ -77,60 +68,55 @@ BOOLEAN ExitBootServices(void)
     {
         BufferSize = 0;
 
-        Status = gBS->GetMemoryMap(
-            &BufferSize,
-            NULL,
-            &MapKey,
-            &DescriptorSize,
-            &DescriptorVersion
-        );
+        status = UEFIBootServices->GetMemoryMap(&BufferSize, NULL, &MapKey, &DescriptorSize, &DescriptorVersion);
 
-        if(Status != EFI_BUFFER_TOO_SMALL)
-            return FALSE;
-
-        BufferSize += DescriptorSize * 16;
-
-        if(Buffer == NULL)
+        if(status != EFI_BUFFER_TOO_SMALL)
         {
-            Status = gBS->AllocatePool(
-                EfiLoaderData,
-                BufferSize,
-                (VOID **)&Buffer
-            );
-
-            if(EFI_ERROR(Status))
-                return FALSE;
+            return FALSE;
         }
 
-        Status = gBS->GetMemoryMap(
-            &BufferSize,
-            Buffer,
-            &MapKey,
-            &DescriptorSize,
-            &DescriptorVersion
-        );
+        BufferSize += DescriptorSize * 64;
 
-        if(Status == EFI_BUFFER_TOO_SMALL)
+        if(buffer != NULL)
         {
-            gBS->FreePool(Buffer);
-            Buffer = NULL;
+            UEFIBootServices->FreePool(buffer);
+            buffer = NULL;
+        }
+
+        status = UEFIBootServices->AllocatePool(EfiLoaderData, BufferSize, (VOID **)&buffer);
+
+        if(EFI_ERROR(status))
+        {
+            return FALSE;
+        }
+
+        status = UEFIBootServices->GetMemoryMap(&BufferSize, buffer, &MapKey, &DescriptorSize, &DescriptorVersion);
+
+        if(status == EFI_BUFFER_TOO_SMALL)
+        {
             continue;
         }
 
-        if(EFI_ERROR(Status))
+        if(EFI_ERROR(status))
+        {
             return FALSE;
+        }
 
-        MemoryMap.MemoryMap = Buffer;
+        MemoryMap.MemoryMap = buffer;
         MemoryMap.MemoryMapSize = BufferSize;
         MemoryMap.MemoryMapDescriptorSize = DescriptorSize;
         MemoryMap.MemoryMapDescriptorVersion = DescriptorVersion;
 
-        Status = gBS->ExitBootServices(
-            LineOSImageHandle,
-            MapKey
-        );
+        status = UEFIBootServices->ExitBootServices(LineOSImageHandle, MapKey);
 
-        if(!EFI_ERROR(Status))
+        if(!EFI_ERROR(status))
+        {
             return TRUE;
+        }
+
+        if(status != EFI_INVALID_PARAMETER)
+        {
+            return FALSE;
+        }
     }
 }

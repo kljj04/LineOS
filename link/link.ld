@@ -3,7 +3,7 @@
  * Copyright (C) 2026 LineOS Developer kljj04
  */
 
-ENTRY(kernel_main)
+ENTRY(KMain)
 
 SECTIONS
 {

@@ -46,6 +46,6 @@ typedef struct
     UINT64 Size;
 } LINEOS_KERNEL;
 
-BOOLEAN LoadKernel(void);
+BOOLEAN LoadKernel(VOID);
 
-extern LINEOS_KERNEL Kernel;
+extern LINEOS_KERNEL kernel;
