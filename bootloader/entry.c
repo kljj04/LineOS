@@ -3,6 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <Uefi.h>
+#include <Library/UefiLib.h>
 #include "acpi.h"
 #include "elf.h"
 #include "gop.h"
@@ -12,29 +13,42 @@
 
 EFI_STATUS EFIAPI EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {
-    gImageHandle = ImageHandle;
-    gST = SystemTable;
-    gBS = SystemTable->BootServices;
+
+    UEFIImageHandle = ImageHandle;
+    UEFISystemTable = SystemTable;
+    UEFIBootServices = SystemTable->BootServices;
 
     MemorySetImageHandle(ImageHandle);
 
     if (!GOPInit())
+    {
         return EFI_ABORTED;
+    }
 
     if (!MemoryInit())
+    {
         return EFI_ABORTED;
+    }
 
     if (!ACPIInit())
+    {
         return EFI_ABORTED;
+    }
 
     if (!LoadKernel())
+    {
         return EFI_ABORTED;
+    }
 
     if (!CreateBootInfo())
+    {
         return EFI_ABORTED;
+    }
 
     if (!ExitBootServices())
+    {
         return EFI_ABORTED;
+    }
 
     JumpKernel();
 

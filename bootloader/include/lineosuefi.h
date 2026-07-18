@@ -6,6 +6,6 @@
 
 #include <Uefi.h>
 
-extern EFI_SYSTEM_TABLE *gST;
-extern EFI_BOOT_SERVICES *gBS;
-extern EFI_HANDLE gImageHandle;
+extern EFI_SYSTEM_TABLE *UEFISystemTable;
+extern EFI_BOOT_SERVICES *UEFIBootServices;
+extern EFI_HANDLE UEFIImageHandle;

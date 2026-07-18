@@ -7,6 +7,6 @@
 #include <Uefi.h>
 #include <lineos/bootinfo.h>
 
-BOOLEAN ACPIInit(void);
+BOOLEAN ACPIInit(VOID);
 
 extern LINEOS_ACPI_RSDP *RSDP;

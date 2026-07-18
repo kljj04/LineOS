@@ -6,35 +6,36 @@
 #include <Protocol/GraphicsOutput.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include "gop.h"
+#include "lineosuefi.h"
 LINEOS_GOP GOP;
 
-BOOLEAN GOPInit(void)
+BOOLEAN GOPInit(VOID)
 {
-    EFI_STATUS Status;
+    EFI_STATUS status;
     EFI_GRAPHICS_OUTPUT_PROTOCOL *GraphicsOutput;
 
-    Status = gBS->LocateProtocol(
+    status = UEFIBootServices->LocateProtocol(
         &gEfiGraphicsOutputProtocolGuid,
         NULL,
         (VOID**)&GraphicsOutput
     );
 
-    if (EFI_ERROR(Status))
+    if (EFI_ERROR(status))
     {
         return FALSE;
     }
 
-    EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* Info;
-    UINTN Size;
+    EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *info;
+    UINTN size;
 
-    Status = GraphicsOutput->QueryMode(
+    status = GraphicsOutput->QueryMode(
         GraphicsOutput,
         GraphicsOutput->Mode->Mode,
-        &Size,
-        &Info
+        &size,
+        &info
     );
 
-    if (EFI_ERROR(Status))
+    if (EFI_ERROR(status))
     {
         return FALSE;
     }

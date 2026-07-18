@@ -7,7 +7,7 @@
 #include <Uefi.h>
 #include <lineos/bootinfo.h>
 
-BOOLEAN CreateBootInfo(void);
-VOID JumpKernel(void);
+BOOLEAN CreateBootInfo(VOID);
+VOID JumpKernel(VOID);
 
 extern LINEOS_BOOT_INFO *BootInfo;

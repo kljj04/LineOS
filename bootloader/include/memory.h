@@ -7,8 +7,8 @@
 #include <Uefi.h>
 #include <lineos/bootinfo.h>
 
-BOOLEAN MemoryInit(void);
-BOOLEAN ExitBootServices(void);
-void MemorySetImageHandle(EFI_HANDLE Handle);
+BOOLEAN MemoryInit(VOID);
+BOOLEAN ExitBootServices(VOID);
+VOID MemorySetImageHandle(EFI_HANDLE Handle);
 
 extern LINEOS_MEMORY_MAP MemoryMap;

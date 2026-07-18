@@ -10,22 +10,23 @@
 #include "gop.h"
 #include "memory.h"
 #include "acpi.h"
+#include "lineosuefi.h"
 
 
 LINEOS_BOOT_INFO *BootInfo = NULL;
 
 
-BOOLEAN CreateBootInfo(void)
+BOOLEAN CreateBootInfo(VOID)
 {
-    EFI_STATUS Status;
+    EFI_STATUS status;
 
-    Status = gBS->AllocatePool(
+    status = UEFIBootServices->AllocatePool(
         EfiLoaderData,
         sizeof(LINEOS_BOOT_INFO),
         (VOID**)&BootInfo
     );
 
-    if(EFI_ERROR(Status))
+    if(EFI_ERROR(status))
         return FALSE;
 
 
@@ -37,17 +38,19 @@ BOOLEAN CreateBootInfo(void)
     BootInfo->MemoryMap = &MemoryMap;
     BootInfo->RSDP = RSDP;
 
+
     return TRUE;
 }
 
 
-VOID JumpKernel(void)
+VOID JumpKernel(VOID)
 {
-    void (*KernelEntry)(LINEOS_BOOT_INFO*);
+    typedef VOID (__attribute__((ms_abi)) *KERNEL_ENTRY)(LINEOS_BOOT_INFO*);
+    KERNEL_ENTRY KernelEntry;
 
     KernelEntry =
-        (void (*)(LINEOS_BOOT_INFO*))
-        Kernel.Entry;
+        (KERNEL_ENTRY)
+        kernel.Entry;
 
     KernelEntry(BootInfo);
 }

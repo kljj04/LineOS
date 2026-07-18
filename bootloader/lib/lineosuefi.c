@@ -5,6 +5,6 @@
 #include <Uefi.h>
 #include "lineosuefi.h"
 
-EFI_SYSTEM_TABLE *gST = NULL;
-EFI_BOOT_SERVICES *gBS = NULL;
-EFI_HANDLE gImageHandle = NULL;
+EFI_SYSTEM_TABLE *UEFISystemTable = NULL;
+EFI_BOOT_SERVICES *UEFIBootServices = NULL;
+EFI_HANDLE UEFIImageHandle = NULL;
