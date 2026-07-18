@@ -2,7 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include "fontinfo.h"
+#include <render/fontinfo.h>
 
 const UINT8 glyph_bitmap[] = {
     /* U+0021 "!" */

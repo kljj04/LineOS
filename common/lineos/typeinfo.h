@@ -18,6 +18,8 @@ typedef UINT32              EFI_GRAPHICS_PIXEL_FORMAT;
 typedef signed short        INT16;
 typedef signed int          INT32;
 typedef signed long long    INT64;
+typedef UINT8               CHAR8;
+typedef UINT16              CHAR16;
 #else
 #include <Uefi.h>
 #include <Protocol/GraphicsOutput.h>
