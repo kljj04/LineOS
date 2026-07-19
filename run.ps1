@@ -1,7 +1,8 @@
 $BaseDir = Get-Location
-$RAM = "2048M"
+$RAM = "59M"
 $LogFile = "qemu.log"
 $QEMU = "qemu-system-x86_64"
+$Accel = "whpx"
 $VHD = "$BaseDir\LineOS\LineOS.vhdx"
 $VHDDrive = "L:"
 $OVMF_CODE = "$BaseDir\uefi\OVMF_CODE.fd"
@@ -14,6 +15,7 @@ $KernelPath = "$VHDDrive\KERNEL"
 $RTC = "base=localtime,clock=host"
 $Machine = "pc"
 $VGA = "std"
+$GraphicsResolution = "2560x1440"
 $Network = "none"
 $DebugOption = "guest_errors,cpu_reset"
 
@@ -83,11 +85,13 @@ function Run-QEMU
     Write-Host "    [*] QEMU start..." -ForegroundColor Cyan
     & $QEMU `
         -rtc $RTC `
+        -accel $Accel `
         -drive "if=pflash,format=raw,readonly=on,file=$OVMF_CODE" `
         -drive "if=pflash,format=raw,file=$OVMF_VARS" `
         -net $Network `
         -M $Machine `
         -vga $VGA `
+        -fw_cfg "name=opt/org.tianocore/GraphicsResolution,string=$GraphicsResolution" `
         -no-reboot `
         -d $DebugOption `
         -D $LogPath `

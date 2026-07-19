@@ -6,6 +6,6 @@
 
 #include <lineos/bootinfo.h>
 
-VOID Halt(VOID);
+VOID HLT(VOID);
 VOID CLI(VOID);
 VOID STI(VOID);

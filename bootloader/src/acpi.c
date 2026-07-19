@@ -11,7 +11,7 @@
 
 LINEOS_ACPI_RSDP *RSDP = NULL;
 
-static BOOLEAN IsGuidEqual(EFI_GUID *a, EFI_GUID *b)
+STATIC BOOLEAN IsGuidEqual(EFI_GUID *a, EFI_GUID *b)
 {
     return
         a->Data1 == b->Data1 &&

@@ -31,7 +31,8 @@ KERN_CFLAGS = -target x86_64-elf \
 			  -DLINEOS_KERNEL_BUILD \
 			  -Icommon \
 			  -Ikernel/include \
-			  -Wunused-variable
+			  -Wunused-variable \
+			  -fshort-wchar
 
 .PHONY: all clean compile_boot compile_kernel link_boot link_kernel
 
