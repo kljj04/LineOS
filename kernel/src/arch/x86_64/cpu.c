@@ -4,7 +4,7 @@
 
 #include <lineos/bootinfo.h>
 
-VOID Halt(VOID)
+VOID HLT(VOID)
 {
     while (1)
     {

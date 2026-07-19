@@ -13,10 +13,10 @@
 
 LINEOS_KERNEL kernel;
 
-static VOID *ELFBuffer = NULL;
-static UINTN ELFSize = 0;
+STATIC VOID *ELFBuffer = NULL;
+STATIC UINTN ELFSize = 0;
 
-static EFI_FILE_PROTOCOL *OpenKernelFile(EFI_HANDLE ImageHandle)
+STATIC EFI_FILE_PROTOCOL *OpenKernelFile(EFI_HANDLE ImageHandle)
 {
     EFI_STATUS status;
     EFI_LOADED_IMAGE_PROTOCOL *LoadedImage;
@@ -65,7 +65,7 @@ static EFI_FILE_PROTOCOL *OpenKernelFile(EFI_HANDLE ImageHandle)
 }
 
 
-static BOOLEAN ReadKernelFile(EFI_FILE_PROTOCOL *file)
+STATIC BOOLEAN ReadKernelFile(EFI_FILE_PROTOCOL *file)
 {
     EFI_STATUS status;
     EFI_FILE_INFO *fileInfo;
@@ -124,7 +124,7 @@ static BOOLEAN ReadKernelFile(EFI_FILE_PROTOCOL *file)
 }
 
 
-static BOOLEAN CheckELF(VOID)
+STATIC BOOLEAN CheckELF(VOID)
 {
     ELF64_HEADER *header;
 
@@ -144,7 +144,7 @@ static BOOLEAN CheckELF(VOID)
 }
 
 
-static BOOLEAN LoadELFSegments(VOID)
+STATIC BOOLEAN LoadELFSegments(VOID)
 {
     ELF64_HEADER *header;
 

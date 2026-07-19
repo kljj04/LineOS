@@ -9,10 +9,10 @@
 
 LINEOS_MEMORY_MAP MemoryMap;
 
-static EFI_MEMORY_DESCRIPTOR *buffer = NULL;
-static UINTN BufferSize = 0;
-static UINTN MapKey = 0;
-static EFI_HANDLE LineOSImageHandle = NULL;
+STATIC EFI_MEMORY_DESCRIPTOR *buffer = NULL;
+STATIC UINTN BufferSize = 0;
+STATIC UINTN MapKey = 0;
+STATIC EFI_HANDLE LineOSImageHandle = NULL;
 
 VOID MemorySetImageHandle(EFI_HANDLE Handle)
 {
