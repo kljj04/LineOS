@@ -43,8 +43,8 @@ UINT16 DrawGlyph(UINT16 Unicode, UINT32 x, UINT32 BaseLine, UINT32 Color)
         return 0;
     }
 
-    const LINEOS_GLYPH* Glyph = &GlyphDsc[Index];
-    const UINT8* Bitmap = &GlyphBitmap[Glyph->BitmapOffset];
+    CONST LINEOS_GLYPH* Glyph = &GlyphDsc[Index];
+    CONST UINT8* Bitmap = &GlyphBitmap[Glyph->BitmapOffset];
 
     INT32 StartX = (INT32)x + Glyph->OffsetX;
     INT32 StartY = (INT32)BaseLine - Glyph->OffsetY;

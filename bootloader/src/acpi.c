@@ -6,12 +6,12 @@
 #include <Guid/Acpi.h>
 #include <Library/BaseLib.h>
 #include <Library/UefiBootServicesTableLib.h>
-#include "acpi.h"
-#include "lineosuefi.h"
+#include <acpi.h>
+#include <lineosuefi.h>
 
-LINEOS_ACPI_RSDP *RSDP = NULL;
+LINEOS_ACPI_RSDP* RSDP = NULL;
 
-STATIC BOOLEAN IsGuidEqual(EFI_GUID *a, EFI_GUID *b)
+STATIC BOOLEAN IsGuidEqual(EFI_GUID* a, EFI_GUID* b)
 {
     return
         a->Data1 == b->Data1 &&
@@ -29,7 +29,7 @@ STATIC BOOLEAN IsGuidEqual(EFI_GUID *a, EFI_GUID *b)
 
 BOOLEAN ACPIInit(VOID)
 {
-    EFI_CONFIGURATION_TABLE *table;
+    EFI_CONFIGURATION_TABLE* table;
 
     UINTN count;
 
@@ -38,11 +38,11 @@ BOOLEAN ACPIInit(VOID)
 
     for (UINTN i = 0; i < count; i++)
     {
-        EFI_GUID *guid = &table[i].VendorGuid;
+        EFI_GUID* guid = &table[i].VendorGuid;
 
         if (IsGuidEqual(guid, &gEfiAcpi20TableGuid))
         {
-            RSDP = (LINEOS_ACPI_RSDP *)table[i].VendorTable;
+            RSDP = (LINEOS_ACPI_RSDP*)table[i].VendorTable;
             return TRUE;
         }
     }

@@ -8,21 +8,21 @@
 #include <Protocol/SimpleFileSystem.h>
 #include <Protocol/LoadedImage.h>
 #include <Guid/FileInfo.h>
-#include "elf.h"
-#include "lineosuefi.h"
+#include <elf.h>
+#include <lineosuefi.h>
 
 LINEOS_KERNEL kernel;
 
-STATIC VOID *ELFBuffer = NULL;
+STATIC VOID* ELFBuffer = NULL;
 STATIC UINTN ELFSize = 0;
 
-STATIC EFI_FILE_PROTOCOL *OpenKernelFile(EFI_HANDLE ImageHandle)
+STATIC EFI_FILE_PROTOCOL* OpenKernelFile(EFI_HANDLE ImageHandle)
 {
     EFI_STATUS status;
-    EFI_LOADED_IMAGE_PROTOCOL *LoadedImage;
-    EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *FileSystem;
-    EFI_FILE_PROTOCOL *root;
-    EFI_FILE_PROTOCOL *file;
+    EFI_LOADED_IMAGE_PROTOCOL* LoadedImage;
+    EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* FileSystem;
+    EFI_FILE_PROTOCOL* root;
+    EFI_FILE_PROTOCOL* file;
 
     status = UEFIBootServices->HandleProtocol(
         ImageHandle,
@@ -30,7 +30,7 @@ STATIC EFI_FILE_PROTOCOL *OpenKernelFile(EFI_HANDLE ImageHandle)
         (VOID**)&LoadedImage
     );
 
-    if(EFI_ERROR(status))
+    if (EFI_ERROR(status))
         return NULL;
 
     status = UEFIBootServices->HandleProtocol(
@@ -39,7 +39,7 @@ STATIC EFI_FILE_PROTOCOL *OpenKernelFile(EFI_HANDLE ImageHandle)
         (VOID**)&FileSystem
     );
 
-    if(EFI_ERROR(status))
+    if (EFI_ERROR(status))
         return NULL;
 
     status = FileSystem->OpenVolume(
@@ -47,7 +47,7 @@ STATIC EFI_FILE_PROTOCOL *OpenKernelFile(EFI_HANDLE ImageHandle)
         &root
     );
 
-    if(EFI_ERROR(status))
+    if (EFI_ERROR(status))
         return NULL;
 
     status = root->Open(
@@ -58,17 +58,17 @@ STATIC EFI_FILE_PROTOCOL *OpenKernelFile(EFI_HANDLE ImageHandle)
         0
     );
 
-    if(EFI_ERROR(status))
+    if (EFI_ERROR(status))
         return NULL;
 
     return file;
 }
 
 
-STATIC BOOLEAN ReadKernelFile(EFI_FILE_PROTOCOL *file)
+STATIC BOOLEAN ReadKernelFile(EFI_FILE_PROTOCOL* file)
 {
     EFI_STATUS status;
-    EFI_FILE_INFO *fileInfo;
+    EFI_FILE_INFO* fileInfo;
     UINTN InfoSize = 0;
 
     status = file->GetInfo(
@@ -78,7 +78,7 @@ STATIC BOOLEAN ReadKernelFile(EFI_FILE_PROTOCOL *file)
         NULL
     );
 
-    if(status != EFI_BUFFER_TOO_SMALL)
+    if (status != EFI_BUFFER_TOO_SMALL)
         return FALSE;
 
     status = UEFIBootServices->AllocatePool(
@@ -87,7 +87,7 @@ STATIC BOOLEAN ReadKernelFile(EFI_FILE_PROTOCOL *file)
         (VOID**)&fileInfo
     );
 
-    if(EFI_ERROR(status))
+    if (EFI_ERROR(status))
         return FALSE;
 
     status = file->GetInfo(
@@ -97,7 +97,7 @@ STATIC BOOLEAN ReadKernelFile(EFI_FILE_PROTOCOL *file)
         fileInfo
     );
 
-    if(EFI_ERROR(status))
+    if (EFI_ERROR(status))
         return FALSE;
 
     ELFSize = fileInfo->FileSize;
@@ -108,7 +108,7 @@ STATIC BOOLEAN ReadKernelFile(EFI_FILE_PROTOCOL *file)
         &ELFBuffer
     );
 
-    if(EFI_ERROR(status))
+    if (EFI_ERROR(status))
         return FALSE;
 
     status = file->Read(
@@ -117,7 +117,7 @@ STATIC BOOLEAN ReadKernelFile(EFI_FILE_PROTOCOL *file)
         ELFBuffer
     );
 
-    if(EFI_ERROR(status))
+    if (EFI_ERROR(status))
         return FALSE;
 
     return TRUE;
@@ -126,16 +126,16 @@ STATIC BOOLEAN ReadKernelFile(EFI_FILE_PROTOCOL *file)
 
 STATIC BOOLEAN CheckELF(VOID)
 {
-    ELF64_HEADER *header;
+    ELF64_HEADER* header;
 
     header = (ELF64_HEADER*)ELFBuffer;
 
-    if(*(UINT32*)header->Ident != ELF_MAGIC32)
+    if (*(UINT32*)header->Ident != ELF_MAGIC32)
     {
         return FALSE;
     }
 
-    if(header->Machine != 0x3E)
+    if (header->Machine != 0x3E)
     {
         return FALSE;
     }
@@ -146,16 +146,16 @@ STATIC BOOLEAN CheckELF(VOID)
 
 STATIC BOOLEAN LoadELFSegments(VOID)
 {
-    ELF64_HEADER *header;
+    ELF64_HEADER* header;
 
     header = (ELF64_HEADER*)ELFBuffer;
 
     UINT64 base = 0xFFFFFFFFFFFFFFFFULL;
     UINT64 size = 0;
 
-    for(UINTN i = 0; i < header->ProgramHeaderCount; i++)
+    for (UINTN i = 0; i < header->ProgramHeaderCount; i++)
     {
-        ELF64_PROGRAM_HEADER *ProgramHeader;
+        ELF64_PROGRAM_HEADER* ProgramHeader;
 
         ProgramHeader =
             (ELF64_PROGRAM_HEADER*)
@@ -165,7 +165,7 @@ STATIC BOOLEAN LoadELFSegments(VOID)
                 i * header->ProgramHeaderSize
             );
 
-        if(ProgramHeader->Type != PT_LOAD)
+        if (ProgramHeader->Type != PT_LOAD)
             continue;
 
         CopyMem(
@@ -174,7 +174,7 @@ STATIC BOOLEAN LoadELFSegments(VOID)
             ProgramHeader->FileSize
         );
 
-        if(ProgramHeader->MemorySize > ProgramHeader->FileSize)
+        if (ProgramHeader->MemorySize > ProgramHeader->FileSize)
         {
             SetMem(
                 (VOID*)
@@ -188,10 +188,10 @@ STATIC BOOLEAN LoadELFSegments(VOID)
             );
         }
 
-        if(ProgramHeader->VirtualAddress < base)
+        if (ProgramHeader->VirtualAddress < base)
             base = ProgramHeader->VirtualAddress;
 
-        if(
+        if (
             ProgramHeader->VirtualAddress +
             ProgramHeader->MemorySize > size
         )
@@ -212,26 +212,26 @@ STATIC BOOLEAN LoadELFSegments(VOID)
 
 BOOLEAN LoadKernel(VOID)
 {
-    EFI_FILE_PROTOCOL *file;
+    EFI_FILE_PROTOCOL* file;
 
     file = OpenKernelFile(UEFIImageHandle);
 
-    if(!file)
+    if (!file)
     {
         return FALSE;
     }
 
-    if(!ReadKernelFile(file))
+    if (!ReadKernelFile(file))
     {
         return FALSE;
     }
 
-    if(!CheckELF())
+    if (!CheckELF())
     {
         return FALSE;
     }
 
-    if(!LoadELFSegments())
+    if (!LoadELFSegments())
     {
         return FALSE;
     }
