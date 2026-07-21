@@ -4,19 +4,21 @@
 
 #include <Uefi.h>
 #include <Library/UefiLib.h>
-#include "acpi.h"
-#include "elf.h"
-#include "gop.h"
-#include "handoff.h"
-#include "memory.h"
-#include "lineosuefi.h"
+#include <acpi.h>
+#include <elf.h>
+#include <gop.h>
+#include <handoff.h>
+#include <memory.h>
+#include <lineosuefi.h>
 
-EFI_STATUS EFIAPI EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
+EFI_STATUS EFIAPI EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 {
-
     UEFIImageHandle = ImageHandle;
     UEFISystemTable = SystemTable;
     UEFIBootServices = SystemTable->BootServices;
+
+    // Disable watchdog
+    UEFIBootServices->SetWatchdogTimer(0, 0, 0, NULL);
 
     MemorySetImageHandle(ImageHandle);
 

@@ -5,17 +5,17 @@
 #include <Uefi.h>
 #include <Protocol/GraphicsOutput.h>
 #include <Library/UefiBootServicesTableLib.h>
-#include "gop.h"
-#include "lineosuefi.h"
+#include <gop.h>
+#include <lineosuefi.h>
 LINEOS_GOP GOP;
 
-STATIC BOOLEAN GOPSelectMode(EFI_GRAPHICS_OUTPUT_PROTOCOL *GraphicsOutput, UINT32 width, UINT32 height)
+STATIC BOOLEAN GOPSelectMode(EFI_GRAPHICS_OUTPUT_PROTOCOL* GraphicsOutput, UINT32 width, UINT32 height)
 {
     EFI_STATUS status;
 
     for (UINT32 ModeNumber = 0; ModeNumber < GraphicsOutput->Mode->MaxMode; ModeNumber++)
     {
-        EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *info;
+        EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* info;
         UINTN size;
 
         status = GraphicsOutput->QueryMode(GraphicsOutput, ModeNumber, &size, &info);
@@ -41,7 +41,7 @@ STATIC BOOLEAN GOPSelectMode(EFI_GRAPHICS_OUTPUT_PROTOCOL *GraphicsOutput, UINT3
 BOOLEAN GOPInit(VOID)
 {
     EFI_STATUS status;
-    EFI_GRAPHICS_OUTPUT_PROTOCOL *GraphicsOutput;
+    EFI_GRAPHICS_OUTPUT_PROTOCOL* GraphicsOutput;
 
     status = UEFIBootServices->LocateProtocol(
         &gEfiGraphicsOutputProtocolGuid,

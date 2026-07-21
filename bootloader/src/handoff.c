@@ -5,15 +5,15 @@
 #include <Uefi.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/BaseMemoryLib.h>
-#include "handoff.h"
-#include "elf.h"
-#include "gop.h"
-#include "memory.h"
-#include "acpi.h"
-#include "lineosuefi.h"
+#include <handoff.h>
+#include <elf.h>
+#include <gop.h>
+#include <memory.h>
+#include <acpi.h>
+#include <lineosuefi.h>
 
 
-LINEOS_BOOT_INFO *BootInfo = NULL;
+LINEOS_BOOT_INFO* BootInfo = NULL;
 
 
 BOOLEAN CreateBootInfo(VOID)
@@ -26,7 +26,7 @@ BOOLEAN CreateBootInfo(VOID)
         (VOID**)&BootInfo
     );
 
-    if(EFI_ERROR(status))
+    if (EFI_ERROR(status))
         return FALSE;
 
 

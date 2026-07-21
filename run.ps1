@@ -1,5 +1,5 @@
 $BaseDir = Get-Location
-$RAM = "59M"
+$RAM = "4G"
 $LogFile = "qemu.log"
 $QEMU = "qemu-system-x86_64"
 $Accel = "whpx"
@@ -85,7 +85,7 @@ function Run-QEMU
     Write-Host "    [*] QEMU start..." -ForegroundColor Cyan
     & $QEMU `
         -rtc $RTC `
-        -accel $Accel `
+        -accel $accel `
         -drive "if=pflash,format=raw,readonly=on,file=$OVMF_CODE" `
         -drive "if=pflash,format=raw,file=$OVMF_VARS" `
         -net $Network `

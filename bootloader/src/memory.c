@@ -4,12 +4,12 @@
 
 #include <Uefi.h>
 #include <Library/UefiBootServicesTableLib.h>
-#include "memory.h"
-#include "lineosuefi.h"
+#include <memory.h>
+#include <lineosuefi.h>
 
 LINEOS_MEMORY_MAP MemoryMap;
 
-STATIC EFI_MEMORY_DESCRIPTOR *buffer = NULL;
+STATIC EFI_MEMORY_DESCRIPTOR* buffer = NULL;
 STATIC UINTN BufferSize = 0;
 STATIC UINTN MapKey = 0;
 STATIC EFI_HANDLE LineOSImageHandle = NULL;
@@ -29,23 +29,23 @@ BOOLEAN MemoryInit(VOID)
 
     status = UEFIBootServices->GetMemoryMap(&BufferSize, NULL, &MapKey, &DescriptorSize, &DescriptorVersion);
 
-    if(status != EFI_BUFFER_TOO_SMALL)
+    if (status != EFI_BUFFER_TOO_SMALL)
     {
         return FALSE;
     }
 
     BufferSize += DescriptorSize * 64;
 
-    status = UEFIBootServices->AllocatePool(EfiLoaderData, BufferSize, (VOID **)&buffer);
+    status = UEFIBootServices->AllocatePool(EfiLoaderData, BufferSize, (VOID**)&buffer);
 
-    if(EFI_ERROR(status))
+    if (EFI_ERROR(status))
     {
         return FALSE;
     }
 
     status = UEFIBootServices->GetMemoryMap(&BufferSize, buffer, &MapKey, &DescriptorSize, &DescriptorVersion);
 
-    if(EFI_ERROR(status))
+    if (EFI_ERROR(status))
     {
         return FALSE;
     }
@@ -64,40 +64,40 @@ BOOLEAN ExitBootServices(VOID)
     UINTN DescriptorSize;
     UINT32 DescriptorVersion;
 
-    while(TRUE)
+    while (TRUE)
     {
         BufferSize = 0;
 
         status = UEFIBootServices->GetMemoryMap(&BufferSize, NULL, &MapKey, &DescriptorSize, &DescriptorVersion);
 
-        if(status != EFI_BUFFER_TOO_SMALL)
+        if (status != EFI_BUFFER_TOO_SMALL)
         {
             return FALSE;
         }
 
         BufferSize += DescriptorSize * 64;
 
-        if(buffer != NULL)
+        if (buffer != NULL)
         {
             UEFIBootServices->FreePool(buffer);
             buffer = NULL;
         }
 
-        status = UEFIBootServices->AllocatePool(EfiLoaderData, BufferSize, (VOID **)&buffer);
+        status = UEFIBootServices->AllocatePool(EfiLoaderData, BufferSize, (VOID**)&buffer);
 
-        if(EFI_ERROR(status))
+        if (EFI_ERROR(status))
         {
             return FALSE;
         }
 
         status = UEFIBootServices->GetMemoryMap(&BufferSize, buffer, &MapKey, &DescriptorSize, &DescriptorVersion);
 
-        if(status == EFI_BUFFER_TOO_SMALL)
+        if (status == EFI_BUFFER_TOO_SMALL)
         {
             continue;
         }
 
-        if(EFI_ERROR(status))
+        if (EFI_ERROR(status))
         {
             return FALSE;
         }
@@ -109,12 +109,12 @@ BOOLEAN ExitBootServices(VOID)
 
         status = UEFIBootServices->ExitBootServices(LineOSImageHandle, MapKey);
 
-        if(!EFI_ERROR(status))
+        if (!EFI_ERROR(status))
         {
             return TRUE;
         }
 
-        if(status != EFI_INVALID_PARAMETER)
+        if (status != EFI_INVALID_PARAMETER)
         {
             return FALSE;
         }
