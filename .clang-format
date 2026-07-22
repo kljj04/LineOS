@@ -1,0 +1,20 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 120
+PointerAlignment: Right
+DerivePointerAlignment: false
+AllowShortFunctionsOnASingleLine: Empty
+AlwaysBreakAfterReturnType: None
+BinPackParameters: true
+BinPackArguments: true
+BreakBeforeBraces: Allman
+SpaceBeforeParens: ControlStatements
+SpaceAfterCStyleCast: true
+AlignConsecutiveAssignments: None
+AlignConsecutiveDeclarations: None
+SortIncludes: false
+AttributeMacros: ['__attribute__']
+StatementMacros: ['CLI', 'HLT']
+TypenameMacros: ['VOID', 'INT32', 'STATIC']

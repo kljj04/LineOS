@@ -4,15 +4,15 @@
 
 #include <acpi/acpi.h>
 
-STATIC LINEOS_RSDP* RSDP = NULL;
-STATIC ACPI_XSDT* XSDT = NULL;
-STATIC ACPI_RSDT* RSDT = NULL;
-STATIC ACPI_HPET* HPET = NULL;
+STATIC LINEOS_RSDP *RSDP = NULL;
+STATIC ACPI_XSDT *XSDT = NULL;
+STATIC ACPI_RSDT *RSDT = NULL;
+STATIC ACPI_HPET *HPET = NULL;
 
-BOOLEAN ACPIChecksum(VOID* table, UINTN length)
+BOOLEAN ACPIChecksum(VOID *table, UINTN length)
 {
     UINT8 sum = 0;
-    UINT8* data = (UINT8*)table;
+    UINT8 *data = (UINT8 *) table;
 
     if (table == NULL || length == 0)
     {
@@ -46,7 +46,7 @@ VOID ACPIInit(VOID)
 
     if (RSDP->Revision >= 2 && RSDP->XSDTAddress >= 0x1000)
     {
-        XSDT = (ACPI_XSDT*)RSDP->XSDTAddress;
+        XSDT = (ACPI_XSDT *) RSDP->XSDTAddress;
 
         if (XSDT->Header.Length < sizeof(ACPI_SDT_HEADER) || !ACPIChecksum(XSDT, XSDT->Header.Length))
         {
@@ -56,7 +56,7 @@ VOID ACPIInit(VOID)
 
     if (RSDP->RSDTAddress >= 0x1000)
     {
-        RSDT = (ACPI_RSDT*)(UINT64)RSDP->RSDTAddress;
+        RSDT = (ACPI_RSDT *) (UINT64) RSDP->RSDTAddress;
 
         if (RSDT->Header.Length < sizeof(ACPI_SDT_HEADER) || !ACPIChecksum(RSDT, RSDT->Header.Length))
         {
@@ -64,10 +64,10 @@ VOID ACPIInit(VOID)
         }
     }
 
-    HPET = (ACPI_HPET*)ACPIFindTable(ACPI_SIGNATURE_HPET);
+    HPET = (ACPI_HPET *) ACPIFindTable(ACPI_SIGNATURE_HPET);
 }
 
-ACPI_SDT_HEADER* ACPIFindTable(UINT32 Signature)
+ACPI_SDT_HEADER *ACPIFindTable(UINT32 Signature)
 {
     if (XSDT != NULL)
     {
@@ -75,7 +75,7 @@ ACPI_SDT_HEADER* ACPIFindTable(UINT32 Signature)
 
         for (UINTN index = 0; index < EntryCount; index++)
         {
-            ACPI_SDT_HEADER* Header = (ACPI_SDT_HEADER*)XSDT->Entry[index];
+            ACPI_SDT_HEADER *Header = (ACPI_SDT_HEADER *) XSDT->Entry[index];
 
             if (Header != NULL && Header->Length >= sizeof(ACPI_SDT_HEADER) && Header->Signature == Signature &&
                 ACPIChecksum(Header, Header->Length))
@@ -91,7 +91,7 @@ ACPI_SDT_HEADER* ACPIFindTable(UINT32 Signature)
 
         for (UINTN index = 0; index < EntryCount; index++)
         {
-            ACPI_SDT_HEADER* Header = (ACPI_SDT_HEADER*)(UINT64)RSDT->Entry[index];
+            ACPI_SDT_HEADER *Header = (ACPI_SDT_HEADER *) (UINT64) RSDT->Entry[index];
 
             if (Header != NULL && Header->Length >= sizeof(ACPI_SDT_HEADER) && Header->Signature == Signature &&
                 ACPIChecksum(Header, Header->Length))
@@ -104,7 +104,7 @@ ACPI_SDT_HEADER* ACPIFindTable(UINT32 Signature)
     return NULL;
 }
 
-ACPI_HPET* HPETGetTable(VOID)
+ACPI_HPET *HPETGetTable(VOID)
 {
     return HPET;
 }

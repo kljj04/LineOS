@@ -19,6 +19,8 @@ typedef struct
 
 VOID CPUID(UINT32 leaf, UINT32 subleaf, UINT32* eax, UINT32* ebx, UINT32* ecx, UINT32* edx);
 VOID CPUDetect(VOID);
+UINT64 RDMSR(UINT32 msr);
+VOID WRMSR(UINT32 msr, UINT64 value);
 VOID HLT(VOID);
 VOID CLI(VOID);
 VOID STI(VOID);

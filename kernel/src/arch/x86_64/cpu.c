@@ -7,7 +7,7 @@
 
 LINEOS_CPU_INFO CPUInfo;
 
-VOID CPUID(UINT32 leaf, UINT32 subleaf, UINT32* eax, UINT32* ebx, UINT32* ecx, UINT32* edx)
+VOID CPUID(UINT32 leaf, UINT32 subleaf, UINT32 *eax, UINT32 *ebx, UINT32 *ecx, UINT32 *edx)
 {
     UINT32 a;
     UINT32 b;
@@ -64,6 +64,23 @@ VOID CPUDetect(VOID)
         CPUID(0x80000007, 0, &eax, &ebx, &ecx, &edx);
         CPUInfo.InvariantTSC = (edx & (1U << 8)) != 0;
     }
+}
+
+UINT64 RDMSR(UINT32 msr)
+{
+    UINT32 low;
+    UINT32 high;
+
+    __asm__ volatile("rdmsr" : "=a"(low), "=d"(high) : "c"(msr));
+    return ((UINT64)high << 32) | low;
+}
+
+VOID WRMSR(UINT32 msr, UINT64 value)
+{
+    UINT32 low = (UINT32)value;
+    UINT32 high = (UINT32)(value >> 32);
+
+    __asm__ volatile("wrmsr" : : "c"(msr), "a"(low), "d"(high));
 }
 
 VOID HLT(VOID)

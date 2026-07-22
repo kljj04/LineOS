@@ -11,7 +11,7 @@
 #include <memory.h>
 #include <lineosuefi.h>
 
-EFI_STATUS EFIAPI EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
+EFI_STATUS EFIAPI EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {
     UEFIImageHandle = ImageHandle;
     UEFISystemTable = SystemTable;
