@@ -13,7 +13,7 @@
 #include <lineosuefi.h>
 
 
-LINEOS_BOOT_INFO* BootInfo = NULL;
+LINEOS_BOOT_INFO *BootInfo = NULL;
 
 
 BOOLEAN CreateBootInfo(VOID)
@@ -23,12 +23,11 @@ BOOLEAN CreateBootInfo(VOID)
     status = UEFIBootServices->AllocatePool(
         EfiLoaderData,
         sizeof(LINEOS_BOOT_INFO),
-        (VOID**)&BootInfo
-    );
+        (VOID **) &BootInfo
+        );
 
     if (EFI_ERROR(status))
         return FALSE;
-
 
     BootInfo->Magic = LINEOS_BOOT_MAGIC;
     BootInfo->Version = 1;
@@ -38,14 +37,13 @@ BOOLEAN CreateBootInfo(VOID)
     BootInfo->MemoryMap = &MemoryMap;
     BootInfo->RSDP = RSDP;
 
-
     return TRUE;
 }
 
 
 VOID JumpKernel(VOID)
 {
-    typedef VOID (__attribute__((ms_abi)) *KERNEL_ENTRY)(LINEOS_BOOT_INFO*);
+    typedef VOID (__attribute__((ms_abi)) *KERNEL_ENTRY)(LINEOS_BOOT_INFO *);
     KERNEL_ENTRY KernelEntry;
 
     KernelEntry =

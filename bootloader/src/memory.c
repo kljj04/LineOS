@@ -9,7 +9,7 @@
 
 LINEOS_MEMORY_MAP MemoryMap;
 
-STATIC EFI_MEMORY_DESCRIPTOR* buffer = NULL;
+STATIC EFI_MEMORY_DESCRIPTOR *buffer = NULL;
 STATIC UINTN BufferSize = 0;
 STATIC UINTN MapKey = 0;
 STATIC EFI_HANDLE LineOSImageHandle = NULL;
@@ -36,7 +36,7 @@ BOOLEAN MemoryInit(VOID)
 
     BufferSize += DescriptorSize * 64;
 
-    status = UEFIBootServices->AllocatePool(EfiLoaderData, BufferSize, (VOID**)&buffer);
+    status = UEFIBootServices->AllocatePool(EfiLoaderData, BufferSize, (VOID **) &buffer);
 
     if (EFI_ERROR(status))
     {
@@ -83,7 +83,7 @@ BOOLEAN ExitBootServices(VOID)
             buffer = NULL;
         }
 
-        status = UEFIBootServices->AllocatePool(EfiLoaderData, BufferSize, (VOID**)&buffer);
+        status = UEFIBootServices->AllocatePool(EfiLoaderData, BufferSize, (VOID **) &buffer);
 
         if (EFI_ERROR(status))
         {

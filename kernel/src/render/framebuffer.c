@@ -6,14 +6,14 @@
 #include <memory/memory.h>
 #include <render/framebuffer.h>
 
-STATIC UINT32* FrameBufferBase = 0;
+STATIC UINT32 *FrameBufferBase = 0;
 STATIC UINT32 FrameBufferWidth = 0;
 STATIC UINT32 FrameBufferHeight = 0;
 STATIC UINT32 PixelsPerScanLine = 0;
 
-VOID FrameBufferInit(LINEOS_BOOT_INFO* BootInfo)
+VOID FrameBufferInit(LINEOS_BOOT_INFO *BootInfo)
 {
-    FrameBufferBase = (UINT32*)BootInfo->GOP->FrameBufferBase;
+    FrameBufferBase = (UINT32 *) BootInfo->GOP->FrameBufferBase;
     FrameBufferWidth = BootInfo->GOP->ScreenWidth;
     FrameBufferHeight = BootInfo->GOP->ScreenHeight;
     PixelsPerScanLine = BootInfo->GOP->PixelsPerScanLine;
@@ -34,11 +34,29 @@ STATIC INT32 Abs(INT32 value)
     return value;
 }
 
-STATIC VOID FillRow(UINT32* destination, UINT32 width, UINT32 color)
+STATIC VOID FillRow(UINT32 *destination, UINT32 width, UINT32 color)
 {
-    for (UINT32 x = 0; x < width; x++)
+    UINT64 Pattern = ((UINT64) color << 32) | color;
+
+    while ((((UINTN) destination) & 7) != 0 && width != 0)
     {
-        destination[x] = color;
+        *destination++ = color;
+        width--;
+    }
+
+    UINT64 *Destination64 = (UINT64 *) destination;
+
+    while (width >= 2)
+    {
+        *Destination64++ = Pattern;
+        width -= 2;
+    }
+
+    destination = (UINT32 *) Destination64;
+
+    if (width != 0)
+    {
+        *destination = color;
     }
 }
 
@@ -137,7 +155,7 @@ VOID DrawLine(INT32 x1, INT32 y1, INT32 x2, INT32 y2, UINT32 color)
     {
         if (x1 >= 0 && y1 >= 0)
         {
-            DrawPixel((UINT32)x1, (UINT32)y1, color);
+            DrawPixel((UINT32) x1, (UINT32) y1, color);
         }
 
         if (x1 == x2 && y1 == y2)
@@ -230,15 +248,15 @@ VOID CopyRect(UINT32 SourceX, UINT32 SourceY, UINT32 width, UINT32 height, UINT3
         return;
     }
 
-    CopySize = (UINTN)width * sizeof(UINT32);
+    CopySize = (UINTN) width * sizeof(UINT32);
 
     if (TargetY > SourceY)
     {
         for (UINT32 RowIndex = height; RowIndex > 0; RowIndex--)
         {
             UINT32 CopyY = RowIndex - 1;
-            UINT32* destination = &FrameBufferBase[FrameBufferOffset(TargetX, TargetY + CopyY)];
-            UINT32* source = &FrameBufferBase[FrameBufferOffset(SourceX, SourceY + CopyY)];
+            UINT32 *destination = &FrameBufferBase[FrameBufferOffset(TargetX, TargetY + CopyY)];
+            UINT32 *source = &FrameBufferBase[FrameBufferOffset(SourceX, SourceY + CopyY)];
 
             MemMove(destination, source, CopySize);
         }
@@ -248,8 +266,8 @@ VOID CopyRect(UINT32 SourceX, UINT32 SourceY, UINT32 width, UINT32 height, UINT3
 
     for (UINT32 RowIndex = 0; RowIndex < height; RowIndex++)
     {
-        UINT32* destination = &FrameBufferBase[FrameBufferOffset(TargetX, TargetY + RowIndex)];
-        UINT32* source = &FrameBufferBase[FrameBufferOffset(SourceX, SourceY + RowIndex)];
+        UINT32 *destination = &FrameBufferBase[FrameBufferOffset(TargetX, TargetY + RowIndex)];
+        UINT32 *source = &FrameBufferBase[FrameBufferOffset(SourceX, SourceY + RowIndex)];
 
         if (destination == source)
         {
