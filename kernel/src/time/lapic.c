@@ -6,6 +6,7 @@
 #include <memory/memory.h>
 #include <time/hpet.h>
 #include <time/lapic.h>
+#include <time/tsc.h>
 
 #define IA32_APIC_BASE_MSR 0x0000001B
 #define IA32_APIC_BASE_ENABLE 0x800
@@ -21,13 +22,14 @@
 #define LAPIC_SPURIOUS_VECTOR 0xFF
 #define LAPIC_TIMER_MASKED 0x00010000
 #define LAPIC_TIMER_MODE_ONE_SHOT 0x00000000
+#define LAPIC_TIMER_MODE_TSC_DEADLINE 0x00040000
 #define LAPIC_TIMER_DIVIDE_16 0x3
 
 LINEOS_LAPIC_INFO LAPICInfo;
 
 VOID LAPICInit(VOID)
 {
-    UINT64 ApicBase;
+    UINT64 APICBase;
 
     LAPICInfo.BaseAddress = 0;
     LAPICInfo.TicksPerMillisecond = 0;
@@ -39,10 +41,10 @@ VOID LAPICInit(VOID)
         return;
     }
 
-    ApicBase = RDMSR(IA32_APIC_BASE_MSR);
-    LAPICInfo.BaseAddress = ApicBase & IA32_APIC_BASE_MASK;
+    APICBase = RDMSR(IA32_APIC_BASE_MSR);
+    LAPICInfo.BaseAddress = APICBase & IA32_APIC_BASE_MASK;
 
-    WRMSR(IA32_APIC_BASE_MSR, ApicBase | IA32_APIC_BASE_ENABLE);
+    WRMSR(IA32_APIC_BASE_MSR, APICBase | IA32_APIC_BASE_ENABLE);
     LAPICWrite(LAPIC_SPURIOUS_INTERRUPT_VECTOR, 0x100 | LAPIC_SPURIOUS_VECTOR);
     LAPICWrite(LAPIC_TIMER_LVT, LAPIC_TIMER_MASKED);
     LAPICTimerSetDivide(LAPIC_TIMER_DIVIDE_16);
@@ -75,7 +77,7 @@ UINT32 LAPICTimerGetCurrentCount(VOID)
     return LAPICRead(LAPIC_TIMER_CURRENT_COUNT);
 }
 
-BOOLEAN LAPICTimerCalibrateWithHPET(UINT64 Milliseconds)
+BOOLEAN LAPICTimerCalibrateWithHPET(UINT64 milliseconds)
 {
     UINT64 StartCounter;
     UINT64 TargetTicks;
@@ -83,12 +85,12 @@ BOOLEAN LAPICTimerCalibrateWithHPET(UINT64 Milliseconds)
     UINT32 CurrentCount;
     UINT32 ElapsedCount;
 
-    if (!LAPICInfo.Available || !HPETInfo.Available || Milliseconds == 0)
+    if (!LAPICInfo.Available || !HPETInfo.Available || milliseconds == 0)
     {
         return FALSE;
     }
 
-    TargetTicks = HPETMillisecondsToTicks(Milliseconds);
+    TargetTicks = HPETMillisecondsToTicks(milliseconds);
 
     if (TargetTicks == 0)
     {
@@ -107,27 +109,27 @@ BOOLEAN LAPICTimerCalibrateWithHPET(UINT64 Milliseconds)
 
     CurrentCount = LAPICTimerGetCurrentCount();
     ElapsedCount = StartCount - CurrentCount;
-    LAPICInfo.TicksPerMillisecond = ElapsedCount / (UINT32) Milliseconds;
+    LAPICInfo.TicksPerMillisecond = ElapsedCount / (UINT32) milliseconds;
     LAPICInfo.Calibrated = LAPICInfo.TicksPerMillisecond != 0;
     LAPICTimerSetInitialCount(0);
     return LAPICInfo.Calibrated;
 }
 
-VOID LAPICTimerStartOneShot(UINT32 vector, UINT64 Milliseconds)
+VOID LAPICTimerStartOneShot(UINT32 vector, UINT64 milliseconds)
 {
-    LAPICTimerStartOneShotUs(vector, Milliseconds * 1000);
+    LAPICTimerStartOneShotUs(vector, milliseconds * 1000);
 }
 
-VOID LAPICTimerStartOneShotUs(UINT32 vector, UINT64 Microseconds)
+VOID LAPICTimerStartOneShotUs(UINT32 vector, UINT64 microseconds)
 {
     UINT64 ticks;
 
-    if (!LAPICInfo.Available || !LAPICInfo.Calibrated || Microseconds == 0)
+    if (!LAPICInfo.Available || !LAPICInfo.Calibrated || microseconds == 0)
     {
         return;
     }
 
-    ticks = ((UINT64)LAPICInfo.TicksPerMillisecond * Microseconds) / 1000;
+    ticks = ((UINT64)LAPICInfo.TicksPerMillisecond * microseconds) / 1000;
 
     if (ticks == 0)
     {
@@ -142,6 +144,23 @@ VOID LAPICTimerStartOneShotUs(UINT32 vector, UINT64 Microseconds)
     LAPICTimerSetDivide(LAPIC_TIMER_DIVIDE_16);
     LAPICWrite(LAPIC_TIMER_LVT, LAPIC_TIMER_MODE_ONE_SHOT | vector);
     LAPICTimerSetInitialCount((UINT32)ticks);
+}
+
+VOID LAPICTimerStartTSCDeadline(UINT32 vector, UINT64 DeadlineTSC)
+{
+    if (!LAPICInfo.Available || DeadlineTSC == 0)
+    {
+        return;
+    }
+
+    TSCDeadlineClear();
+    LAPICWrite(LAPIC_TIMER_LVT, LAPIC_TIMER_MODE_TSC_DEADLINE | vector);
+    TSCDeadlineSet(DeadlineTSC);
+}
+
+VOID LAPICTimerStopTSCDeadline(VOID)
+{
+    TSCDeadlineClear();
 }
 
 VOID LAPICEOI(VOID)

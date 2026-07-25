@@ -8,6 +8,7 @@
 #include <time/hpet.h>
 #include <time/lapic.h>
 #include <time/timer.h>
+#include <time/tsc.h>
 
 #define TIMER_TSC_FALLBACK_TICKS_PER_MS 1000000ULL
 
@@ -15,9 +16,9 @@ LINEOS_TIMER_INFO TimerInfo;
 STATIC volatile UINT64 TimerTicks;
 STATIC volatile BOOLEAN TimerTickPending;
 
-STATIC VOID DelayWithHPET(UINT64 Microseconds)
+STATIC VOID DelayWithHPET(UINT64 microseconds)
 {
-    UINT64 TargetTicks = (HPETMillisecondsToTicks(1) * Microseconds) / 1000;
+    UINT64 TargetTicks = (HPETMillisecondsToTicks(1) * microseconds) / 1000;
     UINT64 StartCounter;
 
     if (TargetTicks == 0)
@@ -33,10 +34,10 @@ STATIC VOID DelayWithHPET(UINT64 Microseconds)
     }
 }
 
-STATIC VOID DelayWithLAPICSleep(UINT64 Microseconds)
+STATIC VOID DelayWithLAPICSleep(UINT64 microseconds)
 {
     TimerTickPending = FALSE;
-    TimerStartOneShotUs(Microseconds);
+    TimerStartOneShotUs(microseconds);
     STI();
 
     while (!TimerTickPending)
@@ -47,22 +48,17 @@ STATIC VOID DelayWithLAPICSleep(UINT64 Microseconds)
     TimerConsumeTick();
 }
 
-STATIC VOID DelayWithTSC(UINT64 Microseconds)
+STATIC VOID DelayWithTSC(UINT64 microseconds)
 {
-    UINT32 low;
-    UINT32 high;
     UINT64 StartTSC;
-    UINT64 TargetTicks = Microseconds * (TIMER_TSC_FALLBACK_TICKS_PER_MS / 1000);
+    UINT64 CurrentTSC;
+    UINT64 TargetTicks = microseconds * (TIMER_TSC_FALLBACK_TICKS_PER_MS / 1000);
 
-    __asm__ volatile("rdtsc" : "=a"(low), "=d"(high));
-    StartTSC = ((UINT64)high << 32) | low;
+    StartTSC = TSCRead();
 
     while (1)
     {
-        UINT64 CurrentTSC;
-
-        __asm__ volatile("rdtsc" : "=a"(low), "=d"(high));
-        CurrentTSC = ((UINT64)high << 32) | low;
+        CurrentTSC = TSCRead();
 
         if (CurrentTSC - StartTSC >= TargetTicks)
         {
@@ -77,10 +73,12 @@ VOID TimerInit(VOID)
 {
     HPETInit();
     LAPICInit();
+    TSCInit();
     LAPICTimerCalibrateWithHPET(10);
     TimerDetect();
 
-    if (TimerInfo.LAPICTimerAvailable && TimerInfo.LAPICTimerCalibrated)
+    if (TimerInfo.MainSource == TimerSourceTSCDeadline ||
+        (TimerInfo.LAPICTimerAvailable && TimerInfo.LAPICTimerCalibrated))
     {
         IDTInit();
     }
@@ -88,12 +86,16 @@ VOID TimerInit(VOID)
 
 VOID TimerDetect(VOID)
 {
-    TimerInfo.TSCDeadlineAvailable = CPUInfo.TSC && CPUInfo.InvariantTSC && CPUInfo.APIC && CPUInfo.TSCDeadline;
+    TimerInfo.TSCDeadlineAvailable = CPUInfo.TSC && CPUInfo.InvariantTSC && CPUInfo.APIC && CPUInfo.TSCDeadline && LAPICInfo.Available;
     TimerInfo.LAPICTimerAvailable = LAPICInfo.Available;
     TimerInfo.LAPICTimerCalibrated = LAPICInfo.Calibrated;
     TimerInfo.HPETAvailable = HPETInfo.Available;
     TimerInfo.LAPICTicksPerMillisecond = LAPICInfo.TicksPerMillisecond;
+    TimerInfo.TSCFrequencyHz = TSCInfo.FrequencyHz;
+    TimerInfo.TSCTicksPerMillisecond = TSCInfo.TicksPerMillisecond;
     TimerInfo.MainSource = TimerSourceNone;
+
+    TimerInfo.TSCDeadlineAvailable = TimerInfo.TSCDeadlineAvailable && TSCInfo.Calibrated;
 
     if (TimerInfo.TSCDeadlineAvailable)
     {
@@ -113,36 +115,56 @@ VOID TimerDetect(VOID)
     }
 }
 
-VOID DelayUs(UINT64 Microseconds)
+VOID DelayUs(UINT64 microseconds)
 {
-    if (Microseconds == 0)
+    if (microseconds == 0)
     {
         return;
     }
 
-    if (TimerInfo.LAPICTimerAvailable && TimerInfo.LAPICTimerCalibrated)
+    if (TimerInfo.MainSource == TimerSourceTSCDeadline ||
+        (TimerInfo.LAPICTimerAvailable && TimerInfo.LAPICTimerCalibrated))
     {
-        DelayWithLAPICSleep(Microseconds);
+        DelayWithLAPICSleep(microseconds);
         return;
     }
 
     if (TimerInfo.HPETAvailable)
     {
-        DelayWithHPET(Microseconds);
+        DelayWithHPET(microseconds);
         return;
     }
 
-    DelayWithTSC(Microseconds);
+    DelayWithTSC(microseconds);
 }
 
-VOID TimerStartOneShot(UINT64 Milliseconds)
+VOID TimerStartOneShot(UINT64 milliseconds)
 {
-    TimerStartOneShotUs(Milliseconds * 1000);
+    TimerStartOneShotUs(milliseconds * 1000);
 }
 
-VOID TimerStartOneShotUs(UINT64 Microseconds)
+VOID TimerStartOneShotUs(UINT64 microseconds)
 {
-    LAPICTimerStartOneShotUs(INTERRUPT_LAPIC_TIMER_VECTOR, Microseconds);
+    UINT64 ticks;
+
+    if (microseconds == 0)
+    {
+        return;
+    }
+
+    if (TimerInfo.MainSource == TimerSourceTSCDeadline)
+    {
+        ticks = (TimerInfo.TSCTicksPerMillisecond * microseconds) / 1000;
+        if (ticks == 0)
+        {
+            ticks = 1;
+        }
+
+        LAPICTimerStartTSCDeadline(INTERRUPT_LAPIC_TIMER_VECTOR, TSCRead() + ticks);
+        return;
+    }
+
+    LAPICTimerStartOneShotUs(INTERRUPT_LAPIC_TIMER_VECTOR, microseconds);
 }
 
 VOID TimerHandleTick(VOID)
