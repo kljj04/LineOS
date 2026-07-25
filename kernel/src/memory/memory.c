@@ -6,6 +6,7 @@
 #include <memory/memory.h>
 
 #define PAGE_SIZE 4096ULL
+#define BITS_PER_BYTE 8ULL
 #define HEAP_BLOCK_MAGIC 0x48454150424C4B31ULL
 
 typedef struct HeapBlock
@@ -21,6 +22,7 @@ LINEOS_PMM_INFO PMMInfo;
 STATIC LINEOS_MEMORY_MAP *MemoryMap = NULL;
 STATIC LINEOS_RSDP *RSDP = NULL;
 STATIC HEAP_BLOCK *HeapHead = NULL;
+STATIC UINT64 PMMLastSearchIndex = 0;
 
 STATIC EFI_MEMORY_DESCRIPTOR *MemoryMapDescriptorAt(UINTN index)
 {
@@ -65,9 +67,9 @@ VOID MemoryMapInit(LINEOS_BOOT_INFO *BootInfo)
 
     for (UINTN index = 0; index < MemoryInfo.DescriptorCount; index++)
     {
-        EFI_MEMORY_DESCRIPTOR *Descriptor = MemoryMapDescriptorAt(index);
-        UINT64 BaseAddress = Descriptor->PhysicalStart;
-        UINT64 size = Descriptor->NumberOfPages * 4096ULL;
+        EFI_MEMORY_DESCRIPTOR *descriptor = MemoryMapDescriptorAt(index);
+        UINT64 BaseAddress = descriptor->PhysicalStart;
+        UINT64 size = descriptor->NumberOfPages * 4096ULL;
         UINT64 EndAddress = BaseAddress + size;
 
         if (EndAddress > MemoryInfo.HighestPhysicalAddress)
@@ -75,7 +77,7 @@ VOID MemoryMapInit(LINEOS_BOOT_INFO *BootInfo)
             MemoryInfo.HighestPhysicalAddress = EndAddress;
         }
 
-        if (MemoryTypeIsUsable(Descriptor->Type))
+        if (MemoryTypeIsUsable(descriptor->Type))
         {
             MemoryInfo.UsableTotalSize += size;
 
@@ -88,13 +90,13 @@ VOID MemoryMapInit(LINEOS_BOOT_INFO *BootInfo)
             continue;
         }
 
-        if (MemoryTypeIsMMIO(Descriptor->Type))
+        if (MemoryTypeIsMMIO(descriptor->Type))
         {
             MemoryInfo.MMIOTotalSize += size;
             continue;
         }
 
-        if (Descriptor->Type == EfiACPIReclaimMemory || Descriptor->Type == EfiACPIMemoryNVS)
+        if (descriptor->Type == EfiACPIReclaimMemory || descriptor->Type == EfiACPIMemoryNVS)
         {
             MemoryInfo.ACPITotalSize += size;
             continue;
@@ -133,7 +135,7 @@ STATIC VOID PMMMarkFree(UINT64 address, UINT64 count)
 {
     UINT64 index;
 
-    if (address < PMMInfo.Base)
+    if (count == 0 || address < PMMInfo.Base)
     {
         return;
     }
@@ -155,7 +157,7 @@ STATIC VOID PMMMarkUsed(UINT64 address, UINT64 count)
 {
     UINT64 index;
 
-    if (address < PMMInfo.Base)
+    if (count == 0 || address < PMMInfo.Base)
     {
         return;
     }
@@ -171,6 +173,107 @@ STATIC VOID PMMMarkUsed(UINT64 address, UINT64 count)
             PMMInfo.UsedPageCount++;
         }
     }
+
+    if (index < PMMLastSearchIndex)
+    {
+        PMMLastSearchIndex = index;
+    }
+}
+
+STATIC BOOLEAN PMMFindBitmapRegion(UINT64 BitmapPages, UINT64 *BitmapAddress)
+{
+    if (BitmapPages == 0 || BitmapAddress == NULL)
+    {
+        return FALSE;
+    }
+
+    for (UINTN index = 0; index < MemoryInfo.DescriptorCount; index++)
+    {
+        EFI_MEMORY_DESCRIPTOR *descriptor = MemoryMapDescriptorAt(index);
+        UINT64 BaseAddress;
+        UINT64 EndAddress;
+        UINT64 PageCount;
+
+        if (descriptor == NULL || !MemoryTypeIsUsable(descriptor->Type))
+        {
+            continue;
+        }
+
+        BaseAddress = AlignUp(descriptor->PhysicalStart, PAGE_SIZE);
+        EndAddress = AlignDown(descriptor->PhysicalStart + (descriptor->NumberOfPages * PAGE_SIZE), PAGE_SIZE);
+
+        if (BaseAddress == 0)
+        {
+            BaseAddress = PAGE_SIZE;
+        }
+
+        if (EndAddress <= BaseAddress)
+        {
+            continue;
+        }
+
+        PageCount = (EndAddress - BaseAddress) / PAGE_SIZE;
+        if (PageCount >= BitmapPages)
+        {
+            *BitmapAddress = BaseAddress;
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+STATIC BOOLEAN PMMRangeIsFree(UINT64 StartIndex, UINT64 count)
+{
+    if (count == 0 || StartIndex >= PMMInfo.PageCount || count > PMMInfo.PageCount - StartIndex)
+    {
+        return FALSE;
+    }
+
+    for (UINT64 index = 0; index < count; index++)
+    {
+        if (BitmapTest(StartIndex + index))
+        {
+            return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+
+STATIC VOID *PMMAllocPagesInRange(UINT64 StartIndex, UINT64 EndIndex, UINTN count)
+{
+    UINT64 Limit;
+
+    if (count == 0 || StartIndex >= EndIndex || count > PMMInfo.PageCount || count > EndIndex - StartIndex)
+    {
+        return NULL;
+    }
+
+    Limit = EndIndex - count;
+    for (UINT64 index = StartIndex; index <= Limit; index++)
+    {
+        if (BitmapTest(index))
+        {
+            continue;
+        }
+
+        if (PMMRangeIsFree(index, count))
+        {
+            UINT64 address = PMMInfo.Base + (index * PAGE_SIZE);
+            PMMMarkUsed(address, count);
+            PMMLastSearchIndex = index + count;
+
+            if (PMMLastSearchIndex >= PMMInfo.PageCount)
+            {
+                PMMLastSearchIndex = 0;
+            }
+
+            return (VOID *) address;
+        }
+    }
+
+    return NULL;
 }
 
 VOID PMMInit(LINEOS_BOOT_INFO *BootInfo)
@@ -179,20 +282,27 @@ VOID PMMInit(LINEOS_BOOT_INFO *BootInfo)
     UINT64 BitmapAddress;
 
     MemoryMapInit(BootInfo);
-    RSDP = (LINEOS_RSDP *) BootInfo->RSDP;
 
     MemSet(&PMMInfo, 0, sizeof(LINEOS_PMM_INFO));
+    PMMLastSearchIndex = 0;
 
-    if (MemoryInfo.UsableSize == 0)
+    if (BootInfo == NULL || MemoryInfo.UsableTotalSize == 0 || MemoryInfo.HighestPhysicalAddress == 0)
     {
         return;
     }
 
-    PMMInfo.Base = AlignDown(MemoryInfo.UsableBase, PAGE_SIZE);
-    PMMInfo.PageCount = MemoryInfo.UsableSize / PAGE_SIZE;
-    PMMInfo.BitmapSize = AlignUp(PMMInfo.PageCount, 8) / 8;
+    RSDP = (LINEOS_RSDP *) BootInfo->RSDP;
+
+    PMMInfo.Base = 0;
+    PMMInfo.PageCount = AlignUp(MemoryInfo.HighestPhysicalAddress, PAGE_SIZE) / PAGE_SIZE;
+    PMMInfo.BitmapSize = AlignUp(PMMInfo.PageCount, BITS_PER_BYTE) / BITS_PER_BYTE;
     BitmapPages = AlignUp(PMMInfo.BitmapSize, PAGE_SIZE) / PAGE_SIZE;
-    BitmapAddress = AlignUp(MemoryInfo.UsableBase, PAGE_SIZE);
+
+    if (!PMMFindBitmapRegion(BitmapPages, &BitmapAddress))
+    {
+        return;
+    }
+
     PMMInfo.Bitmap = (UINT8 *) BitmapAddress;
 
     MemSet(PMMInfo.Bitmap, 0xFF, PMMInfo.BitmapSize);
@@ -201,53 +311,49 @@ VOID PMMInit(LINEOS_BOOT_INFO *BootInfo)
 
     for (UINTN index = 0; index < MemoryInfo.DescriptorCount; index++)
     {
-        EFI_MEMORY_DESCRIPTOR *Descriptor = MemoryMapDescriptorAt(index);
-        UINT64 BaseAddress = AlignUp(Descriptor->PhysicalStart, PAGE_SIZE);
-        UINT64 EndAddress = AlignDown(Descriptor->PhysicalStart + (Descriptor->NumberOfPages * PAGE_SIZE), PAGE_SIZE);
+        EFI_MEMORY_DESCRIPTOR *descriptor = MemoryMapDescriptorAt(index);
+        UINT64 BaseAddress;
+        UINT64 EndAddress;
 
-        if (MemoryTypeIsUsable(Descriptor->Type) && EndAddress > BaseAddress)
+        if (descriptor == NULL || !MemoryTypeIsUsable(descriptor->Type))
+        {
+            continue;
+        }
+
+        BaseAddress = AlignUp(descriptor->PhysicalStart, PAGE_SIZE);
+        EndAddress = AlignDown(descriptor->PhysicalStart + (descriptor->NumberOfPages * PAGE_SIZE), PAGE_SIZE);
+
+        if (BaseAddress == 0)
+        {
+            BaseAddress = PAGE_SIZE;
+        }
+
+        if (EndAddress > BaseAddress)
         {
             PMMMarkFree(BaseAddress, (EndAddress - BaseAddress) / PAGE_SIZE);
         }
     }
 
+    PMMMarkUsed(0, 1);
     PMMMarkUsed(BitmapAddress, BitmapPages);
 }
 
 VOID *PMMAllocPages(UINTN count)
 {
-    UINT64 run = 0;
-    UINT64 StartIndex = 0;
+    VOID *Address;
 
-    if (count == 0 || PMMInfo.Bitmap == NULL)
+    if (count == 0 || PMMInfo.Bitmap == NULL || count > PMMInfo.FreePageCount || count > PMMInfo.PageCount)
     {
         return NULL;
     }
 
-    for (UINT64 index = 0; index < PMMInfo.PageCount; index++)
+    Address = PMMAllocPagesInRange(PMMLastSearchIndex, PMMInfo.PageCount, count);
+    if (Address != NULL)
     {
-        if (BitmapTest(index))
-        {
-            run = 0;
-            continue;
-        }
-
-        if (run == 0)
-        {
-            StartIndex = index;
-        }
-
-        run++;
-
-        if (run == count)
-        {
-            UINT64 address = PMMInfo.Base + (StartIndex * PAGE_SIZE);
-            PMMMarkUsed(address, count);
-            return (VOID *) address;
-        }
+        return Address;
     }
 
-    return NULL;
+    return PMMAllocPagesInRange(0, PMMLastSearchIndex, count);
 }
 
 VOID *PMMAllocPage(VOID)

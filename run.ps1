@@ -29,7 +29,7 @@ function Mount-VHD($Silent = $false)
     }
 }
 
-function Unmount-VHD($Silent = $false)
+function Dismount-VHD($Silent = $false)
 {
     if (-not (Test-Path $VHD))
     {
@@ -67,7 +67,7 @@ function Copy-VHD
     return $true
 }
 
-function Run-QEMU
+function Start-QEMU
 {
     if (-not (Test-Path "$BaseDir\LineOS"))
     {
@@ -101,7 +101,7 @@ function Run-QEMU
     Write-Host "    [*] Done." -ForegroundColor Green
 }
 
-Unmount-VHD $true
+Dismount-VHD $true
 Write-Host "LineOS Builder v2.4.0" -ForegroundColor Yellow
 Write-Host "[*]make:" -ForegroundColor Cyan
 make
@@ -115,13 +115,13 @@ Write-Host "[*]vhd:" -ForegroundColor Cyan
 Mount-VHD
 if (-not (Copy-VHD))
 {
-    Unmount-VHD $true
+    Dismount-VHD $true
     exit 1
 }
-Unmount-VHD
+Dismount-VHD
 Write-Host "---End of vhd---" -ForegroundColor Cyan
 Write-Host "[*]run:" -ForegroundColor Cyan
-Run-QEMU
+Start-QEMU
 if (Test-Path $LogPath)
 {
     $FaultCheck = Select-String `
@@ -136,4 +136,4 @@ if (Test-Path $LogPath)
 }
 Write-Host "---End of run---" -ForegroundColor Cyan
 Write-Host "[*]Exit." -ForegroundColor Magenta
-Mount-VHD $true
+Dismount-VHD $true

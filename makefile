@@ -6,6 +6,33 @@ LD = ld.lld
 
 MAKEFLAGS += --no-print-directory --silent
 
+ifeq ($(OS),Windows_NT)
+	IS_WINDOWS := 1
+endif
+
+ifdef IS_WINDOWS
+	MKDIR_P = powershell -NoProfile -Command "New-Item -ItemType Directory -Force -Path '$(1)' | Out-Null"
+	RM_RF = powershell -NoProfile -Command "if (Test-Path '$(1)') { Remove-Item -Recurse -Force '$(1)' }"
+	PRINT_YELLOW = powershell -NoProfile -Command "Write-Host '$(1)' -ForegroundColor Yellow"
+	PRINT_CYAN = powershell -NoProfile -Command "Write-Host '$(1)' -ForegroundColor Cyan"
+	PRINT_GREEN = powershell -NoProfile -Command "Write-Host '$(1)' -ForegroundColor Green"
+	LINK_EFI = $(LD) -flavor link
+	LINK_KERNEL = $(LD) -flavor gnu
+else
+	CYAN    := \033[36m
+	YELLOW  := \033[33m
+	GREEN   := \033[32m
+	RESET   := \033[0m
+
+	MKDIR_P = mkdir -p $(1)
+	RM_RF = rm -rf $(1)
+	PRINT_YELLOW = printf '%b\n' '$(YELLOW)$(1)$(RESET)'
+	PRINT_CYAN = printf '%b\n' '$(CYAN)$(1)$(RESET)'
+	PRINT_GREEN = printf '%b\n' '$(GREEN)$(1)$(RESET)'
+	LINK_EFI = lld-link
+	LINK_KERNEL = $(LD)
+endif
+
 EFI_CFLAGS = -target x86_64-unknown-windows \
 			 -Wall -Wextra \
 			 -nostdlib \
@@ -47,22 +74,21 @@ KERN_OBJS = $(KERN_SRCS:.c=.o)
 KERN_OBJS := $(patsubst %,build/obj/%,$(KERN_OBJS))
 
 all:
-	@powershell -Command "Write-Host '    [*] compile:' -ForegroundColor Yellow"
-	@powershell -Command "Write-Host '        [*] TARGET1...' -ForegroundColor Cyan"
+	@$(call PRINT_YELLOW,    [*] compile:)
+	@$(call PRINT_CYAN,        [*] TARGET1...)
 	@$(MAKE) compile_boot
 
-	@powershell -Command "Write-Host '        [*] TARGET2...' -ForegroundColor Cyan"
+	@$(call PRINT_CYAN,        [*] TARGET2...)
 	@$(MAKE) compile_kernel
 
-	@powershell -Command "Write-Host '    [*] link:' -ForegroundColor Yellow"
-	@powershell -Command "Write-Host '        [*] TARGET1...' -ForegroundColor Cyan"
+	@$(call PRINT_YELLOW,    [*] link:)
+	@$(call PRINT_CYAN,        [*] TARGET1...)
 	@$(MAKE) link_boot
 
-	@powershell -Command "Write-Host '        [*] TARGET2...' -ForegroundColor Cyan"
+	@$(call PRINT_CYAN,        [*] TARGET2...)
 	@$(MAKE) link_kernel
 
-	@powershell -Command "Write-Host '    [*] Done.' -ForegroundColor Green"
-
+	@$(call PRINT_GREEN,    [*] Done.)
 
 compile_boot: $(BOOT_OBJS)
 compile_kernel: $(KERN_OBJS)
@@ -71,9 +97,8 @@ link_boot: $(TARGET1)
 link_kernel: $(TARGET2)
 
 $(TARGET1): $(BOOT_OBJS)
-	@if not exist LineOS\EFI\BOOT mkdir LineOS\EFI\BOOT > nul
-	@$(LD) -flavor link \
-		-nodefaultlib \
+	@$(call MKDIR_P,LineOS/EFI/BOOT)
+	@$(LINK_EFI) -nodefaultlib \
 		$(BOOT_OBJS) \
 		-dll \
 		-entry:EfiMain \
@@ -81,23 +106,21 @@ $(TARGET1): $(BOOT_OBJS)
 		-out:$(TARGET1)
 
 $(TARGET2): $(KERN_OBJS)
-	@if not exist LineOS\KERNEL mkdir LineOS\KERNEL > nul
-	@$(LD) -flavor gnu \
-		-static \
+	@$(call MKDIR_P,LineOS/KERNEL)
+	@$(LINK_KERNEL) -static \
 		-T link/link.ld \
 		-e KMain \
 		-o $(TARGET2) \
 		$(KERN_OBJS)
 
 build/obj/bootloader/%.o: bootloader/%.c
-	@powershell -Command "$$d = Split-Path -Parent '$@'; if (!(Test-Path $$d)) { New-Item -ItemType Directory -Force -Path $$d | Out-Null }"
+	@$(call MKDIR_P,$(dir $@))
 	@$(CC) $(EFI_CFLAGS) -c $< -o $@
 
 build/obj/kernel/%.o: kernel/%.c
-	@powershell -Command "$$d = Split-Path -Parent '$@'; if (!(Test-Path $$d)) { New-Item -ItemType Directory -Force -Path $$d | Out-Null }"
+	@$(call MKDIR_P,$(dir $@))
 	@$(CC) $(KERN_CFLAGS) -c $< -o $@
 
 clean:
-	@if exist build rmdir /s /q build > nul
-	@if exist LineOS\EFI\BOOT\BOOTX64.EFI del /Q LineOS\EFI\BOOT\BOOTX64.EFI > nul
-	@if exist LineOS\KERNEL\LINEOS_KERNEL.ELF del /Q LineOS\KERNEL\LINEOS_KERNEL.ELF > nul
+	@$(call RM_RF,build)
+	@$(call RM_RF,LineOS)
