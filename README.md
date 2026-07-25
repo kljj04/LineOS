@@ -115,8 +115,8 @@ LineOS uses EDK II for the UEFI bootloader and a freestanding C toolchain for th
 Typical build requirements include:
 
 * EDK II
-* GCC or Clang
-* GNU Binutils
+* Clang
+* GNU Binutils (make)
 * QEMU
 * OVMF
 * Git
