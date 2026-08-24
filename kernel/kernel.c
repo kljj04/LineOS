@@ -1,117 +1,137 @@
 // kernel.c
 // LineOS Project
-// Timer runtime probe kernel
+// Copyright (C) 2026 LineOS Developer kljj04
 
-#include <lineos/bootinfo.h>
-#include <acpi/acpi.h>
 #include <arch/x86_64/cpu.h>
+#include <debug/debug.h>
+#include <lineos/bootinfo.h>
 #include <memory/memory.h>
-#include <render/framebuffer.h>
-#include <render/print.h>
-#include <time/timer.h>
-#include <time/tsc.h>
+#include <pci/pci.h>
+#include <render/gpu/virtio_gpu.h>
 
-#define TIMER_BG     0x101018
-#define TIMER_PANEL  0x1E1E2E
-#define TIMER_BORDER 0x89B4FA
-
-STATIC CONST CHAR16* YesNo(BOOLEAN value)
+STATIC VOID DrawVirtIOTestWindow(UINT32 Width, UINT32 Height)
 {
-    return value ? L"YES" : L"NO";
+    UINT32 WindowWidth = Width / 2;
+    UINT32 WindowHeight = Height / 2;
+    UINT32 WindowX = (Width - WindowWidth) / 2;
+    UINT32 WindowY = (Height - WindowHeight) / 2;
+
+    VirtIOGPUFill(0x000B1020);
+    VirtIOGPUFillRect(WindowX, WindowY, WindowWidth, WindowHeight, 0x00101522);
+    VirtIOGPUFillRect(WindowX, WindowY, WindowWidth, 6, 0x0022D3EE);
+    VirtIOGPUFillRect(WindowX, WindowY + WindowHeight - 6, WindowWidth, 6, 0x0022D3EE);
+    VirtIOGPUFillRect(WindowX, WindowY, 6, WindowHeight, 0x0022D3EE);
+    VirtIOGPUFillRect(WindowX + WindowWidth - 6, WindowY, 6, WindowHeight, 0x0022D3EE);
+    VirtIOGPUFillRect(WindowX, WindowY, WindowWidth, 48, 0x00263B55);
+    VirtIOGPUFillRect(WindowX + 24, WindowY + 16, 18, 18, 0x00FF6666);
+    VirtIOGPUFillRect(WindowX + 54, WindowY + 16, 18, 18, 0x00FACC15);
+    VirtIOGPUFillRect(WindowX + 84, WindowY + 16, 18, 18, 0x0022C55E);
+    VirtIOGPUFillRect(WindowX + 48, WindowY + 96, WindowWidth - 96, 64, 0x0022D3EE);
+    VirtIOGPUFillRect(WindowX + 48, WindowY + 184, WindowWidth - 160, 32, 0x0094A3B8);
+    VirtIOGPUFillRect(WindowX + 48, WindowY + 236, WindowWidth - 220, 32, 0x0094A3B8);
 }
 
-STATIC UINT32 BoolColor(BOOLEAN value)
+VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
 {
-    return value ? LIGHT_GREEN : LIGHT_RED;
-}
+    VIRTIO_GPU_INFO *GPU;
+    UINT32 Width;
+    UINT32 Height;
 
-STATIC VOID PrintBool(CONST CHAR16* label, BOOLEAN value, UINT32 y)
-{
-    KPrint(label, 96, y, LIGHT_GRAY);
-    KPrint(YesNo(value), 520, y, BoolColor(value));
-}
+    DebugWriteLine("LineOS kernel start");
 
-STATIC VOID DrawStaticTimerInfo(VOID)
-{
-    FillScreen(TIMER_BG);
-    FillRect(56, 48, 980, 700, TIMER_PANEL);
-    DrawRect(56, 48, 980, 700, TIMER_BORDER);
-
-    KPrint(L"LineOS Timer Test", 96, 104, YELLOW);
-    KPrint(L"Main timer should prefer TSC Deadline when available.", 96, 144, LIGHT_CYAN);
-
-    KPrint(L"Main source", 96, 220, LIGHT_GRAY);
-    KPrint(TimerSourceName(TimerInfo.MainSource), 520, 220, LIGHT_GREEN);
-
-    PrintBool(L"CPU TSC", CPUInfo.TSC, 280);
-    PrintBool(L"CPU Invariant TSC", CPUInfo.InvariantTSC, 320);
-    PrintBool(L"CPU APIC", CPUInfo.APIC, 360);
-    PrintBool(L"CPU TSC Deadline", CPUInfo.TSCDeadline, 400);
-    PrintBool(L"Timer TSC Deadline available", TimerInfo.TSCDeadlineAvailable, 460);
-    PrintBool(L"LAPIC available", TimerInfo.LAPICTimerAvailable, 500);
-    PrintBool(L"LAPIC calibrated", TimerInfo.LAPICTimerCalibrated, 540);
-    PrintBool(L"HPET available", TimerInfo.HPETAvailable, 580);
-
-    KPrint(L"TSC Hz", 96, 640, LIGHT_GRAY);
-    KPrint(L"%llu", 520, 640, WHITE, TimerInfo.TSCFrequencyHz);
-
-    KPrint(L"TSC ticks/ms", 96, 680, LIGHT_GRAY);
-    KPrint(L"%llu", 520, 680, WHITE, TimerInfo.TSCTicksPerMillisecond);
-}
-
-STATIC VOID DrawRuntimeLabels(VOID)
-{
-    KPrint(L"Current TSC", 112, 820, LIGHT_GRAY);
-    KPrint(L"Delta TSC", 112, 870, LIGHT_GRAY);
-    KPrint(L"Frames", 112, 920, LIGHT_GRAY);
-    KPrint(L"Seconds", 112, 970, LIGHT_GRAY);
-}
-
-STATIC VOID DrawRuntimeStatus(UINT64 CurrentTSC, UINT64 DeltaTSC, UINT64 frames, UINT64 seconds)
-{
-    FillRect(500, 782, 520, 46, TIMER_BG);
-    KPrint(L"%llu", 520, 820, LIGHT_GREEN, CurrentTSC);
-
-    FillRect(500, 832, 520, 46, TIMER_BG);
-    KPrint(L"%llu", 520, 870, LIGHT_CYAN, DeltaTSC);
-
-    FillRect(500, 882, 520, 46, TIMER_BG);
-    KPrint(L"%llu", 520, 920, WHITE, frames);
-
-    FillRect(500, 932, 520, 46, TIMER_BG);
-    KPrint(L"%llu", 520, 970, YELLOW, seconds);
-}
-
-VOID __attribute__((ms_abi)) KMain(LINEOS_BOOT_INFO* BootInfo)
-{
-    UINT64 StartTSC;
-    UINT64 CurrentTSC;
-    UINT64 frames = 0;
-    UINT64 seconds = 0;
-
-    FrameBufferInit(BootInfo);
-    CPUDetect();
-    PMMInit(BootInfo);
-    ACPIInit();
-    TimerInit();
-
-    StartTSC = TSCRead();
-
-    DrawStaticTimerInfo();
-    DrawRuntimeLabels();
-    DrawRuntimeStatus(StartTSC, 0, frames, seconds);
-
-    while (1)
+    if (!KMemoryInit(BootInfo))
     {
-        CurrentTSC = TSCRead();
-        frames++;
-
-        if (TimerInfo.TSCFrequencyHz != 0)
-        {
-            seconds = (CurrentTSC - StartTSC) / TimerInfo.TSCFrequencyHz;
-        }
-
-        DrawRuntimeStatus(CurrentTSC, CurrentTSC - StartTSC, frames, seconds);
-        __asm__ volatile("pause");
+        DebugWriteLine("memory init failed");
+        CLI();
+        HLT();
     }
+    DebugWriteLine("memory init ok");
+
+    if (!PCIInit(BootInfo))
+    {
+        DebugWriteLine("pci init failed");
+        CLI();
+        HLT();
+    }
+    DebugWrite("pci init ok count=");
+    DebugWriteDec(PCIGetDeviceCount());
+    DebugWrite("\n");
+
+    if (!VirtIOGPUInit())
+    {
+        DebugWriteLine("virtio gpu init failed");
+        GPU = VirtIOGPUGetInfo();
+        DebugWrite("stage=");
+        DebugWriteWide(GPU->Debug.LastStage);
+        DebugWrite(" cmd=");
+        DebugWriteHex(GPU->Debug.LastCommand);
+        DebugWrite(" resp=");
+        DebugWriteHex(GPU->Debug.LastResponse);
+        DebugWrite(" err=");
+        DebugWriteWide(VirtIOGPUGetLastError());
+        DebugWrite("\n");
+        DebugWrite("flags init=");
+        DebugWriteDec(GPU->Debug.InitOK);
+        DebugWrite(" start=");
+        DebugWriteDec(GPU->Debug.StartOK);
+        DebugWrite(" q0=");
+        DebugWriteDec(GPU->Debug.ControlQueueOK);
+        DebugWrite(" q1=");
+        DebugWriteDec(GPU->Debug.CursorQueueOK);
+        DebugWrite(" info=");
+        DebugWriteDec(GPU->Debug.DisplayInfoOK);
+        DebugWrite("\n");
+        CLI();
+        HLT();
+    }
+    DebugWriteLine("virtio gpu init ok");
+
+    GPU = VirtIOGPUGetInfo();
+    Width = GPU->DisplayInfo.Displays[0].Rect.Width;
+    Height = GPU->DisplayInfo.Displays[0].Rect.Height;
+    DebugWrite("scanout0 ");
+    DebugWriteDec(Width);
+    DebugWrite("x");
+    DebugWriteDec(Height);
+    DebugWrite("\n");
+
+    if (VirtIOGPUCreateFrameBuffer(Width, Height))
+    {
+        DebugWrite("virtio fb create ok addr=");
+        DebugWriteHex((UINT64) GPU->FrameBuffer);
+        DebugWrite("\n");
+        DrawVirtIOTestWindow(GPU->FrameBufferWidth, GPU->FrameBufferHeight);
+        DebugWrite("pixels p0=");
+        DebugWriteHex(VirtIOGPUReadPixel(0, 0));
+        DebugWrite(" pc=");
+        DebugWriteHex(VirtIOGPUReadPixel(GPU->FrameBufferWidth / 2, GPU->FrameBufferHeight / 2));
+        DebugWrite("\n");
+        if (VirtIOGPUFlush())
+        {
+            DebugWrite("virtio flush ok cmd=");
+            DebugWriteHex(GPU->Debug.LastCommand);
+            DebugWrite(" resp=");
+            DebugWriteHex(GPU->Debug.LastResponse);
+            DebugWrite("\n");
+        }
+        else
+        {
+            DebugWrite("virtio flush failed cmd=");
+            DebugWriteHex(GPU->Debug.LastCommand);
+            DebugWrite(" resp=");
+            DebugWriteHex(GPU->Debug.LastResponse);
+            DebugWrite("\n");
+        }
+    }
+    else
+    {
+        DebugWrite("virtio fb create failed cmd=");
+        DebugWriteHex(GPU->Debug.LastCommand);
+        DebugWrite(" resp=");
+        DebugWriteHex(GPU->Debug.LastResponse);
+        DebugWrite("\n");
+    }
+
+    CLI();
+    HLT();
 }

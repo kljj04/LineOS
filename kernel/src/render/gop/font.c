@@ -3,9 +3,9 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <lineos/bootinfo.h>
+#include <render/gop/font.h>
 #include <render/fontinfo.h>
-#include <render/font.h>
-#include <render/framebuffer.h>
+#include <render/gop/framebuffer.h>
 
 INT32 FindGlyph(UINT16 Unicode)
 {
@@ -53,9 +53,7 @@ UINT16 DrawGlyph(UINT16 Unicode, UINT32 x, UINT32 BaseLine, UINT32 Color)
     {
         for (UINT16 GlyphX = 0; GlyphX < Glyph->Width; GlyphX++)
         {
-            UINT8 Alpha = Bitmap[
-                ((UINT32) GlyphY * Glyph->Width) + GlyphX
-            ];
+            UINT8 Alpha = Bitmap[((UINT32) GlyphY * Glyph->Width) + GlyphX];
 
             if (Alpha == 0)
             {

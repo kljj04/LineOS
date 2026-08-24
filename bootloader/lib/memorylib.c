@@ -21,7 +21,6 @@ VOID *CopyMem(VOID *destination, CONST VOID *source, UINTN length)
     return destination;
 }
 
-
 VOID *SetMem(VOID *buffer, UINTN length, UINT8 value)
 {
     UINT8 *ptr;

@@ -8,8 +8,8 @@
 #include <elf.h>
 #include <gop.h>
 #include <handoff.h>
-#include <memory.h>
 #include <lineosuefi.h>
+#include <memory.h>
 
 EFI_STATUS EFIAPI EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {
@@ -17,42 +17,55 @@ EFI_STATUS EFIAPI EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
     UEFISystemTable = SystemTable;
     UEFIBootServices = SystemTable->BootServices;
 
-    // Disable watchdog
-    UEFIBootServices->SetWatchdogTimer(0, 0, 0, NULL);
+    if (!LineOSDisableWatchdog())
+    {
+        LineOSHaltWithMessage(L"failed to disable UEFI watchdog", LineOSLastWatchdogStatus);
+    }
 
     MemorySetImageHandle(ImageHandle);
 
     if (!GOPInit())
     {
-        return EFI_ABORTED;
+        LineOSHaltWithMessage(L"GOPInit failed", EFI_ABORTED);
+    }
+
+    if (!LineOSDisableWatchdog())
+    {
+        LineOSHaltWithMessage(L"failed to disable UEFI watchdog after GOP init", LineOSLastWatchdogStatus);
     }
 
     if (!MemoryInit())
     {
-        return EFI_ABORTED;
+        LineOSHaltWithMessage(L"MemoryInit failed", EFI_ABORTED);
     }
 
     if (!ACPIInit())
     {
-        return EFI_ABORTED;
+        LineOSHaltWithMessage(L"ACPIInit failed", EFI_ABORTED);
     }
 
     if (!LoadKernel())
     {
-        return EFI_ABORTED;
+        LineOSHaltWithMessage(L"LoadKernel failed", EFI_ABORTED);
     }
 
     if (!CreateBootInfo())
     {
-        return EFI_ABORTED;
+        LineOSHaltWithMessage(L"CreateBootInfo failed", EFI_ABORTED);
+    }
+
+    if (!LineOSDisableWatchdog())
+    {
+        LineOSHaltWithMessage(L"failed to disable UEFI watchdog before exit", LineOSLastWatchdogStatus);
     }
 
     if (!ExitBootServices())
     {
-        return EFI_ABORTED;
+        LineOSHaltWithMessage(L"ExitBootServices failed", EFI_ABORTED);
     }
 
     JumpKernel();
 
-    return EFI_SUCCESS;
+    LineOSHaltWithMessage(L"kernel returned", EFI_ABORTED);
+    return EFI_ABORTED;
 }

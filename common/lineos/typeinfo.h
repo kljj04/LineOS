@@ -5,21 +5,24 @@
 #pragma once
 
 #ifdef LINEOS_KERNEL_BUILD
-typedef unsigned char       UINT8;
-typedef unsigned short      UINT16;
-typedef unsigned int        UINT32;
-typedef unsigned long long  UINT64;
-typedef UINT64              UINTN;
-typedef void                VOID;
-typedef UINT8               BOOLEAN;
-typedef void               *EFI_HANDLE;
-typedef void               *EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER;
-typedef UINT32              EFI_GRAPHICS_PIXEL_FORMAT;
-typedef signed short        INT16;
-typedef signed int          INT32;
-typedef signed long long    INT64;
-typedef UINT8               CHAR8;
-typedef UINT16              CHAR16;
+typedef unsigned char UINT8;
+typedef unsigned short UINT16;
+typedef unsigned int UINT32;
+typedef unsigned long long UINT64;
+typedef unsigned __int128 UINT128;
+typedef signed char INT8;
+typedef signed short INT16;
+typedef signed int INT32;
+typedef signed long long INT64;
+typedef signed __int128 INT128;
+typedef unsigned char CHAR8;
+typedef unsigned short CHAR16;
+typedef unsigned long long UINTN;
+typedef unsigned char BOOLEAN;
+typedef void VOID;
+typedef void *EFI_HANDLE;
+typedef void *EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER;
+typedef unsigned int EFI_GRAPHICS_PIXEL_FORMAT;
 
 #define EFI_MEMORY_UC 0x0000000000000001ULL
 #define EFI_MEMORY_WC 0x0000000000000002ULL
@@ -65,12 +68,14 @@ typedef struct
 } EFI_MEMORY_DESCRIPTOR;
 
 #define CONST const
-#define NULL ((VOID*)0)
-#define TRUE  ((BOOLEAN)1)
-#define FALSE ((BOOLEAN)0)
+#define NULL ((VOID *) 0)
+#define TRUE ((BOOLEAN) 1)
+#define FALSE ((BOOLEAN) 0)
 #define STATIC static
 #define PACKED __attribute__((packed))
+#define MS_ABI __attribute__((ms_abi))
+#define SYSV_ABI __attribute__((sysv_abi))
 #else
-#include <Uefi.h>
 #include <Protocol/GraphicsOutput.h>
+#include <Uefi.h>
 #endif

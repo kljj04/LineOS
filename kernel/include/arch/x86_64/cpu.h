@@ -6,23 +6,13 @@
 
 #include <lineos/bootinfo.h>
 
-typedef struct
-{
-    UINT32 MaxLeaf;
-    UINT32 MaxExtendedLeaf;
-    BOOLEAN TSC;
-    BOOLEAN InvariantTSC;
-    BOOLEAN APIC;
-    BOOLEAN X2APIC;
-    BOOLEAN TSCDeadline;
-} LINEOS_CPU_INFO;
-
-VOID CPUID(UINT32 leaf, UINT32 subleaf, UINT32* eax, UINT32* ebx, UINT32* ecx, UINT32* edx);
-VOID CPUDetect(VOID);
-UINT64 RDMSR(UINT32 msr);
-VOID WRMSR(UINT32 msr, UINT64 value);
-VOID HLT(VOID);
-VOID CLI(VOID);
-VOID STI(VOID);
-
-extern LINEOS_CPU_INFO CPUInfo;
+VOID HLT();
+VOID CLI();
+VOID STI();
+VOID PAUSE();
+UINT8 INB(UINT16 Port);
+UINT16 INW(UINT16 Port);
+UINT32 INL(UINT16 Port);
+VOID OUTB(UINT16 Port, UINT8 Value);
+VOID OUTW(UINT16 Port, UINT16 Value);
+VOID OUTL(UINT16 Port, UINT32 Value);

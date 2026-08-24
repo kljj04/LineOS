@@ -3,21 +3,27 @@
 BaseDir="$(pwd)"
 RAM="4G"
 LogFile="qemu.log"
+DebugConFile="debugcon.log"
 QEMU="qemu-system-x86_64"
 Accel="kvm"
 CPU="host"
-CPUFlags="+tsc-deadline,+invtsc"
+CPUFlags="+tsc-deadline,+invtsc,+fsgsbase,+pdpe1gb"
 VHD="${BaseDir}/LineOS/LineOS.vhdx"
 MountDir="/tmp/lineos_vhd_mount"
 OVMF_CODE="${BaseDir}/uefi/OVMF_CODE.fd"
 OVMF_VARS="${BaseDir}/uefi/OVMF_VARS.fd"
 LogPath="${BaseDir}/logs/${LogFile}"
+DebugConPath="${BaseDir}/logs/${DebugConFile}"
 BootFile="${BaseDir}/LineOS/EFI/BOOT/BOOTX64.EFI"
 KernelFile="${BaseDir}/LineOS/KERNEL/LINEOS_KERNEL.ELF"
 RTC="base=localtime,clock=host"
-Machine="pc"
-VGA="std"
-GraphicsResolution="2560x1440"
+Machine="q35"
+VGA="none"
+DisplayConfig="gtk,zoom-to-fit=off"
+GraphicsWidth="1920"
+GraphicsHeight="1080"
+GraphicsResolution="${GraphicsWidth}x${GraphicsHeight}"
+VideoDevice="virtio-gpu-pci,xres=${GraphicsWidth},yres=${GraphicsHeight}"
 Network="none"
 DebugOption="guest_errors,cpu_reset"
 
@@ -80,12 +86,13 @@ StartQEMU() {
     mkdir -p "${BaseDir}/LineOS"
     mkdir -p "${BaseDir}/logs"
 
-    if ! command -v $QEMU &> /dev/null; then
+    if ! command -v $QEMU &>/dev/null; then
         echo -e "${RED}    [-] QEMU not found.${RESET}"
         return 1
     fi
 
     echo -e "${CYAN}    [*] QEMU start...${RESET}"
+    rm -f "$DebugConPath"
 
     if [ ! -f "$OVMF_VARS" ]; then
         OVMF_VARS="/usr/share/OVMF/OVMF_VARS.fd"
@@ -100,19 +107,23 @@ StartQEMU() {
         -net $Network \
         -M $Machine \
         -vga $VGA \
+        -device "$VideoDevice" \
         -fw_cfg "name=opt/org.tianocore/GraphicsResolution,string=$GraphicsResolution" \
         -no-reboot \
         -d $DebugOption \
         -D "$LogPath" \
+        -debugcon "file:$DebugConPath" \
+        -global isa-debugcon.iobase=0xe9 \
         -m $RAM \
         -drive "file=$VHD,format=vhdx" \
-        #2> /dev/null
+        -display $DisplayConfig \
+        2> /dev/null
 
     echo -e "${GREEN}    [*] Done.${RESET}"
 }
 
 DismountVHD true
-echo -e "${YELLOW}LineOS Builder v2.4.0 (Linux Native)${RESET}"
+echo -e "${YELLOW}LineOS Builder v2.6.0 (Linux Native)${RESET}"
 
 echo -e "${CYAN}[*] make:${RESET}"
 make
@@ -120,14 +131,14 @@ if [ $? -ne 0 ]; then
     echo -e "${RED}    [-] make failed.${RESET}"
     exit 1
 fi
-echo -e "${CYAN}---End of make---${RESET}"
+echo -e "${CYAN}━━━End of make━━━${RESET}"
 
 echo -e "${CYAN}[*] vhd:${RESET}"
 if ! CopyVHD; then
     DismountVHD true
     exit 1
 fi
-echo -e "${CYAN}---End of vhd---${RESET}"
+echo -e "${CYAN}━━━End of vhd━━━${RESET}"
 
 echo -e "${CYAN}[*] run:${RESET}"
 StartQEMU
@@ -139,6 +150,6 @@ if [ -f "$LogPath" ]; then
     fi
 fi
 
-echo -e "${CYAN}---End of run---${RESET}"
+echo -e "${CYAN}━━━End of run━━━${RESET}"
 echo -e "${MAGENTA}[*] Exit.${RESET}"
 DismountVHD true

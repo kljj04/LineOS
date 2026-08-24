@@ -102,7 +102,7 @@ function Start-QEMU
 }
 
 Dismount-VHD $true
-Write-Host "LineOS Builder v2.4.0" -ForegroundColor Yellow
+Write-Host "LineOS Builder v2.6.0 (Windows Native)" -ForegroundColor Yellow
 Write-Host "[*]make:" -ForegroundColor Cyan
 make
 if ($LastExitCode -ne 0)

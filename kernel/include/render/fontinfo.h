@@ -12,8 +12,8 @@ typedef struct
     UINT16 Width;
     UINT16 Height;
     UINT16 Advance;
-    INT16  OffsetX;
-    INT16  OffsetY;
+    INT16 OffsetX;
+    INT16 OffsetY;
 } LINEOS_GLYPH;
 
 extern const UINT32 GlyphCount;
