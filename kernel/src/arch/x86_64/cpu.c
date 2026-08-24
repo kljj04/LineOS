@@ -2,88 +2,10 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <lineos/bootinfo.h>
 #include <arch/x86_64/cpu.h>
+#include <lineos/bootinfo.h>
 
-LINEOS_CPU_INFO CPUInfo;
-
-VOID CPUID(UINT32 leaf, UINT32 subleaf, UINT32 *eax, UINT32 *ebx, UINT32 *ecx, UINT32 *edx)
-{
-    UINT32 a;
-    UINT32 b;
-    UINT32 c;
-    UINT32 d;
-
-    __asm__ volatile("cpuid" : "=a"(a), "=b"(b), "=c"(c), "=d"(d) : "a"(leaf), "c"(subleaf));
-
-    if (eax != NULL)
-    {
-        *eax = a;
-    }
-
-    if (ebx != NULL)
-    {
-        *ebx = b;
-    }
-
-    if (ecx != NULL)
-    {
-        *ecx = c;
-    }
-
-    if (edx != NULL)
-    {
-        *edx = d;
-    }
-}
-
-VOID CPUDetect(VOID)
-{
-    UINT32 eax;
-    UINT32 ebx;
-    UINT32 ecx;
-    UINT32 edx;
-
-    CPUID(0x00000000, 0, &eax, &ebx, &ecx, &edx);
-    CPUInfo.MaxLeaf = eax;
-
-    CPUID(0x80000000, 0, &eax, &ebx, &ecx, &edx);
-    CPUInfo.MaxExtendedLeaf = eax;
-
-    if (CPUInfo.MaxLeaf >= 0x00000001)
-    {
-        CPUID(0x00000001, 0, &eax, &ebx, &ecx, &edx);
-        CPUInfo.TSC = (edx & (1U << 4)) != 0;
-        CPUInfo.APIC = (edx & (1U << 9)) != 0;
-        CPUInfo.X2APIC = (ecx & (1U << 21)) != 0;
-        CPUInfo.TSCDeadline = (ecx & (1U << 24)) != 0;
-    }
-
-    if (CPUInfo.MaxExtendedLeaf >= 0x80000007)
-    {
-        CPUID(0x80000007, 0, &eax, &ebx, &ecx, &edx);
-        CPUInfo.InvariantTSC = (edx & (1U << 8)) != 0;
-    }
-}
-
-UINT64 RDMSR(UINT32 msr)
-{
-    UINT32 low;
-    UINT32 high;
-
-    __asm__ volatile("rdmsr" : "=a"(low), "=d"(high) : "c"(msr));
-    return ((UINT64)high << 32) | low;
-}
-
-VOID WRMSR(UINT32 msr, UINT64 value)
-{
-    UINT32 low = (UINT32)value;
-    UINT32 high = (UINT32)(value >> 32);
-
-    __asm__ volatile("wrmsr" : : "c"(msr), "a"(low), "d"(high));
-}
-
-VOID HLT(VOID)
+VOID HLT()
 {
     while (1)
     {
@@ -91,13 +13,56 @@ VOID HLT(VOID)
     }
 }
 
-VOID CLI(VOID)
+VOID CLI()
 {
-    __asm__ volatile("cli");
+    __asm__ volatile("cli" ::: "memory");
 }
 
-
-VOID STI(VOID)
+VOID STI()
 {
-    __asm__ volatile("sti");
+    __asm__ volatile("sti" ::: "memory");
+}
+
+VOID PAUSE()
+{
+    __asm__ volatile("pause");
+}
+
+UINT8 INB(UINT16 Port)
+{
+    UINT8 Value;
+
+    __asm__ volatile("inb %w1, %b0" : "=a"(Value) : "Nd"(Port));
+    return Value;
+}
+
+UINT16 INW(UINT16 Port)
+{
+    UINT16 Value;
+
+    __asm__ volatile("inw %w1, %w0" : "=a"(Value) : "Nd"(Port));
+    return Value;
+}
+
+UINT32 INL(UINT16 Port)
+{
+    UINT32 Value;
+
+    __asm__ volatile("inl %w1, %0" : "=a"(Value) : "Nd"(Port));
+    return Value;
+}
+
+VOID OUTB(UINT16 Port, UINT8 Value)
+{
+    __asm__ volatile("outb %b0, %w1" : : "a"(Value), "Nd"(Port));
+}
+
+VOID OUTW(UINT16 Port, UINT16 Value)
+{
+    __asm__ volatile("outw %w0, %w1" : : "a"(Value), "Nd"(Port));
+}
+
+VOID OUTL(UINT16 Port, UINT32 Value)
+{
+    __asm__ volatile("outl %0, %w1" : : "a"(Value), "Nd"(Port));
 }

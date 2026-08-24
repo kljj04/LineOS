@@ -4,7 +4,7 @@
 
 #include <lineos/bootinfo.h>
 #include <memory/memory.h>
-#include <render/framebuffer.h>
+#include <render/gop/framebuffer.h>
 
 STATIC UINT32 *FrameBufferBase = 0;
 STATIC UINT32 FrameBufferWidth = 0;
@@ -217,8 +217,8 @@ VOID CopyRect(UINT32 SourceX, UINT32 SourceY, UINT32 width, UINT32 height, UINT3
         return;
     }
 
-    if (SourceX >= FrameBufferWidth || SourceY >= FrameBufferHeight || TargetX >= FrameBufferWidth || TargetY >=
-        FrameBufferHeight)
+    if (SourceX >= FrameBufferWidth || SourceY >= FrameBufferHeight || TargetX >= FrameBufferWidth ||
+        TargetY >= FrameBufferHeight)
     {
         return;
     }
@@ -258,7 +258,7 @@ VOID CopyRect(UINT32 SourceX, UINT32 SourceY, UINT32 width, UINT32 height, UINT3
             UINT32 *destination = &FrameBufferBase[FrameBufferOffset(TargetX, TargetY + CopyY)];
             UINT32 *source = &FrameBufferBase[FrameBufferOffset(SourceX, SourceY + CopyY)];
 
-            MemMove(destination, source, CopySize);
+            KMemMove(destination, source, CopySize);
         }
 
         return;
@@ -274,6 +274,37 @@ VOID CopyRect(UINT32 SourceX, UINT32 SourceY, UINT32 width, UINT32 height, UINT3
             continue;
         }
 
-        MemMove(destination, source, CopySize);
+        KMemMove(destination, source, CopySize);
+    }
+}
+
+UINT32 FrameBufferGetWidth(VOID)
+{
+    return FrameBufferWidth;
+}
+
+UINT32 FrameBufferGetHeight(VOID)
+{
+    return FrameBufferHeight;
+}
+
+VOID FrameBufferCopyToLinear(UINT32 *Destination, UINT32 Width, UINT32 Height)
+{
+    UINT32 CopyWidth;
+    UINT32 CopyHeight;
+    UINTN CopySize;
+
+    if (FrameBufferBase == NULL || Destination == NULL || Width == 0 || Height == 0)
+    {
+        return;
+    }
+
+    CopyWidth = Width < FrameBufferWidth ? Width : FrameBufferWidth;
+    CopyHeight = Height < FrameBufferHeight ? Height : FrameBufferHeight;
+    CopySize = (UINTN) CopyWidth * sizeof(UINT32);
+
+    for (UINT32 Row = 0; Row < CopyHeight; Row++)
+    {
+        KMemCpy(&Destination[Row * Width], &FrameBufferBase[FrameBufferOffset(0, Row)], CopySize);
     }
 }

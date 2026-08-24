@@ -123,4 +123,5 @@ build/obj/kernel/%.o: kernel/%.c
 
 clean:
 	@$(call RM_RF,build)
-	@$(call RM_RF,LineOS)
+	@$(call RM_RF,$(TARGET1))
+	@$(call RM_RF,$(TARGET2))

@@ -7,232 +7,146 @@
 
 #define PAGE_SIZE 4096ULL
 #define BITS_PER_BYTE 8ULL
-#define HEAP_BLOCK_MAGIC 0x48454150424C4B31ULL
+#define LOW_MEMORY_RESERVED_PAGES 256ULL
 
-typedef struct HeapBlock
+STATIC UINT8 *PageBitmap = NULL;
+STATIC UINT64 PageBitmapSize = 0;
+STATIC UINT64 TotalPages = 0;
+STATIC UINT64 LastSearchPage = 0;
+
+STATIC UINT64 AlignUp(UINT64 Value, UINT64 Alignment)
 {
-    UINT64 Magic;
-    UINTN Size;
-    BOOLEAN Free;
-    struct HeapBlock *Next;
-} HEAP_BLOCK;
+    return (Value + Alignment - 1) & ~(Alignment - 1);
+}
 
-LINEOS_MEMORY_INFO MemoryInfo;
-LINEOS_PMM_INFO PMMInfo;
-STATIC LINEOS_MEMORY_MAP *MemoryMap = NULL;
-STATIC LINEOS_RSDP *RSDP = NULL;
-STATIC HEAP_BLOCK *HeapHead = NULL;
-STATIC UINT64 PMMLastSearchIndex = 0;
-
-STATIC EFI_MEMORY_DESCRIPTOR *MemoryMapDescriptorAt(UINTN index)
+STATIC UINT64 PageIndexFromAddress(UINT64 Address)
 {
-    UINT8 *base;
+    return Address / PAGE_SIZE;
+}
 
-    if (MemoryMap == NULL || index >= MemoryInfo.DescriptorCount)
+STATIC UINT64 AddressFromPageIndex(UINT64 PageIndex)
+{
+    return PageIndex * PAGE_SIZE;
+}
+
+STATIC EFI_MEMORY_DESCRIPTOR *GetMemoryDescriptor(LINEOS_MEMORY_MAP *MemoryMap, UINTN Index)
+{
+    return (EFI_MEMORY_DESCRIPTOR *) ((UINT8 *) MemoryMap->MemoryMap + (Index * MemoryMap->MemoryMapDescriptorSize));
+}
+
+STATIC UINTN GetMemoryDescriptorCount(LINEOS_MEMORY_MAP *MemoryMap)
+{
+    return MemoryMap->MemoryMapSize / MemoryMap->MemoryMapDescriptorSize;
+}
+
+STATIC VOID BitmapSet(UINT64 PageIndex)
+{
+    PageBitmap[PageIndex / BITS_PER_BYTE] |= (UINT8) (1U << (PageIndex % BITS_PER_BYTE));
+}
+
+STATIC VOID BitmapClear(UINT64 PageIndex)
+{
+    PageBitmap[PageIndex / BITS_PER_BYTE] &= (UINT8) ~(1U << (PageIndex % BITS_PER_BYTE));
+}
+
+STATIC BOOLEAN BitmapTest(UINT64 PageIndex)
+{
+    return (PageBitmap[PageIndex / BITS_PER_BYTE] & (UINT8) (1U << (PageIndex % BITS_PER_BYTE))) != 0;
+}
+
+STATIC UINT64 FindHighestConventionalMemoryAddress(LINEOS_MEMORY_MAP *MemoryMap)
+{
+    UINT64 HighestAddress = 0;
+    UINTN EntryCount = GetMemoryDescriptorCount(MemoryMap);
+
+    for (UINTN Index = 0; Index < EntryCount; Index++)
     {
-        return NULL;
-    }
+        EFI_MEMORY_DESCRIPTOR *Descriptor = GetMemoryDescriptor(MemoryMap, Index);
+        UINT64 End = Descriptor->PhysicalStart + (Descriptor->NumberOfPages * PAGE_SIZE);
 
-    base = (UINT8 *) MemoryMap->MemoryMap;
-    return (EFI_MEMORY_DESCRIPTOR *) (base + (index * MemoryMap->MemoryMapDescriptorSize));
-}
-
-BOOLEAN MemoryTypeIsUsable(UINT32 type)
-{
-    return type == EfiConventionalMemory;
-}
-
-BOOLEAN MemoryTypeIsMMIO(UINT32 type)
-{
-    return type == EfiMemoryMappedIO || type == EfiMemoryMappedIOPortSpace;
-}
-
-EFI_MEMORY_DESCRIPTOR *MemoryMapGetDescriptor(UINTN index)
-{
-    return MemoryMapDescriptorAt(index);
-}
-
-VOID MemoryMapInit(LINEOS_BOOT_INFO *BootInfo)
-{
-    MemSet(&MemoryInfo, 0, sizeof(LINEOS_MEMORY_INFO));
-
-    if (BootInfo == NULL || BootInfo->MemoryMap == NULL || BootInfo->MemoryMap->MemoryMap == NULL || BootInfo->MemoryMap
-        ->MemoryMapDescriptorSize == 0)
-    {
-        return;
-    }
-
-    MemoryMap = BootInfo->MemoryMap;
-    MemoryInfo.DescriptorCount = MemoryMap->MemoryMapSize / MemoryMap->MemoryMapDescriptorSize;
-
-    for (UINTN index = 0; index < MemoryInfo.DescriptorCount; index++)
-    {
-        EFI_MEMORY_DESCRIPTOR *descriptor = MemoryMapDescriptorAt(index);
-        UINT64 BaseAddress = descriptor->PhysicalStart;
-        UINT64 size = descriptor->NumberOfPages * 4096ULL;
-        UINT64 EndAddress = BaseAddress + size;
-
-        if (EndAddress > MemoryInfo.HighestPhysicalAddress)
+        if (Descriptor->Type != EfiConventionalMemory)
         {
-            MemoryInfo.HighestPhysicalAddress = EndAddress;
-        }
-
-        if (MemoryTypeIsUsable(descriptor->Type))
-        {
-            MemoryInfo.UsableTotalSize += size;
-
-            if (size > MemoryInfo.UsableSize)
-            {
-                MemoryInfo.UsableBase = BaseAddress;
-                MemoryInfo.UsableSize = size;
-            }
-
             continue;
         }
 
-        if (MemoryTypeIsMMIO(descriptor->Type))
+        if (End > HighestAddress)
         {
-            MemoryInfo.MMIOTotalSize += size;
+            HighestAddress = End;
+        }
+    }
+
+    return HighestAddress;
+}
+
+STATIC EFI_MEMORY_DESCRIPTOR *FindBitmapStorageDescriptor(LINEOS_MEMORY_MAP *MemoryMap, UINT64 BitmapBytes)
+{
+    EFI_MEMORY_DESCRIPTOR *BestDescriptor = NULL;
+    UINT64 BestPages = 0;
+    UINTN EntryCount = GetMemoryDescriptorCount(MemoryMap);
+    UINT64 NeededPages = AlignUp(BitmapBytes, PAGE_SIZE) / PAGE_SIZE;
+
+    for (UINTN Index = 0; Index < EntryCount; Index++)
+    {
+        EFI_MEMORY_DESCRIPTOR *Descriptor = GetMemoryDescriptor(MemoryMap, Index);
+
+        if (Descriptor->Type != EfiConventionalMemory || Descriptor->NumberOfPages < NeededPages)
+        {
             continue;
         }
 
-        if (descriptor->Type == EfiACPIReclaimMemory || descriptor->Type == EfiACPIMemoryNVS)
+        if (Descriptor->NumberOfPages > BestPages)
         {
-            MemoryInfo.ACPITotalSize += size;
+            BestDescriptor = Descriptor;
+            BestPages = Descriptor->NumberOfPages;
+        }
+    }
+
+    return BestDescriptor;
+}
+
+STATIC VOID MarkPagesUsed(UINT64 StartPage, UINT64 PageCount)
+{
+    for (UINT64 Index = 0; Index < PageCount && StartPage + Index < TotalPages; Index++)
+    {
+        BitmapSet(StartPage + Index);
+    }
+}
+
+STATIC VOID MarkPagesFree(UINT64 StartPage, UINT64 PageCount)
+{
+    for (UINT64 Index = 0; Index < PageCount && StartPage + Index < TotalPages; Index++)
+    {
+        BitmapClear(StartPage + Index);
+    }
+}
+
+STATIC VOID MarkConventionalMemoryFree(LINEOS_MEMORY_MAP *MemoryMap)
+{
+    UINTN EntryCount = GetMemoryDescriptorCount(MemoryMap);
+
+    for (UINTN Index = 0; Index < EntryCount; Index++)
+    {
+        EFI_MEMORY_DESCRIPTOR *Descriptor = GetMemoryDescriptor(MemoryMap, Index);
+
+        if (Descriptor->Type != EfiConventionalMemory)
+        {
             continue;
         }
 
-        MemoryInfo.ReservedTotalSize += size;
+        MarkPagesFree(PageIndexFromAddress(Descriptor->PhysicalStart), Descriptor->NumberOfPages);
     }
 }
 
-STATIC UINT64 AlignUp(UINT64 value, UINT64 alignment)
+STATIC BOOLEAN ArePagesFree(UINT64 StartPage, UINTN PageCount)
 {
-    return (value + alignment - 1) & ~(alignment - 1);
-}
-
-STATIC UINT64 AlignDown(UINT64 value, UINT64 alignment)
-{
-    return value & ~(alignment - 1);
-}
-
-STATIC VOID BitmapSet(UINT64 index)
-{
-    PMMInfo.Bitmap[index / 8] |= (UINT8) (1 << (index % 8));
-}
-
-STATIC VOID BitmapClear(UINT64 index)
-{
-    PMMInfo.Bitmap[index / 8] &= (UINT8) ~(1 << (index % 8));
-}
-
-STATIC BOOLEAN BitmapTest(UINT64 index)
-{
-    return (PMMInfo.Bitmap[index / 8] & (UINT8) (1 << (index % 8))) != 0;
-}
-
-STATIC VOID PMMMarkFree(UINT64 address, UINT64 count)
-{
-    UINT64 index;
-
-    if (count == 0 || address < PMMInfo.Base)
-    {
-        return;
-    }
-
-    index = (address - PMMInfo.Base) / PAGE_SIZE;
-
-    for (UINT64 i = 0; i < count && index + i < PMMInfo.PageCount; i++)
-    {
-        if (BitmapTest(index + i))
-        {
-            BitmapClear(index + i);
-            PMMInfo.FreePageCount++;
-            PMMInfo.UsedPageCount--;
-        }
-    }
-}
-
-STATIC VOID PMMMarkUsed(UINT64 address, UINT64 count)
-{
-    UINT64 index;
-
-    if (count == 0 || address < PMMInfo.Base)
-    {
-        return;
-    }
-
-    index = (address - PMMInfo.Base) / PAGE_SIZE;
-
-    for (UINT64 i = 0; i < count && index + i < PMMInfo.PageCount; i++)
-    {
-        if (!BitmapTest(index + i))
-        {
-            BitmapSet(index + i);
-            PMMInfo.FreePageCount--;
-            PMMInfo.UsedPageCount++;
-        }
-    }
-
-    if (index < PMMLastSearchIndex)
-    {
-        PMMLastSearchIndex = index;
-    }
-}
-
-STATIC BOOLEAN PMMFindBitmapRegion(UINT64 BitmapPages, UINT64 *BitmapAddress)
-{
-    if (BitmapPages == 0 || BitmapAddress == NULL)
+    if (StartPage + PageCount > TotalPages)
     {
         return FALSE;
     }
 
-    for (UINTN index = 0; index < MemoryInfo.DescriptorCount; index++)
+    for (UINTN Index = 0; Index < PageCount; Index++)
     {
-        EFI_MEMORY_DESCRIPTOR *descriptor = MemoryMapDescriptorAt(index);
-        UINT64 BaseAddress;
-        UINT64 EndAddress;
-        UINT64 PageCount;
-
-        if (descriptor == NULL || !MemoryTypeIsUsable(descriptor->Type))
-        {
-            continue;
-        }
-
-        BaseAddress = AlignUp(descriptor->PhysicalStart, PAGE_SIZE);
-        EndAddress = AlignDown(descriptor->PhysicalStart + (descriptor->NumberOfPages * PAGE_SIZE), PAGE_SIZE);
-
-        if (BaseAddress == 0)
-        {
-            BaseAddress = PAGE_SIZE;
-        }
-
-        if (EndAddress <= BaseAddress)
-        {
-            continue;
-        }
-
-        PageCount = (EndAddress - BaseAddress) / PAGE_SIZE;
-        if (PageCount >= BitmapPages)
-        {
-            *BitmapAddress = BaseAddress;
-            return TRUE;
-        }
-    }
-
-    return FALSE;
-}
-
-STATIC BOOLEAN PMMRangeIsFree(UINT64 StartIndex, UINT64 count)
-{
-    if (count == 0 || StartIndex >= PMMInfo.PageCount || count > PMMInfo.PageCount - StartIndex)
-    {
-        return FALSE;
-    }
-
-    for (UINT64 index = 0; index < count; index++)
-    {
-        if (BitmapTest(StartIndex + index))
+        if (BitmapTest(StartPage + Index))
         {
             return FALSE;
         }
@@ -241,477 +155,176 @@ STATIC BOOLEAN PMMRangeIsFree(UINT64 StartIndex, UINT64 count)
     return TRUE;
 }
 
-STATIC VOID *PMMAllocPagesInRange(UINT64 StartIndex, UINT64 EndIndex, UINTN count)
+STATIC UINT64 FindFreePageRange(UINTN PageCount)
 {
-    UINT64 Limit;
+    UINT64 StartPage = LastSearchPage;
 
-    if (count == 0 || StartIndex >= EndIndex || count > PMMInfo.PageCount || count > EndIndex - StartIndex)
+    for (UINT64 Pass = 0; Pass < 2; Pass++)
     {
-        return NULL;
-    }
-
-    Limit = EndIndex - count;
-    for (UINT64 index = StartIndex; index <= Limit; index++)
-    {
-        if (BitmapTest(index))
+        for (UINT64 Page = StartPage; Page + PageCount <= TotalPages; Page++)
         {
-            continue;
-        }
-
-        if (PMMRangeIsFree(index, count))
-        {
-            UINT64 address = PMMInfo.Base + (index * PAGE_SIZE);
-            PMMMarkUsed(address, count);
-            PMMLastSearchIndex = index + count;
-
-            if (PMMLastSearchIndex >= PMMInfo.PageCount)
+            if (ArePagesFree(Page, PageCount))
             {
-                PMMLastSearchIndex = 0;
+                LastSearchPage = Page + PageCount;
+                return Page;
             }
-
-            return (VOID *) address;
         }
+
+        StartPage = 0;
     }
 
-    return NULL;
+    return TotalPages;
 }
 
-VOID PMMInit(LINEOS_BOOT_INFO *BootInfo)
+BOOLEAN KMemoryInit(LINEOS_BOOT_INFO *BootInfo)
 {
+    LINEOS_MEMORY_MAP *MemoryMap;
+    EFI_MEMORY_DESCRIPTOR *BitmapStorage;
+    UINT64 HighestAddress;
     UINT64 BitmapPages;
-    UINT64 BitmapAddress;
 
-    MemoryMapInit(BootInfo);
-
-    MemSet(&PMMInfo, 0, sizeof(LINEOS_PMM_INFO));
-    PMMLastSearchIndex = 0;
-
-    if (BootInfo == NULL || MemoryInfo.UsableTotalSize == 0 || MemoryInfo.HighestPhysicalAddress == 0)
+    if (BootInfo == NULL || BootInfo->MemoryMap == NULL || BootInfo->MemoryMap->MemoryMap == NULL ||
+        BootInfo->MemoryMap->MemoryMapDescriptorSize == 0)
     {
-        return;
+        return FALSE;
     }
 
-    RSDP = (LINEOS_RSDP *) BootInfo->RSDP;
+    MemoryMap = BootInfo->MemoryMap;
+    HighestAddress = FindHighestConventionalMemoryAddress(MemoryMap);
+    TotalPages = AlignUp(HighestAddress, PAGE_SIZE) / PAGE_SIZE;
+    PageBitmapSize = AlignUp(TotalPages, BITS_PER_BYTE) / BITS_PER_BYTE;
+    BitmapStorage = FindBitmapStorageDescriptor(MemoryMap, PageBitmapSize);
 
-    PMMInfo.Base = 0;
-    PMMInfo.PageCount = AlignUp(MemoryInfo.HighestPhysicalAddress, PAGE_SIZE) / PAGE_SIZE;
-    PMMInfo.BitmapSize = AlignUp(PMMInfo.PageCount, BITS_PER_BYTE) / BITS_PER_BYTE;
-    BitmapPages = AlignUp(PMMInfo.BitmapSize, PAGE_SIZE) / PAGE_SIZE;
-
-    if (!PMMFindBitmapRegion(BitmapPages, &BitmapAddress))
+    if (TotalPages == 0 || PageBitmapSize == 0 || BitmapStorage == NULL)
     {
-        return;
+        return FALSE;
     }
 
-    PMMInfo.Bitmap = (UINT8 *) BitmapAddress;
+    BitmapPages = AlignUp(PageBitmapSize, PAGE_SIZE) / PAGE_SIZE;
+    PageBitmap = (UINT8 *) (BitmapStorage->PhysicalStart + ((BitmapStorage->NumberOfPages - BitmapPages) * PAGE_SIZE));
 
-    MemSet(PMMInfo.Bitmap, 0xFF, PMMInfo.BitmapSize);
-    PMMInfo.FreePageCount = 0;
-    PMMInfo.UsedPageCount = PMMInfo.PageCount;
+    KMemSet(PageBitmap, 0xFF, (UINTN) PageBitmapSize);
+    MarkConventionalMemoryFree(MemoryMap);
+    MarkPagesUsed(0, LOW_MEMORY_RESERVED_PAGES);
+    MarkPagesUsed(PageIndexFromAddress((UINT64) PageBitmap), BitmapPages);
+    LastSearchPage = LOW_MEMORY_RESERVED_PAGES;
 
-    for (UINTN index = 0; index < MemoryInfo.DescriptorCount; index++)
-    {
-        EFI_MEMORY_DESCRIPTOR *descriptor = MemoryMapDescriptorAt(index);
-        UINT64 BaseAddress;
-        UINT64 EndAddress;
-
-        if (descriptor == NULL || !MemoryTypeIsUsable(descriptor->Type))
-        {
-            continue;
-        }
-
-        BaseAddress = AlignUp(descriptor->PhysicalStart, PAGE_SIZE);
-        EndAddress = AlignDown(descriptor->PhysicalStart + (descriptor->NumberOfPages * PAGE_SIZE), PAGE_SIZE);
-
-        if (BaseAddress == 0)
-        {
-            BaseAddress = PAGE_SIZE;
-        }
-
-        if (EndAddress > BaseAddress)
-        {
-            PMMMarkFree(BaseAddress, (EndAddress - BaseAddress) / PAGE_SIZE);
-        }
-    }
-
-    PMMMarkUsed(0, 1);
-    PMMMarkUsed(BitmapAddress, BitmapPages);
+    return TRUE;
 }
 
-VOID *PMMAllocPages(UINTN count)
+VOID *KGetPageBitmap(VOID)
 {
-    VOID *Address;
-
-    if (count == 0 || PMMInfo.Bitmap == NULL || count > PMMInfo.FreePageCount || count > PMMInfo.PageCount)
-    {
-        return NULL;
-    }
-
-    Address = PMMAllocPagesInRange(PMMLastSearchIndex, PMMInfo.PageCount, count);
-    if (Address != NULL)
-    {
-        return Address;
-    }
-
-    return PMMAllocPagesInRange(0, PMMLastSearchIndex, count);
+    return PageBitmap;
 }
 
-VOID *PMMAllocPage(VOID)
+UINT64 KGetPageBitmapSize(VOID)
 {
-    return PMMAllocPages(1);
+    return PageBitmapSize;
 }
 
-VOID PMMFreePages(VOID *address, UINTN count)
+UINT64 KGetTotalPages(VOID)
 {
-    if (address == NULL || count == 0)
-    {
-        return;
-    }
-
-    PMMMarkFree((UINT64) address, count);
+    return TotalPages;
 }
 
-VOID PMMFreePage(VOID *address)
+UINT8 KGetPageBitmapByte(UINT64 ByteIndex)
 {
-    PMMFreePages(address, 1);
+    if (PageBitmap == NULL || ByteIndex >= PageBitmapSize)
+    {
+        return 0;
+    }
+
+    return PageBitmap[ByteIndex];
 }
 
-STATIC UINTN HeapAlign(UINTN size)
+VOID *KMemMove(VOID *destination, CONST VOID *source, UINTN size)
 {
-    return (size + 15) & ~(UINTN) 15;
-}
+    UINT8 *dst = (UINT8 *) destination;
+    CONST UINT8 *src = (CONST UINT8 *) source;
 
-STATIC HEAP_BLOCK *HeapNewBlock(UINTN size)
-{
-    UINTN TotalSize = sizeof(HEAP_BLOCK) + size;
-    UINTN PageCount = (UINTN) AlignUp(TotalSize, PAGE_SIZE) / PAGE_SIZE;
-    HEAP_BLOCK *block = (HEAP_BLOCK *) PMMAllocPages(PageCount);
-
-    if (block == NULL)
-    {
-        return NULL;
-    }
-
-    block->Magic = HEAP_BLOCK_MAGIC;
-    block->Size = (PageCount * PAGE_SIZE) - sizeof(HEAP_BLOCK);
-    block->Free = FALSE;
-    block->Next = NULL;
-    return block;
-}
-
-STATIC VOID HeapSplitBlock(HEAP_BLOCK *block, UINTN size)
-{
-    HEAP_BLOCK *NextBlock;
-
-    if (block->Size < size + sizeof(HEAP_BLOCK) + 16)
-    {
-        return;
-    }
-
-    NextBlock = (HEAP_BLOCK *) ((UINT8 *) (block + 1) + size);
-    NextBlock->Magic = HEAP_BLOCK_MAGIC;
-    NextBlock->Size = block->Size - size - sizeof(HEAP_BLOCK);
-    NextBlock->Free = TRUE;
-    NextBlock->Next = block->Next;
-
-    block->Size = size;
-    block->Next = NextBlock;
-}
-
-VOID *KMalloc(UINTN size)
-{
-    HEAP_BLOCK *block;
-
-    if (size == 0)
-    {
-        return NULL;
-    }
-
-    size = HeapAlign(size);
-    block = HeapHead;
-
-    while (block != NULL)
-    {
-        if (block->Free && block->Size >= size)
-        {
-            block->Free = FALSE;
-            HeapSplitBlock(block, size);
-            return block + 1;
-        }
-
-        if (block->Next == NULL)
-        {
-            break;
-        }
-
-        block = block->Next;
-    }
-
-    HEAP_BLOCK *NewBlock = HeapNewBlock(size);
-
-    if (NewBlock == NULL)
-    {
-        return NULL;
-    }
-
-    HeapSplitBlock(NewBlock, size);
-
-    if (HeapHead == NULL)
-    {
-        HeapHead = NewBlock;
-    }
-    else
-    {
-        block->Next = NewBlock;
-    }
-
-    return NewBlock + 1;
-}
-
-VOID KFree(VOID *ptr)
-{
-    HEAP_BLOCK *block;
-
-    if (ptr == NULL)
-    {
-        return;
-    }
-
-    block = ((HEAP_BLOCK *) ptr) - 1;
-
-    if (block->Magic != HEAP_BLOCK_MAGIC)
-    {
-        return;
-    }
-
-    block->Free = TRUE;
-
-    while (block->Next != NULL && block->Next->Free)
-    {
-        block->Size += sizeof(HEAP_BLOCK) + block->Next->Size;
-        block->Next = block->Next->Next;
-    }
-}
-
-VOID *KRealloc(VOID *ptr, UINTN size)
-{
-    HEAP_BLOCK *block;
-    VOID *NewPtr;
-
-    if (ptr == NULL)
-    {
-        return KMalloc(size);
-    }
-
-    if (size == 0)
-    {
-        KFree(ptr);
-        return NULL;
-    }
-
-    block = ((HEAP_BLOCK *) ptr) - 1;
-
-    if (block->Magic != HEAP_BLOCK_MAGIC)
-    {
-        return NULL;
-    }
-
-    size = HeapAlign(size);
-
-    if (block->Size >= size)
-    {
-        HeapSplitBlock(block, size);
-        return ptr;
-    }
-
-    NewPtr = KMalloc(size);
-
-    if (NewPtr == NULL)
-    {
-        return NULL;
-    }
-
-    MemCopy(NewPtr, ptr, block->Size);
-    KFree(ptr);
-    return NewPtr;
-}
-
-LINEOS_RSDP *ACPIGetRSDP(VOID)
-{
-    return RSDP;
-}
-
-UINT8 MMIORead8(UINT64 address)
-{
-    return *(volatile UINT8 *) address;
-}
-
-UINT16 MMIORead16(UINT64 address)
-{
-    return *(volatile UINT16 *) address;
-}
-
-UINT32 MMIORead32(UINT64 address)
-{
-    return *(volatile UINT32 *) address;
-}
-
-UINT64 MMIORead64(UINT64 address)
-{
-    return *(volatile UINT64 *) address;
-}
-
-VOID MMIOWrite8(UINT64 address, UINT8 value)
-{
-    *(volatile UINT8 *) address = value;
-}
-
-VOID MMIOWrite16(UINT64 address, UINT16 value)
-{
-    *(volatile UINT16 *) address = value;
-}
-
-VOID MMIOWrite32(UINT64 address, UINT32 value)
-{
-    *(volatile UINT32 *) address = value;
-}
-
-VOID MMIOWrite64(UINT64 address, UINT64 value)
-{
-    *(volatile UINT64 *) address = value;
-}
-
-VOID *MemSet(VOID *destination, UINT8 value, UINTN size)
-{
-    UINT8 *Destination8 = (UINT8 *) destination;
-    UINT64 Pattern = value;
-
-    Pattern |= Pattern << 8;
-    Pattern |= Pattern << 16;
-    Pattern |= Pattern << 32;
-
-    while ((((UINTN) Destination8) & 7) != 0 && size != 0)
-    {
-        *Destination8++ = value;
-        size--;
-    }
-
-    UINT64 *Destination64 = (UINT64 *) Destination8;
-
-    while (size >= sizeof(UINT64))
-    {
-        *Destination64++ = Pattern;
-        size -= sizeof(UINT64);
-    }
-
-    Destination8 = (UINT8 *) Destination64;
-
-    while (size != 0)
-    {
-        *Destination8++ = value;
-        size--;
-    }
-
-    return destination;
-}
-
-VOID *MemCopy(VOID *destination, CONST VOID *source, UINTN size)
-{
-    UINT8 *Destination8 = (UINT8 *) destination;
-    CONST UINT8 *Source8 = (CONST UINT8 *) source;
-
-    while ((((UINTN) Destination8) & 7) != 0 && size != 0)
-    {
-        *Destination8++ = *Source8++;
-        size--;
-    }
-
-    if ((((UINTN) Source8) & 7) == 0)
-    {
-        UINT64 *Destination64 = (UINT64 *) Destination8;
-        CONST UINT64 *Source64 = (CONST UINT64 *) Source8;
-
-        while (size >= sizeof(UINT64))
-        {
-            *Destination64++ = *Source64++;
-            size -= sizeof(UINT64);
-        }
-
-        Destination8 = (UINT8 *) Destination64;
-        Source8 = (CONST UINT8 *) Source64;
-    }
-
-    while (size != 0)
-    {
-        *Destination8++ = *Source8++;
-        size--;
-    }
-
-    return destination;
-}
-
-VOID *MemMove(VOID *destination, CONST VOID *source, UINTN size)
-{
-    UINT8 *Destination = (UINT8 *) destination;
-    CONST UINT8 *Source = (CONST UINT8 *) source;
-
-    if (Destination == Source || size == 0)
+    if (dst == src || size == 0)
     {
         return destination;
     }
 
-    if (Destination < Source || Destination >= Source + size)
+    if (dst < src)
     {
-        MemCopy(destination, source, size);
+        for (UINTN i = 0; i < size; i++)
+        {
+            dst[i] = src[i];
+        }
     }
     else
     {
-        Destination += size;
-        Source += size;
-
-        while ((((UINTN) Destination) & 7) != 0 && size != 0)
+        for (UINTN i = size; i > 0; i--)
         {
-            *--Destination = *--Source;
-            size--;
-        }
-
-        if ((((UINTN) Source) & 7) == 0)
-        {
-            UINT64 *Destination64 = (UINT64 *) Destination;
-            CONST UINT64 *Source64 = (CONST UINT64 *) Source;
-
-            while (size >= sizeof(UINT64))
-            {
-                *--Destination64 = *--Source64;
-                size -= sizeof(UINT64);
-            }
-
-            Destination = (UINT8 *) Destination64;
-            Source = (CONST UINT8 *) Source64;
-        }
-
-        while (size != 0)
-        {
-            *--Destination = *--Source;
-            size--;
+            dst[i - 1] = src[i - 1];
         }
     }
 
     return destination;
 }
 
-INT32 MemCompare(CONST VOID *first, CONST VOID *second, UINTN size)
+VOID *KMemCpy(VOID *destination, CONST VOID *source, UINTN size)
 {
-    CONST UINT8 *First = (CONST UINT8 *) first;
-    CONST UINT8 *Second = (CONST UINT8 *) second;
+    UINT8 *dst = (UINT8 *) destination;
+    CONST UINT8 *src = (CONST UINT8 *) source;
 
-    for (UINTN index = 0; index < size; index++)
+    for (UINTN Index = 0; Index < size; Index++)
     {
-        if (First[index] != Second[index])
-        {
-            return (INT32) First[index] - (INT32) Second[index];
-        }
+        dst[Index] = src[Index];
     }
 
-    return 0;
+    return destination;
+}
+
+VOID *KMemSet(VOID *destination, UINT8 value, UINTN size)
+{
+    UINT8 *dst = (UINT8 *) destination;
+
+    for (UINTN Index = 0; Index < size; Index++)
+    {
+        dst[Index] = value;
+    }
+
+    return destination;
+}
+
+VOID *KAllocPages(UINTN pageCount)
+{
+    UINT64 Page;
+
+    if (pageCount == 0 || PageBitmap == NULL)
+    {
+        return NULL;
+    }
+
+    Page = FindFreePageRange(pageCount);
+    if (Page == TotalPages)
+    {
+        return NULL;
+    }
+
+    MarkPagesUsed(Page, pageCount);
+    KMemSet((VOID *) AddressFromPageIndex(Page), 0, (UINTN) (pageCount * PAGE_SIZE));
+
+    return (VOID *) AddressFromPageIndex(Page);
+}
+
+VOID KMemFreePages(VOID *address, UINTN pageCount)
+{
+    UINT64 Address;
+
+    if (address == NULL || pageCount == 0 || PageBitmap == NULL)
+    {
+        return;
+    }
+
+    Address = (UINT64) address;
+    if ((Address % PAGE_SIZE) != 0)
+    {
+        return;
+    }
+
+    MarkPagesFree(PageIndexFromAddress(Address), pageCount);
 }

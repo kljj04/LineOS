@@ -11,7 +11,7 @@
 
 typedef struct
 {
-    UINT8  Ident[16];
+    UINT8 Ident[16];
     UINT16 Type;
     UINT16 Machine;
     UINT32 Version;

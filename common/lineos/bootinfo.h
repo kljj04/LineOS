@@ -10,31 +10,31 @@
 
 typedef struct
 {
-    UINT64                    FrameBufferBase;
-    UINT64                    FrameBufferSize;
-    UINT32                    ScreenWidth;
-    UINT32                    ScreenHeight;
-    UINT32                    PixelsPerScanLine;
+    UINT64 FrameBufferBase;
+    UINT64 FrameBufferSize;
+    UINT32 ScreenWidth;
+    UINT32 ScreenHeight;
+    UINT32 PixelsPerScanLine;
     EFI_GRAPHICS_PIXEL_FORMAT PixelFormat;
 } LINEOS_GOP;
 
 typedef struct
 {
     EFI_MEMORY_DESCRIPTOR *MemoryMap;
-    UINTN                  MemoryMapSize;
-    UINTN                  MemoryMapDescriptorSize;
-    UINT32                 MemoryMapDescriptorVersion;
+    UINTN MemoryMapSize;
+    UINTN MemoryMapDescriptorSize;
+    UINT32 MemoryMapDescriptorVersion;
 } LINEOS_MEMORY_MAP;
 
 typedef EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER LINEOS_ACPI_RSDP;
 
 typedef struct
 {
-    UINT64             Magic;
-    UINT32             Version;
-    UINT32             Size;
+    UINT64 Magic;
+    UINT32 Version;
+    UINT32 Size;
 
-    LINEOS_GOP        *GOP;
+    LINEOS_GOP *GOP;
     LINEOS_MEMORY_MAP *MemoryMap;
-    LINEOS_ACPI_RSDP  *RSDP;
+    LINEOS_ACPI_RSDP *RSDP;
 } LINEOS_BOOT_INFO;

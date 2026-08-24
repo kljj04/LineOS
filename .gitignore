@@ -1,3 +1,5 @@
+.vscode/
 .idea/
-/LineOS/
-/build/
+build/
+LineOS/
+logs/

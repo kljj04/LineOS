@@ -2,11 +2,11 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <stdarg.h>
 #include <lineos/bootinfo.h>
-#include <render/framebuffer.h>
-#include <render/font.h>
-#include <render/print.h>
+#include <render/gop/font.h>
+#include <render/gop/framebuffer.h>
+#include <render/gop/print.h>
+#include <stdarg.h>
 
 #define KPRINT_TAB_SIZE 4
 #define KPRINT_LINE_HEIGHT 24
@@ -161,7 +161,7 @@ VOID KPrint(CONST CHAR16 *msg, UINT32 x, UINT32 BaseLine, UINT32 color, ...)
 
         case 's':
         {
-            CONST CHAR16 *String = va_arg(args, CONST CHAR16*);
+            CONST CHAR16 *String = va_arg(args, CONST CHAR16 *);
 
             if (String == 0)
             {
@@ -225,7 +225,7 @@ VOID KPrint(CONST CHAR16 *msg, UINT32 x, UINT32 BaseLine, UINT32 color, ...)
         case 'p':
             x += KPrintChar('0', x, BaseLine, color);
             x += KPrintChar('x', x, BaseLine, color);
-            x = KPrintUnsigned((UINT64) va_arg(args, VOID*), 16, FALSE, x, BaseLine, color);
+            x = KPrintUnsigned((UINT64) va_arg(args, VOID *), 16, FALSE, x, BaseLine, color);
             break;
 
         default:

@@ -5,9 +5,9 @@
 #include <Uefi.h>
 #include <Guid/Acpi.h>
 #include <Guid/FileInfo.h>
+#include <Protocol/GraphicsOutput.h>
 #include <Protocol/LoadedImage.h>
 #include <Protocol/SimpleFileSystem.h>
-#include <Protocol/GraphicsOutput.h>
 #include <guid.h>
 
 EFI_GUID gEfiAcpi20TableGuid = EFI_ACPI_20_TABLE_GUID;
