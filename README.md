@@ -1,169 +1,164 @@
-# LineOS Development
+# LineOS
 
-**LineOS** is a hobby operating system written primarily in pure C for 64-bit UEFI systems.
+LineOS is a 64-bit UEFI hobby operating system written mostly in freestanding C.
 
-The project uses EDK II for its custom UEFI bootloader and a freestanding C environment for the kernel. Its main purpose is to explore low-level system programming, kernel development, graphics rendering, memory management, hardware initialization, and modern x86_64 platform architecture.
+The project is currently focused on bootstrapping a small graphical kernel, PCI discovery, VirtIO devices, physical memory management, and native Korean text rendering.
 
-## Overview
+## Status
 
-LineOS currently uses a custom UEFI bootloader to load an ELF64 kernel and transfer execution to it.
+LineOS is experimental. Internal APIs, boot data, device drivers, memory layout, and build scripts can change quickly.
 
-Before entering the kernel, the bootloader gathers platform information from UEFI and passes it through a `LINEOS_BOOT_INFO` structure.
+Current boot flow:
 
-The information currently passed to the kernel includes:
-
-* Graphics Output Protocol information
-* Framebuffer address and display properties
-* UEFI memory map
-* ACPI root table information
-* Kernel boot metadata
-
-The kernel can initialize the framebuffer, render graphics, and display Unicode text using an embedded bitmap font.
-
-## Architecture
-
-* Architecture: `x86_64`
-* Firmware interface: `UEFI`
-* Execution mode: `64-bit Long Mode`
-* Bootloader environment: `EDK II`
-* Kernel language: `C`
-* Kernel format: `ELF64`
-* Text encoding: `UTF-16`
-* Graphics output: `UEFI GOP framebuffer`
-* BIOS support: Not supported
-
-LineOS does not use legacy BIOS services or 16-bit boot code.
+1. UEFI starts `BOOTX64.EFI`.
+2. The bootloader initializes GOP, ACPI, and the memory map.
+3. The bootloader loads `LINEOS_KERNEL.ELF`.
+4. Boot metadata is passed through `LINEOS_BOOT_INFO`.
+5. The kernel initializes memory, PCI, VirtIO GPU, and renders a graphical test screen.
 
 ## Current Features
 
-* Custom UEFI bootloader
-* ELF64 kernel loading
-* Kernel entry-point handoff
-* GOP framebuffer initialization
-* Screen and rectangle drawing
-* Pixel and line rendering
-* 8-bit alpha-blended bitmap font rendering
-* UTF-16 text output
-* ASCII, symbols, box-drawing characters, Hangul Jamo, and complete Hangul syllable support
-* Korean and English kernel text rendering
-* UEFI memory map collection
-* ACPI RSDP discovery
-* Boot information structure
-* Basic CPU control functions
-* Experimental boot and kernel panic screens
+- Custom UEFI bootloader
+- ELF64 kernel loading
+- Boot information handoff
+- UEFI GOP discovery
+- ACPI RSDP discovery
+- UEFI memory map handoff
+- Physical page bitmap allocator
+- Basic memory functions: `KMemCpy`, `KMemMove`, `KMemSet`
+- PCI configuration space scanning
+- Q35 machine support
+- VirtIO PCI transport helpers
+- VirtIO GPU initialization
+- VirtIO GPU framebuffer creation, transfer, scanout, and flush
+- Raw disk image boot flow
+- GPT disk image with EFI and EXT3 partitions
+- Debug output through QEMU debugcon port `0xE9`
+- TrueType font parsing and rasterization
+- Pretendard SemiBold Korean rendering
+- JetBrains Mono Nerd Font rendering
+- ASCII, Hangul, and Nerd Font glyph test output
 
-## Font System
+## Architecture
 
-LineOS contains an embedded bitmap font generated from multiple source fonts.
+- CPU architecture: `x86_64`
+- Firmware: `UEFI`
+- Kernel format: `ELF64`
+- Bootloader ABI: Microsoft x64 ABI
+- Kernel language: freestanding C
+- Main emulator target: QEMU
+- Machine type: `q35`
+- Graphics device: `virtio-gpu-pci`
+- Storage device: `virtio-blk-pci`
+- Boot disk format: raw image
+- BIOS boot: not supported
 
-The current font configuration uses:
+## Repository Layout
 
-* JetBrains Mono SemiBold for ASCII and symbols
-* Pretendard SemiBold for Korean characters
-* 8-bit grayscale alpha values for antialiasing
-* Per-glyph metrics including size, advance, and offset
-* A sorted Unicode table for glyph lookup
+- `bootloader/`: UEFI bootloader sources
+- `common/`: shared boot structures and type definitions
+- `kernel/`: kernel sources, drivers, memory, rendering, and assets
+- `kernel/assets/fonts/`: bundled test fonts
+- `link/`: kernel linker script
+- `uefi/`: OVMF firmware files
+- `run.sh`: Linux build, image, and QEMU launcher
+- `run.ps1`: Windows helper script with WSL-based image handling
+- `LICENSES/`: third-party license texts
+- `THIRD_PARTY_NOTICES.md`: bundled third-party asset notices
 
-The font currently includes the full set of modern Hangul syllables, allowing Korean text to be rendered directly by the kernel.
+Generated files live under `build/`, `LineOS/`, and `logs/`.
 
-Because the complete font data is embedded in the kernel image, it currently represents a significant portion of the kernel size.
+## Build Requirements
 
-## Planned Features
+Linux is the primary development environment.
 
-* Physical memory manager
-* Virtual memory manager
-* Kernel heap allocator
-* GDT initialization
-* IDT initialization
-* CPU exception handlers
-* Kernel panic diagnostics
-* Register and stack dumps
-* Local APIC initialization
-* I/O APIC support
-* HPET initialization
-* TSC calibration
-* TSC-deadline timer support
-* LAPIC timer fallback
-* Keyboard input
-* Interactive kernel console
-* Multicore processor initialization
-* Task scheduling
-* Multitasking
-* File system support
-* Storage device drivers
-* User mode
-* System calls
-* Executable loading
+Typical requirements:
 
-## Memory Requirements
+- `clang`
+- `ld.lld`
+- `make`
+- `qemu-system-x86_64`
+- `qemu-img`
+- `parted`
+- `mkfs.vfat`
+- `mkfs.ext3`
+- `losetup`
+- OVMF firmware
 
-The currently tested minimum memory configuration is approximately `60 MiB`.
-
-For practical use, the recommended minimum is:
-
-* Minimum: `64 MiB`
-* Recommended: `128 MiB` or more
-
-A significant amount of memory is currently used by the embedded 8-bit bitmap font and the graphical framebuffer.
-
-These requirements may change as the kernel and font storage system are optimized.
-
-## Building
-
-LineOS uses EDK II for the UEFI bootloader and a freestanding C toolchain for the kernel.
-
-Typical build requirements include:
-
-* EDK II
-* Clang
-* GNU Binutils (make)
-* QEMU
-* OVMF
-* Git
-* PowerShell
-
-The project is currently developed and tested primarily on Windows using PowerShell scripts and QEMU.
-
-Detailed build instructions will be added as the build system becomes more stable.
+KVM is used when available.
 
 ## Running
 
-LineOS is primarily tested under QEMU using OVMF firmware.
+From the project root:
 
-The current development environment boots the UEFI loader, loads the kernel, initializes the framebuffer, and displays the graphical kernel interface.
+```bash
+./run.sh
+```
 
-Real hardware support has not yet been extensively tested.
+The script:
 
-## Development Status
+1. Builds the bootloader and kernel.
+2. Creates `LineOS/LineOS.img` if it does not exist.
+3. Creates a GPT layout with a 300 MiB EFI partition and an EXT3 root partition.
+4. Copies `BOOTX64.EFI` and `LINEOS_KERNEL.ELF` into the EFI partition.
+5. Starts QEMU with Q35, VirtIO GPU, VirtIO block, OVMF, and debugcon logging.
 
-LineOS is under active development.
+Runtime logs:
 
-The project is experimental and is not intended for production use. Internal APIs, boot structures, memory layouts, rendering interfaces, and build procedures may change frequently.
+- `logs/qemu.log`: QEMU debug log
+- `logs/debugcon.log`: kernel debugcon output
 
-The current development focus is on:
+## Font Rendering
 
-* Framebuffer rendering
-* Unicode text output
-* Kernel diagnostics
-* CPU initialization
-* Memory management
-* Interrupt and timer infrastructure
+LineOS currently embeds two TrueType font files into the kernel image with assembler `.incbin`:
 
-## Goals
+- `kernel/assets/fonts/PTDSB.ttf`: Pretendard SemiBold
+- `kernel/assets/fonts/JBMNFSB.ttf`: JetBrains Mono Nerd Font SemiBold
 
-The main goals of LineOS are:
+The kernel uses the embedded TrueType data for runtime glyph rasterization and draws directly into the VirtIO GPU framebuffer.
 
-* Learn how modern UEFI operating systems boot
-* Build a kernel without depending on an existing operating system
-* Understand x86_64 processor and platform architecture
-* Explore low-level memory and hardware management
-* Build a graphical kernel interface
-* Support Korean text directly inside the kernel
-* Maintain a clean and understandable pure C codebase
-* Gradually develop a usable 64-bit hobby operating system
+The current test screen renders:
+
+- English ASCII
+- digits and symbols
+- Korean Hangul text
+- Nerd Font private-use glyphs
+
+The bundled fonts are third-party assets. See `THIRD_PARTY_NOTICES.md` and `LICENSES/OFL-1.1.txt`.
+
+## Memory Notes
+
+The kernel uses a physical page bitmap initialized from the UEFI memory map.
+
+Important boot metadata includes:
+
+- memory map pointer and descriptor size
+- ACPI RSDP pointer
+- GOP information
+- loaded kernel base, size, and entry address
+
+The kernel image is marked used during memory initialization so page allocation does not overwrite the loaded kernel or embedded font data.
+
+## Planned Work
+
+- VirtIO GPU cleanup and higher-level drawing API
+- Better TrueType text layout and caching
+- Kernel heap allocator
+- EXT2 filesystem read/write support
+- VirtIO block driver
+- Interrupt descriptor table
+- CPU exception handling
+- LAPIC and timer setup
+- Keyboard and mouse input
+- Kernel console
+- Multicore startup
+- Scheduler
+- User mode
+- System calls
+- Executable loading
 
 ## License
 
-Copyright © 2026 LineOS Developer `kljj04`.
+LineOS is licensed under the MIT License. See `LICENSE`.
 
-See the `LICENSE` file for details.
+Third-party fonts are licensed separately under the SIL Open Font License 1.1. See `THIRD_PARTY_NOTICES.md`.
