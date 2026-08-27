@@ -3,8 +3,8 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <memory/memory.h>
-#include <render/gpu/virtio_pci.h>
-#include <render/gpu/virtqueue.h>
+#include <virtio/virtio_pci.h>
+#include <virtio/virtqueue.h>
 
 #define PAGE_SIZE 4096ULL
 
@@ -33,10 +33,10 @@ STATIC VOID MemoryBarrier(VOID)
 BOOLEAN VirtQueueInit(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, UINT16 QueueIndex, UINT16 WantedSize)
 {
     VIRTIO_PCI_COMMON_CONFIG *CommonConfig;
-    UINT16 QueueSize;
-    UINTN DescBytes;
-    UINTN AvailBytes;
-    UINTN UsedBytes;
+    UINT16                    QueueSize;
+    UINTN                     DescBytes;
+    UINTN                     AvailBytes;
+    UINTN                     UsedBytes;
 
     if (Device == NULL || Device->CommonConfig == NULL || Queue == NULL)
     {
@@ -88,13 +88,11 @@ BOOLEAN VirtQueueInit(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, UINT16 QueueI
     return TRUE;
 }
 
-BOOLEAN VirtQueueSend(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, VOID *Request, UINT32 RequestLength, VOID *Response,
-                      UINT32 ResponseLength)
+BOOLEAN VirtQueueSend(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, VOID *Request, UINT32 RequestLength, VOID *Response, UINT32 ResponseLength)
 {
     UINT32 Timeout;
 
-    if (Device == NULL || Queue == NULL || Request == NULL || RequestLength == 0 || Response == NULL ||
-        ResponseLength == 0 || Queue->Size < 2)
+    if (Device == NULL || Queue == NULL || Request == NULL || RequestLength == 0 || Response == NULL || ResponseLength == 0 || Queue->Size < 2)
     {
         LastError = L"virtqueue send args invalid";
         return FALSE;

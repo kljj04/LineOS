@@ -2,7 +2,7 @@ BasedOnStyle: LLVM
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never
-ColumnLimit: 120
+ColumnLimit: 12000
 PointerAlignment: Right
 DerivePointerAlignment: false
 AllowShortFunctionsOnASingleLine: Empty
@@ -13,8 +13,20 @@ BreakBeforeBraces: Allman
 SpaceBeforeParens: ControlStatements
 SpaceAfterCStyleCast: true
 AlignConsecutiveAssignments: None
-AlignConsecutiveDeclarations: None
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCompound: false
+  AlignFunctionPointers: true
+  PadOperators: true
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCompound: false
+  AlignFunctionPointers: false
+  PadOperators: false
 SortIncludes: false
 AttributeMacros: ['__attribute__']
 StatementMacros: ['CLI', 'HLT']
-TypenameMacros: ['VOID', 'INT32', 'STATIC']

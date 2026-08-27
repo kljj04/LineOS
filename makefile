@@ -61,17 +61,25 @@ KERN_CFLAGS = -target x86_64-elf \
 			  -Wunused-variable \
 			  -fshort-wchar
 
+KERN_FLOAT_CFLAGS = $(filter-out -mgeneral-regs-only,$(KERN_CFLAGS)) \
+					-msse2 \
+					-mfpmath=sse
+
 .PHONY: all clean compile_boot compile_kernel link_boot link_kernel
 
 rwildcard = $(foreach d,$(wildcard $1/*),$(call rwildcard,$d,$2)) $(wildcard $1/$2)
 
 BOOT_SRCS = $(call rwildcard,bootloader,*.c)
 KERN_SRCS = $(call rwildcard,kernel,*.c)
+KERN_ASM_SRCS = $(call rwildcard,kernel,*.S)
 
 BOOT_OBJS = $(BOOT_SRCS:.c=.o)
 BOOT_OBJS := $(patsubst %,build/obj/%,$(BOOT_OBJS))
 KERN_OBJS = $(KERN_SRCS:.c=.o)
 KERN_OBJS := $(patsubst %,build/obj/%,$(KERN_OBJS))
+KERN_ASM_OBJS = $(KERN_ASM_SRCS:.S=.o)
+KERN_ASM_OBJS := $(patsubst %,build/obj/%,$(KERN_ASM_OBJS))
+KERN_OBJS += $(KERN_ASM_OBJS)
 
 all:
 	@$(call PRINT_YELLOW,    [*] compile:)
@@ -120,6 +128,26 @@ build/obj/bootloader/%.o: bootloader/%.c
 build/obj/kernel/%.o: kernel/%.c
 	@$(call MKDIR_P,$(dir $@))
 	@$(CC) $(KERN_CFLAGS) -c $< -o $@
+
+build/obj/kernel/%.o: kernel/%.S
+	@$(call MKDIR_P,$(dir $@))
+	@$(CC) $(KERN_CFLAGS) -c $< -o $@
+
+build/obj/kernel/kernel.o: kernel/kernel.c
+	@$(call MKDIR_P,$(dir $@))
+	@$(CC) $(KERN_FLOAT_CFLAGS) -c $< -o $@
+
+build/obj/kernel/src/render/truetype.o: kernel/src/render/truetype.c
+	@$(call MKDIR_P,$(dir $@))
+	@$(CC) $(KERN_FLOAT_CFLAGS) -c $< -o $@
+
+build/obj/kernel/src/render/truetype_engine.o: kernel/src/render/truetype_engine.c
+	@$(call MKDIR_P,$(dir $@))
+	@$(CC) $(KERN_FLOAT_CFLAGS) -c $< -o $@
+
+build/obj/kernel/src/render/truetype_runtime.o: kernel/src/render/truetype_runtime.c
+	@$(call MKDIR_P,$(dir $@))
+	@$(CC) $(KERN_FLOAT_CFLAGS) -c $< -o $@
 
 clean:
 	@$(call RM_RF,build)

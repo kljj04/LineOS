@@ -4,29 +4,29 @@
 
 #include <memory/memory.h>
 #include <pci/pci.h>
-#include <render/gpu/virtio_pci.h>
+#include <virtio/virtio_pci.h>
 
-#define PCI_STATUS_CAPABILITIES 0x10
-#define PCI_CAPABILITY_POINTER 0x34
-#define PCI_CAP_VENDOR_SPECIFIC 0x09
-#define PCI_COMMAND 0x04
-#define PCI_COMMAND_IO_SPACE 0x1
+#define PCI_STATUS_CAPABILITIES  0x10
+#define PCI_CAPABILITY_POINTER   0x34
+#define PCI_CAP_VENDOR_SPECIFIC  0x09
+#define PCI_COMMAND              0x04
+#define PCI_COMMAND_IO_SPACE     0x1
 #define PCI_COMMAND_MEMORY_SPACE 0x2
-#define PCI_COMMAND_BUS_MASTER 0x4
+#define PCI_COMMAND_BUS_MASTER   0x4
 
 #define VIRTIO_PCI_CAP_COMMON_CFG 1
 #define VIRTIO_PCI_CAP_NOTIFY_CFG 2
-#define VIRTIO_PCI_CAP_ISR_CFG 3
+#define VIRTIO_PCI_CAP_ISR_CFG    3
 #define VIRTIO_PCI_CAP_DEVICE_CFG 4
 
 typedef struct PACKED
 {
-    UINT8 CapVendor;
-    UINT8 CapNext;
-    UINT8 CapLength;
-    UINT8 ConfigType;
-    UINT8 BAR;
-    UINT8 Padding[3];
+    UINT8  CapVendor;
+    UINT8  CapNext;
+    UINT8  CapLength;
+    UINT8  ConfigType;
+    UINT8  BAR;
+    UINT8  Padding[3];
     UINT32 Offset;
     UINT32 Length;
 } VIRTIO_PCI_CAP;
@@ -73,7 +73,7 @@ STATIC UINT32 ReadCapability32(PCI_DEVICE *Device, UINT8 CapabilityOffset, UINT8
 STATIC VOID ReadVirtIOCapability(VIRTIO_PCI_DEVICE *VirtIODevice, UINT8 CapabilityOffset)
 {
     VIRTIO_PCI_CAP Capability;
-    PCI_DEVICE *Device = VirtIODevice->PCIDevice;
+    PCI_DEVICE    *Device = VirtIODevice->PCIDevice;
 
     Capability.CapVendor = PCIConfigRead8(Device, CapabilityOffset);
     Capability.CapNext = PCIConfigRead8(Device, (UINT8) (CapabilityOffset + 1));
@@ -122,7 +122,7 @@ STATIC VOID ReadVirtIOCapability(VIRTIO_PCI_DEVICE *VirtIODevice, UINT8 Capabili
 STATIC BOOLEAN ScanCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
 {
     PCI_DEVICE *Device = VirtIODevice->PCIDevice;
-    UINT8 CapabilityOffset;
+    UINT8       CapabilityOffset;
 
     if ((PCIConfigRead16(Device, 0x06) & PCI_STATUS_CAPABILITIES) == 0)
     {
@@ -143,8 +143,7 @@ STATIC BOOLEAN ScanCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
         CapabilityOffset = PCIConfigRead8(Device, (UINT8) (CapabilityOffset + 1)) & 0xFC;
     }
 
-    if (VirtIODevice->CommonConfigBAR == 0xFF || VirtIODevice->NotifyBAR == 0xFF ||
-        VirtIODevice->ISRStatusBAR == 0xFF || VirtIODevice->DeviceConfigBAR == 0xFF)
+    if (VirtIODevice->CommonConfigBAR == 0xFF || VirtIODevice->NotifyBAR == 0xFF || VirtIODevice->ISRStatusBAR == 0xFF || VirtIODevice->DeviceConfigBAR == 0xFF)
     {
         LastError = L"virtio pci caps incomplete";
         return FALSE;
@@ -155,17 +154,12 @@ STATIC BOOLEAN ScanCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
 
 STATIC BOOLEAN MapCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
 {
-    VirtIODevice->CommonConfig = (VIRTIO_PCI_COMMON_CONFIG *) GetBARAddress(VirtIODevice, VirtIODevice->CommonConfigBAR,
-                                                                            VirtIODevice->CommonConfigOffset);
-    VirtIODevice->NotifyBase =
-        (volatile UINT16 *) GetBARAddress(VirtIODevice, VirtIODevice->NotifyBAR, VirtIODevice->NotifyOffset);
-    VirtIODevice->ISRStatus =
-        (volatile UINT8 *) GetBARAddress(VirtIODevice, VirtIODevice->ISRStatusBAR, VirtIODevice->ISRStatusOffset);
-    VirtIODevice->DeviceConfig =
-        (volatile UINT8 *) GetBARAddress(VirtIODevice, VirtIODevice->DeviceConfigBAR, VirtIODevice->DeviceConfigOffset);
+    VirtIODevice->CommonConfig = (VIRTIO_PCI_COMMON_CONFIG *) GetBARAddress(VirtIODevice, VirtIODevice->CommonConfigBAR, VirtIODevice->CommonConfigOffset);
+    VirtIODevice->NotifyBase = (volatile UINT16 *) GetBARAddress(VirtIODevice, VirtIODevice->NotifyBAR, VirtIODevice->NotifyOffset);
+    VirtIODevice->ISRStatus = (volatile UINT8 *) GetBARAddress(VirtIODevice, VirtIODevice->ISRStatusBAR, VirtIODevice->ISRStatusOffset);
+    VirtIODevice->DeviceConfig = (volatile UINT8 *) GetBARAddress(VirtIODevice, VirtIODevice->DeviceConfigBAR, VirtIODevice->DeviceConfigOffset);
 
-    if (VirtIODevice->CommonConfig == NULL || VirtIODevice->NotifyBase == NULL || VirtIODevice->ISRStatus == NULL ||
-        VirtIODevice->DeviceConfig == NULL)
+    if (VirtIODevice->CommonConfig == NULL || VirtIODevice->NotifyBase == NULL || VirtIODevice->ISRStatus == NULL || VirtIODevice->DeviceConfig == NULL)
     {
         LastError = L"virtio pci cap address invalid";
         return FALSE;
@@ -246,7 +240,7 @@ BOOLEAN VirtIOPCIStartDevice(VIRTIO_PCI_DEVICE *VirtIODevice)
 VOID VirtIOPCINotifyQueue(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 QueueIndex)
 {
     VIRTIO_PCI_COMMON_CONFIG *CommonConfig;
-    volatile UINT16 *NotifyAddress;
+    volatile UINT16          *NotifyAddress;
 
     if (VirtIODevice == NULL || VirtIODevice->CommonConfig == NULL || VirtIODevice->NotifyBase == NULL)
     {
@@ -255,8 +249,7 @@ VOID VirtIOPCINotifyQueue(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 QueueIndex)
 
     CommonConfig = VirtIODevice->CommonConfig;
     CommonConfig->QueueSelect = QueueIndex;
-    NotifyAddress = (volatile UINT16 *) ((UINT8 *) VirtIODevice->NotifyBase +
-                                         (CommonConfig->QueueNotifyOff * VirtIODevice->NotifyMultiplier));
+    NotifyAddress = (volatile UINT16 *) ((UINT8 *) VirtIODevice->NotifyBase + (CommonConfig->QueueNotifyOff * VirtIODevice->NotifyMultiplier));
     *NotifyAddress = QueueIndex;
 }
 
