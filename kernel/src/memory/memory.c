@@ -206,6 +206,7 @@ BOOLEAN KMemoryInit(LINEOS_BOOT_INFO *BootInfo)
     KMemSet(PageBitmap, 0xFF, (UINTN) PageBitmapSize);
     MarkConventionalMemoryFree(MemoryMap);
     MarkPagesUsed(0, LOW_MEMORY_RESERVED_PAGES);
+    MarkPagesUsed(PageIndexFromAddress(BootInfo->Kernel.Base), AlignUp(BootInfo->Kernel.Size, PAGE_SIZE) / PAGE_SIZE);
     MarkPagesUsed(PageIndexFromAddress((UINT64) PageBitmap), BitmapPages);
     LastSearchPage = LOW_MEMORY_RESERVED_PAGES;
 

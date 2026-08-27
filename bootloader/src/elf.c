@@ -28,33 +28,22 @@ STATIC UINT64 AlignUp(UINT64 value, UINT64 alignment)
     return (value + alignment - 1) & ~(alignment - 1);
 }
 
-STATIC BOOLEAN ReserveELFSegment(ELF64_PROGRAM_HEADER *ProgramHeader)
+STATIC BOOLEAN ReserveELFImage(UINT64 ImageBase, UINT64 ImageEnd)
 {
     EFI_STATUS status;
     EFI_PHYSICAL_ADDRESS address;
-    UINT64 base;
-    UINT64 end;
     UINTN pages;
 
-    if (ProgramHeader == NULL || ProgramHeader->MemorySize == 0)
+    if (ImageEnd <= ImageBase)
     {
         return FALSE;
     }
 
-    base = AlignDown(ProgramHeader->VirtualAddress, ELF_PAGE_SIZE);
-    end = AlignUp(ProgramHeader->VirtualAddress + ProgramHeader->MemorySize, ELF_PAGE_SIZE);
-
-    if (end <= base)
-    {
-        return FALSE;
-    }
-
-    address = (EFI_PHYSICAL_ADDRESS) base;
-    pages = (UINTN) ((end - base) / ELF_PAGE_SIZE);
+    address = (EFI_PHYSICAL_ADDRESS) ImageBase;
+    pages = (UINTN) ((ImageEnd - ImageBase) / ELF_PAGE_SIZE);
 
     status = UEFIBootServices->AllocatePages(AllocateAddress, EfiLoaderData, pages, &address);
-
-    return !EFI_ERROR(status) && address == (EFI_PHYSICAL_ADDRESS) base;
+    return !EFI_ERROR(status) && address == (EFI_PHYSICAL_ADDRESS) ImageBase;
 }
 
 STATIC EFI_FILE_PROTOCOL *OpenKernelFile(EFI_HANDLE ImageHandle)
@@ -156,6 +145,35 @@ STATIC BOOLEAN LoadELFSegments(VOID)
     for (UINTN i = 0; i < header->ProgramHeaderCount; i++)
     {
         ELF64_PROGRAM_HEADER *ProgramHeader;
+        UINT64 SegmentBase;
+        UINT64 SegmentEnd;
+
+        ProgramHeader = (ELF64_PROGRAM_HEADER *) ((UINT8 *) ELFBuffer + header->ProgramHeaderOffset +
+                                                  i * header->ProgramHeaderSize);
+
+        if (ProgramHeader->Type != PT_LOAD || ProgramHeader->MemorySize == 0)
+            continue;
+
+        SegmentBase = AlignDown(ProgramHeader->VirtualAddress, ELF_PAGE_SIZE);
+        SegmentEnd = AlignUp(ProgramHeader->VirtualAddress + ProgramHeader->MemorySize, ELF_PAGE_SIZE);
+
+        if (SegmentBase < base)
+            base = SegmentBase;
+
+        if (SegmentEnd > size)
+            size = SegmentEnd;
+    }
+
+    if (!ReserveELFImage(base, size))
+    {
+        return FALSE;
+    }
+
+    SetMem((VOID *) base, size - base, 0);
+
+    for (UINTN i = 0; i < header->ProgramHeaderCount; i++)
+    {
+        ELF64_PROGRAM_HEADER *ProgramHeader;
 
         ProgramHeader = (ELF64_PROGRAM_HEADER *) ((UINT8 *) ELFBuffer + header->ProgramHeaderOffset +
                                                   i * header->ProgramHeaderSize);
@@ -163,27 +181,9 @@ STATIC BOOLEAN LoadELFSegments(VOID)
         if (ProgramHeader->Type != PT_LOAD)
             continue;
 
-        if (!ReserveELFSegment(ProgramHeader))
-        {
-            return FALSE;
-        }
-
         CopyMem((VOID *) ProgramHeader->VirtualAddress, (UINT8 *) ELFBuffer + ProgramHeader->Offset,
                 ProgramHeader->FileSize);
 
-        if (ProgramHeader->MemorySize > ProgramHeader->FileSize)
-        {
-            SetMem((VOID *) (ProgramHeader->VirtualAddress + ProgramHeader->FileSize),
-                   ProgramHeader->MemorySize - ProgramHeader->FileSize, 0);
-        }
-
-        if (ProgramHeader->VirtualAddress < base)
-            base = ProgramHeader->VirtualAddress;
-
-        if (ProgramHeader->VirtualAddress + ProgramHeader->MemorySize > size)
-        {
-            size = ProgramHeader->VirtualAddress + ProgramHeader->MemorySize;
-        }
     }
 
     kernel.Base = base;

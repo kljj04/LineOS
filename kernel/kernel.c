@@ -8,13 +8,16 @@
 #include <memory/memory.h>
 #include <pci/pci.h>
 #include <render/gpu/virtio_gpu.h>
+#include <render/truetype_engine.h>
 
 STATIC VOID DrawVirtIOTestWindow(UINT32 Width, UINT32 Height)
 {
-    UINT32 WindowWidth = Width / 2;
-    UINT32 WindowHeight = Height / 2;
+    UINT32 WindowWidth = Width - 160;
+    UINT32 WindowHeight = Height - 160;
     UINT32 WindowX = (Width - WindowWidth) / 2;
     UINT32 WindowY = (Height - WindowHeight) / 2;
+    UINT32 x = WindowX + 48;
+    UINT32 y = WindowY + 96;
 
     VirtIOGPUFill(0x000B1020);
     VirtIOGPUFillRect(WindowX, WindowY, WindowWidth, WindowHeight, 0x00101522);
@@ -26,9 +29,20 @@ STATIC VOID DrawVirtIOTestWindow(UINT32 Width, UINT32 Height)
     VirtIOGPUFillRect(WindowX + 24, WindowY + 16, 18, 18, 0x00FF6666);
     VirtIOGPUFillRect(WindowX + 54, WindowY + 16, 18, 18, 0x00FACC15);
     VirtIOGPUFillRect(WindowX + 84, WindowY + 16, 18, 18, 0x0022C55E);
-    VirtIOGPUFillRect(WindowX + 48, WindowY + 96, WindowWidth - 96, 64, 0x0022D3EE);
-    VirtIOGPUFillRect(WindowX + 48, WindowY + 184, WindowWidth - 160, 32, 0x0094A3B8);
-    VirtIOGPUFillRect(WindowX + 48, WindowY + 236, WindowWidth - 220, 32, 0x0094A3B8);
+
+    TrueTypeSelectFont(TRUE_TYPE_FONT_PRETENDARD);
+    DrawTrueTypeText(L"LineOS TrueType", x, y, 0x0022D3EE, 42);
+    DrawTrueTypeText(L"ASCII: ABCDEFGHIJKLMNOPQRSTUVWXYZ", x, y + 62, 0x00E5E7EB, 28);
+    DrawTrueTypeText(L"ascii: abcdefghijklmnopqrstuvwxyz", x, y + 106, 0x00CBD5E1, 28);
+    DrawTrueTypeText(L"digits: 0123456789  symbols: !@#$%^&*()[]{}<>", x, y + 150, 0x0094A3B8, 24);
+    DrawTrueTypeText(L"한글: 프리텐다드 세미볼드 렌더링 OK", x, y + 196, 0x00F8FAFC, 30);
+
+    TrueTypeSelectFont(TRUE_TYPE_FONT_JETBRAINS_MONO);
+    DrawTrueTypeText(L"JetBrains Mono Nerd Font", x, y + 260, 0x0022D3EE, 30);
+    DrawTrueTypeText(L"ASCII: 0xDEADBEEF -> /home/kljj04/LineOS", x, y + 306, 0x00E5E7EB, 24);
+    DrawTrueTypeText(L"Nerd: \uf120  \uf07b  \uf15b  \uf121  \ue5ff  \ue7a2  \ue7ad  \ue73c", x, y + 356, 0x00FACC15,
+                     34);
+    TrueTypeSelectFont(TRUE_TYPE_FONT_PRETENDARD);
 }
 
 VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
@@ -36,6 +50,19 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
     VIRTIO_GPU_INFO *GPU;
     UINT32 Width;
     UINT32 Height;
+
+    UINT64 CR0;
+    UINT64 CR4;
+
+    ASM("mov %%cr0, %0" : "=r"(CR0));
+    CR0 &= ~(1ULL << 2);
+    CR0 |=  (1ULL << 1);
+    ASM("mov %0, %%cr0" :: "r"(CR0));
+
+    ASM("mov %%cr4, %0" : "=r"(CR4));
+    CR4 |= (1ULL << 9);
+    CR4 |= (1ULL << 10);
+    ASM("mov %0, %%cr4" :: "r"(CR4));
 
     DebugWriteLine("LineOS kernel start");
 
@@ -46,6 +73,15 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
         HLT();
     }
     DebugWriteLine("memory init ok");
+
+    if (!TrueTypeInit())
+    {
+        DebugWriteLine("truetype init failed");
+    }
+    else
+    {
+        DebugWriteLine("truetype init ok");
+    }
 
     if (!PCIInit(BootInfo))
     {

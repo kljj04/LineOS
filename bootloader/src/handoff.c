@@ -30,6 +30,9 @@ BOOLEAN CreateBootInfo(VOID)
     BootInfo->GOP = &GOP;
     BootInfo->MemoryMap = &MemoryMap;
     BootInfo->RSDP = RSDP;
+    BootInfo->Kernel.Base = kernel.Base;
+    BootInfo->Kernel.Size = kernel.Size;
+    BootInfo->Kernel.Entry = kernel.Entry;
 
     return TRUE;
 }

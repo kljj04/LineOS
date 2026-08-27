@@ -7,7 +7,7 @@ ENTRY(KMain)
 
 SECTIONS
 {
-    . = 0x200000;
+    . = 0x4000000;
 
     __kernel_start = .;
 

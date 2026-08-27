@@ -30,6 +30,13 @@ typedef EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER LINEOS_ACPI_RSDP;
 
 typedef struct
 {
+    UINT64 Base;
+    UINT64 Size;
+    UINT64 Entry;
+} LINEOS_KERNEL_IMAGE;
+
+typedef struct
+{
     UINT64 Magic;
     UINT32 Version;
     UINT32 Size;
@@ -37,4 +44,5 @@ typedef struct
     LINEOS_GOP *GOP;
     LINEOS_MEMORY_MAP *MemoryMap;
     LINEOS_ACPI_RSDP *RSDP;
+    LINEOS_KERNEL_IMAGE Kernel;
 } LINEOS_BOOT_INFO;

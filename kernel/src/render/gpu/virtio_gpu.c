@@ -5,16 +5,16 @@
 #include <memory/memory.h>
 #include <pci/pci.h>
 #include <render/gpu/virtio_gpu_protocol.h>
-#include <render/gpu/virtio_pci.h>
+#include <virtio/virtio_pci.h>
 #include <render/gpu/virtio_gpu.h>
-#include <render/gpu/virtqueue.h>
+#include <virtio/virtqueue.h>
 
 STATIC VIRTIO_GPU_INFO VirtIOGPUInfo;
-STATIC CONST CHAR16 *LastError = L"not initialized";
+STATIC CONST CHAR16   *LastError = L"not initialized";
 
 #define VIRTIO_GPU_RESOURCE_FRAMEBUFFER 1
-#define VIRTIO_GPU_BYTES_PER_PIXEL 4
-#define PAGE_SIZE 4096ULL
+#define VIRTIO_GPU_BYTES_PER_PIXEL      4
+#define PAGE_SIZE                       4096ULL
 
 STATIC UINT64 AlignUp(UINT64 Value, UINT64 Alignment)
 {
@@ -43,8 +43,7 @@ STATIC BOOLEAN GetDisplayInfo(VOID)
     Request.Header.Type = VIRTIO_GPU_CMD_GET_DISPLAY_INFO;
     SetCommandDebug(L"display info", Request.Header.Type);
 
-    if (!VirtQueueSend(&VirtIOGPUInfo.Device, &VirtIOGPUInfo.ControlQueue, &Request, sizeof(Request),
-                       &VirtIOGPUInfo.DisplayInfo, sizeof(VirtIOGPUInfo.DisplayInfo)))
+    if (!VirtQueueSend(&VirtIOGPUInfo.Device, &VirtIOGPUInfo.ControlQueue, &Request, sizeof(Request), &VirtIOGPUInfo.DisplayInfo, sizeof(VirtIOGPUInfo.DisplayInfo)))
     {
         LastError = VirtQueueGetLastError();
         return FALSE;
@@ -63,12 +62,11 @@ STATIC BOOLEAN GetDisplayInfo(VOID)
 STATIC BOOLEAN SendNoDataCommand(VOID *Request, UINT32 RequestLength, CONST CHAR16 *Stage)
 {
     VIRTIO_GPU_CTRL_HEADER *RequestHeader = (VIRTIO_GPU_CTRL_HEADER *) Request;
-    VIRTIO_GPU_CTRL_HEADER Response;
+    VIRTIO_GPU_CTRL_HEADER  Response;
 
     KMemSet(&Response, 0, sizeof(Response));
     SetCommandDebug(Stage, RequestHeader->Type);
-    if (!VirtQueueSend(&VirtIOGPUInfo.Device, &VirtIOGPUInfo.ControlQueue, Request, RequestLength, &Response,
-                       sizeof(Response)))
+    if (!VirtQueueSend(&VirtIOGPUInfo.Device, &VirtIOGPUInfo.ControlQueue, Request, RequestLength, &Response, sizeof(Response)))
     {
         LastError = VirtQueueGetLastError();
         return FALSE;
@@ -137,10 +135,10 @@ BOOLEAN VirtIOGPUInit(VOID)
 
 BOOLEAN VirtIOGPUCreateFrameBuffer(UINT32 Width, UINT32 Height)
 {
-    VIRTIO_GPU_RESOURCE_CREATE_2D_REQUEST CreateRequest;
+    VIRTIO_GPU_RESOURCE_CREATE_2D_REQUEST      CreateRequest;
     VIRTIO_GPU_RESOURCE_ATTACH_BACKING_REQUEST AttachRequest;
-    UINT64 FrameBufferBytes;
-    UINT64 FrameBufferPages;
+    UINT64                                     FrameBufferBytes;
+    UINT64                                     FrameBufferPages;
 
     if (!VirtIOGPUInfo.Found)
     {
@@ -217,8 +215,7 @@ VOID VirtIOGPUFillRect(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 C
     UINT32 MaxY;
     UINT32 Pixel = Color | 0xFF000000;
 
-    if (VirtIOGPUInfo.FrameBuffer == NULL || X >= VirtIOGPUInfo.FrameBufferWidth ||
-        Y >= VirtIOGPUInfo.FrameBufferHeight)
+    if (VirtIOGPUInfo.FrameBuffer == NULL || X >= VirtIOGPUInfo.FrameBufferWidth || Y >= VirtIOGPUInfo.FrameBufferHeight)
     {
         return;
     }
@@ -249,8 +246,7 @@ VOID VirtIOGPUFillRect(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 C
 
 UINT32 VirtIOGPUReadPixel(UINT32 X, UINT32 Y)
 {
-    if (VirtIOGPUInfo.FrameBuffer == NULL || X >= VirtIOGPUInfo.FrameBufferWidth ||
-        Y >= VirtIOGPUInfo.FrameBufferHeight)
+    if (VirtIOGPUInfo.FrameBuffer == NULL || X >= VirtIOGPUInfo.FrameBufferWidth || Y >= VirtIOGPUInfo.FrameBufferHeight)
     {
         return 0;
     }
@@ -265,9 +261,9 @@ STATIC VOID MemoryFence(VOID)
 
 BOOLEAN VirtIOGPUFlush(VOID)
 {
-    VIRTIO_GPU_SET_SCANOUT_REQUEST ScanoutRequest;
+    VIRTIO_GPU_SET_SCANOUT_REQUEST         ScanoutRequest;
     VIRTIO_GPU_TRANSFER_TO_HOST_2D_REQUEST TransferRequest;
-    VIRTIO_GPU_RESOURCE_FLUSH_REQUEST FlushRequest;
+    VIRTIO_GPU_RESOURCE_FLUSH_REQUEST      FlushRequest;
 
     if (VirtIOGPUInfo.FrameBuffer == NULL)
     {
