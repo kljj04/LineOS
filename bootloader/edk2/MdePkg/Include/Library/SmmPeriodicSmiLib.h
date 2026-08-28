@@ -8,7 +8,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #pragma once
 
-#define PERIODIC_SMI_LIBRARY_ANY_CPU  0xffffffff
+#define PERIODIC_SMI_LIBRARY_ANY_CPU 0xffffffff
 
 /**
   This function returns a pointer to a table of supported periodic
@@ -22,11 +22,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
            by a tick period of 0.
 
 **/
-UINT64 *
-EFIAPI
-PeriodicSmiSupportedTickPeriod (
-  VOID
-  );
+UINT64 *EFIAPI PeriodicSmiSupportedTickPeriod(VOID);
 
 /**
   This function returns the time in 100ns units since the periodic SMI
@@ -41,9 +37,7 @@ PeriodicSmiSupportedTickPeriod (
 **/
 UINT64
 EFIAPI
-PeriodicSmiExecutionTime (
-  VOID
-  );
+PeriodicSmiExecutionTime(VOID);
 
 /**
   This function returns control back to the SMM Foundation.  When the next
@@ -53,11 +47,7 @@ PeriodicSmiExecutionTime (
   then control is returned to the calling function.
 
 **/
-VOID
-EFIAPI
-PeriodicSmiExit (
-  VOID
-  );
+VOID EFIAPI PeriodicSmiExit(VOID);
 
 /**
   This function yields control back to the SMM Foundation.  When the next
@@ -78,9 +68,7 @@ PeriodicSmiExit (
 **/
 UINT64
 EFIAPI
-PeriodicSmiYield (
-  VOID
-  );
+PeriodicSmiYield(VOID);
 
 /**
   This function is a prototype for a periodic SMI handler function
@@ -93,12 +81,7 @@ PeriodicSmiYield (
                           an unknown amount of time.
 
 **/
-typedef
-VOID
-(EFIAPI *PERIODIC_SMI_LIBRARY_HANDLER)(
-  IN CONST VOID  *Context OPTIONAL,
-  IN UINT64      ElapsedTime
-  );
+typedef VOID(EFIAPI *PERIODIC_SMI_LIBRARY_HANDLER)(IN CONST VOID *Context OPTIONAL, IN UINT64 ElapsedTime);
 
 /**
   This function enables a periodic SMI handler.
@@ -142,14 +125,7 @@ VOID
 **/
 EFI_STATUS
 EFIAPI
-PeriodicSmiEnable (
-  IN OUT EFI_HANDLE                    *DispatchHandle     OPTIONAL,
-  IN     PERIODIC_SMI_LIBRARY_HANDLER  DispatchFunction,
-  IN     CONST VOID                    *Context            OPTIONAL,
-  IN     UINT64                        TickPeriod,
-  IN     UINTN                         Cpu,
-  IN     UINTN                         StackSize
-  );
+PeriodicSmiEnable(IN OUT EFI_HANDLE *DispatchHandle OPTIONAL, IN PERIODIC_SMI_LIBRARY_HANDLER DispatchFunction, IN CONST VOID *Context OPTIONAL, IN UINT64 TickPeriod, IN UINTN Cpu, IN UINTN StackSize);
 
 /**
   This function disables a periodic SMI handler that has been previously
@@ -170,6 +146,4 @@ PeriodicSmiEnable (
 **/
 BOOLEAN
 EFIAPI
-PeriodicSmiDisable (
-  IN EFI_HANDLE  DispatchHandle    OPTIONAL
-  );
+PeriodicSmiDisable(IN EFI_HANDLE DispatchHandle OPTIONAL);

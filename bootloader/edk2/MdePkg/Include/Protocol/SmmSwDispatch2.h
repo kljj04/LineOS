@@ -14,15 +14,16 @@
 #include <Protocol/MmSwDispatch.h>
 #include <Pi/PiSmmCis.h>
 
-#define EFI_SMM_SW_DISPATCH2_PROTOCOL_GUID  EFI_MM_SW_DISPATCH_PROTOCOL_GUID
+#define EFI_SMM_SW_DISPATCH2_PROTOCOL_GUID EFI_MM_SW_DISPATCH_PROTOCOL_GUID
 
 ///
 /// A particular chipset may not support all possible software SMI input values.
 /// For example, the ICH supports only values 00h to 0FFh.  The parent only allows a single
 /// child registration for each SwSmiInputValue.
 ///
-typedef struct {
-  UINTN    SwSmiInputValue;
+typedef struct
+{
+    UINTN SwSmiInputValue;
 } EFI_SMM_SW_REGISTER_CONTEXT;
 
 ///
@@ -31,19 +32,20 @@ typedef struct {
 /// to an instance of EFI_SMM_SW_CONTEXT indicating the index of the CPU which generated the
 /// software SMI.
 ///
-typedef struct {
-  ///
-  /// The 0-based index of the CPU which generated the software SMI.
-  ///
-  UINTN    SwSmiCpuIndex;
-  ///
-  /// This value corresponds directly to the CommandPort parameter used in the call to Trigger().
-  ///
-  UINT8    CommandPort;
-  ///
-  /// This value corresponds directly to the DataPort parameter used in the call to Trigger().
-  ///
-  UINT8    DataPort;
+typedef struct
+{
+    ///
+    /// The 0-based index of the CPU which generated the software SMI.
+    ///
+    UINTN SwSmiCpuIndex;
+    ///
+    /// This value corresponds directly to the CommandPort parameter used in the call to Trigger().
+    ///
+    UINT8 CommandPort;
+    ///
+    /// This value corresponds directly to the DataPort parameter used in the call to Trigger().
+    ///
+    UINT8 DataPort;
 } EFI_SMM_SW_CONTEXT;
 
 typedef struct _EFI_SMM_SW_DISPATCH2_PROTOCOL EFI_SMM_SW_DISPATCH2_PROTOCOL;
@@ -77,14 +79,7 @@ typedef struct _EFI_SMM_SW_DISPATCH2_PROTOCOL EFI_SMM_SW_DISPATCH2_PROTOCOL;
   @retval EFI_OUT_OF_RESOURCES   A unique software SMI value could not be assigned
                                  for this dispatch.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SMM_SW_REGISTER2)(
-  IN  CONST EFI_SMM_SW_DISPATCH2_PROTOCOL  *This,
-  IN        EFI_SMM_HANDLER_ENTRY_POINT2   DispatchFunction,
-  IN  OUT   EFI_SMM_SW_REGISTER_CONTEXT    *RegisterContext,
-  OUT       EFI_HANDLE                     *DispatchHandle
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SMM_SW_REGISTER2)(IN CONST EFI_SMM_SW_DISPATCH2_PROTOCOL *This, IN EFI_SMM_HANDLER_ENTRY_POINT2 DispatchFunction, IN OUT EFI_SMM_SW_REGISTER_CONTEXT *RegisterContext, OUT EFI_HANDLE *DispatchHandle);
 
 /**
   Unregister a child SMI source dispatch function for the specified software SMI.
@@ -98,12 +93,7 @@ EFI_STATUS
   @retval EFI_SUCCESS            The dispatch function has been successfully unregistered.
   @retval EFI_INVALID_PARAMETER  The DispatchHandle was not valid.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SMM_SW_UNREGISTER2)(
-  IN CONST EFI_SMM_SW_DISPATCH2_PROTOCOL  *This,
-  IN       EFI_HANDLE                     DispatchHandle
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SMM_SW_UNREGISTER2)(IN CONST EFI_SMM_SW_DISPATCH2_PROTOCOL *This, IN EFI_HANDLE DispatchHandle);
 
 ///
 /// Interface structure for the SMM Software SMI Dispatch Protocol.
@@ -112,14 +102,15 @@ EFI_STATUS
 /// given software.  These handlers will respond to software interrupts, and the maximum software
 /// interrupt in the EFI_SMM_SW_REGISTER_CONTEXT is denoted by MaximumSwiValue.
 ///
-struct _EFI_SMM_SW_DISPATCH2_PROTOCOL {
-  EFI_SMM_SW_REGISTER2      Register;
-  EFI_SMM_SW_UNREGISTER2    UnRegister;
-  ///
-  /// A read-only field that describes the maximum value that can be used in the
-  /// EFI_SMM_SW_DISPATCH2_PROTOCOL.Register() service.
-  ///
-  UINTN                     MaximumSwiValue;
+struct _EFI_SMM_SW_DISPATCH2_PROTOCOL
+{
+    EFI_SMM_SW_REGISTER2   Register;
+    EFI_SMM_SW_UNREGISTER2 UnRegister;
+    ///
+    /// A read-only field that describes the maximum value that can be used in the
+    /// EFI_SMM_SW_DISPATCH2_PROTOCOL.Register() service.
+    ///
+    UINTN MaximumSwiValue;
 };
 
-extern EFI_GUID  gEfiSmmSwDispatch2ProtocolGuid;
+extern EFI_GUID gEfiSmmSwDispatch2ProtocolGuid;

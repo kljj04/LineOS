@@ -21,11 +21,7 @@
                         PE/COFF image that has already been loaded and relocated.
 
 **/
-VOID
-EFIAPI
-PeCoffLoaderRelocateImageExtraAction (
-  IN OUT PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext
-  );
+VOID EFIAPI PeCoffLoaderRelocateImageExtraAction(IN OUT PE_COFF_LOADER_IMAGE_CONTEXT *ImageContext);
 
 /**
   Performs additional actions just before a PE/COFF image is unloaded.  Any resources
@@ -37,8 +33,4 @@ PeCoffLoaderRelocateImageExtraAction (
                         PE/COFF image that is being unloaded.
 
 **/
-VOID
-EFIAPI
-PeCoffLoaderUnloadImageExtraAction (
-  IN OUT PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext
-  );
+VOID EFIAPI PeCoffLoaderUnloadImageExtraAction(IN OUT PE_COFF_LOADER_IMAGE_CONTEXT *ImageContext);

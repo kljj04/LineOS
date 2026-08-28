@@ -24,8 +24,7 @@
   @return The encoded PCI address.
 
 **/
-#define S3_PCI_LIB_ADDRESS(Bus, Device, Function, Register)   \
-  (((Register) & 0xfff) | (((Function) & 0x07) << 12) | (((Device) & 0x1f) << 15) | (((Bus) & 0xff) << 20))
+#define S3_PCI_LIB_ADDRESS(Bus, Device, Function, Register) (((Register) & 0xfff) | (((Function) & 0x07) << 12) | (((Device) & 0x1f) << 15) | (((Bus) & 0xff) << 20))
 
 /**
 
@@ -44,9 +43,7 @@
 **/
 UINT8
 EFIAPI
-S3PciRead8 (
-  IN UINTN  Address
-  );
+S3PciRead8(IN UINTN Address);
 
 /**
   Writes an 8-bit PCI configuration register, and saves the value in the S3
@@ -67,10 +64,7 @@ S3PciRead8 (
 **/
 UINT8
 EFIAPI
-S3PciWrite8 (
-  IN UINTN  Address,
-  IN UINT8  Value
-  );
+S3PciWrite8(IN UINTN Address, IN UINT8 Value);
 
 /**
   Performs a bitwise OR of an 8-bit PCI configuration register with
@@ -94,10 +88,7 @@ S3PciWrite8 (
 **/
 UINT8
 EFIAPI
-S3PciOr8 (
-  IN UINTN  Address,
-  IN UINT8  OrData
-  );
+S3PciOr8(IN UINTN Address, IN UINT8 OrData);
 
 /**
   Performs a bitwise AND of an 8-bit PCI configuration register with an 8-bit
@@ -121,10 +112,7 @@ S3PciOr8 (
 **/
 UINT8
 EFIAPI
-S3PciAnd8 (
-  IN UINTN  Address,
-  IN UINT8  AndData
-  );
+S3PciAnd8(IN UINTN Address, IN UINT8 AndData);
 
 /**
   Performs a bitwise AND of an 8-bit PCI configuration register with an 8-bit
@@ -151,11 +139,7 @@ S3PciAnd8 (
 **/
 UINT8
 EFIAPI
-S3PciAndThenOr8 (
-  IN UINTN  Address,
-  IN UINT8  AndData,
-  IN UINT8  OrData
-  );
+S3PciAndThenOr8(IN UINTN Address, IN UINT8 AndData, IN UINT8 OrData);
 
 /**
   Reads a bit field of a PCI configuration register, and saves the value in
@@ -181,11 +165,7 @@ S3PciAndThenOr8 (
 **/
 UINT8
 EFIAPI
-S3PciBitFieldRead8 (
-  IN UINTN  Address,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit
-  );
+S3PciBitFieldRead8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to a PCI configuration register, and saves the value in
@@ -214,12 +194,7 @@ S3PciBitFieldRead8 (
 **/
 UINT8
 EFIAPI
-S3PciBitFieldWrite8 (
-  IN UINTN  Address,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit,
-  IN UINT8  Value
-  );
+S3PciBitFieldWrite8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 Value);
 
 /**
   Reads a bit field in an 8-bit PCI configuration, performs a bitwise OR, and
@@ -251,12 +226,7 @@ S3PciBitFieldWrite8 (
 **/
 UINT8
 EFIAPI
-S3PciBitFieldOr8 (
-  IN UINTN  Address,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit,
-  IN UINT8  OrData
-  );
+S3PciBitFieldOr8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 OrData);
 
 /**
   Reads a bit field in an 8-bit PCI configuration register, performs a bitwise
@@ -288,12 +258,7 @@ S3PciBitFieldOr8 (
 **/
 UINT8
 EFIAPI
-S3PciBitFieldAnd8 (
-  IN UINTN  Address,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit,
-  IN UINT8  AndData
-  );
+S3PciBitFieldAnd8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 AndData);
 
 /**
   Reads a bit field in an 8-bit Address, performs a bitwise AND followed by a
@@ -328,13 +293,7 @@ S3PciBitFieldAnd8 (
 **/
 UINT8
 EFIAPI
-S3PciBitFieldAndThenOr8 (
-  IN UINTN  Address,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit,
-  IN UINT8  AndData,
-  IN UINT8  OrData
-  );
+S3PciBitFieldAndThenOr8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 AndData, IN UINT8 OrData);
 
 /**
   Reads a 16-bit PCI configuration register, and saves the value in the S3
@@ -355,9 +314,7 @@ S3PciBitFieldAndThenOr8 (
 **/
 UINT16
 EFIAPI
-S3PciRead16 (
-  IN UINTN  Address
-  );
+S3PciRead16(IN UINTN Address);
 
 /**
   Writes a 16-bit PCI configuration register, and saves the value in the S3
@@ -379,10 +336,7 @@ S3PciRead16 (
 **/
 UINT16
 EFIAPI
-S3PciWrite16 (
-  IN UINTN   Address,
-  IN UINT16  Value
-  );
+S3PciWrite16(IN UINTN Address, IN UINT16 Value);
 
 /**
   Performs a bitwise OR of a 16-bit PCI configuration register with
@@ -407,10 +361,7 @@ S3PciWrite16 (
 **/
 UINT16
 EFIAPI
-S3PciOr16 (
-  IN UINTN   Address,
-  IN UINT16  OrData
-  );
+S3PciOr16(IN UINTN Address, IN UINT16 OrData);
 
 /**
   Performs a bitwise AND of a 16-bit PCI configuration register with a 16-bit
@@ -435,10 +386,7 @@ S3PciOr16 (
 **/
 UINT16
 EFIAPI
-S3PciAnd16 (
-  IN UINTN   Address,
-  IN UINT16  AndData
-  );
+S3PciAnd16(IN UINTN Address, IN UINT16 AndData);
 
 /**
   Performs a bitwise AND of a 16-bit PCI configuration register with a 16-bit
@@ -466,11 +414,7 @@ S3PciAnd16 (
 **/
 UINT16
 EFIAPI
-S3PciAndThenOr16 (
-  IN UINTN   Address,
-  IN UINT16  AndData,
-  IN UINT16  OrData
-  );
+S3PciAndThenOr16(IN UINTN Address, IN UINT16 AndData, IN UINT16 OrData);
 
 /**
   Reads a bit field of a PCI configuration register, and saves the value in
@@ -497,11 +441,7 @@ S3PciAndThenOr16 (
 **/
 UINT16
 EFIAPI
-S3PciBitFieldRead16 (
-  IN UINTN  Address,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit
-  );
+S3PciBitFieldRead16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to a PCI configuration register, and saves the value in
@@ -531,12 +471,7 @@ S3PciBitFieldRead16 (
 **/
 UINT16
 EFIAPI
-S3PciBitFieldWrite16 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT16  Value
-  );
+S3PciBitFieldWrite16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 Value);
 
 /**
   Reads a bit field in a 16-bit PCI configuration, performs a bitwise OR, and
@@ -569,12 +504,7 @@ S3PciBitFieldWrite16 (
 **/
 UINT16
 EFIAPI
-S3PciBitFieldOr16 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT16  OrData
-  );
+S3PciBitFieldOr16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 OrData);
 
 /**
   Reads a bit field in a 16-bit PCI configuration register, performs a bitwise
@@ -607,12 +537,7 @@ S3PciBitFieldOr16 (
 **/
 UINT16
 EFIAPI
-S3PciBitFieldAnd16 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT16  AndData
-  );
+S3PciBitFieldAnd16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 AndData);
 
 /**
   Reads a bit field in a 16-bit Address, performs a bitwise AND followed by a
@@ -648,13 +573,7 @@ S3PciBitFieldAnd16 (
 **/
 UINT16
 EFIAPI
-S3PciBitFieldAndThenOr16 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT16  AndData,
-  IN UINT16  OrData
-  );
+S3PciBitFieldAndThenOr16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 AndData, IN UINT16 OrData);
 
 /**
   Reads a 32-bit PCI configuration register, and saves the value in the S3
@@ -675,9 +594,7 @@ S3PciBitFieldAndThenOr16 (
 **/
 UINT32
 EFIAPI
-S3PciRead32 (
-  IN UINTN  Address
-  );
+S3PciRead32(IN UINTN Address);
 
 /**
   Writes a 32-bit PCI configuration register, and saves the value in the S3
@@ -699,10 +616,7 @@ S3PciRead32 (
 **/
 UINT32
 EFIAPI
-S3PciWrite32 (
-  IN UINTN   Address,
-  IN UINT32  Value
-  );
+S3PciWrite32(IN UINTN Address, IN UINT32 Value);
 
 /**
   Performs a bitwise OR of a 32-bit PCI configuration register with
@@ -727,10 +641,7 @@ S3PciWrite32 (
 **/
 UINT32
 EFIAPI
-S3PciOr32 (
-  IN UINTN   Address,
-  IN UINT32  OrData
-  );
+S3PciOr32(IN UINTN Address, IN UINT32 OrData);
 
 /**
   Performs a bitwise AND of a 32-bit PCI configuration register with a 32-bit
@@ -755,10 +666,7 @@ S3PciOr32 (
 **/
 UINT32
 EFIAPI
-S3PciAnd32 (
-  IN UINTN   Address,
-  IN UINT32  AndData
-  );
+S3PciAnd32(IN UINTN Address, IN UINT32 AndData);
 
 /**
   Performs a bitwise AND of a 32-bit PCI configuration register with a 32-bit
@@ -786,11 +694,7 @@ S3PciAnd32 (
 **/
 UINT32
 EFIAPI
-S3PciAndThenOr32 (
-  IN UINTN   Address,
-  IN UINT32  AndData,
-  IN UINT32  OrData
-  );
+S3PciAndThenOr32(IN UINTN Address, IN UINT32 AndData, IN UINT32 OrData);
 
 /**
   Reads a bit field of a PCI configuration register, and saves the value in
@@ -817,11 +721,7 @@ S3PciAndThenOr32 (
 **/
 UINT32
 EFIAPI
-S3PciBitFieldRead32 (
-  IN UINTN  Address,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit
-  );
+S3PciBitFieldRead32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to a PCI configuration register, and saves the value in
@@ -851,12 +751,7 @@ S3PciBitFieldRead32 (
 **/
 UINT32
 EFIAPI
-S3PciBitFieldWrite32 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT32  Value
-  );
+S3PciBitFieldWrite32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 Value);
 
 /**
   Reads a bit field in a 32-bit PCI configuration, performs a bitwise OR, and
@@ -889,12 +784,7 @@ S3PciBitFieldWrite32 (
 **/
 UINT32
 EFIAPI
-S3PciBitFieldOr32 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT32  OrData
-  );
+S3PciBitFieldOr32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 OrData);
 
 /**
   Reads a bit field in a 32-bit PCI configuration register, performs a bitwise
@@ -927,12 +817,7 @@ S3PciBitFieldOr32 (
 **/
 UINT32
 EFIAPI
-S3PciBitFieldAnd32 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT32  AndData
-  );
+S3PciBitFieldAnd32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 AndData);
 
 /**
   Reads a bit field in a 32-bit Address, performs a bitwise AND followed by a
@@ -968,13 +853,7 @@ S3PciBitFieldAnd32 (
 **/
 UINT32
 EFIAPI
-S3PciBitFieldAndThenOr32 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT32  AndData,
-  IN UINT32  OrData
-  );
+S3PciBitFieldAndThenOr32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 AndData, IN UINT32 OrData);
 
 /**
   Reads a range of PCI configuration registers into a caller supplied buffer,
@@ -1002,11 +881,7 @@ S3PciBitFieldAndThenOr32 (
 **/
 UINTN
 EFIAPI
-S3PciReadBuffer (
-  IN  UINTN  StartAddress,
-  IN  UINTN  Size,
-  OUT VOID   *Buffer
-  );
+S3PciReadBuffer(IN UINTN StartAddress, IN UINTN Size, OUT VOID *Buffer);
 
 /**
   Copies the data in a caller supplied buffer to a specified range of PCI
@@ -1035,8 +910,4 @@ S3PciReadBuffer (
 **/
 UINTN
 EFIAPI
-S3PciWriteBuffer (
-  IN UINTN  StartAddress,
-  IN UINTN  Size,
-  IN VOID   *Buffer
-  );
+S3PciWriteBuffer(IN UINTN StartAddress, IN UINTN Size, IN VOID *Buffer);

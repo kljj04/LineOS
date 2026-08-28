@@ -16,7 +16,7 @@ STATIC BOOLEAN GOPSelectMode(EFI_GRAPHICS_OUTPUT_PROTOCOL *GraphicsOutput, UINT3
     for (UINT32 ModeNumber = 0; ModeNumber < GraphicsOutput->Mode->MaxMode; ModeNumber++)
     {
         EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *info;
-        UINTN size;
+        UINTN                                 size;
 
         status = GraphicsOutput->QueryMode(GraphicsOutput, ModeNumber, &size, &info);
 
@@ -40,7 +40,7 @@ STATIC BOOLEAN GOPSelectMode(EFI_GRAPHICS_OUTPUT_PROTOCOL *GraphicsOutput, UINT3
 
 BOOLEAN GOPInit(VOID)
 {
-    EFI_STATUS status;
+    EFI_STATUS                    status;
     EFI_GRAPHICS_OUTPUT_PROTOCOL *GraphicsOutput;
 
     status = UEFIBootServices->LocateProtocol(&gEfiGraphicsOutputProtocolGuid, NULL, (VOID **) &GraphicsOutput);

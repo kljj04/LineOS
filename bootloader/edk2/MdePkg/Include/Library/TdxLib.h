@@ -21,11 +21,7 @@
 **/
 EFI_STATUS
 EFIAPI
-TdAcceptPages (
-  IN UINT64  StartAddress,
-  IN UINT64  NumberOfPages,
-  IN UINT32  PageSize
-  );
+TdAcceptPages(IN UINT64 StartAddress, IN UINT64 NumberOfPages, IN UINT32 PageSize);
 
 /**
   This function extends one of the RTMR measurement register
@@ -43,11 +39,7 @@ TdAcceptPages (
 **/
 EFI_STATUS
 EFIAPI
-TdExtendRtmr (
-  IN  UINT32  *Data,
-  IN  UINT32  DataLen,
-  IN  UINT8   Index
-  );
+TdExtendRtmr(IN UINT32 *Data, IN UINT32 DataLen, IN UINT8 Index);
 
 /**
   This function gets the Td guest shared page mask.
@@ -60,9 +52,7 @@ TdExtendRtmr (
 **/
 UINT64
 EFIAPI
-TdSharedPageMask (
-  VOID
-  );
+TdSharedPageMask(VOID);
 
 /**
   This function gets the maximum number of Virtual CPUs that are usable for
@@ -72,9 +62,7 @@ TdSharedPageMask (
 **/
 UINT32
 EFIAPI
-TdMaxVCpuNum (
-  VOID
-  );
+TdMaxVCpuNum(VOID);
 
 /**
   This function gets the number of Virtual CPUs that are usable for Td
@@ -84,6 +72,4 @@ TdMaxVCpuNum (
 **/
 UINT32
 EFIAPI
-TdVCpuNum (
-  VOID
-  );
+TdVCpuNum(VOID);

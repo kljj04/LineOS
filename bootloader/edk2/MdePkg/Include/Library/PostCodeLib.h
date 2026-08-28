@@ -8,8 +8,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #pragma once
 
-#define POST_CODE_PROPERTY_POST_CODE_ENABLED              0x00000008
-#define POST_CODE_PROPERTY_POST_CODE_DESCRIPTION_ENABLED  0x00000010
+#define POST_CODE_PROPERTY_POST_CODE_ENABLED             0x00000008
+#define POST_CODE_PROPERTY_POST_CODE_DESCRIPTION_ENABLED 0x00000010
 
 /**
   Sends a 32-bit value to a POST card.
@@ -31,9 +31,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 UINT32
 EFIAPI
-PostCode (
-  IN UINT32  Value
-  );
+PostCode(IN UINT32 Value);
 
 /**
   Sends a 32-bit value to a POST and associated ASCII string.
@@ -61,10 +59,7 @@ PostCode (
 **/
 UINT32
 EFIAPI
-PostCodeWithDescription (
-  IN UINT32       Value,
-  IN CONST CHAR8  *Description  OPTIONAL
-  );
+PostCodeWithDescription(IN UINT32 Value, IN CONST CHAR8 *Description OPTIONAL);
 
 /**
   Returns TRUE if POST Codes are enabled.
@@ -80,9 +75,7 @@ PostCodeWithDescription (
 **/
 BOOLEAN
 EFIAPI
-PostCodeEnabled (
-  VOID
-  );
+PostCodeEnabled(VOID);
 
 /**
   Returns TRUE if POST code descriptions are enabled.
@@ -98,9 +91,7 @@ PostCodeEnabled (
 **/
 BOOLEAN
 EFIAPI
-PostCodeDescriptionEnabled (
-  VOID
-  );
+PostCodeDescriptionEnabled(VOID);
 
 /**
   Sends a 32-bit value to a POST card.
@@ -113,7 +104,7 @@ PostCodeDescriptionEnabled (
   @return  Value The 32-bit value to write to the POST card.
 
 **/
-#define POST_CODE(Value)  PostCodeEnabled() ? PostCode(Value) : Value
+#define POST_CODE(Value) PostCodeEnabled() ? PostCode(Value) : Value
 
 /**
   Sends a 32-bit value to a POST and associated ASCII string.
@@ -129,9 +120,4 @@ PostCodeDescriptionEnabled (
 
   @return Value        The 32-bit value to write to the POST card.
 **/
-#define POST_CODE_WITH_DESCRIPTION(Value, Description)  \
-  PostCodeEnabled()                              ?     \
-    (PostCodeDescriptionEnabled()                ?     \
-      PostCodeWithDescription(Value,Description) :     \
-      PostCode(Value))                           :     \
-    Value
+#define POST_CODE_WITH_DESCRIPTION(Value, Description) PostCodeEnabled() ? (PostCodeDescriptionEnabled() ? PostCodeWithDescription(Value, Description) : PostCode(Value)) : Value

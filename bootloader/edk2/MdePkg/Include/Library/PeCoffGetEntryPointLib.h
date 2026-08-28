@@ -27,10 +27,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 RETURN_STATUS
 EFIAPI
-PeCoffLoaderGetEntryPoint (
-  IN  VOID  *Pe32Data,
-  OUT VOID  **EntryPoint
-  );
+PeCoffLoaderGetEntryPoint(IN VOID *Pe32Data, OUT VOID **EntryPoint);
 
 /**
   Returns the machine type of a PE/COFF image.
@@ -46,9 +43,7 @@ PeCoffLoaderGetEntryPoint (
 **/
 UINT16
 EFIAPI
-PeCoffLoaderGetMachineType (
-  IN VOID  *Pe32Data
-  );
+PeCoffLoaderGetMachineType(IN VOID *Pe32Data);
 
 /**
   Returns a pointer to the PDB file name for a PE/COFF image that has been
@@ -69,11 +64,7 @@ PeCoffLoaderGetMachineType (
           if it cannot be retrieved.
 
 **/
-VOID *
-EFIAPI
-PeCoffLoaderGetPdbPointer (
-  IN VOID  *Pe32Data
-  );
+VOID *EFIAPI PeCoffLoaderGetPdbPointer(IN VOID *Pe32Data);
 
 /**
   Returns the size of the PE/COFF headers
@@ -89,9 +80,7 @@ PeCoffLoaderGetPdbPointer (
 **/
 UINT32
 EFIAPI
-PeCoffGetSizeOfHeaders (
-  IN VOID  *Pe32Data
-  );
+PeCoffGetSizeOfHeaders(IN VOID *Pe32Data);
 
 /**
   Returns PE/COFF image base specified by the address in this PE/COFF image.
@@ -107,6 +96,4 @@ PeCoffGetSizeOfHeaders (
 **/
 UINTN
 EFIAPI
-PeCoffSearchImageBase (
-  IN UINTN  Address
-  );
+PeCoffSearchImageBase(IN UINTN Address);

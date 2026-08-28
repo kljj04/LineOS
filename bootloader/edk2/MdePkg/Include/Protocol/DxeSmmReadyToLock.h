@@ -26,6 +26,6 @@
 
 #include <Protocol/DxeMmReadyToLock.h>
 
-#define EFI_DXE_SMM_READY_TO_LOCK_PROTOCOL_GUID  EFI_DXE_MM_READY_TO_LOCK_PROTOCOL_GUID
+#define EFI_DXE_SMM_READY_TO_LOCK_PROTOCOL_GUID EFI_DXE_MM_READY_TO_LOCK_PROTOCOL_GUID
 
-extern EFI_GUID  gEfiDxeSmmReadyToLockProtocolGuid;
+extern EFI_GUID gEfiDxeSmmReadyToLockProtocolGuid;

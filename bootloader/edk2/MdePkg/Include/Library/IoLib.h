@@ -25,8 +25,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#define IO_LIB_ADDRESS(Segment, Port) \
-  ( ((Port) & 0xffff) | (((Segment) & 0xffff) << 16) )
+#define IO_LIB_ADDRESS(Segment, Port) (((Port) & 0xffff) | (((Segment) & 0xffff) << 16))
 
 /**
   Reads an 8-bit I/O port.
@@ -44,9 +43,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 UINT8
 EFIAPI
-IoRead8 (
-  IN      UINTN  Port
-  );
+IoRead8(IN UINTN Port);
 
 /**
   Writes an 8-bit I/O port.
@@ -65,10 +62,7 @@ IoRead8 (
 **/
 UINT8
 EFIAPI
-IoWrite8 (
-  IN      UINTN  Port,
-  IN      UINT8  Value
-  );
+IoWrite8(IN UINTN Port, IN UINT8 Value);
 
 /**
   Reads an 8-bit I/O port fifo into a block of memory.
@@ -87,13 +81,7 @@ IoWrite8 (
   @param  Buffer  The buffer to store the read data into.
 
 **/
-VOID
-EFIAPI
-IoReadFifo8 (
-  IN      UINTN  Port,
-  IN      UINTN  Count,
-  OUT     VOID   *Buffer
-  );
+VOID EFIAPI IoReadFifo8(IN UINTN Port, IN UINTN Count, OUT VOID *Buffer);
 
 /**
   Writes a block of memory into an 8-bit I/O port fifo.
@@ -112,13 +100,7 @@ IoReadFifo8 (
   @param  Buffer  The buffer to retrieve the write data from.
 
 **/
-VOID
-EFIAPI
-IoWriteFifo8 (
-  IN      UINTN  Port,
-  IN      UINTN  Count,
-  IN      VOID   *Buffer
-  );
+VOID EFIAPI IoWriteFifo8(IN UINTN Port, IN UINTN Count, IN VOID *Buffer);
 
 /**
   Reads an 8-bit I/O port, performs a bitwise OR, and writes the
@@ -140,10 +122,7 @@ IoWriteFifo8 (
 **/
 UINT8
 EFIAPI
-IoOr8 (
-  IN      UINTN  Port,
-  IN      UINT8  OrData
-  );
+IoOr8(IN UINTN Port, IN UINT8 OrData);
 
 /**
   Reads an 8-bit I/O port, performs a bitwise AND, and writes the result back
@@ -165,10 +144,7 @@ IoOr8 (
 **/
 UINT8
 EFIAPI
-IoAnd8 (
-  IN      UINTN  Port,
-  IN      UINT8  AndData
-  );
+IoAnd8(IN UINTN Port, IN UINT8 AndData);
 
 /**
   Reads an 8-bit I/O port, performs a bitwise AND followed by a bitwise
@@ -192,11 +168,7 @@ IoAnd8 (
 **/
 UINT8
 EFIAPI
-IoAndThenOr8 (
-  IN      UINTN  Port,
-  IN      UINT8  AndData,
-  IN      UINT8  OrData
-  );
+IoAndThenOr8(IN UINTN Port, IN UINT8 AndData, IN UINT8 OrData);
 
 /**
   Reads a bit field of an I/O register.
@@ -220,11 +192,7 @@ IoAndThenOr8 (
 **/
 UINT8
 EFIAPI
-IoBitFieldRead8 (
-  IN      UINTN  Port,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit
-  );
+IoBitFieldRead8(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to an I/O register.
@@ -251,12 +219,7 @@ IoBitFieldRead8 (
 **/
 UINT8
 EFIAPI
-IoBitFieldWrite8 (
-  IN      UINTN  Port,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit,
-  IN      UINT8  Value
-  );
+IoBitFieldWrite8(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 Value);
 
 /**
   Reads a bit field in an 8-bit port, performs a bitwise OR, and writes the
@@ -286,12 +249,7 @@ IoBitFieldWrite8 (
 **/
 UINT8
 EFIAPI
-IoBitFieldOr8 (
-  IN      UINTN  Port,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit,
-  IN      UINT8  OrData
-  );
+IoBitFieldOr8(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 OrData);
 
 /**
   Reads a bit field in an 8-bit port, performs a bitwise AND, and writes the
@@ -321,12 +279,7 @@ IoBitFieldOr8 (
 **/
 UINT8
 EFIAPI
-IoBitFieldAnd8 (
-  IN      UINTN  Port,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit,
-  IN      UINT8  AndData
-  );
+IoBitFieldAnd8(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 AndData);
 
 /**
   Reads a bit field in an 8-bit port, performs a bitwise AND followed by a
@@ -360,13 +313,7 @@ IoBitFieldAnd8 (
 **/
 UINT8
 EFIAPI
-IoBitFieldAndThenOr8 (
-  IN      UINTN  Port,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit,
-  IN      UINT8  AndData,
-  IN      UINT8  OrData
-  );
+IoBitFieldAndThenOr8(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 AndData, IN UINT8 OrData);
 
 /**
   Reads a 16-bit I/O port.
@@ -385,9 +332,7 @@ IoBitFieldAndThenOr8 (
 **/
 UINT16
 EFIAPI
-IoRead16 (
-  IN      UINTN  Port
-  );
+IoRead16(IN UINTN Port);
 
 /**
   Writes a 16-bit I/O port.
@@ -407,10 +352,7 @@ IoRead16 (
 **/
 UINT16
 EFIAPI
-IoWrite16 (
-  IN      UINTN   Port,
-  IN      UINT16  Value
-  );
+IoWrite16(IN UINTN Port, IN UINT16 Value);
 
 /**
   Reads a 16-bit I/O port fifo into a block of memory.
@@ -429,13 +371,7 @@ IoWrite16 (
   @param  Buffer  The buffer to store the read data into.
 
 **/
-VOID
-EFIAPI
-IoReadFifo16 (
-  IN      UINTN  Port,
-  IN      UINTN  Count,
-  OUT     VOID   *Buffer
-  );
+VOID EFIAPI IoReadFifo16(IN UINTN Port, IN UINTN Count, OUT VOID *Buffer);
 
 /**
   Writes a block of memory into a 16-bit I/O port fifo.
@@ -454,13 +390,7 @@ IoReadFifo16 (
   @param  Buffer  The buffer to retrieve the write data from.
 
 **/
-VOID
-EFIAPI
-IoWriteFifo16 (
-  IN      UINTN  Port,
-  IN      UINTN  Count,
-  IN      VOID   *Buffer
-  );
+VOID EFIAPI IoWriteFifo16(IN UINTN Port, IN UINTN Count, IN VOID *Buffer);
 
 /**
   Reads a 16-bit I/O port, performs a bitwise OR, and writes the
@@ -483,10 +413,7 @@ IoWriteFifo16 (
 **/
 UINT16
 EFIAPI
-IoOr16 (
-  IN      UINTN   Port,
-  IN      UINT16  OrData
-  );
+IoOr16(IN UINTN Port, IN UINT16 OrData);
 
 /**
   Reads a 16-bit I/O port, performs a bitwise AND, and writes the result back
@@ -509,10 +436,7 @@ IoOr16 (
 **/
 UINT16
 EFIAPI
-IoAnd16 (
-  IN      UINTN   Port,
-  IN      UINT16  AndData
-  );
+IoAnd16(IN UINTN Port, IN UINT16 AndData);
 
 /**
   Reads a 16-bit I/O port, performs a bitwise AND followed by a bitwise
@@ -537,11 +461,7 @@ IoAnd16 (
 **/
 UINT16
 EFIAPI
-IoAndThenOr16 (
-  IN      UINTN   Port,
-  IN      UINT16  AndData,
-  IN      UINT16  OrData
-  );
+IoAndThenOr16(IN UINTN Port, IN UINT16 AndData, IN UINT16 OrData);
 
 /**
   Reads a bit field of an I/O register.
@@ -566,11 +486,7 @@ IoAndThenOr16 (
 **/
 UINT16
 EFIAPI
-IoBitFieldRead16 (
-  IN      UINTN  Port,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit
-  );
+IoBitFieldRead16(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to an I/O register.
@@ -599,12 +515,7 @@ IoBitFieldRead16 (
 **/
 UINT16
 EFIAPI
-IoBitFieldWrite16 (
-  IN      UINTN   Port,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT16  Value
-  );
+IoBitFieldWrite16(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 Value);
 
 /**
   Reads a bit field in a 16-bit port, performs a bitwise OR, and writes the
@@ -635,12 +546,7 @@ IoBitFieldWrite16 (
 **/
 UINT16
 EFIAPI
-IoBitFieldOr16 (
-  IN      UINTN   Port,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT16  OrData
-  );
+IoBitFieldOr16(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 OrData);
 
 /**
   Reads a bit field in a 16-bit port, performs a bitwise AND, and writes the
@@ -671,12 +577,7 @@ IoBitFieldOr16 (
 **/
 UINT16
 EFIAPI
-IoBitFieldAnd16 (
-  IN      UINTN   Port,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT16  AndData
-  );
+IoBitFieldAnd16(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 AndData);
 
 /**
   Reads a bit field in a 16-bit port, performs a bitwise AND followed by a
@@ -711,13 +612,7 @@ IoBitFieldAnd16 (
 **/
 UINT16
 EFIAPI
-IoBitFieldAndThenOr16 (
-  IN      UINTN   Port,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT16  AndData,
-  IN      UINT16  OrData
-  );
+IoBitFieldAndThenOr16(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 AndData, IN UINT16 OrData);
 
 /**
   Reads a 32-bit I/O port.
@@ -736,9 +631,7 @@ IoBitFieldAndThenOr16 (
 **/
 UINT32
 EFIAPI
-IoRead32 (
-  IN      UINTN  Port
-  );
+IoRead32(IN UINTN Port);
 
 /**
   Writes a 32-bit I/O port.
@@ -758,10 +651,7 @@ IoRead32 (
 **/
 UINT32
 EFIAPI
-IoWrite32 (
-  IN      UINTN   Port,
-  IN      UINT32  Value
-  );
+IoWrite32(IN UINTN Port, IN UINT32 Value);
 
 /**
   Reads a 32-bit I/O port fifo into a block of memory.
@@ -780,13 +670,7 @@ IoWrite32 (
   @param  Buffer  The buffer to store the read data into.
 
 **/
-VOID
-EFIAPI
-IoReadFifo32 (
-  IN      UINTN  Port,
-  IN      UINTN  Count,
-  OUT     VOID   *Buffer
-  );
+VOID EFIAPI IoReadFifo32(IN UINTN Port, IN UINTN Count, OUT VOID *Buffer);
 
 /**
   Writes a block of memory into a 32-bit I/O port fifo.
@@ -805,13 +689,7 @@ IoReadFifo32 (
   @param  Buffer  The buffer to retrieve the write data from.
 
 **/
-VOID
-EFIAPI
-IoWriteFifo32 (
-  IN      UINTN  Port,
-  IN      UINTN  Count,
-  IN      VOID   *Buffer
-  );
+VOID EFIAPI IoWriteFifo32(IN UINTN Port, IN UINTN Count, IN VOID *Buffer);
 
 /**
   Reads a 32-bit I/O port, performs a bitwise OR, and writes the
@@ -834,10 +712,7 @@ IoWriteFifo32 (
 **/
 UINT32
 EFIAPI
-IoOr32 (
-  IN      UINTN   Port,
-  IN      UINT32  OrData
-  );
+IoOr32(IN UINTN Port, IN UINT32 OrData);
 
 /**
   Reads a 32-bit I/O port, performs a bitwise AND, and writes the result back
@@ -860,10 +735,7 @@ IoOr32 (
 **/
 UINT32
 EFIAPI
-IoAnd32 (
-  IN      UINTN   Port,
-  IN      UINT32  AndData
-  );
+IoAnd32(IN UINTN Port, IN UINT32 AndData);
 
 /**
   Reads a 32-bit I/O port, performs a bitwise AND followed by a bitwise
@@ -888,11 +760,7 @@ IoAnd32 (
 **/
 UINT32
 EFIAPI
-IoAndThenOr32 (
-  IN      UINTN   Port,
-  IN      UINT32  AndData,
-  IN      UINT32  OrData
-  );
+IoAndThenOr32(IN UINTN Port, IN UINT32 AndData, IN UINT32 OrData);
 
 /**
   Reads a bit field of an I/O register.
@@ -917,11 +785,7 @@ IoAndThenOr32 (
 **/
 UINT32
 EFIAPI
-IoBitFieldRead32 (
-  IN      UINTN  Port,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit
-  );
+IoBitFieldRead32(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to an I/O register.
@@ -950,12 +814,7 @@ IoBitFieldRead32 (
 **/
 UINT32
 EFIAPI
-IoBitFieldWrite32 (
-  IN      UINTN   Port,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  Value
-  );
+IoBitFieldWrite32(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 Value);
 
 /**
   Reads a bit field in a 32-bit port, performs a bitwise OR, and writes the
@@ -986,12 +845,7 @@ IoBitFieldWrite32 (
 **/
 UINT32
 EFIAPI
-IoBitFieldOr32 (
-  IN      UINTN   Port,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  OrData
-  );
+IoBitFieldOr32(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 OrData);
 
 /**
   Reads a bit field in a 32-bit port, performs a bitwise AND, and writes the
@@ -1022,12 +876,7 @@ IoBitFieldOr32 (
 **/
 UINT32
 EFIAPI
-IoBitFieldAnd32 (
-  IN      UINTN   Port,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  AndData
-  );
+IoBitFieldAnd32(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 AndData);
 
 /**
   Reads a bit field in a 32-bit port, performs a bitwise AND followed by a
@@ -1062,13 +911,7 @@ IoBitFieldAnd32 (
 **/
 UINT32
 EFIAPI
-IoBitFieldAndThenOr32 (
-  IN      UINTN   Port,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  AndData,
-  IN      UINT32  OrData
-  );
+IoBitFieldAndThenOr32(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 AndData, IN UINT32 OrData);
 
 /**
   Reads a 64-bit I/O port.
@@ -1087,9 +930,7 @@ IoBitFieldAndThenOr32 (
 **/
 UINT64
 EFIAPI
-IoRead64 (
-  IN      UINTN  Port
-  );
+IoRead64(IN UINTN Port);
 
 /**
   Writes a 64-bit I/O port.
@@ -1109,10 +950,7 @@ IoRead64 (
 **/
 UINT64
 EFIAPI
-IoWrite64 (
-  IN      UINTN   Port,
-  IN      UINT64  Value
-  );
+IoWrite64(IN UINTN Port, IN UINT64 Value);
 
 /**
   Reads a 64-bit I/O port, performs a bitwise OR, and writes the
@@ -1135,10 +973,7 @@ IoWrite64 (
 **/
 UINT64
 EFIAPI
-IoOr64 (
-  IN      UINTN   Port,
-  IN      UINT64  OrData
-  );
+IoOr64(IN UINTN Port, IN UINT64 OrData);
 
 /**
   Reads a 64-bit I/O port, performs a bitwise AND, and writes the result back
@@ -1161,10 +996,7 @@ IoOr64 (
 **/
 UINT64
 EFIAPI
-IoAnd64 (
-  IN      UINTN   Port,
-  IN      UINT64  AndData
-  );
+IoAnd64(IN UINTN Port, IN UINT64 AndData);
 
 /**
   Reads a 64-bit I/O port, performs a bitwise AND followed by a bitwise
@@ -1189,11 +1021,7 @@ IoAnd64 (
 **/
 UINT64
 EFIAPI
-IoAndThenOr64 (
-  IN      UINTN   Port,
-  IN      UINT64  AndData,
-  IN      UINT64  OrData
-  );
+IoAndThenOr64(IN UINTN Port, IN UINT64 AndData, IN UINT64 OrData);
 
 /**
   Reads a bit field of an I/O register.
@@ -1218,11 +1046,7 @@ IoAndThenOr64 (
 **/
 UINT64
 EFIAPI
-IoBitFieldRead64 (
-  IN      UINTN  Port,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit
-  );
+IoBitFieldRead64(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to an I/O register.
@@ -1251,12 +1075,7 @@ IoBitFieldRead64 (
 **/
 UINT64
 EFIAPI
-IoBitFieldWrite64 (
-  IN      UINTN   Port,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT64  Value
-  );
+IoBitFieldWrite64(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 Value);
 
 /**
   Reads a bit field in a 64-bit port, performs a bitwise OR, and writes the
@@ -1287,12 +1106,7 @@ IoBitFieldWrite64 (
 **/
 UINT64
 EFIAPI
-IoBitFieldOr64 (
-  IN      UINTN   Port,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT64  OrData
-  );
+IoBitFieldOr64(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 OrData);
 
 /**
   Reads a bit field in a 64-bit port, performs a bitwise AND, and writes the
@@ -1323,12 +1137,7 @@ IoBitFieldOr64 (
 **/
 UINT64
 EFIAPI
-IoBitFieldAnd64 (
-  IN      UINTN   Port,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT64  AndData
-  );
+IoBitFieldAnd64(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 AndData);
 
 /**
   Reads a bit field in a 64-bit port, performs a bitwise AND followed by a
@@ -1363,13 +1172,7 @@ IoBitFieldAnd64 (
 **/
 UINT64
 EFIAPI
-IoBitFieldAndThenOr64 (
-  IN      UINTN   Port,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT64  AndData,
-  IN      UINT64  OrData
-  );
+IoBitFieldAndThenOr64(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 AndData, IN UINT64 OrData);
 
 /**
   Reads an 8-bit MMIO register.
@@ -1387,9 +1190,7 @@ IoBitFieldAndThenOr64 (
 **/
 UINT8
 EFIAPI
-MmioRead8 (
-  IN      UINTN  Address
-  );
+MmioRead8(IN UINTN Address);
 
 /**
   Writes an 8-bit MMIO register.
@@ -1408,10 +1209,7 @@ MmioRead8 (
 **/
 UINT8
 EFIAPI
-MmioWrite8 (
-  IN      UINTN  Address,
-  IN      UINT8  Value
-  );
+MmioWrite8(IN UINTN Address, IN UINT8 Value);
 
 /**
   Reads an 8-bit MMIO register, performs a bitwise OR, and writes the
@@ -1433,10 +1231,7 @@ MmioWrite8 (
 **/
 UINT8
 EFIAPI
-MmioOr8 (
-  IN      UINTN  Address,
-  IN      UINT8  OrData
-  );
+MmioOr8(IN UINTN Address, IN UINT8 OrData);
 
 /**
   Reads an 8-bit MMIO register, performs a bitwise AND, and writes the result
@@ -1458,10 +1253,7 @@ MmioOr8 (
 **/
 UINT8
 EFIAPI
-MmioAnd8 (
-  IN      UINTN  Address,
-  IN      UINT8  AndData
-  );
+MmioAnd8(IN UINTN Address, IN UINT8 AndData);
 
 /**
   Reads an 8-bit MMIO register, performs a bitwise AND followed by a bitwise
@@ -1486,11 +1278,7 @@ MmioAnd8 (
 **/
 UINT8
 EFIAPI
-MmioAndThenOr8 (
-  IN      UINTN  Address,
-  IN      UINT8  AndData,
-  IN      UINT8  OrData
-  );
+MmioAndThenOr8(IN UINTN Address, IN UINT8 AndData, IN UINT8 OrData);
 
 /**
   Reads a bit field of a MMIO register.
@@ -1514,11 +1302,7 @@ MmioAndThenOr8 (
 **/
 UINT8
 EFIAPI
-MmioBitFieldRead8 (
-  IN      UINTN  Address,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit
-  );
+MmioBitFieldRead8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to a MMIO register.
@@ -1545,12 +1329,7 @@ MmioBitFieldRead8 (
 **/
 UINT8
 EFIAPI
-MmioBitFieldWrite8 (
-  IN      UINTN  Address,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit,
-  IN      UINT8  Value
-  );
+MmioBitFieldWrite8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 Value);
 
 /**
   Reads a bit field in an 8-bit MMIO register, performs a bitwise OR, and
@@ -1581,12 +1360,7 @@ MmioBitFieldWrite8 (
 **/
 UINT8
 EFIAPI
-MmioBitFieldOr8 (
-  IN      UINTN  Address,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit,
-  IN      UINT8  OrData
-  );
+MmioBitFieldOr8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 OrData);
 
 /**
   Reads a bit field in an 8-bit MMIO register, performs a bitwise AND, and
@@ -1617,12 +1391,7 @@ MmioBitFieldOr8 (
 **/
 UINT8
 EFIAPI
-MmioBitFieldAnd8 (
-  IN      UINTN  Address,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit,
-  IN      UINT8  AndData
-  );
+MmioBitFieldAnd8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 AndData);
 
 /**
   Reads a bit field in an 8-bit MMIO register, performs a bitwise AND followed
@@ -1656,13 +1425,7 @@ MmioBitFieldAnd8 (
 **/
 UINT8
 EFIAPI
-MmioBitFieldAndThenOr8 (
-  IN      UINTN  Address,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit,
-  IN      UINT8  AndData,
-  IN      UINT8  OrData
-  );
+MmioBitFieldAndThenOr8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 AndData, IN UINT8 OrData);
 
 /**
   Reads a 16-bit MMIO register.
@@ -1681,9 +1444,7 @@ MmioBitFieldAndThenOr8 (
 **/
 UINT16
 EFIAPI
-MmioRead16 (
-  IN      UINTN  Address
-  );
+MmioRead16(IN UINTN Address);
 
 /**
   Writes a 16-bit MMIO register.
@@ -1703,10 +1464,7 @@ MmioRead16 (
 **/
 UINT16
 EFIAPI
-MmioWrite16 (
-  IN      UINTN   Address,
-  IN      UINT16  Value
-  );
+MmioWrite16(IN UINTN Address, IN UINT16 Value);
 
 /**
   Reads a 16-bit MMIO register, performs a bitwise OR, and writes the
@@ -1729,10 +1487,7 @@ MmioWrite16 (
 **/
 UINT16
 EFIAPI
-MmioOr16 (
-  IN      UINTN   Address,
-  IN      UINT16  OrData
-  );
+MmioOr16(IN UINTN Address, IN UINT16 OrData);
 
 /**
   Reads a 16-bit MMIO register, performs a bitwise AND, and writes the result
@@ -1755,10 +1510,7 @@ MmioOr16 (
 **/
 UINT16
 EFIAPI
-MmioAnd16 (
-  IN      UINTN   Address,
-  IN      UINT16  AndData
-  );
+MmioAnd16(IN UINTN Address, IN UINT16 AndData);
 
 /**
   Reads a 16-bit MMIO register, performs a bitwise AND followed by a bitwise
@@ -1783,11 +1535,7 @@ MmioAnd16 (
 **/
 UINT16
 EFIAPI
-MmioAndThenOr16 (
-  IN      UINTN   Address,
-  IN      UINT16  AndData,
-  IN      UINT16  OrData
-  );
+MmioAndThenOr16(IN UINTN Address, IN UINT16 AndData, IN UINT16 OrData);
 
 /**
   Reads a bit field of a MMIO register.
@@ -1812,11 +1560,7 @@ MmioAndThenOr16 (
 **/
 UINT16
 EFIAPI
-MmioBitFieldRead16 (
-  IN      UINTN  Address,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit
-  );
+MmioBitFieldRead16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to a MMIO register.
@@ -1844,12 +1588,7 @@ MmioBitFieldRead16 (
 **/
 UINT16
 EFIAPI
-MmioBitFieldWrite16 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT16  Value
-  );
+MmioBitFieldWrite16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 Value);
 
 /**
   Reads a bit field in a 16-bit MMIO register, performs a bitwise OR, and
@@ -1881,12 +1620,7 @@ MmioBitFieldWrite16 (
 **/
 UINT16
 EFIAPI
-MmioBitFieldOr16 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT16  OrData
-  );
+MmioBitFieldOr16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 OrData);
 
 /**
   Reads a bit field in a 16-bit MMIO register, performs a bitwise AND, and
@@ -1918,12 +1652,7 @@ MmioBitFieldOr16 (
 **/
 UINT16
 EFIAPI
-MmioBitFieldAnd16 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT16  AndData
-  );
+MmioBitFieldAnd16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 AndData);
 
 /**
   Reads a bit field in a 16-bit MMIO register, performs a bitwise AND followed
@@ -1958,13 +1687,7 @@ MmioBitFieldAnd16 (
 **/
 UINT16
 EFIAPI
-MmioBitFieldAndThenOr16 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT16  AndData,
-  IN      UINT16  OrData
-  );
+MmioBitFieldAndThenOr16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 AndData, IN UINT16 OrData);
 
 /**
   Reads a 32-bit MMIO register.
@@ -1983,9 +1706,7 @@ MmioBitFieldAndThenOr16 (
 **/
 UINT32
 EFIAPI
-MmioRead32 (
-  IN      UINTN  Address
-  );
+MmioRead32(IN UINTN Address);
 
 /**
   Writes a 32-bit MMIO register.
@@ -2005,10 +1726,7 @@ MmioRead32 (
 **/
 UINT32
 EFIAPI
-MmioWrite32 (
-  IN      UINTN   Address,
-  IN      UINT32  Value
-  );
+MmioWrite32(IN UINTN Address, IN UINT32 Value);
 
 /**
   Reads a 32-bit MMIO register, performs a bitwise OR, and writes the
@@ -2031,10 +1749,7 @@ MmioWrite32 (
 **/
 UINT32
 EFIAPI
-MmioOr32 (
-  IN      UINTN   Address,
-  IN      UINT32  OrData
-  );
+MmioOr32(IN UINTN Address, IN UINT32 OrData);
 
 /**
   Reads a 32-bit MMIO register, performs a bitwise AND, and writes the result
@@ -2057,10 +1772,7 @@ MmioOr32 (
 **/
 UINT32
 EFIAPI
-MmioAnd32 (
-  IN      UINTN   Address,
-  IN      UINT32  AndData
-  );
+MmioAnd32(IN UINTN Address, IN UINT32 AndData);
 
 /**
   Reads a 32-bit MMIO register, performs a bitwise AND followed by a bitwise
@@ -2085,11 +1797,7 @@ MmioAnd32 (
 **/
 UINT32
 EFIAPI
-MmioAndThenOr32 (
-  IN      UINTN   Address,
-  IN      UINT32  AndData,
-  IN      UINT32  OrData
-  );
+MmioAndThenOr32(IN UINTN Address, IN UINT32 AndData, IN UINT32 OrData);
 
 /**
   Reads a bit field of a MMIO register.
@@ -2114,11 +1822,7 @@ MmioAndThenOr32 (
 **/
 UINT32
 EFIAPI
-MmioBitFieldRead32 (
-  IN      UINTN  Address,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit
-  );
+MmioBitFieldRead32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to a MMIO register.
@@ -2146,12 +1850,7 @@ MmioBitFieldRead32 (
 **/
 UINT32
 EFIAPI
-MmioBitFieldWrite32 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  Value
-  );
+MmioBitFieldWrite32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 Value);
 
 /**
   Reads a bit field in a 32-bit MMIO register, performs a bitwise OR, and
@@ -2183,12 +1882,7 @@ MmioBitFieldWrite32 (
 **/
 UINT32
 EFIAPI
-MmioBitFieldOr32 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  OrData
-  );
+MmioBitFieldOr32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 OrData);
 
 /**
   Reads a bit field in a 32-bit MMIO register, performs a bitwise AND, and
@@ -2220,12 +1914,7 @@ MmioBitFieldOr32 (
 **/
 UINT32
 EFIAPI
-MmioBitFieldAnd32 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  AndData
-  );
+MmioBitFieldAnd32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 AndData);
 
 /**
   Reads a bit field in a 32-bit MMIO register, performs a bitwise AND followed
@@ -2260,13 +1949,7 @@ MmioBitFieldAnd32 (
 **/
 UINT32
 EFIAPI
-MmioBitFieldAndThenOr32 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  AndData,
-  IN      UINT32  OrData
-  );
+MmioBitFieldAndThenOr32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 AndData, IN UINT32 OrData);
 
 /**
   Reads a 64-bit MMIO register.
@@ -2285,9 +1968,7 @@ MmioBitFieldAndThenOr32 (
 **/
 UINT64
 EFIAPI
-MmioRead64 (
-  IN      UINTN  Address
-  );
+MmioRead64(IN UINTN Address);
 
 /**
   Writes a 64-bit MMIO register.
@@ -2305,10 +1986,7 @@ MmioRead64 (
 **/
 UINT64
 EFIAPI
-MmioWrite64 (
-  IN      UINTN   Address,
-  IN      UINT64  Value
-  );
+MmioWrite64(IN UINTN Address, IN UINT64 Value);
 
 /**
   Reads a 64-bit MMIO register, performs a bitwise OR, and writes the
@@ -2331,10 +2009,7 @@ MmioWrite64 (
 **/
 UINT64
 EFIAPI
-MmioOr64 (
-  IN      UINTN   Address,
-  IN      UINT64  OrData
-  );
+MmioOr64(IN UINTN Address, IN UINT64 OrData);
 
 /**
   Reads a 64-bit MMIO register, performs a bitwise AND, and writes the result
@@ -2357,10 +2032,7 @@ MmioOr64 (
 **/
 UINT64
 EFIAPI
-MmioAnd64 (
-  IN      UINTN   Address,
-  IN      UINT64  AndData
-  );
+MmioAnd64(IN UINTN Address, IN UINT64 AndData);
 
 /**
   Reads a 64-bit MMIO register, performs a bitwise AND followed by a bitwise
@@ -2385,11 +2057,7 @@ MmioAnd64 (
 **/
 UINT64
 EFIAPI
-MmioAndThenOr64 (
-  IN      UINTN   Address,
-  IN      UINT64  AndData,
-  IN      UINT64  OrData
-  );
+MmioAndThenOr64(IN UINTN Address, IN UINT64 AndData, IN UINT64 OrData);
 
 /**
   Reads a bit field of a MMIO register.
@@ -2414,11 +2082,7 @@ MmioAndThenOr64 (
 **/
 UINT64
 EFIAPI
-MmioBitFieldRead64 (
-  IN      UINTN  Address,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit
-  );
+MmioBitFieldRead64(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to a MMIO register.
@@ -2446,12 +2110,7 @@ MmioBitFieldRead64 (
 **/
 UINT64
 EFIAPI
-MmioBitFieldWrite64 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT64  Value
-  );
+MmioBitFieldWrite64(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 Value);
 
 /**
   Reads a bit field in a 64-bit MMIO register, performs a bitwise OR, and
@@ -2483,12 +2142,7 @@ MmioBitFieldWrite64 (
 **/
 UINT64
 EFIAPI
-MmioBitFieldOr64 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT64  OrData
-  );
+MmioBitFieldOr64(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 OrData);
 
 /**
   Reads a bit field in a 64-bit MMIO register, performs a bitwise AND, and
@@ -2520,12 +2174,7 @@ MmioBitFieldOr64 (
 **/
 UINT64
 EFIAPI
-MmioBitFieldAnd64 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT64  AndData
-  );
+MmioBitFieldAnd64(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 AndData);
 
 /**
   Reads a bit field in a 64-bit MMIO register, performs a bitwise AND followed
@@ -2560,13 +2209,7 @@ MmioBitFieldAnd64 (
 **/
 UINT64
 EFIAPI
-MmioBitFieldAndThenOr64 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT64  AndData,
-  IN      UINT64  OrData
-  );
+MmioBitFieldAndThenOr64(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 AndData, IN UINT64 OrData);
 
 /**
   Copy data from MMIO region to system memory by using 8-bit access.
@@ -2586,13 +2229,7 @@ MmioBitFieldAndThenOr64 (
   @return Buffer
 
 **/
-UINT8 *
-EFIAPI
-MmioReadBuffer8 (
-  IN  UINTN  StartAddress,
-  IN  UINTN  Length,
-  OUT UINT8  *Buffer
-  );
+UINT8 *EFIAPI MmioReadBuffer8(IN UINTN StartAddress, IN UINTN Length, OUT UINT8 *Buffer);
 
 /**
   Copy data from MMIO region to system memory by using 16-bit access.
@@ -2616,13 +2253,7 @@ MmioReadBuffer8 (
   @return Buffer
 
 **/
-UINT16 *
-EFIAPI
-MmioReadBuffer16 (
-  IN  UINTN   StartAddress,
-  IN  UINTN   Length,
-  OUT UINT16  *Buffer
-  );
+UINT16 *EFIAPI MmioReadBuffer16(IN UINTN StartAddress, IN UINTN Length, OUT UINT16 *Buffer);
 
 /**
   Copy data from MMIO region to system memory by using 32-bit access.
@@ -2646,13 +2277,7 @@ MmioReadBuffer16 (
   @return Buffer
 
 **/
-UINT32 *
-EFIAPI
-MmioReadBuffer32 (
-  IN  UINTN   StartAddress,
-  IN  UINTN   Length,
-  OUT UINT32  *Buffer
-  );
+UINT32 *EFIAPI MmioReadBuffer32(IN UINTN StartAddress, IN UINTN Length, OUT UINT32 *Buffer);
 
 /**
   Copy data from MMIO region to system memory by using 64-bit access.
@@ -2676,13 +2301,7 @@ MmioReadBuffer32 (
   @return Buffer
 
 **/
-UINT64 *
-EFIAPI
-MmioReadBuffer64 (
-  IN  UINTN   StartAddress,
-  IN  UINTN   Length,
-  OUT UINT64  *Buffer
-  );
+UINT64 *EFIAPI MmioReadBuffer64(IN UINTN StartAddress, IN UINTN Length, OUT UINT64 *Buffer);
 
 /**
   Copy data from system memory to MMIO region by using 8-bit access.
@@ -2702,13 +2321,7 @@ MmioReadBuffer64 (
   @return Buffer
 
 **/
-UINT8 *
-EFIAPI
-MmioWriteBuffer8 (
-  IN  UINTN        StartAddress,
-  IN  UINTN        Length,
-  IN  CONST UINT8  *Buffer
-  );
+UINT8 *EFIAPI MmioWriteBuffer8(IN UINTN StartAddress, IN UINTN Length, IN CONST UINT8 *Buffer);
 
 /**
   Copy data from system memory to MMIO region by using 16-bit access.
@@ -2733,13 +2346,7 @@ MmioWriteBuffer8 (
   @return Buffer
 
 **/
-UINT16 *
-EFIAPI
-MmioWriteBuffer16 (
-  IN  UINTN         StartAddress,
-  IN  UINTN         Length,
-  IN  CONST UINT16  *Buffer
-  );
+UINT16 *EFIAPI MmioWriteBuffer16(IN UINTN StartAddress, IN UINTN Length, IN CONST UINT16 *Buffer);
 
 /**
   Copy data from system memory to MMIO region by using 32-bit access.
@@ -2764,13 +2371,7 @@ MmioWriteBuffer16 (
   @return Buffer
 
 **/
-UINT32 *
-EFIAPI
-MmioWriteBuffer32 (
-  IN  UINTN         StartAddress,
-  IN  UINTN         Length,
-  IN  CONST UINT32  *Buffer
-  );
+UINT32 *EFIAPI MmioWriteBuffer32(IN UINTN StartAddress, IN UINTN Length, IN CONST UINT32 *Buffer);
 
 /**
   Copy data from system memory to MMIO region by using 64-bit access.
@@ -2795,10 +2396,4 @@ MmioWriteBuffer32 (
   @return Buffer
 
 **/
-UINT64 *
-EFIAPI
-MmioWriteBuffer64 (
-  IN  UINTN         StartAddress,
-  IN  UINTN         Length,
-  IN  CONST UINT64  *Buffer
-  );
+UINT64 *EFIAPI MmioWriteBuffer64(IN UINTN StartAddress, IN UINTN Length, IN CONST UINT64 *Buffer);

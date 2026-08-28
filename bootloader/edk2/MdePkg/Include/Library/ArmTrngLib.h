@@ -34,10 +34,7 @@
 **/
 RETURN_STATUS
 EFIAPI
-GetArmTrngVersion (
-  OUT UINT16  *MajorRevision,
-  OUT UINT16  *MinorRevision
-  );
+GetArmTrngVersion(OUT UINT16 *MajorRevision, OUT UINT16 *MinorRevision);
 
 /** Get the UUID of the Arm TRNG backend.
 
@@ -57,9 +54,7 @@ GetArmTrngVersion (
 **/
 RETURN_STATUS
 EFIAPI
-GetArmTrngUuid (
-  OUT GUID  *Guid
-  );
+GetArmTrngUuid(OUT GUID *Guid);
 
 /** Returns maximum number of entropy bits that can be returned in a single
     call.
@@ -69,9 +64,7 @@ GetArmTrngUuid (
 **/
 UINTN
 EFIAPI
-GetArmTrngMaxSupportedEntropyBits (
-  VOID
-  );
+GetArmTrngMaxSupportedEntropyBits(VOID);
 
 /** Returns N bits of conditioned entropy.
 
@@ -96,8 +89,4 @@ GetArmTrngMaxSupportedEntropyBits (
 **/
 RETURN_STATUS
 EFIAPI
-GetArmTrngEntropy (
-  IN  UINTN  EntropyBits,
-  IN  UINTN  BufferSize,
-  OUT UINT8  *Buffer
-  );
+GetArmTrngEntropy(IN UINTN EntropyBits, IN UINTN BufferSize, OUT UINT8 *Buffer);

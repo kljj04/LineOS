@@ -107,15 +107,7 @@ typedef struct _EFI_GUIDED_SECTION_EXTRACTION_PROTOCOL EFI_GUIDED_SECTION_EXTRAC
                                 Protocol.
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_EXTRACT_GUIDED_SECTION)(
-  IN CONST  EFI_GUIDED_SECTION_EXTRACTION_PROTOCOL  *This,
-  IN CONST  VOID                                    *InputSection,
-  OUT       VOID                                    **OutputBuffer,
-  OUT       UINTN                                   *OutputSize,
-  OUT       UINT32                                  *AuthenticationStatus
-  );
+typedef EFI_STATUS(EFIAPI *EFI_EXTRACT_GUIDED_SECTION)(IN CONST EFI_GUIDED_SECTION_EXTRACTION_PROTOCOL *This, IN CONST VOID *InputSection, OUT VOID **OutputBuffer, OUT UINTN *OutputSize, OUT UINT32 *AuthenticationStatus);
 
 ///
 /// Typically, protocol interface structures are identified by associating them with a GUID. Each
@@ -124,6 +116,7 @@ EFI_STATUS
 /// have the same GUID. The GUID that is associated with an instance of the GUIDed Section
 /// Extraction Protocol is used to correlate it with the GUIDed section type that it is intended to process.
 ///
-struct _EFI_GUIDED_SECTION_EXTRACTION_PROTOCOL {
-  EFI_EXTRACT_GUIDED_SECTION    ExtractSection;
+struct _EFI_GUIDED_SECTION_EXTRACTION_PROTOCOL
+{
+    EFI_EXTRACT_GUIDED_SECTION ExtractSection;
 };

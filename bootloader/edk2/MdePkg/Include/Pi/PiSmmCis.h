@@ -16,10 +16,10 @@ typedef struct _EFI_SMM_SYSTEM_TABLE2 EFI_SMM_SYSTEM_TABLE2;
 //
 // Define new MM related definition introduced by PI 1.5.
 //
-#define  SMM_SMST_SIGNATURE                MM_MMST_SIGNATURE
-#define  SMM_SPECIFICATION_MAJOR_REVISION  MM_SPECIFICATION_MAJOR_REVISION
-#define  SMM_SPECIFICATION_MINOR_REVISION  MM_SPECIFICATION_MINOR_REVISION
-#define  EFI_SMM_SYSTEM_TABLE2_REVISION    EFI_MM_SYSTEM_TABLE_REVISION
+#define SMM_SMST_SIGNATURE               MM_MMST_SIGNATURE
+#define SMM_SPECIFICATION_MAJOR_REVISION MM_SPECIFICATION_MAJOR_REVISION
+#define SMM_SPECIFICATION_MINOR_REVISION MM_SPECIFICATION_MINOR_REVISION
+#define EFI_SMM_SYSTEM_TABLE2_REVISION   EFI_MM_SYSTEM_TABLE_REVISION
 
 /**
   Adds, updates, or removes a configuration table entry from the System Management System Table.
@@ -39,50 +39,44 @@ typedef struct _EFI_SMM_SYSTEM_TABLE2 EFI_SMM_SYSTEM_TABLE2;
   @retval EFI_NOT_FOUND          An attempt was made to delete a non-existent entry.
   @retval EFI_OUT_OF_RESOURCES   There is not enough memory available to complete the operation.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SMM_INSTALL_CONFIGURATION_TABLE2)(
-  IN CONST EFI_SMM_SYSTEM_TABLE2    *SystemTable,
-  IN CONST EFI_GUID                 *Guid,
-  IN VOID                           *Table,
-  IN UINTN                          TableSize
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SMM_INSTALL_CONFIGURATION_TABLE2)(IN CONST EFI_SMM_SYSTEM_TABLE2 *SystemTable, IN CONST EFI_GUID *Guid, IN VOID *Table, IN UINTN TableSize);
 
-typedef  EFI_MM_STARTUP_THIS_AP          EFI_SMM_STARTUP_THIS_AP;
-typedef  EFI_MM_NOTIFY_FN                EFI_SMM_NOTIFY_FN;
-typedef  EFI_MM_REGISTER_PROTOCOL_NOTIFY EFI_SMM_REGISTER_PROTOCOL_NOTIFY;
-typedef  EFI_MM_INTERRUPT_MANAGE         EFI_SMM_INTERRUPT_MANAGE;
-typedef  EFI_MM_HANDLER_ENTRY_POINT      EFI_SMM_HANDLER_ENTRY_POINT2;
-typedef  EFI_MM_INTERRUPT_REGISTER       EFI_SMM_INTERRUPT_REGISTER;
-typedef  EFI_MM_INTERRUPT_UNREGISTER     EFI_SMM_INTERRUPT_UNREGISTER;
+typedef EFI_MM_STARTUP_THIS_AP          EFI_SMM_STARTUP_THIS_AP;
+typedef EFI_MM_NOTIFY_FN                EFI_SMM_NOTIFY_FN;
+typedef EFI_MM_REGISTER_PROTOCOL_NOTIFY EFI_SMM_REGISTER_PROTOCOL_NOTIFY;
+typedef EFI_MM_INTERRUPT_MANAGE         EFI_SMM_INTERRUPT_MANAGE;
+typedef EFI_MM_HANDLER_ENTRY_POINT      EFI_SMM_HANDLER_ENTRY_POINT2;
+typedef EFI_MM_INTERRUPT_REGISTER       EFI_SMM_INTERRUPT_REGISTER;
+typedef EFI_MM_INTERRUPT_UNREGISTER     EFI_SMM_INTERRUPT_UNREGISTER;
 
 ///
 /// Processor information and functionality needed by SMM Foundation.
 ///
-typedef struct _EFI_SMM_ENTRY_CONTEXT {
-  EFI_SMM_STARTUP_THIS_AP    SmmStartupThisAp;
-  ///
-  /// A number between zero and the NumberOfCpus field. This field designates which
-  /// processor is executing the SMM Foundation.
-  ///
-  UINTN                      CurrentlyExecutingCpu;
-  ///
-  /// The number of possible processors in the platform.  This is a 1 based
-  /// counter.  This does not indicate the number of processors that entered SMM.
-  ///
-  UINTN                      NumberOfCpus;
-  ///
-  /// Points to an array, where each element describes the number of bytes in the
-  /// corresponding save state specified by CpuSaveState. There are always
-  /// NumberOfCpus entries in the array.
-  ///
-  UINTN                      *CpuSaveStateSize;
-  ///
-  /// Points to an array, where each element is a pointer to a CPU save state. The
-  /// corresponding element in CpuSaveStateSize specifies the number of bytes in the
-  /// save state area. There are always NumberOfCpus entries in the array.
-  ///
-  VOID                       **CpuSaveState;
+typedef struct _EFI_SMM_ENTRY_CONTEXT
+{
+    EFI_SMM_STARTUP_THIS_AP SmmStartupThisAp;
+    ///
+    /// A number between zero and the NumberOfCpus field. This field designates which
+    /// processor is executing the SMM Foundation.
+    ///
+    UINTN CurrentlyExecutingCpu;
+    ///
+    /// The number of possible processors in the platform.  This is a 1 based
+    /// counter.  This does not indicate the number of processors that entered SMM.
+    ///
+    UINTN NumberOfCpus;
+    ///
+    /// Points to an array, where each element describes the number of bytes in the
+    /// corresponding save state specified by CpuSaveState. There are always
+    /// NumberOfCpus entries in the array.
+    ///
+    UINTN *CpuSaveStateSize;
+    ///
+    /// Points to an array, where each element is a pointer to a CPU save state. The
+    /// corresponding element in CpuSaveStateSize specifies the number of bytes in the
+    /// save state area. There are always NumberOfCpus entries in the array.
+    ///
+    VOID **CpuSaveState;
 } EFI_SMM_ENTRY_CONTEXT;
 
 /**
@@ -90,11 +84,7 @@ typedef struct _EFI_SMM_ENTRY_CONTEXT {
 
   @param[in] SmmEntryContext  Processor information and functionality needed by SMM Foundation.
 **/
-typedef
-VOID
-(EFIAPI *EFI_SMM_ENTRY_POINT)(
-  IN CONST EFI_SMM_ENTRY_CONTEXT  *SmmEntryContext
-  );
+typedef VOID(EFIAPI *EFI_SMM_ENTRY_POINT)(IN CONST EFI_SMM_ENTRY_CONTEXT *SmmEntryContext);
 
 ///
 /// System Management System Table (SMST)
@@ -103,95 +93,96 @@ VOID
 /// services for managing SMRAM allocation and providing basic I/O services. These services are
 /// intended for both preboot and runtime usage.
 ///
-struct _EFI_SMM_SYSTEM_TABLE2 {
-  ///
-  /// The table header for the SMST.
-  ///
-  EFI_TABLE_HEADER                        Hdr;
-  ///
-  /// A pointer to a NULL-terminated Unicode string containing the vendor name.
-  /// It is permissible for this pointer to be NULL.
-  ///
-  CHAR16                                  *SmmFirmwareVendor;
-  ///
-  /// The particular revision of the firmware.
-  ///
-  UINT32                                  SmmFirmwareRevision;
+struct _EFI_SMM_SYSTEM_TABLE2
+{
+    ///
+    /// The table header for the SMST.
+    ///
+    EFI_TABLE_HEADER Hdr;
+    ///
+    /// A pointer to a NULL-terminated Unicode string containing the vendor name.
+    /// It is permissible for this pointer to be NULL.
+    ///
+    CHAR16 *SmmFirmwareVendor;
+    ///
+    /// The particular revision of the firmware.
+    ///
+    UINT32 SmmFirmwareRevision;
 
-  EFI_SMM_INSTALL_CONFIGURATION_TABLE2    SmmInstallConfigurationTable;
+    EFI_SMM_INSTALL_CONFIGURATION_TABLE2 SmmInstallConfigurationTable;
 
-  ///
-  /// I/O Service
-  ///
-  EFI_SMM_CPU_IO2_PROTOCOL                SmmIo;
+    ///
+    /// I/O Service
+    ///
+    EFI_SMM_CPU_IO2_PROTOCOL SmmIo;
 
-  ///
-  /// Runtime memory services
-  ///
-  EFI_ALLOCATE_POOL                       SmmAllocatePool;
-  EFI_FREE_POOL                           SmmFreePool;
-  EFI_ALLOCATE_PAGES                      SmmAllocatePages;
-  EFI_FREE_PAGES                          SmmFreePages;
+    ///
+    /// Runtime memory services
+    ///
+    EFI_ALLOCATE_POOL  SmmAllocatePool;
+    EFI_FREE_POOL      SmmFreePool;
+    EFI_ALLOCATE_PAGES SmmAllocatePages;
+    EFI_FREE_PAGES     SmmFreePages;
 
-  ///
-  /// MP service
-  ///
-  EFI_SMM_STARTUP_THIS_AP                 SmmStartupThisAp;
+    ///
+    /// MP service
+    ///
+    EFI_SMM_STARTUP_THIS_AP SmmStartupThisAp;
 
-  ///
-  /// CPU information records
-  ///
+    ///
+    /// CPU information records
+    ///
 
-  ///
-  /// A number between zero and and the NumberOfCpus field. This field designates
-  /// which processor is executing the SMM infrastructure.
-  ///
-  UINTN    CurrentlyExecutingCpu;
-  ///
-  /// The number of possible processors in the platform.  This is a 1 based counter.
-  ///
-  UINTN    NumberOfCpus;
-  ///
-  /// Points to an array, where each element describes the number of bytes in the
-  /// corresponding save state specified by CpuSaveState. There are always
-  /// NumberOfCpus entries in the array.
-  ///
-  UINTN    *CpuSaveStateSize;
-  ///
-  /// Points to an array, where each element is a pointer to a CPU save state. The
-  /// corresponding element in CpuSaveStateSize specifies the number of bytes in the
-  /// save state area. There are always NumberOfCpus entries in the array.
-  ///
-  VOID     **CpuSaveState;
+    ///
+    /// A number between zero and and the NumberOfCpus field. This field designates
+    /// which processor is executing the SMM infrastructure.
+    ///
+    UINTN CurrentlyExecutingCpu;
+    ///
+    /// The number of possible processors in the platform.  This is a 1 based counter.
+    ///
+    UINTN NumberOfCpus;
+    ///
+    /// Points to an array, where each element describes the number of bytes in the
+    /// corresponding save state specified by CpuSaveState. There are always
+    /// NumberOfCpus entries in the array.
+    ///
+    UINTN *CpuSaveStateSize;
+    ///
+    /// Points to an array, where each element is a pointer to a CPU save state. The
+    /// corresponding element in CpuSaveStateSize specifies the number of bytes in the
+    /// save state area. There are always NumberOfCpus entries in the array.
+    ///
+    VOID **CpuSaveState;
 
-  ///
-  /// Extensibility table
-  ///
+    ///
+    /// Extensibility table
+    ///
 
-  ///
-  /// The number of UEFI Configuration Tables in the buffer SmmConfigurationTable.
-  ///
-  UINTN                               NumberOfTableEntries;
-  ///
-  /// A pointer to the UEFI Configuration Tables. The number of entries in the table is
-  /// NumberOfTableEntries.
-  ///
-  EFI_CONFIGURATION_TABLE             *SmmConfigurationTable;
+    ///
+    /// The number of UEFI Configuration Tables in the buffer SmmConfigurationTable.
+    ///
+    UINTN NumberOfTableEntries;
+    ///
+    /// A pointer to the UEFI Configuration Tables. The number of entries in the table is
+    /// NumberOfTableEntries.
+    ///
+    EFI_CONFIGURATION_TABLE *SmmConfigurationTable;
 
-  ///
-  /// Protocol services
-  ///
-  EFI_INSTALL_PROTOCOL_INTERFACE      SmmInstallProtocolInterface;
-  EFI_UNINSTALL_PROTOCOL_INTERFACE    SmmUninstallProtocolInterface;
-  EFI_HANDLE_PROTOCOL                 SmmHandleProtocol;
-  EFI_SMM_REGISTER_PROTOCOL_NOTIFY    SmmRegisterProtocolNotify;
-  EFI_LOCATE_HANDLE                   SmmLocateHandle;
-  EFI_LOCATE_PROTOCOL                 SmmLocateProtocol;
+    ///
+    /// Protocol services
+    ///
+    EFI_INSTALL_PROTOCOL_INTERFACE   SmmInstallProtocolInterface;
+    EFI_UNINSTALL_PROTOCOL_INTERFACE SmmUninstallProtocolInterface;
+    EFI_HANDLE_PROTOCOL              SmmHandleProtocol;
+    EFI_SMM_REGISTER_PROTOCOL_NOTIFY SmmRegisterProtocolNotify;
+    EFI_LOCATE_HANDLE                SmmLocateHandle;
+    EFI_LOCATE_PROTOCOL              SmmLocateProtocol;
 
-  ///
-  /// SMI Management functions
-  ///
-  EFI_SMM_INTERRUPT_MANAGE            SmiManage;
-  EFI_SMM_INTERRUPT_REGISTER          SmiHandlerRegister;
-  EFI_SMM_INTERRUPT_UNREGISTER        SmiHandlerUnRegister;
+    ///
+    /// SMI Management functions
+    ///
+    EFI_SMM_INTERRUPT_MANAGE     SmiManage;
+    EFI_SMM_INTERRUPT_REGISTER   SmiHandlerRegister;
+    EFI_SMM_INTERRUPT_UNREGISTER SmiHandlerUnRegister;
 };

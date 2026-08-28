@@ -193,7 +193,7 @@ BOOLEAN VirtIOGPUCreateFrameBuffer(UINT32 Width, UINT32 Height)
     return TRUE;
 }
 
-VOID VirtIOGPUFill(UINT32 Color)
+VOID FillScreen(UINT32 Color)
 {
     UINT64 PixelCount;
 
@@ -209,7 +209,7 @@ VOID VirtIOGPUFill(UINT32 Color)
     }
 }
 
-VOID VirtIOGPUFillRect(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 Color)
+VOID FillRect(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 Color)
 {
     UINT32 MaxX;
     UINT32 MaxY;
@@ -244,7 +244,7 @@ VOID VirtIOGPUFillRect(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 C
     }
 }
 
-UINT32 VirtIOGPUReadPixel(UINT32 X, UINT32 Y)
+UINT32 ReadPixel(UINT32 X, UINT32 Y)
 {
     if (VirtIOGPUInfo.FrameBuffer == NULL || X >= VirtIOGPUInfo.FrameBufferWidth || Y >= VirtIOGPUInfo.FrameBufferHeight)
     {
@@ -256,7 +256,7 @@ UINT32 VirtIOGPUReadPixel(UINT32 X, UINT32 Y)
 
 STATIC VOID MemoryFence(VOID)
 {
-    __asm__ volatile("mfence" ::: "memory");
+    ASM("mfence" ::: "memory");
 }
 
 BOOLEAN VirtIOGPUFlush(VOID)

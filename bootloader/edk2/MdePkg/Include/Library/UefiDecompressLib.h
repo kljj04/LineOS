@@ -54,12 +54,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 RETURN_STATUS
 EFIAPI
-UefiDecompressGetInfo (
-  IN  CONST VOID  *Source,
-  IN  UINT32      SourceSize,
-  OUT UINT32      *DestinationSize,
-  OUT UINT32      *ScratchSize
-  );
+UefiDecompressGetInfo(IN CONST VOID *Source, IN UINT32 SourceSize, OUT UINT32 *DestinationSize, OUT UINT32 *ScratchSize);
 
 /**
   Decompresses a compressed source buffer.
@@ -92,8 +87,4 @@ UefiDecompressGetInfo (
 **/
 RETURN_STATUS
 EFIAPI
-UefiDecompress (
-  IN CONST VOID  *Source,
-  IN OUT VOID    *Destination,
-  IN OUT VOID    *Scratch  OPTIONAL
-  );
+UefiDecompress(IN CONST VOID *Source, IN OUT VOID *Destination, IN OUT VOID *Scratch OPTIONAL);

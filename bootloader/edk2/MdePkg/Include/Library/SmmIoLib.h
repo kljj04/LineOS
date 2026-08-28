@@ -25,8 +25,4 @@
 **/
 BOOLEAN
 EFIAPI
-SmmIsMmioValid (
-  IN EFI_PHYSICAL_ADDRESS  BaseAddress,
-  IN UINT64                Length,
-  IN EFI_GUID              *Owner  OPTIONAL
-  );
+SmmIsMmioValid(IN EFI_PHYSICAL_ADDRESS BaseAddress, IN UINT64 Length, IN EFI_GUID *Owner OPTIONAL);

@@ -29,30 +29,26 @@
   @return The encoded PCI address.
 
 **/
-#define S3_BOOT_SCRIPT_LIB_PCI_ADDRESS(Bus, Device, Function, Register)   \
-  (UINT64) ( \
-  (((UINTN) Bus) << 24) | \
-  (((UINTN) Device) << 16) | \
-  (((UINTN) Function) << 8) | \
-  (((UINTN) (Register)) < 256 ? ((UINTN) (Register)) : (UINT64) (LShiftU64 ((UINT64) (Register), 32))))
+#define S3_BOOT_SCRIPT_LIB_PCI_ADDRESS(Bus, Device, Function, Register) (UINT64)((((UINTN) Bus) << 24) | (((UINTN) Device) << 16) | (((UINTN) Function) << 8) | (((UINTN) (Register)) < 256 ? ((UINTN) (Register)) : (UINT64) (LShiftU64((UINT64) (Register), 32))))
 
 ///
 /// S3 Boot Script Width.
 ///
-typedef enum {
-  S3BootScriptWidthUint8,        ///< 8-bit operation.
-  S3BootScriptWidthUint16,       ///< 16-bit operation.
-  S3BootScriptWidthUint32,       ///< 32-bit operation.
-  S3BootScriptWidthUint64,       ///< 64-bit operation.
-  S3BootScriptWidthFifoUint8,    ///< 8-bit FIFO operation.
-  S3BootScriptWidthFifoUint16,   ///< 16-bit FIFO operation.
-  S3BootScriptWidthFifoUint32,   ///< 32-bit FIFO operation.
-  S3BootScriptWidthFifoUint64,   ///< 64-bit FIFO operation.
-  S3BootScriptWidthFillUint8,    ///< 8-bit Fill operation.
-  S3BootScriptWidthFillUint16,   ///< 16-bit Fill operation.
-  S3BootScriptWidthFillUint32,   ///< 32-bit Fill operation.
-  S3BootScriptWidthFillUint64,   ///< 64-bit Fill operation.
-  S3BootScriptWidthMaximum
+typedef enum
+{
+    S3BootScriptWidthUint8,      ///< 8-bit operation.
+    S3BootScriptWidthUint16,     ///< 16-bit operation.
+    S3BootScriptWidthUint32,     ///< 32-bit operation.
+    S3BootScriptWidthUint64,     ///< 64-bit operation.
+    S3BootScriptWidthFifoUint8,  ///< 8-bit FIFO operation.
+    S3BootScriptWidthFifoUint16, ///< 16-bit FIFO operation.
+    S3BootScriptWidthFifoUint32, ///< 32-bit FIFO operation.
+    S3BootScriptWidthFifoUint64, ///< 64-bit FIFO operation.
+    S3BootScriptWidthFillUint8,  ///< 8-bit Fill operation.
+    S3BootScriptWidthFillUint16, ///< 16-bit Fill operation.
+    S3BootScriptWidthFillUint32, ///< 32-bit Fill operation.
+    S3BootScriptWidthFillUint64, ///< 64-bit Fill operation.
+    S3BootScriptWidthMaximum
 } S3_BOOT_SCRIPT_LIB_WIDTH;
 
 /**
@@ -70,12 +66,7 @@ typedef enum {
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptSaveIoWrite (
-  IN  S3_BOOT_SCRIPT_LIB_WIDTH  Width,
-  IN  UINT64                    Address,
-  IN  UINTN                     Count,
-  IN  VOID                      *Buffer
-  );
+S3BootScriptSaveIoWrite(IN S3_BOOT_SCRIPT_LIB_WIDTH Width, IN UINT64 Address, IN UINTN Count, IN VOID *Buffer);
 
 /**
   Adds a record for an I/O modify operation into a S3 boot script table.
@@ -93,12 +84,7 @@ S3BootScriptSaveIoWrite (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptSaveIoReadWrite (
-  IN  S3_BOOT_SCRIPT_LIB_WIDTH  Width,
-  IN  UINT64                    Address,
-  IN  VOID                      *Data,
-  IN  VOID                      *DataMask
-  );
+S3BootScriptSaveIoReadWrite(IN S3_BOOT_SCRIPT_LIB_WIDTH Width, IN UINT64 Address, IN VOID *Data, IN VOID *DataMask);
 
 /**
   Adds a record for a memory write operation into a specified boot script table.
@@ -114,12 +100,7 @@ S3BootScriptSaveIoReadWrite (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptSaveMemWrite (
-  IN  S3_BOOT_SCRIPT_LIB_WIDTH  Width,
-  IN  UINT64                    Address,
-  IN  UINTN                     Count,
-  IN  VOID                      *Buffer
-  );
+S3BootScriptSaveMemWrite(IN S3_BOOT_SCRIPT_LIB_WIDTH Width, IN UINT64 Address, IN UINTN Count, IN VOID *Buffer);
 
 /**
   Adds a record for a memory modify operation into a specified boot script table.
@@ -137,12 +118,7 @@ S3BootScriptSaveMemWrite (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptSaveMemReadWrite (
-  IN  S3_BOOT_SCRIPT_LIB_WIDTH  Width,
-  IN  UINT64                    Address,
-  IN  VOID                      *Data,
-  IN  VOID                      *DataMask
-  );
+S3BootScriptSaveMemReadWrite(IN S3_BOOT_SCRIPT_LIB_WIDTH Width, IN UINT64 Address, IN VOID *Data, IN VOID *DataMask);
 
 /**
   Adds a record for a PCI configuration space write operation into a specified boot script table.
@@ -158,12 +134,7 @@ S3BootScriptSaveMemReadWrite (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptSavePciCfgWrite (
-  IN  S3_BOOT_SCRIPT_LIB_WIDTH  Width,
-  IN  UINT64                    Address,
-  IN  UINTN                     Count,
-  IN  VOID                      *Buffer
-  );
+S3BootScriptSavePciCfgWrite(IN S3_BOOT_SCRIPT_LIB_WIDTH Width, IN UINT64 Address, IN UINTN Count, IN VOID *Buffer);
 
 /**
   Adds a record for a PCI configuration space modify operation into a specified boot script table.
@@ -179,12 +150,7 @@ S3BootScriptSavePciCfgWrite (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptSavePciCfgReadWrite (
-  IN  S3_BOOT_SCRIPT_LIB_WIDTH  Width,
-  IN  UINT64                    Address,
-  IN  VOID                      *Data,
-  IN  VOID                      *DataMask
-  );
+S3BootScriptSavePciCfgReadWrite(IN S3_BOOT_SCRIPT_LIB_WIDTH Width, IN UINT64 Address, IN VOID *Data, IN VOID *DataMask);
 
 /**
   Adds a record for a PCI configuration space modify operation into a specified boot script table.
@@ -201,13 +167,7 @@ S3BootScriptSavePciCfgReadWrite (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptSavePciCfg2Write (
-  IN S3_BOOT_SCRIPT_LIB_WIDTH  Width,
-  IN UINT16                    Segment,
-  IN UINT64                    Address,
-  IN UINTN                     Count,
-  IN VOID                      *Buffer
-  );
+S3BootScriptSavePciCfg2Write(IN S3_BOOT_SCRIPT_LIB_WIDTH Width, IN UINT16 Segment, IN UINT64 Address, IN UINTN Count, IN VOID *Buffer);
 
 /**
   Adds a record for a PCI configuration space modify operation into a specified boot script table.
@@ -224,13 +184,7 @@ S3BootScriptSavePciCfg2Write (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptSavePciCfg2ReadWrite (
-  IN S3_BOOT_SCRIPT_LIB_WIDTH  Width,
-  IN UINT16                    Segment,
-  IN UINT64                    Address,
-  IN VOID                      *Data,
-  IN VOID                      *DataMask
-  );
+S3BootScriptSavePciCfg2ReadWrite(IN S3_BOOT_SCRIPT_LIB_WIDTH Width, IN UINT16 Segment, IN UINT64 Address, IN VOID *Data, IN VOID *DataMask);
 
 /**
   Adds a record for an SMBus command execution into a specified boot script table.
@@ -250,12 +204,7 @@ S3BootScriptSavePciCfg2ReadWrite (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptSaveSmbusExecute (
-  IN  UINTN                SmBusAddress,
-  IN  EFI_SMBUS_OPERATION  Operation,
-  IN  UINTN                *Length,
-  IN  VOID                 *Buffer
-  );
+S3BootScriptSaveSmbusExecute(IN UINTN SmBusAddress, IN EFI_SMBUS_OPERATION Operation, IN UINTN *Length, IN VOID *Buffer);
 
 /**
   Adds a record for an execution stall on the processor into a specified boot script table.
@@ -268,9 +217,7 @@ S3BootScriptSaveSmbusExecute (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptSaveStall (
-  IN  UINTN  Duration
-  );
+S3BootScriptSaveStall(IN UINTN Duration);
 
 /**
   Adds a record for dispatching specified arbitrary code into a specified boot script table.
@@ -285,10 +232,7 @@ S3BootScriptSaveStall (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptSaveDispatch2 (
-  IN  VOID  *EntryPoint,
-  IN  VOID  *Context
-  );
+S3BootScriptSaveDispatch2(IN VOID *EntryPoint, IN VOID *Context);
 
 /**
   Adds a record for dispatching specified arbitrary code into a specified boot script table.
@@ -301,9 +245,7 @@ S3BootScriptSaveDispatch2 (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptSaveDispatch (
-  IN  VOID  *EntryPoint
-  );
+S3BootScriptSaveDispatch(IN VOID *EntryPoint);
 
 /**
   Adds a record for memory reads of the memory location and continues when the exit
@@ -329,14 +271,7 @@ S3BootScriptSaveDispatch (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptSaveMemPoll (
-  IN  S3_BOOT_SCRIPT_LIB_WIDTH  Width,
-  IN  UINT64                    Address,
-  IN  VOID                      *BitMask,
-  IN  VOID                      *BitValue,
-  IN  UINTN                     Duration,
-  IN  UINT64                    LoopTimes
-  );
+S3BootScriptSaveMemPoll(IN S3_BOOT_SCRIPT_LIB_WIDTH Width, IN UINT64 Address, IN VOID *BitMask, IN VOID *BitValue, IN UINTN Duration, IN UINT64 LoopTimes);
 
 /**
   Store arbitrary information in the boot script table. This opcode is a no-op on
@@ -352,10 +287,7 @@ S3BootScriptSaveMemPoll (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptSaveInformation (
-  IN  UINT32  InformationLength,
-  IN  VOID    *Information
-  );
+S3BootScriptSaveInformation(IN UINT32 InformationLength, IN VOID *Information);
 
 /**
   Adds a record for I/O reads the I/O location and continues when the exit criteria
@@ -378,13 +310,7 @@ S3BootScriptSaveInformation (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptSaveIoPoll (
-  IN S3_BOOT_SCRIPT_LIB_WIDTH  Width,
-  IN UINT64                    Address,
-  IN VOID                      *Data,
-  IN VOID                      *DataMask,
-  IN UINT64                    Delay
-  );
+S3BootScriptSaveIoPoll(IN S3_BOOT_SCRIPT_LIB_WIDTH Width, IN UINT64 Address, IN VOID *Data, IN VOID *DataMask, IN UINT64 Delay);
 
 /**
   Adds a record for PCI configuration space reads and continues when the exit
@@ -408,13 +334,7 @@ S3BootScriptSaveIoPoll (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptSavePciPoll (
-  IN S3_BOOT_SCRIPT_LIB_WIDTH  Width,
-  IN UINT64                    Address,
-  IN VOID                      *Data,
-  IN VOID                      *DataMask,
-  IN UINT64                    Delay
-  );
+S3BootScriptSavePciPoll(IN S3_BOOT_SCRIPT_LIB_WIDTH Width, IN UINT64 Address, IN VOID *Data, IN VOID *DataMask, IN UINT64 Delay);
 
 /**
   Adds a record for PCI configuration space reads and continues when the exit criteria
@@ -444,14 +364,7 @@ S3BootScriptSavePciPoll (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptSavePci2Poll (
-  IN S3_BOOT_SCRIPT_LIB_WIDTH  Width,
-  IN UINT16                    Segment,
-  IN UINT64                    Address,
-  IN VOID                      *Data,
-  IN VOID                      *DataMask,
-  IN UINT64                    Delay
-  );
+S3BootScriptSavePci2Poll(IN S3_BOOT_SCRIPT_LIB_WIDTH Width, IN UINT16 Segment, IN UINT64 Address, IN VOID *Data, IN VOID *DataMask, IN UINT64 Delay);
 
 /**
   Save ASCII string information specified by Buffer to boot script with opcode
@@ -467,9 +380,7 @@ S3BootScriptSavePci2Poll (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptSaveInformationAsciiString (
-  IN  CONST CHAR8  *String
-  );
+S3BootScriptSaveInformationAsciiString(IN CONST CHAR8 *String);
 
 /**
   This is an function to close the S3 boot script table. The function could only
@@ -495,11 +406,7 @@ S3BootScriptSaveInformationAsciiString (
   @return the base address of the new copy of the boot script table.
 
 **/
-UINT8 *
-EFIAPI
-S3BootScriptCloseTable (
-  VOID
-  );
+UINT8 *EFIAPI S3BootScriptCloseTable(VOID);
 
 /**
   Executes the S3 boot script table.
@@ -510,9 +417,7 @@ S3BootScriptCloseTable (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptExecute (
-  VOID
-  );
+S3BootScriptExecute(VOID);
 
 /**
   Move the last boot script entry to the position
@@ -537,10 +442,7 @@ S3BootScriptExecute (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptMoveLastOpcode (
-  IN     BOOLEAN  BeforeOrAfter,
-  IN OUT VOID     **Position OPTIONAL
-  );
+S3BootScriptMoveLastOpcode(IN BOOLEAN BeforeOrAfter, IN OUT VOID **Position OPTIONAL);
 
 /**
   Find a label within the boot script table and, if not present, optionally create it.
@@ -568,12 +470,7 @@ S3BootScriptMoveLastOpcode (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptLabel (
-  IN       BOOLEAN  BeforeOrAfter,
-  IN       BOOLEAN  CreateIfNotFound,
-  IN OUT   VOID     **Position OPTIONAL,
-  IN CONST CHAR8    *Label
-  );
+S3BootScriptLabel(IN BOOLEAN BeforeOrAfter, IN BOOLEAN CreateIfNotFound, IN OUT VOID **Position OPTIONAL, IN CONST CHAR8 *Label);
 
 /**
   Compare two positions in the boot script table and return their relative position.
@@ -591,8 +488,4 @@ S3BootScriptLabel (
 **/
 RETURN_STATUS
 EFIAPI
-S3BootScriptCompare (
-  IN  UINT8  *Position1,
-  IN  UINT8  *Position2,
-  OUT UINTN  *RelativePosition
-  );
+S3BootScriptCompare(IN UINT8 *Position1, IN UINT8 *Position2, OUT UINTN *RelativePosition);

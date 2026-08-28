@@ -1,11 +1,11 @@
 /** @file
-*
-*  Copyright (c) 2021, NUVIA Inc. All rights reserved.<BR>
-*  Copyright (c) 2012-2014, ARM Limited. All rights reserved.
-*
-*  SPDX-License-Identifier: BSD-2-Clause-Patent
-*
-**/
+ *
+ *  Copyright (c) 2021, NUVIA Inc. All rights reserved.<BR>
+ *  Copyright (c) 2012-2014, ARM Limited. All rights reserved.
+ *
+ *  SPDX-License-Identifier: BSD-2-Clause-Patent
+ *
+ **/
 
 #pragma once
 
@@ -13,25 +13,26 @@
  * The size of the SMC arguments are different between AArch64 and AArch32.
  * The native size is used for the arguments.
  */
-typedef struct {
-  UINTN    Arg0;
-  UINTN    Arg1;
-  UINTN    Arg2;
-  UINTN    Arg3;
-  UINTN    Arg4;
-  UINTN    Arg5;
-  UINTN    Arg6;
-  UINTN    Arg7;
-  UINTN    Arg8;
-  UINTN    Arg9;
-  UINTN    Arg10;
-  UINTN    Arg11;
-  UINTN    Arg12;
-  UINTN    Arg13;
-  UINTN    Arg14;
-  UINTN    Arg15;
-  UINTN    Arg16;
-  UINTN    Arg17;
+typedef struct
+{
+    UINTN Arg0;
+    UINTN Arg1;
+    UINTN Arg2;
+    UINTN Arg3;
+    UINTN Arg4;
+    UINTN Arg5;
+    UINTN Arg6;
+    UINTN Arg7;
+    UINTN Arg8;
+    UINTN Arg9;
+    UINTN Arg10;
+    UINTN Arg11;
+    UINTN Arg12;
+    UINTN Arg13;
+    UINTN Arg14;
+    UINTN Arg15;
+    UINTN Arg16;
+    UINTN Arg17;
 } ARM_SMC_ARGS;
 
 /**
@@ -42,10 +43,7 @@ typedef struct {
   for both input and output values.
 
 **/
-VOID
-ArmCallSmc (
-  IN OUT ARM_SMC_ARGS  *Args
-  );
+VOID ArmCallSmc(IN OUT ARM_SMC_ARGS *Args);
 
 /** Trigger an SMC call with 3 arguments.
 
@@ -58,12 +56,7 @@ ArmCallSmc (
 
 **/
 UINTN
-ArmCallSmc3 (
-  IN     UINTN  Function,
-  IN OUT UINTN  *Arg1 OPTIONAL,
-  IN OUT UINTN  *Arg2 OPTIONAL,
-  IN OUT UINTN  *Arg3 OPTIONAL
-  );
+ArmCallSmc3(IN UINTN Function, IN OUT UINTN *Arg1 OPTIONAL, IN OUT UINTN *Arg2 OPTIONAL, IN OUT UINTN *Arg3 OPTIONAL);
 
 /** Trigger an SMC call with 2 arguments.
 
@@ -76,12 +69,7 @@ ArmCallSmc3 (
 
 **/
 UINTN
-ArmCallSmc2 (
-  IN     UINTN  Function,
-  IN OUT UINTN  *Arg1 OPTIONAL,
-  IN OUT UINTN  *Arg2 OPTIONAL,
-  OUT UINTN     *Arg3 OPTIONAL
-  );
+ArmCallSmc2(IN UINTN Function, IN OUT UINTN *Arg1 OPTIONAL, IN OUT UINTN *Arg2 OPTIONAL, OUT UINTN *Arg3 OPTIONAL);
 
 /** Trigger an SMC call with 1 argument.
 
@@ -94,12 +82,7 @@ ArmCallSmc2 (
 
 **/
 UINTN
-ArmCallSmc1 (
-  IN     UINTN  Function,
-  IN OUT UINTN  *Arg1 OPTIONAL,
-  OUT UINTN     *Arg2 OPTIONAL,
-  OUT UINTN     *Arg3 OPTIONAL
-  );
+ArmCallSmc1(IN UINTN Function, IN OUT UINTN *Arg1 OPTIONAL, OUT UINTN *Arg2 OPTIONAL, OUT UINTN *Arg3 OPTIONAL);
 
 /** Trigger an SMC call with 0 arguments.
 
@@ -112,9 +95,4 @@ ArmCallSmc1 (
 
 **/
 UINTN
-ArmCallSmc0 (
-  IN     UINTN  Function,
-  OUT UINTN     *Arg1 OPTIONAL,
-  OUT UINTN     *Arg2 OPTIONAL,
-  OUT UINTN     *Arg3 OPTIONAL
-  );
+ArmCallSmc0(IN UINTN Function, OUT UINTN *Arg1 OPTIONAL, OUT UINTN *Arg2 OPTIONAL, OUT UINTN *Arg3 OPTIONAL);

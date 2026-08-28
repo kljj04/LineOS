@@ -24,6 +24,4 @@
 **/
 UINTN
 EFIAPI
-S3Stall (
-  IN UINTN  MicroSeconds
-  );
+S3Stall(IN UINTN MicroSeconds);

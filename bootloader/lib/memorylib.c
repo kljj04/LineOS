@@ -7,7 +7,7 @@
 
 VOID *CopyMem(VOID *destination, CONST VOID *source, UINTN length)
 {
-    UINT8 *DestinationBuffer;
+    UINT8       *DestinationBuffer;
     CONST UINT8 *SourceBuffer;
 
     DestinationBuffer = (UINT8 *) destination;

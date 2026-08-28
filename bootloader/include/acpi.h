@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <Uefi.h>
+#include <lineos/typeinfo.h>
 #include <lineos/bootinfo.h>
 
 BOOLEAN ACPIInit(VOID);
 
-extern LINEOS_ACPI_RSDP *RSDP;
+EXTERN LINEOS_ACPI_RSDP *RSDP;

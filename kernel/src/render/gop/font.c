@@ -7,7 +7,7 @@
 #include <render/fontinfo.h>
 #include <render/gop/framebuffer.h>
 
-INT32 FindGlyph(UINT16 Unicode)
+INT32 GOPFindGlyph(UINT16 Unicode)
 {
     INT32 Low = 0;
     INT32 High = (INT32) GlyphCount - 1;
@@ -34,9 +34,9 @@ INT32 FindGlyph(UINT16 Unicode)
     return -1;
 }
 
-UINT16 DrawGlyph(UINT16 Unicode, UINT32 x, UINT32 BaseLine, UINT32 Color)
+UINT16 GOPDrawGlyph(UINT16 Unicode, UINT32 x, UINT32 BaseLine, UINT32 Color)
 {
-    INT32 Index = FindGlyph(Unicode);
+    INT32 Index = GOPFindGlyph(Unicode);
 
     if (Index < 0)
     {
@@ -44,7 +44,7 @@ UINT16 DrawGlyph(UINT16 Unicode, UINT32 x, UINT32 BaseLine, UINT32 Color)
     }
 
     CONST LINEOS_GLYPH *Glyph = &GlyphDsc[Index];
-    CONST UINT8 *Bitmap = &GlyphBitmap[Glyph->BitmapOffset];
+    CONST UINT8        *Bitmap = &GlyphBitmap[Glyph->BitmapOffset];
 
     INT32 StartX = (INT32) x + Glyph->OffsetX;
     INT32 StartY = (INT32) BaseLine - Glyph->OffsetY;
@@ -70,11 +70,11 @@ UINT16 DrawGlyph(UINT16 Unicode, UINT32 x, UINT32 BaseLine, UINT32 Color)
 
             if (Alpha == 255)
             {
-                DrawPixel((UINT32) ScreenX, (UINT32) ScreenY, Color);
+                GOPDrawPixel((UINT32) ScreenX, (UINT32) ScreenY, Color);
                 continue;
             }
 
-            BlendPixel((UINT32) ScreenX, (UINT32) ScreenY, Color, Alpha);
+            GOPBlendPixel((UINT32) ScreenX, (UINT32) ScreenY, Color, Alpha);
         }
     }
 

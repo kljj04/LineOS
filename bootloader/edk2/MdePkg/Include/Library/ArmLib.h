@@ -13,81 +13,77 @@
 #include <Uefi/UefiBaseType.h>
 #include <AArch64/AArch64.h>
 
-#define EFI_MEMORY_CACHETYPE_MASK  (EFI_MEMORY_UC | EFI_MEMORY_WC |  \
-                                     EFI_MEMORY_WT | EFI_MEMORY_WB | \
-                                     EFI_MEMORY_UCE)
+#define EFI_MEMORY_CACHETYPE_MASK (EFI_MEMORY_UC | EFI_MEMORY_WC | EFI_MEMORY_WT | EFI_MEMORY_WB | EFI_MEMORY_UCE)
 
-typedef enum {
-  ARM_MEMORY_REGION_ATTRIBUTE_UNCACHED_UNBUFFERED = 0,
-  ARM_MEMORY_REGION_ATTRIBUTE_WRITE_BACK,
+typedef enum
+{
+    ARM_MEMORY_REGION_ATTRIBUTE_UNCACHED_UNBUFFERED = 0,
+    ARM_MEMORY_REGION_ATTRIBUTE_WRITE_BACK,
 
-  // On some platforms, memory mapped flash region is designed as not supporting
-  // shareable attribute, so WRITE_BACK_NONSHAREABLE is added for such special
-  // need.
-  // Do NOT use below two attributes if you are not sure.
-  ARM_MEMORY_REGION_ATTRIBUTE_WRITE_BACK_NONSHAREABLE,
+    // On some platforms, memory mapped flash region is designed as not supporting
+    // shareable attribute, so WRITE_BACK_NONSHAREABLE is added for such special
+    // need.
+    // Do NOT use below two attributes if you are not sure.
+    ARM_MEMORY_REGION_ATTRIBUTE_WRITE_BACK_NONSHAREABLE,
 
-  // Special region types for memory that must be mapped with read-only or
-  // non-execute permissions from the very start, e.g., to support the use
-  // of the WXN virtual memory control.
-  ARM_MEMORY_REGION_ATTRIBUTE_WRITE_BACK_RO,
-  ARM_MEMORY_REGION_ATTRIBUTE_WRITE_BACK_XP,
+    // Special region types for memory that must be mapped with read-only or
+    // non-execute permissions from the very start, e.g., to support the use
+    // of the WXN virtual memory control.
+    ARM_MEMORY_REGION_ATTRIBUTE_WRITE_BACK_RO,
+    ARM_MEMORY_REGION_ATTRIBUTE_WRITE_BACK_XP,
 
-  ARM_MEMORY_REGION_ATTRIBUTE_WRITE_THROUGH,
-  ARM_MEMORY_REGION_ATTRIBUTE_DEVICE,
+    ARM_MEMORY_REGION_ATTRIBUTE_WRITE_THROUGH,
+    ARM_MEMORY_REGION_ATTRIBUTE_DEVICE,
 } ARM_MEMORY_REGION_ATTRIBUTES;
 
-typedef struct {
-  EFI_PHYSICAL_ADDRESS            PhysicalBase;
-  EFI_VIRTUAL_ADDRESS             VirtualBase;
-  UINT64                          Length;
-  ARM_MEMORY_REGION_ATTRIBUTES    Attributes;
+typedef struct
+{
+    EFI_PHYSICAL_ADDRESS         PhysicalBase;
+    EFI_VIRTUAL_ADDRESS          VirtualBase;
+    UINT64                       Length;
+    ARM_MEMORY_REGION_ATTRIBUTES Attributes;
 } ARM_MEMORY_REGION_DESCRIPTOR;
 
-typedef VOID (*CACHE_OPERATION)(
-  VOID
-  );
-typedef VOID (*LINE_OPERATION)(
-  UINTN
-  );
+typedef VOID (*CACHE_OPERATION)(VOID);
+typedef VOID (*LINE_OPERATION)(UINTN);
 
 //
 // ARM Cpu IDs
 //
-#define ARM_CPU_IMPLEMENTER_MASK      (0xFFU << 24)
-#define ARM_CPU_IMPLEMENTER_ARMLTD    (0x41U << 24)
-#define ARM_CPU_IMPLEMENTER_DEC       (0x44U << 24)
-#define ARM_CPU_IMPLEMENTER_MOT       (0x4DU << 24)
-#define ARM_CPU_IMPLEMENTER_QUALCOMM  (0x51U << 24)
-#define ARM_CPU_IMPLEMENTER_MARVELL   (0x56U << 24)
+#define ARM_CPU_IMPLEMENTER_MASK     (0xFFU << 24)
+#define ARM_CPU_IMPLEMENTER_ARMLTD   (0x41U << 24)
+#define ARM_CPU_IMPLEMENTER_DEC      (0x44U << 24)
+#define ARM_CPU_IMPLEMENTER_MOT      (0x4DU << 24)
+#define ARM_CPU_IMPLEMENTER_QUALCOMM (0x51U << 24)
+#define ARM_CPU_IMPLEMENTER_MARVELL  (0x56U << 24)
 
-#define ARM_CPU_PRIMARY_PART_MASK       (0xFFF << 4)
-#define ARM_CPU_PRIMARY_PART_CORTEXA5   (0xC05 << 4)
-#define ARM_CPU_PRIMARY_PART_CORTEXA7   (0xC07 << 4)
-#define ARM_CPU_PRIMARY_PART_CORTEXA8   (0xC08 << 4)
-#define ARM_CPU_PRIMARY_PART_CORTEXA9   (0xC09 << 4)
-#define ARM_CPU_PRIMARY_PART_CORTEXA15  (0xC0F << 4)
+#define ARM_CPU_PRIMARY_PART_MASK      (0xFFF << 4)
+#define ARM_CPU_PRIMARY_PART_CORTEXA5  (0xC05 << 4)
+#define ARM_CPU_PRIMARY_PART_CORTEXA7  (0xC07 << 4)
+#define ARM_CPU_PRIMARY_PART_CORTEXA8  (0xC08 << 4)
+#define ARM_CPU_PRIMARY_PART_CORTEXA9  (0xC09 << 4)
+#define ARM_CPU_PRIMARY_PART_CORTEXA15 (0xC0F << 4)
 
 //
 // ARM MP Core IDs
 //
-#define ARM_CORE_AFF0  0xFF
-#define ARM_CORE_AFF1  (0xFF << 8)
-#define ARM_CORE_AFF2  (0xFF << 16)
-#define ARM_CORE_AFF3  (0xFFULL << 32)
+#define ARM_CORE_AFF0 0xFF
+#define ARM_CORE_AFF1 (0xFF << 8)
+#define ARM_CORE_AFF2 (0xFF << 16)
+#define ARM_CORE_AFF3 (0xFFULL << 32)
 
-#define ARM_CORE_MASK     ARM_CORE_AFF0
-#define ARM_CLUSTER_MASK  ARM_CORE_AFF1
-#define GET_CORE_ID(MpId)              ((MpId) & ARM_CORE_MASK)
-#define GET_CLUSTER_ID(MpId)           (((MpId) & ARM_CLUSTER_MASK) >> 8)
-#define GET_MPID(ClusterId, CoreId)    (((ClusterId) << 8) | (CoreId))
-#define GET_MPIDR_AFF0(MpId)           ((MpId) & ARM_CORE_AFF0)
-#define GET_MPIDR_AFF1(MpId)           (((MpId) & ARM_CORE_AFF1) >> 8)
-#define GET_MPIDR_AFF2(MpId)           (((MpId) & ARM_CORE_AFF2) >> 16)
-#define GET_MPIDR_AFF3(MpId)           (((MpId) & ARM_CORE_AFF3) >> 32)
-#define GET_MPIDR_AFFINITY_BITS(MpId)  ((MpId) & 0xFF00FFFFFF)
-#define PRIMARY_CORE_ID  (PcdGet32(PcdArmPrimaryCore) & ARM_CORE_MASK)
-#define MPIDR_MT_BIT     BIT24
+#define ARM_CORE_MASK                 ARM_CORE_AFF0
+#define ARM_CLUSTER_MASK              ARM_CORE_AFF1
+#define GET_CORE_ID(MpId)             ((MpId) & ARM_CORE_MASK)
+#define GET_CLUSTER_ID(MpId)          (((MpId) & ARM_CLUSTER_MASK) >> 8)
+#define GET_MPID(ClusterId, CoreId)   (((ClusterId) << 8) | (CoreId))
+#define GET_MPIDR_AFF0(MpId)          ((MpId) & ARM_CORE_AFF0)
+#define GET_MPIDR_AFF1(MpId)          (((MpId) & ARM_CORE_AFF1) >> 8)
+#define GET_MPIDR_AFF2(MpId)          (((MpId) & ARM_CORE_AFF2) >> 16)
+#define GET_MPIDR_AFF3(MpId)          (((MpId) & ARM_CORE_AFF3) >> 32)
+#define GET_MPIDR_AFFINITY_BITS(MpId) ((MpId) & 0xFF00FFFFFF)
+#define PRIMARY_CORE_ID               (PcdGet32(PcdArmPrimaryCore) & ARM_CORE_MASK)
+#define MPIDR_MT_BIT                  BIT24
 
 /** Reads the CCSIDR register for the specified cache.
 
@@ -97,9 +93,7 @@ typedef VOID (*LINE_OPERATION)(
           Returns the contents of the CCSIDR register in AARCH32 mode.
 **/
 UINTN
-ReadCCSIDR (
-  IN UINT32  CSSELR
-  );
+ReadCCSIDR(IN UINT32 CSSELR);
 
 /** Reads the CCSIDR2 for the specified cache.
 
@@ -108,365 +102,175 @@ ReadCCSIDR (
   @return The contents of the CCSIDR2 register for the specified cache.
 **/
 UINT32
-ReadCCSIDR2 (
-  IN UINT32  CSSELR
-  );
+ReadCCSIDR2(IN UINT32 CSSELR);
 
 /** Reads the Cache Level ID (CLIDR) register.
 
   @return The contents of the CLIDR_EL1 register.
 **/
 UINT32
-ReadCLIDR (
-  VOID
-  );
+ReadCLIDR(VOID);
 
 UINTN
 EFIAPI
-ArmDataCacheLineLength (
-  VOID
-  );
+ArmDataCacheLineLength(VOID);
 
 UINTN
 EFIAPI
-ArmInstructionCacheLineLength (
-  VOID
-  );
+ArmInstructionCacheLineLength(VOID);
 
 UINT32
 EFIAPI
-ArmCacheWritebackGranule (
-  VOID
-  );
+ArmCacheWritebackGranule(VOID);
 
 UINTN
 EFIAPI
-ArmIsArchTimerImplemented (
-  VOID
-  );
+ArmIsArchTimerImplemented(VOID);
 
 UINTN
 EFIAPI
-ArmCacheInfo (
-  VOID
-  );
+ArmCacheInfo(VOID);
 
 BOOLEAN
 EFIAPI
-ArmIsMpCore (
-  VOID
-  );
+ArmIsMpCore(VOID);
 
-VOID
-EFIAPI
-ArmInvalidateInstructionCache (
-  VOID
-  );
+VOID EFIAPI ArmInvalidateInstructionCache(VOID);
 
-VOID
-EFIAPI
-ArmInvalidateDataCacheEntryByMVA (
-  IN  UINTN  Address
-  );
+VOID EFIAPI ArmInvalidateDataCacheEntryByMVA(IN UINTN Address);
 
-VOID
-EFIAPI
-ArmCleanDataCacheEntryToPoUByMVA (
-  IN  UINTN  Address
-  );
+VOID EFIAPI ArmCleanDataCacheEntryToPoUByMVA(IN UINTN Address);
 
-VOID
-EFIAPI
-ArmInvalidateInstructionCacheEntryToPoUByMVA (
-  IN  UINTN  Address
-  );
+VOID EFIAPI ArmInvalidateInstructionCacheEntryToPoUByMVA(IN UINTN Address);
 
-VOID
-EFIAPI
-ArmCleanDataCacheEntryByMVA (
-  IN  UINTN  Address
-  );
+VOID EFIAPI ArmCleanDataCacheEntryByMVA(IN UINTN Address);
 
-VOID
-EFIAPI
-ArmCleanInvalidateDataCacheEntryByMVA (
-  IN  UINTN  Address
-  );
+VOID EFIAPI ArmCleanInvalidateDataCacheEntryByMVA(IN UINTN Address);
 
-VOID
-EFIAPI
-ArmEnableDataCache (
-  VOID
-  );
+VOID EFIAPI ArmEnableDataCache(VOID);
 
-VOID
-EFIAPI
-ArmDisableDataCache (
-  VOID
-  );
+VOID EFIAPI ArmDisableDataCache(VOID);
 
-VOID
-EFIAPI
-ArmEnableInstructionCache (
-  VOID
-  );
+VOID EFIAPI ArmEnableInstructionCache(VOID);
 
-VOID
-EFIAPI
-ArmDisableInstructionCache (
-  VOID
-  );
+VOID EFIAPI ArmDisableInstructionCache(VOID);
 
-VOID
-EFIAPI
-ArmEnableMmu (
-  VOID
-  );
+VOID EFIAPI ArmEnableMmu(VOID);
 
-VOID
-EFIAPI
-ArmDisableMmu (
-  VOID
-  );
+VOID EFIAPI ArmDisableMmu(VOID);
 
-VOID
-EFIAPI
-ArmEnableCachesAndMmu (
-  VOID
-  );
+VOID EFIAPI ArmEnableCachesAndMmu(VOID);
 
-VOID
-EFIAPI
-ArmDisableCachesAndMmu (
-  VOID
-  );
+VOID EFIAPI ArmDisableCachesAndMmu(VOID);
 
-VOID
-EFIAPI
-ArmEnableInterrupts (
-  VOID
-  );
+VOID EFIAPI ArmEnableInterrupts(VOID);
 
 UINTN
 EFIAPI
-ArmDisableInterrupts (
-  VOID
-  );
+ArmDisableInterrupts(VOID);
 
 BOOLEAN
 EFIAPI
-ArmGetInterruptState (
-  VOID
-  );
+ArmGetInterruptState(VOID);
 
-VOID
-EFIAPI
-ArmEnableAsynchronousAbort (
-  VOID
-  );
+VOID EFIAPI ArmEnableAsynchronousAbort(VOID);
 
 UINTN
 EFIAPI
-ArmDisableAsynchronousAbort (
-  VOID
-  );
+ArmDisableAsynchronousAbort(VOID);
 
-VOID
-EFIAPI
-ArmEnableIrq (
-  VOID
-  );
+VOID EFIAPI ArmEnableIrq(VOID);
 
 UINTN
 EFIAPI
-ArmDisableIrq (
-  VOID
-  );
+ArmDisableIrq(VOID);
 
-VOID
-EFIAPI
-ArmEnableFiq (
-  VOID
-  );
+VOID EFIAPI ArmEnableFiq(VOID);
 
 UINTN
 EFIAPI
-ArmDisableFiq (
-  VOID
-  );
+ArmDisableFiq(VOID);
 
 BOOLEAN
 EFIAPI
-ArmGetFiqState (
-  VOID
-  );
+ArmGetFiqState(VOID);
 
 /**
  * Invalidate Data and Instruction TLBs
  */
-VOID
-EFIAPI
-ArmInvalidateTlb (
-  VOID
-  );
+VOID EFIAPI ArmInvalidateTlb(VOID);
 
-VOID
-EFIAPI
-ArmUpdateTranslationTableEntry (
-  IN  VOID  *TranslationTableEntry,
-  IN  VOID  *Mva
-  );
+VOID EFIAPI ArmUpdateTranslationTableEntry(IN VOID *TranslationTableEntry, IN VOID *Mva);
 
-VOID
-EFIAPI
-ArmSetTTBR0 (
-  IN  VOID  *TranslationTableBase
-  );
+VOID EFIAPI ArmSetTTBR0(IN VOID *TranslationTableBase);
 
-VOID *
-EFIAPI
-ArmGetTTBR0BaseAddress (
-  VOID
-  );
+VOID *EFIAPI ArmGetTTBR0BaseAddress(VOID);
 
 BOOLEAN
 EFIAPI
-ArmMmuEnabled (
-  VOID
-  );
+ArmMmuEnabled(VOID);
 
-VOID
-EFIAPI
-ArmDataMemoryBarrier (
-  VOID
-  );
+VOID EFIAPI ArmDataMemoryBarrier(VOID);
 
-VOID
-EFIAPI
-ArmDataSynchronizationBarrier (
-  VOID
-  );
+VOID EFIAPI ArmDataSynchronizationBarrier(VOID);
 
-VOID
-EFIAPI
-ArmInstructionSynchronizationBarrier (
-  VOID
-  );
+VOID EFIAPI ArmInstructionSynchronizationBarrier(VOID);
 
-VOID
-EFIAPI
-ArmWriteVBar (
-  IN  UINTN  VectorBase
-  );
+VOID EFIAPI ArmWriteVBar(IN UINTN VectorBase);
 
 UINTN
 EFIAPI
-ArmReadVBar (
-  VOID
-  );
+ArmReadVBar(VOID);
 
-VOID
-EFIAPI
-ArmWriteAuxCr (
-  IN  UINT32  Bit
-  );
+VOID EFIAPI ArmWriteAuxCr(IN UINT32 Bit);
 
 UINT32
 EFIAPI
-ArmReadAuxCr (
-  VOID
-  );
+ArmReadAuxCr(VOID);
 
-VOID
-EFIAPI
-ArmSetAuxCrBit (
-  IN  UINT32  Bits
-  );
+VOID EFIAPI ArmSetAuxCrBit(IN UINT32 Bits);
 
-VOID
-EFIAPI
-ArmUnsetAuxCrBit (
-  IN  UINT32  Bits
-  );
+VOID EFIAPI ArmUnsetAuxCrBit(IN UINT32 Bits);
 
-VOID
-EFIAPI
-ArmCallSEV (
-  VOID
-  );
+VOID EFIAPI ArmCallSEV(VOID);
 
-VOID
-EFIAPI
-ArmCallWFE (
-  VOID
-  );
+VOID EFIAPI ArmCallWFE(VOID);
 
-VOID
-EFIAPI
-ArmCallWFI (
+VOID EFIAPI ArmCallWFI(
 
-  VOID
-  );
+    VOID);
 
 UINTN
 EFIAPI
-ArmReadMpidr (
-  VOID
-  );
+ArmReadMpidr(VOID);
 
 UINTN
 EFIAPI
-ArmReadAidr (
-  VOID
-  );
+ArmReadAidr(VOID);
 
 UINTN
 EFIAPI
-ArmReadMidr (
-  VOID
-  );
+ArmReadMidr(VOID);
 
 UINT32
 EFIAPI
-ArmReadCpacr (
-  VOID
-  );
+ArmReadCpacr(VOID);
 
-VOID
-EFIAPI
-ArmWriteCpacr (
-  IN  UINT32  Access
-  );
+VOID EFIAPI ArmWriteCpacr(IN UINT32 Access);
 
-VOID
-EFIAPI
-ArmEnableVFP (
-  VOID
-  );
+VOID EFIAPI ArmEnableVFP(VOID);
 
 UINT32
 EFIAPI
-ArmReadSctlr (
-  VOID
-  );
+ArmReadSctlr(VOID);
 
-VOID
-EFIAPI
-ArmWriteSctlr (
-  IN  UINT32  Value
-  );
+VOID EFIAPI ArmWriteSctlr(IN UINT32 Value);
 
 UINTN
 EFIAPI
-ArmReadHVBar (
-  VOID
-  );
+ArmReadHVBar(VOID);
 
-VOID
-EFIAPI
-ArmWriteHVBar (
-  IN  UINTN  HypModeVectorBase
-  );
+VOID EFIAPI ArmWriteHVBar(IN UINTN HypModeVectorBase);
 
 //
 // Helper functions for accessing CPU ACTLR
@@ -474,161 +278,87 @@ ArmWriteHVBar (
 
 UINTN
 EFIAPI
-ArmReadCpuActlr (
-  VOID
-  );
+ArmReadCpuActlr(VOID);
 
-VOID
-EFIAPI
-ArmWriteCpuActlr (
-  IN  UINTN  Val
-  );
+VOID EFIAPI ArmWriteCpuActlr(IN UINTN Val);
 
-VOID
-EFIAPI
-ArmSetCpuActlrBit (
-  IN  UINTN  Bits
-  );
+VOID EFIAPI ArmSetCpuActlrBit(IN UINTN Bits);
 
-VOID
-EFIAPI
-ArmUnsetCpuActlrBit (
-  IN  UINTN  Bits
-  );
+VOID EFIAPI ArmUnsetCpuActlrBit(IN UINTN Bits);
 
 //
 // Accessors for the architected generic timer registers
 //
 
-#define ARM_ARCH_TIMER_ENABLE   (1 << 0)
-#define ARM_ARCH_TIMER_IMASK    (1 << 1)
-#define ARM_ARCH_TIMER_ISTATUS  (1 << 2)
+#define ARM_ARCH_TIMER_ENABLE  (1 << 0)
+#define ARM_ARCH_TIMER_IMASK   (1 << 1)
+#define ARM_ARCH_TIMER_ISTATUS (1 << 2)
 
 UINTN
 EFIAPI
-ArmReadCntFrq (
-  VOID
-  );
+ArmReadCntFrq(VOID);
 
-VOID
-EFIAPI
-ArmWriteCntFrq (
-  UINTN  FreqInHz
-  );
+VOID EFIAPI ArmWriteCntFrq(UINTN FreqInHz);
 
 UINT64
 EFIAPI
-ArmReadCntPct (
-  VOID
-  );
+ArmReadCntPct(VOID);
 
 UINTN
 EFIAPI
-ArmReadCntkCtl (
-  VOID
-  );
+ArmReadCntkCtl(VOID);
 
-VOID
-EFIAPI
-ArmWriteCntkCtl (
-  UINTN  Val
-  );
+VOID EFIAPI ArmWriteCntkCtl(UINTN Val);
 
 UINTN
 EFIAPI
-ArmReadCntpTval (
-  VOID
-  );
+ArmReadCntpTval(VOID);
 
-VOID
-EFIAPI
-ArmWriteCntpTval (
-  UINTN  Val
-  );
+VOID EFIAPI ArmWriteCntpTval(UINTN Val);
 
 UINTN
 EFIAPI
-ArmReadCntpCtl (
-  VOID
-  );
+ArmReadCntpCtl(VOID);
 
-VOID
-EFIAPI
-ArmWriteCntpCtl (
-  UINTN  Val
-  );
+VOID EFIAPI ArmWriteCntpCtl(UINTN Val);
 
 UINTN
 EFIAPI
-ArmReadCntvTval (
-  VOID
-  );
+ArmReadCntvTval(VOID);
 
-VOID
-EFIAPI
-ArmWriteCntvTval (
-  UINTN  Val
-  );
+VOID EFIAPI ArmWriteCntvTval(UINTN Val);
 
 UINTN
 EFIAPI
-ArmReadCntvCtl (
-  VOID
-  );
+ArmReadCntvCtl(VOID);
 
-VOID
-EFIAPI
-ArmWriteCntvCtl (
-  UINTN  Val
-  );
+VOID EFIAPI ArmWriteCntvCtl(UINTN Val);
 
 UINT64
 EFIAPI
-ArmReadCntvCt (
-  VOID
-  );
+ArmReadCntvCt(VOID);
 
 UINT64
 EFIAPI
-ArmReadCntpCval (
-  VOID
-  );
+ArmReadCntpCval(VOID);
 
-VOID
-EFIAPI
-ArmWriteCntpCval (
-  UINT64  Val
-  );
+VOID EFIAPI ArmWriteCntpCval(UINT64 Val);
 
 UINT64
 EFIAPI
-ArmReadCntvCval (
-  VOID
-  );
+ArmReadCntvCval(VOID);
 
-VOID
-EFIAPI
-ArmWriteCntvCval (
-  UINT64  Val
-  );
+VOID EFIAPI ArmWriteCntvCval(UINT64 Val);
 
 UINT64
 EFIAPI
-ArmReadCntvOff (
-  VOID
-  );
+ArmReadCntvOff(VOID);
 
-VOID
-EFIAPI
-ArmWriteCntvOff (
-  UINT64  Val
-  );
+VOID EFIAPI ArmWriteCntvOff(UINT64 Val);
 
 UINTN
 EFIAPI
-ArmGetPhysicalAddressBits (
-  VOID
-  );
+ArmGetPhysicalAddressBits(VOID);
 
 ///
 ///  ID Register Helper functions
@@ -642,9 +372,7 @@ ArmGetPhysicalAddressBits (
 **/
 BOOLEAN
 EFIAPI
-ArmHasGicSystemRegisters (
-  VOID
-  );
+ArmHasGicSystemRegisters(VOID);
 
 /**
   Check whether the CPU supports the GICv5 system register interface
@@ -654,9 +382,7 @@ ArmHasGicSystemRegisters (
 **/
 BOOLEAN
 EFIAPI
-ArmHasGicV5SystemRegisters (
-  VOID
-  );
+ArmHasGicV5SystemRegisters(VOID);
 
 /** Checks if CCIDX is implemented.
 
@@ -665,9 +391,7 @@ ArmHasGicV5SystemRegisters (
 **/
 BOOLEAN
 EFIAPI
-ArmHasCcidx (
-  VOID
-  );
+ArmHasCcidx(VOID);
 
 ///
 /// AArch64-only ID Register Helper functions
@@ -681,9 +405,7 @@ ArmHasCcidx (
 **/
 BOOLEAN
 EFIAPI
-ArmHasVhe (
-  VOID
-  );
+ArmHasVhe(VOID);
 
 /**
   Checks whether the CPU implements the Trace Buffer Extension.
@@ -693,9 +415,7 @@ ArmHasVhe (
 **/
 BOOLEAN
 EFIAPI
-ArmHasTrbe (
-  VOID
-  );
+ArmHasTrbe(VOID);
 
 /**
   Checks whether the CPU implements the Embedded Trace Extension.
@@ -705,9 +425,7 @@ ArmHasTrbe (
 **/
 BOOLEAN
 EFIAPI
-ArmHasEte (
-  VOID
-  );
+ArmHasEte(VOID);
 
 /**
   Checks whether the CPU supports 52-bit addressing with 4KiB translation
@@ -718,9 +436,7 @@ ArmHasEte (
 **/
 BOOLEAN
 EFIAPI
-ArmHas52BitTgran4 (
-  VOID
-  );
+ArmHas52BitTgran4(VOID);
 
 /** Checks if RME is implemented.
 
@@ -729,6 +445,4 @@ ArmHas52BitTgran4 (
 **/
 BOOLEAN
 EFIAPI
-ArmHasRme (
-  VOID
-  );
+ArmHasRme(VOID);

@@ -1,17 +1,15 @@
-Checks: '-*,
-bugprone-*,
-cert-err34-c,
-cert-str34-c,
-bugprone-sizeof-expression,
-bugprone-suspicious-memset-usage,
-bugprone-suspicious-string-compare,
-bugprone-undefined-memory-manipulation,
-readability-misleading-indentation,
-readability-redundant-control-flow,
-misc-misplaced-const'
+Checks: >
+  -*,
+  bugprone-sizeof-expression,
+  bugprone-suspicious-memset-usage,
+  bugprone-suspicious-string-compare,
+  bugprone-undefined-memory-manipulation,
+  cert-err34-c,
+  cert-str34-c,
+  readability-misleading-indentation,
+  readability-redundant-control-flow,
+  misc-misplaced-const,
 
 WarningsAsErrors: ''
-
 HeaderFilterRegex: '.*'
-
 FormatStyle: file

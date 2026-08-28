@@ -1,4 +1,14 @@
 #!/bin/bash
+# run.sh
+# LineOS Project
+# Copyright (C) 2026 LineOS Developer kljj04
+
+CYAN="\033[36m"
+YELLOW="\033[33m"
+GREEN="\033[32m"
+RED="\033[31m"
+MAGENTA="\033[35m"
+RESET="\033[0m"
 
 BaseDir="$(pwd)"
 RAM="4G"
@@ -21,22 +31,35 @@ KernelFile="${BaseDir}/LineOS/KERNEL/LINEOS_KERNEL.ELF"
 RTC="base=localtime,clock=host"
 Machine="q35"
 VGA="none"
-DisplayConfig="gtk,zoom-to-fit=off"
-GraphicsWidth="1920"
-GraphicsHeight="1080"
+DisplayConfig="gtk"
+GraphicsResInput="QHD"
+
+if [ "$GraphicsResInput" = "HD" ]; then
+  GraphicsWidth="1280"
+  GraphicsHeight="720"
+elif [ "$GraphicsResInput" = "FHD" ]; then
+  GraphicsWidth="1920"
+  GraphicsHeight="1080"
+elif [ "$GraphicsResInput" = "FHD+" ]; then
+  GraphicsWidth="2240"
+  GraphicsHeight="1260"
+elif [ "$GraphicsResInput" = "QHD" ]; then
+  GraphicsWidth="2560"
+  GraphicsHeight="1440"
+elif [ "$GraphicsResInput" = "UHD" ]; then
+  GraphicsWidth="3840"
+  GraphicsHeight="2160"
+else
+  echo -e "${RED}[-] Unknown resolution.${RESET}"
+  exit 1
+fi
+
 GraphicsResolution="${GraphicsWidth}x${GraphicsHeight}"
 VideoDevice="virtio-gpu-pci,xres=${GraphicsWidth},yres=${GraphicsHeight}"
 BlkDevice="virtio-blk-pci,drive=lineos_disk,bootindex=0"
 
 Network="none"
 DebugOption="guest_errors,cpu_reset"
-
-CYAN="\033[36m"
-YELLOW="\033[33m"
-GREEN="\033[32m"
-RED="\033[31m"
-MAGENTA="\033[35m"
-RESET="\033[0m"
 
 RequireCommand() {
     local Command=$1

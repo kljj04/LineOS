@@ -16,11 +16,7 @@
   This function triggers a software SMM interrupt at boot time.
 
 **/
-VOID
-EFIAPI
-TriggerBootServiceSoftwareSmi (
-  VOID
-  );
+VOID EFIAPI TriggerBootServiceSoftwareSmi(VOID);
 
 /**
   Triggers an SMI at run time.
@@ -28,11 +24,7 @@ TriggerBootServiceSoftwareSmi (
   This function triggers a software SMM interrupt at run time.
 
 **/
-VOID
-EFIAPI
-TriggerRuntimeSoftwareSmi (
-  VOID
-  );
+VOID EFIAPI TriggerRuntimeSoftwareSmi(VOID);
 
 /**
   Test if a boot time software SMI happened.
@@ -46,9 +38,7 @@ TriggerRuntimeSoftwareSmi (
 **/
 BOOLEAN
 EFIAPI
-IsBootServiceSoftwareSmi (
-  VOID
-  );
+IsBootServiceSoftwareSmi(VOID);
 
 /**
   Test if a run time software SMI happened.
@@ -62,16 +52,10 @@ IsBootServiceSoftwareSmi (
 **/
 BOOLEAN
 EFIAPI
-IsRuntimeSoftwareSmi (
-  VOID
-  );
+IsRuntimeSoftwareSmi(VOID);
 
 /**
   Clear APM SMI Status Bit; Set the EOS bit.
 
 **/
-VOID
-EFIAPI
-ClearSmi (
-  VOID
-  );
+VOID EFIAPI ClearSmi(VOID);

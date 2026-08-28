@@ -31,11 +31,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
   @return The pointer to the HOB list.
 
 **/
-VOID *
-EFIAPI
-GetHobList (
-  VOID
-  );
+VOID *EFIAPI GetHobList(VOID);
 
 /**
   Returns the next instance of a HOB type from the starting HOB.
@@ -54,12 +50,7 @@ GetHobList (
   @return The next instance of a HOB type from the starting HOB.
 
 **/
-VOID *
-EFIAPI
-GetNextHob (
-  IN UINT16      Type,
-  IN CONST VOID  *HobStart
-  );
+VOID *EFIAPI GetNextHob(IN UINT16 Type, IN CONST VOID *HobStart);
 
 /**
   Returns the first instance of a HOB type among the whole HOB list.
@@ -74,11 +65,7 @@ GetNextHob (
   @return The next instance of a HOB type from the starting HOB.
 
 **/
-VOID *
-EFIAPI
-GetFirstHob (
-  IN UINT16  Type
-  );
+VOID *EFIAPI GetFirstHob(IN UINT16 Type);
 
 /**
   Returns the next instance of the matched GUID HOB from the starting HOB.
@@ -102,12 +89,7 @@ GetFirstHob (
   @return The next instance of the matched GUID HOB from the starting HOB.
 
 **/
-VOID *
-EFIAPI
-GetNextGuidHob (
-  IN CONST EFI_GUID  *Guid,
-  IN CONST VOID      *HobStart
-  );
+VOID *EFIAPI GetNextGuidHob(IN CONST EFI_GUID *Guid, IN CONST VOID *HobStart);
 
 /**
   Returns the first instance of the matched GUID HOB among the whole HOB list.
@@ -127,11 +109,7 @@ GetNextGuidHob (
   @return The first instance of the matched GUID HOB among the whole HOB list.
 
 **/
-VOID *
-EFIAPI
-GetFirstGuidHob (
-  IN CONST EFI_GUID  *Guid
-  );
+VOID *EFIAPI GetFirstGuidHob(IN CONST EFI_GUID *Guid);
 
 /**
   Get the system boot mode from the HOB list.
@@ -148,9 +126,7 @@ GetFirstGuidHob (
 **/
 EFI_BOOT_MODE
 EFIAPI
-GetBootModeHob (
-  VOID
-  );
+GetBootModeHob(VOID);
 
 /**
   Builds a HOB for a loaded PE32 module.
@@ -168,14 +144,7 @@ GetBootModeHob (
   @param  EntryPoint              The 64 bit physical address of the module entry point.
 
 **/
-VOID
-EFIAPI
-BuildModuleHob (
-  IN CONST EFI_GUID        *ModuleName,
-  IN EFI_PHYSICAL_ADDRESS  MemoryAllocationModule,
-  IN UINT64                ModuleLength,
-  IN EFI_PHYSICAL_ADDRESS  EntryPoint
-  );
+VOID EFIAPI BuildModuleHob(IN CONST EFI_GUID *ModuleName, IN EFI_PHYSICAL_ADDRESS MemoryAllocationModule, IN UINT64 ModuleLength, IN EFI_PHYSICAL_ADDRESS EntryPoint);
 
 /**
   Builds a HOB that describes a chunk of system memory with Owner GUID.
@@ -193,15 +162,7 @@ BuildModuleHob (
   @param  OwnerGUID           GUID for the owner of this resource.
 
 **/
-VOID
-EFIAPI
-BuildResourceDescriptorWithOwnerHob (
-  IN EFI_RESOURCE_TYPE            ResourceType,
-  IN EFI_RESOURCE_ATTRIBUTE_TYPE  ResourceAttribute,
-  IN EFI_PHYSICAL_ADDRESS         PhysicalStart,
-  IN UINT64                       NumberOfBytes,
-  IN EFI_GUID                     *OwnerGUID
-  );
+VOID EFIAPI BuildResourceDescriptorWithOwnerHob(IN EFI_RESOURCE_TYPE ResourceType, IN EFI_RESOURCE_ATTRIBUTE_TYPE ResourceAttribute, IN EFI_PHYSICAL_ADDRESS PhysicalStart, IN UINT64 NumberOfBytes, IN EFI_GUID *OwnerGUID);
 
 /**
   Builds a HOB that describes a chunk of system memory.
@@ -218,14 +179,7 @@ BuildResourceDescriptorWithOwnerHob (
   @param  NumberOfBytes       The length of the memory described by this HOB in bytes.
 
 **/
-VOID
-EFIAPI
-BuildResourceDescriptorHob (
-  IN EFI_RESOURCE_TYPE            ResourceType,
-  IN EFI_RESOURCE_ATTRIBUTE_TYPE  ResourceAttribute,
-  IN EFI_PHYSICAL_ADDRESS         PhysicalStart,
-  IN UINT64                       NumberOfBytes
-  );
+VOID EFIAPI BuildResourceDescriptorHob(IN EFI_RESOURCE_TYPE ResourceType, IN EFI_RESOURCE_ATTRIBUTE_TYPE ResourceAttribute, IN EFI_PHYSICAL_ADDRESS PhysicalStart, IN UINT64 NumberOfBytes);
 
 /**
   Builds a customized HOB tagged with a GUID for identification and returns
@@ -249,12 +203,7 @@ BuildResourceDescriptorHob (
   @retval  others       The start address of GUID HOB data.
 
 **/
-VOID *
-EFIAPI
-BuildGuidHob (
-  IN CONST EFI_GUID  *Guid,
-  IN UINTN           DataLength
-  );
+VOID *EFIAPI BuildGuidHob(IN CONST EFI_GUID *Guid, IN UINTN DataLength);
 
 /**
   Builds a customized HOB tagged with a GUID for identification, copies the input data to the HOB
@@ -281,13 +230,7 @@ BuildGuidHob (
   @retval  others       The start address of GUID HOB data.
 
 **/
-VOID *
-EFIAPI
-BuildGuidDataHob (
-  IN CONST EFI_GUID  *Guid,
-  IN VOID            *Data,
-  IN UINTN           DataLength
-  );
+VOID *EFIAPI BuildGuidDataHob(IN CONST EFI_GUID *Guid, IN VOID *Data, IN UINTN DataLength);
 
 /**
   Builds a Firmware Volume HOB.
@@ -303,12 +246,7 @@ BuildGuidDataHob (
   @param  Length        The size of the Firmware Volume in bytes.
 
 **/
-VOID
-EFIAPI
-BuildFvHob (
-  IN EFI_PHYSICAL_ADDRESS  BaseAddress,
-  IN UINT64                Length
-  );
+VOID EFIAPI BuildFvHob(IN EFI_PHYSICAL_ADDRESS BaseAddress, IN UINT64 Length);
 
 /**
   Builds a EFI_HOB_TYPE_FV2 HOB.
@@ -326,14 +264,7 @@ BuildFvHob (
   @param  FileName      The name of the file.
 
 **/
-VOID
-EFIAPI
-BuildFv2Hob (
-  IN          EFI_PHYSICAL_ADDRESS  BaseAddress,
-  IN          UINT64                Length,
-  IN CONST    EFI_GUID              *FvName,
-  IN CONST    EFI_GUID              *FileName
-  );
+VOID EFIAPI BuildFv2Hob(IN EFI_PHYSICAL_ADDRESS BaseAddress, IN UINT64 Length, IN CONST EFI_GUID *FvName, IN CONST EFI_GUID *FileName);
 
 /**
   Builds a EFI_HOB_TYPE_FV3 HOB.
@@ -356,16 +287,7 @@ BuildFv2Hob (
                                 Valid only if IsExtractedFv is TRUE.
 
 **/
-VOID
-EFIAPI
-BuildFv3Hob (
-  IN          EFI_PHYSICAL_ADDRESS  BaseAddress,
-  IN          UINT64                Length,
-  IN          UINT32                AuthenticationStatus,
-  IN          BOOLEAN               ExtractedFv,
-  IN CONST    EFI_GUID              *FvName  OPTIONAL,
-  IN CONST    EFI_GUID              *FileName OPTIONAL
-  );
+VOID EFIAPI BuildFv3Hob(IN EFI_PHYSICAL_ADDRESS BaseAddress, IN UINT64 Length, IN UINT32 AuthenticationStatus, IN BOOLEAN ExtractedFv, IN CONST EFI_GUID *FvName OPTIONAL, IN CONST EFI_GUID *FileName OPTIONAL);
 
 /**
   Builds a Capsule Volume HOB.
@@ -381,12 +303,7 @@ BuildFv3Hob (
   @param  Length        The size of the Capsule Volume in bytes.
 
 **/
-VOID
-EFIAPI
-BuildCvHob (
-  IN EFI_PHYSICAL_ADDRESS  BaseAddress,
-  IN UINT64                Length
-  );
+VOID EFIAPI BuildCvHob(IN EFI_PHYSICAL_ADDRESS BaseAddress, IN UINT64 Length);
 
 /**
   Builds a HOB for the CPU.
@@ -401,12 +318,7 @@ BuildCvHob (
   @param  SizeOfIoSpace       The maximum physical I/O addressability of the processor.
 
 **/
-VOID
-EFIAPI
-BuildCpuHob (
-  IN UINT8  SizeOfMemorySpace,
-  IN UINT8  SizeOfIoSpace
-  );
+VOID EFIAPI BuildCpuHob(IN UINT8 SizeOfMemorySpace, IN UINT8 SizeOfIoSpace);
 
 /**
   Builds a HOB for the Stack.
@@ -421,12 +333,7 @@ BuildCpuHob (
   @param  Length        The length of the stack in bytes.
 
 **/
-VOID
-EFIAPI
-BuildStackHob (
-  IN EFI_PHYSICAL_ADDRESS  BaseAddress,
-  IN UINT64                Length
-  );
+VOID EFIAPI BuildStackHob(IN EFI_PHYSICAL_ADDRESS BaseAddress, IN UINT64 Length);
 
 /**
   Builds a HOB for the BSP store.
@@ -442,13 +349,7 @@ BuildStackHob (
   @param  MemoryType    Type of memory allocated by this HOB.
 
 **/
-VOID
-EFIAPI
-BuildBspStoreHob (
-  IN EFI_PHYSICAL_ADDRESS  BaseAddress,
-  IN UINT64                Length,
-  IN EFI_MEMORY_TYPE       MemoryType
-  );
+VOID EFIAPI BuildBspStoreHob(IN EFI_PHYSICAL_ADDRESS BaseAddress, IN UINT64 Length, IN EFI_MEMORY_TYPE MemoryType);
 
 /**
   Builds a HOB for the memory allocation.
@@ -464,13 +365,7 @@ BuildBspStoreHob (
   @param  MemoryType    Type of memory allocated by this HOB.
 
 **/
-VOID
-EFIAPI
-BuildMemoryAllocationHob (
-  IN EFI_PHYSICAL_ADDRESS  BaseAddress,
-  IN UINT64                Length,
-  IN EFI_MEMORY_TYPE       MemoryType
-  );
+VOID EFIAPI BuildMemoryAllocationHob(IN EFI_PHYSICAL_ADDRESS BaseAddress, IN UINT64 Length, IN EFI_MEMORY_TYPE MemoryType);
 
 /**
   Returns the next instance of the Memory Allocation HOB with the matched GUID from
@@ -491,12 +386,7 @@ BuildMemoryAllocationHob (
   @retval NULL   NULL is returned if the matching Memory Allocation HOB is not found.
 
 **/
-VOID *
-EFIAPI
-GetNextMemoryAllocationGuidHob (
-  IN CONST EFI_GUID  *Guid,
-  IN CONST VOID      *HobStart
-  );
+VOID *EFIAPI GetNextMemoryAllocationGuidHob(IN CONST EFI_GUID *Guid, IN CONST VOID *HobStart);
 
 /**
   Search the HOB list for the Memory Allocation HOB with a matching base address
@@ -512,12 +402,7 @@ GetNextMemoryAllocationGuidHob (
   @retval NULL   NULL is returned if the matching Memory Allocation HOB is not found.
 
 **/
-VOID *
-EFIAPI
-TagMemoryAllocationHobWithGuid (
-  IN EFI_PHYSICAL_ADDRESS  BaseAddress,
-  IN CONST EFI_GUID        *Guid
-  );
+VOID *EFIAPI TagMemoryAllocationHobWithGuid(IN EFI_PHYSICAL_ADDRESS BaseAddress, IN CONST EFI_GUID *Guid);
 
 /**
   Returns the type of a HOB.
@@ -530,8 +415,7 @@ TagMemoryAllocationHobWithGuid (
   @return HobType.
 
 **/
-#define GET_HOB_TYPE(HobStart) \
-  ((*(EFI_HOB_GENERIC_HEADER **)&(HobStart))->HobType)
+#define GET_HOB_TYPE(HobStart) ((*(EFI_HOB_GENERIC_HEADER **) &(HobStart))->HobType)
 
 /**
   Returns the length, in bytes, of a HOB.
@@ -544,8 +428,7 @@ TagMemoryAllocationHobWithGuid (
   @return HobLength.
 
 **/
-#define GET_HOB_LENGTH(HobStart) \
-  ((*(EFI_HOB_GENERIC_HEADER **)&(HobStart))->HobLength)
+#define GET_HOB_LENGTH(HobStart) ((*(EFI_HOB_GENERIC_HEADER **) &(HobStart))->HobLength)
 
 /**
   Returns a pointer to the next HOB in the HOB list.
@@ -558,8 +441,7 @@ TagMemoryAllocationHobWithGuid (
   @return A pointer to the next HOB in the HOB list.
 
 **/
-#define GET_NEXT_HOB(HobStart) \
-  (VOID *)(*(UINT8 **)&(HobStart) + GET_HOB_LENGTH (HobStart))
+#define GET_NEXT_HOB(HobStart) (VOID *) (*(UINT8 **) &(HobStart) + GET_HOB_LENGTH(HobStart))
 
 /**
   Determines if a HOB is the last HOB in the HOB list.
@@ -574,7 +456,7 @@ TagMemoryAllocationHobWithGuid (
   @retval FALSE      The HOB specified by HobStart is not the last HOB in the HOB list.
 
 **/
-#define END_OF_HOB_LIST(HobStart)  (GET_HOB_TYPE (HobStart) == (UINT16)EFI_HOB_TYPE_END_OF_HOB_LIST)
+#define END_OF_HOB_LIST(HobStart) (GET_HOB_TYPE(HobStart) == (UINT16) EFI_HOB_TYPE_END_OF_HOB_LIST)
 
 /**
   Returns a pointer to data buffer from a HOB of type EFI_HOB_TYPE_GUID_EXTENSION.
@@ -587,8 +469,7 @@ TagMemoryAllocationHobWithGuid (
   @return  A pointer to the data buffer in a HOB.
 
 **/
-#define GET_GUID_HOB_DATA(HobStart) \
-  (VOID *)(*(UINT8 **)&(HobStart) + sizeof (EFI_HOB_GUID_TYPE))
+#define GET_GUID_HOB_DATA(HobStart) (VOID *) (*(UINT8 **) &(HobStart) + sizeof(EFI_HOB_GUID_TYPE))
 
 /**
   Returns the size of the data buffer from a HOB of type EFI_HOB_TYPE_GUID_EXTENSION.
@@ -600,5 +481,4 @@ TagMemoryAllocationHobWithGuid (
 
   @return  The size of the data buffer.
 **/
-#define GET_GUID_HOB_DATA_SIZE(HobStart) \
-  (UINT16)(GET_HOB_LENGTH (HobStart) - sizeof (EFI_HOB_GUID_TYPE))
+#define GET_GUID_HOB_DATA_SIZE(HobStart) (UINT16)(GET_HOB_LENGTH(HobStart) - sizeof(EFI_HOB_GUID_TYPE))

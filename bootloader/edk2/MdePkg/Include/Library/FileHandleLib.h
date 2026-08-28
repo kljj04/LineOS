@@ -13,7 +13,7 @@
 
 /// The tag for use in identifying UNICODE files.
 /// If the file is UNICODE, the first 16 bits of the file will equal this value.
-extern CONST UINT16  gUnicodeFileTag;
+extern CONST UINT16 gUnicodeFileTag;
 
 /**
   This function retrieves information about the file for the handle
@@ -28,11 +28,7 @@ extern CONST UINT16  gUnicodeFileTag;
   @retval NULL                  Information could not be retrieved.
   @retval !NULL                 The information about the file.
 **/
-EFI_FILE_INFO *
-EFIAPI
-FileHandleGetInfo (
-  IN EFI_FILE_HANDLE  FileHandle
-  );
+EFI_FILE_INFO *EFIAPI FileHandleGetInfo(IN EFI_FILE_HANDLE FileHandle);
 
 /**
   This function sets the information about the file for the opened handle
@@ -55,10 +51,7 @@ FileHandleGetInfo (
 **/
 EFI_STATUS
 EFIAPI
-FileHandleSetInfo (
-  IN EFI_FILE_HANDLE      FileHandle,
-  IN CONST EFI_FILE_INFO  *FileInfo
-  );
+FileHandleSetInfo(IN EFI_FILE_HANDLE FileHandle, IN CONST EFI_FILE_INFO *FileInfo);
 
 /**
   This function reads information from an opened file.
@@ -91,11 +84,7 @@ FileHandleSetInfo (
 **/
 EFI_STATUS
 EFIAPI
-FileHandleRead (
-  IN EFI_FILE_HANDLE  FileHandle,
-  IN OUT UINTN        *BufferSize,
-  OUT VOID            *Buffer
-  );
+FileHandleRead(IN EFI_FILE_HANDLE FileHandle, IN OUT UINTN *BufferSize, OUT VOID *Buffer);
 
 /**
   Write data to a file.
@@ -123,11 +112,7 @@ FileHandleRead (
 **/
 EFI_STATUS
 EFIAPI
-FileHandleWrite (
-  IN EFI_FILE_HANDLE  FileHandle,
-  IN OUT UINTN        *BufferSize,
-  IN VOID             *Buffer
-  );
+FileHandleWrite(IN EFI_FILE_HANDLE FileHandle, IN OUT UINTN *BufferSize, IN VOID *Buffer);
 
 /**
   Close an open file handle.
@@ -142,9 +127,7 @@ FileHandleWrite (
 **/
 EFI_STATUS
 EFIAPI
-FileHandleClose (
-  IN EFI_FILE_HANDLE  FileHandle
-  );
+FileHandleClose(IN EFI_FILE_HANDLE FileHandle);
 
 /**
   Delete a file and close the handle.
@@ -162,9 +145,7 @@ FileHandleClose (
 **/
 EFI_STATUS
 EFIAPI
-FileHandleDelete (
-  IN EFI_FILE_HANDLE  FileHandle
-  );
+FileHandleDelete(IN EFI_FILE_HANDLE FileHandle);
 
 /**
   Set the current position in a file.
@@ -187,10 +168,7 @@ FileHandleDelete (
 **/
 EFI_STATUS
 EFIAPI
-FileHandleSetPosition (
-  IN EFI_FILE_HANDLE  FileHandle,
-  IN UINT64           Position
-  );
+FileHandleSetPosition(IN EFI_FILE_HANDLE FileHandle, IN UINT64 Position);
 
 /**
   Gets a file's current position.
@@ -209,10 +187,7 @@ FileHandleSetPosition (
 **/
 EFI_STATUS
 EFIAPI
-FileHandleGetPosition (
-  IN EFI_FILE_HANDLE  FileHandle,
-  OUT UINT64          *Position
-  );
+FileHandleGetPosition(IN EFI_FILE_HANDLE FileHandle, OUT UINT64 *Position);
 
 /**
   Flushes data on a file.
@@ -230,9 +205,7 @@ FileHandleGetPosition (
 **/
 EFI_STATUS
 EFIAPI
-FileHandleFlush (
-  IN EFI_FILE_HANDLE  FileHandle
-  );
+FileHandleFlush(IN EFI_FILE_HANDLE FileHandle);
 
 /**
   Function to determine if a given handle is a directory handle.
@@ -249,9 +222,7 @@ FileHandleFlush (
 **/
 EFI_STATUS
 EFIAPI
-FileHandleIsDirectory (
-  IN EFI_FILE_HANDLE  DirHandle
-  );
+FileHandleIsDirectory(IN EFI_FILE_HANDLE DirHandle);
 
 /** Retrieve first entry from a directory.
 
@@ -277,10 +248,7 @@ FileHandleIsDirectory (
 **/
 EFI_STATUS
 EFIAPI
-FileHandleFindFirstFile (
-  IN EFI_FILE_HANDLE  DirHandle,
-  OUT EFI_FILE_INFO   **Buffer
-  );
+FileHandleFindFirstFile(IN EFI_FILE_HANDLE DirHandle, OUT EFI_FILE_INFO **Buffer);
 
 /** Retrieve next entries from a directory.
 
@@ -302,11 +270,7 @@ FileHandleFindFirstFile (
 **/
 EFI_STATUS
 EFIAPI
-FileHandleFindNextFile (
-  IN EFI_FILE_HANDLE  DirHandle,
-  OUT EFI_FILE_INFO   *Buffer,
-  OUT BOOLEAN         *NoFile
-  );
+FileHandleFindNextFile(IN EFI_FILE_HANDLE DirHandle, OUT EFI_FILE_INFO *Buffer, OUT BOOLEAN *NoFile);
 
 /**
   Retrieve the size of a file.
@@ -324,10 +288,7 @@ FileHandleFindNextFile (
 **/
 EFI_STATUS
 EFIAPI
-FileHandleGetSize (
-  IN EFI_FILE_HANDLE  FileHandle,
-  OUT UINT64          *Size
-  );
+FileHandleGetSize(IN EFI_FILE_HANDLE FileHandle, OUT UINT64 *Size);
 
 /**
   Set the size of a file.
@@ -344,10 +305,7 @@ FileHandleGetSize (
 **/
 EFI_STATUS
 EFIAPI
-FileHandleSetSize (
-  IN EFI_FILE_HANDLE  FileHandle,
-  IN UINT64           Size
-  );
+FileHandleSetSize(IN EFI_FILE_HANDLE FileHandle, IN UINT64 Size);
 
 /**
   Function to get a full filename given a EFI_FILE_HANDLE somewhere lower on the
@@ -366,10 +324,7 @@ FileHandleSetSize (
 **/
 EFI_STATUS
 EFIAPI
-FileHandleGetFileName (
-  IN CONST EFI_FILE_HANDLE  Handle,
-  OUT CHAR16                **FullFileName
-  );
+FileHandleGetFileName(IN CONST EFI_FILE_HANDLE Handle, OUT CHAR16 **FullFileName);
 
 /**
   Function to read a single line (up to but not including the \n) from a file.
@@ -401,13 +356,7 @@ FileHandleGetFileName (
 **/
 EFI_STATUS
 EFIAPI
-FileHandleReadLine (
-  IN EFI_FILE_HANDLE  Handle,
-  IN OUT CHAR16       *Buffer,
-  IN OUT UINTN        *Size,
-  IN BOOLEAN          Truncate,
-  IN OUT BOOLEAN      *Ascii
-  );
+FileHandleReadLine(IN EFI_FILE_HANDLE Handle, IN OUT CHAR16 *Buffer, IN OUT UINTN *Size, IN BOOLEAN Truncate, IN OUT BOOLEAN *Ascii);
 
 /**
   Function to read a single line from a file. The \n is not included in the returned
@@ -424,12 +373,7 @@ FileHandleReadLine (
 
   @sa FileHandleReadLine
 **/
-CHAR16 *
-EFIAPI
-FileHandleReturnLine (
-  IN EFI_FILE_HANDLE  Handle,
-  IN OUT BOOLEAN      *Ascii
-  );
+CHAR16 *EFIAPI FileHandleReturnLine(IN EFI_FILE_HANDLE Handle, IN OUT BOOLEAN *Ascii);
 
 /**
   Function to write a line of text to a file.
@@ -454,10 +398,7 @@ FileHandleReturnLine (
 **/
 EFI_STATUS
 EFIAPI
-FileHandleWriteLine (
-  IN EFI_FILE_HANDLE  Handle,
-  IN CHAR16           *Buffer
-  );
+FileHandleWriteLine(IN EFI_FILE_HANDLE Handle, IN CHAR16 *Buffer);
 
 /**
   Function to take a formatted argument and print it to a file.
@@ -473,11 +414,7 @@ FileHandleWriteLine (
 **/
 EFI_STATUS
 EFIAPI
-FileHandlePrintLine (
-  IN EFI_FILE_HANDLE  Handle,
-  IN CONST CHAR16     *Format,
-  ...
-  );
+FileHandlePrintLine(IN EFI_FILE_HANDLE Handle, IN CONST CHAR16 *Format, ...);
 
 /**
   Function to determine if a FILE_HANDLE is at the end of the file.
@@ -493,6 +430,4 @@ FileHandlePrintLine (
 **/
 BOOLEAN
 EFIAPI
-FileHandleEof (
-  IN EFI_FILE_HANDLE  Handle
-  );
+FileHandleEof(IN EFI_FILE_HANDLE Handle);

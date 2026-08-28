@@ -68,15 +68,7 @@ typedef struct _EFI_PEI_GUIDED_SECTION_EXTRACTION_PPI EFI_PEI_GUIDED_SECTION_EXT
   @retval EFI_INVALID_PARAMETER The GUID in InputSection does not match this instance of the
                                 GUIDed Section Extraction PPI.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_PEI_EXTRACT_GUIDED_SECTION)(
-  IN  CONST  EFI_PEI_GUIDED_SECTION_EXTRACTION_PPI *This,
-  IN  CONST  VOID                                  *InputSection,
-  OUT VOID                                         **OutputBuffer,
-  OUT UINTN                                        *OutputSize,
-  OUT UINT32                                       *AuthenticationStatus
-  );
+typedef EFI_STATUS(EFIAPI *EFI_PEI_EXTRACT_GUIDED_SECTION)(IN CONST EFI_PEI_GUIDED_SECTION_EXTRACTION_PPI *This, IN CONST VOID *InputSection, OUT VOID **OutputBuffer, OUT UINTN *OutputSize, OUT UINT32 *AuthenticationStatus);
 
 ///
 /// If a GUID-defined section is encountered when doing section extraction,
@@ -85,6 +77,7 @@ EFI_STATUS
 /// Extraction PPI to extract the section stream contained
 /// therein.
 ///
-struct _EFI_PEI_GUIDED_SECTION_EXTRACTION_PPI {
-  EFI_PEI_EXTRACT_GUIDED_SECTION    ExtractSection;
+struct _EFI_PEI_GUIDED_SECTION_EXTRACTION_PPI
+{
+    EFI_PEI_EXTRACT_GUIDED_SECTION ExtractSection;
 };

@@ -1,25 +1,34 @@
 [LineOS C Coding Style Rules]
 You must strictly follow these formatting and naming conventions for all C/C++ code generation:
 
-1. lowercase (lc):
-   - File names (e.g., kprint.c, font.c, glyph.h)
-   - Single-word variables (e.g., x, y, color, msg, ptr)
+1. Keyword macros:
+   - Use the LineOS keyword macros consistently:
+     - CONST    -> const
+     - NULL     -> ((VOID *) 0)
+     - TRUE     -> ((BOOLEAN) 1)
+     - FALSE    -> ((BOOLEAN) 0)
+     - STATIC   -> static
+     - EXTERN   -> extern
+     - INLINE   -> inline
+     - PACKED   -> __attribute__((packed))
+     - MS_ABI   -> __attribute__((ms_abi))
+     - SYSV_ABI -> __attribute__((sysv_abi))
+     - ASM      -> __asm__ volatile
 
-2. PascalCase (PC) & Acronyms:
-   - Multi-word variables (e.g., TargetWidth, PixelData, KernelBaseAddr)
-   - Functions (e.g., KPrint(), DrawPixel(), InitCPU())
-   - Struct internal members (e.g., struct FontGlyph, GlyphWidth)
-   - Enum members/constants (e.g., FontTypeAscii, FontTypeHangeul)
-   - Acronyms MUST be UPPERCASE (e.g., CPU, GPU, VGA, RSDP, GOP, MMU, IDT, GDT, PML4, UEFI, APIC)
-     - Combined examples: CPUId, VGABuffer, GPUPixelData, RSDPPointer, InitCPU(), SetupGOP()
+2. Formatting:
+   - Use Allman braces.
+   - Function definitions and declarations must keep all parameters on one line.
 
-3. SCREAMING_SNAKE_CASE / UPPER:
-   - Macros and #defines, Structs (e.g., FONT_MAX, BASE_ADDRESS)
-   - Standard Integer types and typedefs (e.g., UINT32, INT8, UINTN, PHYS_ADDR)
-   - Enum type names themselves (e.g., typedef enum { ... } FONT_TYPE;)
+3. Functions:
+   - Function names must use PascalCase.
+   - Acronyms inside function names must remain uppercase.
+   - If a name may collide with compiler/runtime/library symbols, add a K prefix, such as KMemSet.
 
-4. Strict Function Parameter Rule (ONE LINE):
-   - All function definitions and declarations MUST keep their parameters on ONE SINGLE LINE. 
-   - Never break parameters into multiple lines (e.g., void DrawPixel(UINT32 X, UINT32 Y, UINT32 Color);).
+4. Variables:
+   - Multi-word variables must use PascalCase.
+   - Single-word variables must use lowercase.
+
+5. Enum, struct, and constant names:
+   - Enum type names, struct type names, typedef names, enum members, macros, and constants must use all uppercase with underscores between words.
 
 * Context: 64-bit UEFI kernel (Long Mode). No 16-bit BIOS code. Custom OS development framework.

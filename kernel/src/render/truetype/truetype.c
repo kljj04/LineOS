@@ -2,8 +2,8 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <render/truetype.h>
-#include <render/truetype_runtime.h>
+#include <render/truetype/truetype.h>
+#include <render/truetype/truetype_runtime.h>
 #include <lineos/typeinfo.h>
 
 #define LINEOS_MAX_OVERSAMPLE 8
@@ -48,8 +48,8 @@ STATIC BUFFER NewBuf(CONST VOID *p, UINTN size)
     r.cursor = 0;
     return r;
 }
-#define BufGet16(b) BufGet((b), 2)
-#define BufGet32(b) BufGet((b), 4)
+#define BUF_GET16(b) BufGet((b), 2)
+#define BUF_GET32(b) BufGet((b), 4)
 STATIC BUFFER BufRange(CONST BUFFER *b, INT32 o, INT32 s)
 {
     BUFFER r = NewBuf(NULL, 0);
@@ -63,7 +63,7 @@ STATIC BUFFER CffGetIndex(BUFFER *b)
 {
     INT32 count, start, offsize;
     start = b->cursor;
-    count = BufGet16(b);
+    count = BUF_GET16(b);
     if (count)
     {
         offsize = BufGet8(b);
@@ -83,9 +83,9 @@ STATIC UINT32 CffInt(BUFFER *b)
     else if (b0 >= 251 && b0 <= 254)
         return -(b0 - 251) * 256 - BufGet8(b) - 108;
     else if (b0 == 28)
-        return BufGet16(b);
+        return BUF_GET16(b);
     else if (b0 == 29)
-        return BufGet32(b);
+        return BUF_GET32(b);
     KAssert(0);
     return 0;
 }
@@ -135,13 +135,13 @@ STATIC VOID DictGetInts(BUFFER *b, INT32 key, INT32 outcount, UINT32 *out)
 STATIC INT32 CffIndexCount(BUFFER *b)
 {
     BufSeek(b, 0);
-    return BufGet16(b);
+    return BUF_GET16(b);
 }
 STATIC BUFFER CffIndexGet(BUFFER b, INT32 i)
 {
     INT32 count, offsize, start, end;
     BufSeek(&b, 0);
-    count = BufGet16(&b);
+    count = BUF_GET16(&b);
     offsize = BufGet8(&b);
     KAssert(i >= 0 && i < count);
     KAssert(offsize >= 1 && offsize <= 4);
@@ -150,52 +150,52 @@ STATIC BUFFER CffIndexGet(BUFFER b, INT32 i)
     end = BufGet(&b, offsize);
     return BufRange(&b, 2 + (count + 1) * offsize + start, end - start);
 }
-#define ttBYTE(p)  (*(UINT8 *) (p))
-#define ttCHAR(p)  (*(INT8 *) (p))
-#define ttFixed(p) ttLONG(p)
-STATIC UINT16 ttUSHORT(UINT8 *p)
+#define TT_BYTE(p)  (*(UINT8 *) (p))
+#define TT_CHAR(p)  (*(INT8 *) (p))
+#define TT_FIXED(p) TTLONG(p)
+STATIC UINT16 TTUSHORT(UINT8 *p)
 {
     return p[0] * 256 + p[1];
 }
-STATIC INT16 ttSHORT(UINT8 *p)
+STATIC INT16 TTSHORT(UINT8 *p)
 {
     return p[0] * 256 + p[1];
 }
-STATIC UINT32 ttULONG(UINT8 *p)
+STATIC UINT32 TTULONG(UINT8 *p)
 {
     return (p[0] << 24) + (p[1] << 16) + (p[2] << 8) + p[3];
 }
-STATIC INT32 ttLONG(UINT8 *p)
+STATIC INT32 TTLONG(UINT8 *p)
 {
     return (p[0] << 24) + (p[1] << 16) + (p[2] << 8) + p[3];
 }
-#define Tag4(p, c0, c1, c2, c3) ((p)[0] == (c0) && (p)[1] == (c1) && (p)[2] == (c2) && (p)[3] == (c3))
-#define Tag(p, str)             Tag4(p, str[0], str[1], str[2], str[3])
+#define TAG4(p, c0, c1, c2, c3) ((p)[0] == (c0) && (p)[1] == (c1) && (p)[2] == (c2) && (p)[3] == (c3))
+#define TAG(p, str)             TAG4(p, str[0], str[1], str[2], str[3])
 STATIC INT32 Isfont(UINT8 *font)
 {
-    if (Tag4(font, '1', 0, 0, 0))
+    if (TAG4(font, '1', 0, 0, 0))
         return 1;
-    if (Tag(font, "typ1"))
+    if (TAG(font, "typ1"))
         return 1;
-    if (Tag(font, "OTTO"))
+    if (TAG(font, "OTTO"))
         return 1;
-    if (Tag4(font, 0, 1, 0, 0))
+    if (TAG4(font, 0, 1, 0, 0))
         return 1;
-    if (Tag(font, "true"))
+    if (TAG(font, "true"))
         return 1;
     return 0;
 }
 STATIC UINT32 FindTable(UINT8 *data, UINT32 fontstart, CONST VOID *TagName)
 {
     CONST UINT8 *tag = (CONST UINT8 *) TagName;
-    INT32        NumTables = ttUSHORT(data + fontstart + 4);
+    INT32        NumTables = TTUSHORT(data + fontstart + 4);
     UINT32       tabledir = fontstart + 12;
     INT32        i;
     for (i = 0; i < NumTables; ++i)
     {
         UINT32 loc = tabledir + 16 * i;
-        if (Tag(data + loc + 0, tag))
-            return ttULONG(data + loc + 8);
+        if (TAG(data + loc + 0, tag))
+            return TTULONG(data + loc + 8);
     }
     return 0;
 }
@@ -203,14 +203,14 @@ STATIC INT32 GetFontOffsetForIndexInternal(UINT8 *FontCollection, INT32 index)
 {
     if (Isfont(FontCollection))
         return index == 0 ? 0 : -1;
-    if (Tag(FontCollection, "ttcf"))
+    if (TAG(FontCollection, "ttcf"))
     {
-        if (ttULONG(FontCollection + 4) == 0x00010000 || ttULONG(FontCollection + 4) == 0x00020000)
+        if (TTULONG(FontCollection + 4) == 0x00010000 || TTULONG(FontCollection + 4) == 0x00020000)
         {
-            INT32 n = ttLONG(FontCollection + 8);
+            INT32 n = TTLONG(FontCollection + 8);
             if (index >= n)
                 return -1;
-            return ttULONG(FontCollection + 12 + index * 4);
+            return TTULONG(FontCollection + 12 + index * 4);
         }
     }
     return -1;
@@ -219,11 +219,11 @@ STATIC INT32 GetNumberOfFontsInternal(UINT8 *FontCollection)
 {
     if (Isfont(FontCollection))
         return 1;
-    if (Tag(FontCollection, "ttcf"))
+    if (TAG(FontCollection, "ttcf"))
     {
-        if (ttULONG(FontCollection + 4) == 0x00010000 || ttULONG(FontCollection + 4) == 0x00020000)
+        if (TTULONG(FontCollection + 4) == 0x00010000 || TTULONG(FontCollection + 4) == 0x00020000)
         {
-            return ttLONG(FontCollection + 8);
+            return TTLONG(FontCollection + 8);
         }
     }
     return 0;
@@ -242,7 +242,7 @@ STATIC BUFFER GetSubrs(BUFFER cff, BUFFER fontdict)
     BufSeek(&cff, PrivateLoc[1] + subrsoff);
     return CffGetIndex(&cff);
 }
-STATIC INT32 GetSvg(FONT_INFO *info)
+STATIC INT32 GetSVG(FONT_INFO *info)
 {
     UINT32 t;
     if (info->svg < 0)
@@ -250,7 +250,7 @@ STATIC INT32 GetSvg(FONT_INFO *info)
         t = FindTable(info->data, info->fontstart, "SVG ");
         if (t)
         {
-            UINT32 offset = ttULONG(info->data + t + 2);
+            UINT32 offset = TTULONG(info->data + t + 2);
             info->svg = t + offset;
         }
         else
@@ -323,54 +323,54 @@ STATIC INT32 InitFontInternal(FONT_INFO *info, UINT8 *data, INT32 fontstart)
     }
     t = FindTable(data, fontstart, "maxp");
     if (t)
-        info->NumGlyphs = ttUSHORT(data + t + 4);
+        info->NumGlyphs = TTUSHORT(data + t + 4);
     else
         info->NumGlyphs = 0xffff;
     info->svg = -1;
-    NumTables = ttUSHORT(data + cmap + 2);
+    NumTables = TTUSHORT(data + cmap + 2);
     info->IndexMap = 0;
     for (i = 0; i < NumTables; ++i)
     {
         UINT32 EncodingRecord = cmap + 4 + 8 * i;
-        switch (ttUSHORT(data + EncodingRecord))
+        switch (TTUSHORT(data + EncodingRecord))
         {
         case 3:
-            switch (ttUSHORT(data + EncodingRecord + 2))
+            switch (TTUSHORT(data + EncodingRecord + 2))
             {
             case 1:
             case 10:
-                info->IndexMap = cmap + ttULONG(data + EncodingRecord + 4);
+                info->IndexMap = cmap + TTULONG(data + EncodingRecord + 4);
                 break;
             }
             break;
         case 0:
-            info->IndexMap = cmap + ttULONG(data + EncodingRecord + 4);
+            info->IndexMap = cmap + TTULONG(data + EncodingRecord + 4);
             break;
         }
     }
     if (info->IndexMap == 0)
         return 0;
-    info->IndexToLocFormat = ttUSHORT(data + info->head + 50);
+    info->IndexToLocFormat = TTUSHORT(data + info->head + 50);
     return 1;
 }
-extern INT32 FindGlyphIndex(CONST FONT_INFO *info, INT32 UnicodeCodepoint)
+EXTERN INT32 FindGlyphIndex(CONST FONT_INFO *info, INT32 UnicodeCodepoint)
 {
     UINT8 *data = info->data;
     UINT32 IndexMap = info->IndexMap;
-    UINT16 format = ttUSHORT(data + IndexMap + 0);
+    UINT16 format = TTUSHORT(data + IndexMap + 0);
     if (format == 0)
     {
-        INT32 bytes = ttUSHORT(data + IndexMap + 2);
+        INT32 bytes = TTUSHORT(data + IndexMap + 2);
         if (UnicodeCodepoint < bytes - 6)
-            return ttBYTE(data + IndexMap + 6 + UnicodeCodepoint);
+            return TT_BYTE(data + IndexMap + 6 + UnicodeCodepoint);
         return 0;
     }
     else if (format == 6)
     {
-        UINT32 first = ttUSHORT(data + IndexMap + 6);
-        UINT32 count = ttUSHORT(data + IndexMap + 8);
+        UINT32 first = TTUSHORT(data + IndexMap + 6);
+        UINT32 count = TTUSHORT(data + IndexMap + 8);
         if ((UINT32) UnicodeCodepoint >= first && (UINT32) UnicodeCodepoint < first + count)
-            return ttUSHORT(data + IndexMap + 10 + (UnicodeCodepoint - first) * 2);
+            return TTUSHORT(data + IndexMap + 10 + (UnicodeCodepoint - first) * 2);
         return 0;
     }
     else if (format == 2)
@@ -380,22 +380,22 @@ extern INT32 FindGlyphIndex(CONST FONT_INFO *info, INT32 UnicodeCodepoint)
     }
     else if (format == 4)
     {
-        UINT16 segcount = ttUSHORT(data + IndexMap + 6) >> 1;
-        UINT16 SearchRange = ttUSHORT(data + IndexMap + 8) >> 1;
-        UINT16 EntrySelector = ttUSHORT(data + IndexMap + 10);
-        UINT16 RangeShift = ttUSHORT(data + IndexMap + 12) >> 1;
+        UINT16 segcount = TTUSHORT(data + IndexMap + 6) >> 1;
+        UINT16 SearchRange = TTUSHORT(data + IndexMap + 8) >> 1;
+        UINT16 EntrySelector = TTUSHORT(data + IndexMap + 10);
+        UINT16 RangeShift = TTUSHORT(data + IndexMap + 12) >> 1;
         UINT32 EndCount = IndexMap + 14;
         UINT32 search = EndCount;
         if (UnicodeCodepoint > 0xffff)
             return 0;
-        if (UnicodeCodepoint >= ttUSHORT(data + search + RangeShift * 2))
+        if (UnicodeCodepoint >= TTUSHORT(data + search + RangeShift * 2))
             search += RangeShift * 2;
         search -= 2;
         while (EntrySelector)
         {
             UINT16 end;
             SearchRange >>= 1;
-            end = ttUSHORT(data + search + SearchRange * 2);
+            end = TTUSHORT(data + search + SearchRange * 2);
             if (UnicodeCodepoint > end)
                 search += SearchRange * 2;
             --EntrySelector;
@@ -404,34 +404,34 @@ extern INT32 FindGlyphIndex(CONST FONT_INFO *info, INT32 UnicodeCodepoint)
         {
             UINT16 offset, start, last;
             UINT16 item = (UINT16) ((search - EndCount) >> 1);
-            start = ttUSHORT(data + IndexMap + 14 + segcount * 2 + 2 + 2 * item);
-            last = ttUSHORT(data + EndCount + 2 * item);
+            start = TTUSHORT(data + IndexMap + 14 + segcount * 2 + 2 + 2 * item);
+            last = TTUSHORT(data + EndCount + 2 * item);
             if (UnicodeCodepoint < start || UnicodeCodepoint > last)
                 return 0;
-            offset = ttUSHORT(data + IndexMap + 14 + segcount * 6 + 2 + 2 * item);
+            offset = TTUSHORT(data + IndexMap + 14 + segcount * 6 + 2 + 2 * item);
             if (offset == 0)
-                return (UINT16) (UnicodeCodepoint + ttSHORT(data + IndexMap + 14 + segcount * 4 + 2 + 2 * item));
-            return ttUSHORT(data + offset + (UnicodeCodepoint - start) * 2 + IndexMap + 14 + segcount * 6 + 2 + 2 * item);
+                return (UINT16) (UnicodeCodepoint + TTSHORT(data + IndexMap + 14 + segcount * 4 + 2 + 2 * item));
+            return TTUSHORT(data + offset + (UnicodeCodepoint - start) * 2 + IndexMap + 14 + segcount * 6 + 2 + 2 * item);
         }
     }
     else if (format == 12 || format == 13)
     {
-        UINT32 ngroups = ttULONG(data + IndexMap + 12);
+        UINT32 ngroups = TTULONG(data + IndexMap + 12);
         INT32  low, high;
         low = 0;
         high = (INT32) ngroups;
         while (low < high)
         {
             INT32  mid = low + ((high - low) >> 1);
-            UINT32 StartChar = ttULONG(data + IndexMap + 16 + mid * 12);
-            UINT32 EndChar = ttULONG(data + IndexMap + 16 + mid * 12 + 4);
+            UINT32 StartChar = TTULONG(data + IndexMap + 16 + mid * 12);
+            UINT32 EndChar = TTULONG(data + IndexMap + 16 + mid * 12 + 4);
             if ((UINT32) UnicodeCodepoint < StartChar)
                 high = mid;
             else if ((UINT32) UnicodeCodepoint > EndChar)
                 low = mid + 1;
             else
             {
-                UINT32 StartGlyph = ttULONG(data + IndexMap + 16 + mid * 12 + 8);
+                UINT32 StartGlyph = TTULONG(data + IndexMap + 16 + mid * 12 + 8);
                 if (format == 12)
                     return StartGlyph + UnicodeCodepoint - StartChar;
                 else
@@ -443,7 +443,7 @@ extern INT32 FindGlyphIndex(CONST FONT_INFO *info, INT32 UnicodeCodepoint)
     KAssert(0);
     return 0;
 }
-extern INT32 GetCodepointShape(CONST FONT_INFO *info, INT32 UnicodeCodepoint, VERTEX **vertices)
+EXTERN INT32 GetCodepointShape(CONST FONT_INFO *info, INT32 UnicodeCodepoint, VERTEX **vertices)
 {
     return GetGlyphShape(info, FindGlyphIndex(info, UnicodeCodepoint), vertices);
 }
@@ -465,18 +465,18 @@ STATIC INT32 GetGlyfOffset(CONST FONT_INFO *info, INT32 GlyphIndex)
         return -1;
     if (info->IndexToLocFormat == 0)
     {
-        g1 = info->glyf + ttUSHORT(info->data + info->loca + GlyphIndex * 2) * 2;
-        g2 = info->glyf + ttUSHORT(info->data + info->loca + GlyphIndex * 2 + 2) * 2;
+        g1 = info->glyf + TTUSHORT(info->data + info->loca + GlyphIndex * 2) * 2;
+        g2 = info->glyf + TTUSHORT(info->data + info->loca + GlyphIndex * 2 + 2) * 2;
     }
     else
     {
-        g1 = info->glyf + ttULONG(info->data + info->loca + GlyphIndex * 4);
-        g2 = info->glyf + ttULONG(info->data + info->loca + GlyphIndex * 4 + 4);
+        g1 = info->glyf + TTULONG(info->data + info->loca + GlyphIndex * 4);
+        g2 = info->glyf + TTULONG(info->data + info->loca + GlyphIndex * 4 + 4);
     }
     return g1 == g2 ? -1 : g1;
 }
 STATIC INT32 GetGlyphInfoT2(CONST FONT_INFO *info, INT32 GlyphIndex, INT32 *x0, INT32 *y0, INT32 *x1, INT32 *y1);
-extern INT32 GetGlyphBox(CONST FONT_INFO *info, INT32 GlyphIndex, INT32 *x0, INT32 *y0, INT32 *x1, INT32 *y1)
+EXTERN INT32 GetGlyphBox(CONST FONT_INFO *info, INT32 GlyphIndex, INT32 *x0, INT32 *y0, INT32 *x1, INT32 *y1)
 {
     if (info->cff.size)
     {
@@ -488,21 +488,21 @@ extern INT32 GetGlyphBox(CONST FONT_INFO *info, INT32 GlyphIndex, INT32 *x0, INT
         if (g < 0)
             return 0;
         if (x0)
-            *x0 = ttSHORT(info->data + g + 2);
+            *x0 = TTSHORT(info->data + g + 2);
         if (y0)
-            *y0 = ttSHORT(info->data + g + 4);
+            *y0 = TTSHORT(info->data + g + 4);
         if (x1)
-            *x1 = ttSHORT(info->data + g + 6);
+            *x1 = TTSHORT(info->data + g + 6);
         if (y1)
-            *y1 = ttSHORT(info->data + g + 8);
+            *y1 = TTSHORT(info->data + g + 8);
     }
     return 1;
 }
-extern INT32 GetCodepointBox(CONST FONT_INFO *info, INT32 codepoint, INT32 *x0, INT32 *y0, INT32 *x1, INT32 *y1)
+EXTERN INT32 GetCodepointBox(CONST FONT_INFO *info, INT32 codepoint, INT32 *x0, INT32 *y0, INT32 *x1, INT32 *y1)
 {
     return GetGlyphBox(info, FindGlyphIndex(info, codepoint), x0, y0, x1, y1);
 }
-extern INT32 IsGlyphEmpty(CONST FONT_INFO *info, INT32 GlyphIndex)
+EXTERN INT32 IsGlyphEmpty(CONST FONT_INFO *info, INT32 GlyphIndex)
 {
     INT16 NumberOfContours;
     INT32 g;
@@ -511,7 +511,7 @@ extern INT32 IsGlyphEmpty(CONST FONT_INFO *info, INT32 GlyphIndex)
     g = GetGlyfOffset(info, GlyphIndex);
     if (g < 0)
         return 1;
-    NumberOfContours = ttSHORT(info->data + g);
+    NumberOfContours = TTSHORT(info->data + g);
     return NumberOfContours == 0;
 }
 STATIC INT32 CloseShape(VERTEX *vertices, INT32 NumVertices, INT32 WasOff, INT32 StartOff, INT32 sx, INT32 sy, INT32 scx, INT32 scy, INT32 cx, INT32 cy)
@@ -519,15 +519,15 @@ STATIC INT32 CloseShape(VERTEX *vertices, INT32 NumVertices, INT32 WasOff, INT32
     if (StartOff)
     {
         if (WasOff)
-            Setvertex(&vertices[NumVertices++], LINEOS_vcurve, (cx + scx) >> 1, (cy + scy) >> 1, cx, cy);
-        Setvertex(&vertices[NumVertices++], LINEOS_vcurve, sx, sy, scx, scy);
+            Setvertex(&vertices[NumVertices++], LINEOS_VCURVE, (cx + scx) >> 1, (cy + scy) >> 1, cx, cy);
+        Setvertex(&vertices[NumVertices++], LINEOS_VCURVE, sx, sy, scx, scy);
     }
     else
     {
         if (WasOff)
-            Setvertex(&vertices[NumVertices++], LINEOS_vcurve, sx, sy, cx, cy);
+            Setvertex(&vertices[NumVertices++], LINEOS_VCURVE, sx, sy, cx, cy);
         else
-            Setvertex(&vertices[NumVertices++], LINEOS_vline, sx, sy, 0, 0);
+            Setvertex(&vertices[NumVertices++], LINEOS_VLINE, sx, sy, 0, 0);
     }
     return NumVertices;
 }
@@ -542,7 +542,7 @@ STATIC INT32 GetGlyphShapeTT(CONST FONT_INFO *info, INT32 GlyphIndex, VERTEX **p
     *pvertices = NULL;
     if (g < 0)
         return 0;
-    NumberOfContours = ttSHORT(data + g);
+    NumberOfContours = TTSHORT(data + g);
     if (NumberOfContours > 0)
     {
         UINT8  flags = 0, flagcount;
@@ -550,9 +550,9 @@ STATIC INT32 GetGlyphShapeTT(CONST FONT_INFO *info, INT32 GlyphIndex, VERTEX **p
         INT32  x, y, cx, cy, sx, sy, scx, scy;
         UINT8 *points;
         EndPtsOfContours = (data + g + 10);
-        ins = ttUSHORT(data + g + 10 + NumberOfContours * 2);
+        ins = TTUSHORT(data + g + 10 + NumberOfContours * 2);
         points = data + g + 10 + NumberOfContours * 2 + 2 + ins;
-        n = 1 + ttUSHORT(EndPtsOfContours + NumberOfContours * 2 - 2);
+        n = 1 + TTUSHORT(EndPtsOfContours + NumberOfContours * 2 - 2);
         m = n + 2 * NumberOfContours;
         vertices = (VERTEX *) KTTFAlloc(m * sizeof(vertices[0]), info->userdata);
         if (vertices == 0)
@@ -643,9 +643,9 @@ STATIC INT32 GetGlyphShapeTT(CONST FONT_INFO *info, INT32 GlyphIndex, VERTEX **p
                     sx = x;
                     sy = y;
                 }
-                Setvertex(&vertices[NumVertices++], LINEOS_vmove, sx, sy, 0, 0);
+                Setvertex(&vertices[NumVertices++], LINEOS_VMOVE, sx, sy, 0, 0);
                 WasOff = 0;
-                NextMove = 1 + ttUSHORT(EndPtsOfContours + j * 2);
+                NextMove = 1 + TTUSHORT(EndPtsOfContours + j * 2);
                 ++j;
             }
             else
@@ -653,7 +653,7 @@ STATIC INT32 GetGlyphShapeTT(CONST FONT_INFO *info, INT32 GlyphIndex, VERTEX **p
                 if (!(flags & 1))
                 {
                     if (WasOff)
-                        Setvertex(&vertices[NumVertices++], LINEOS_vcurve, (cx + x) >> 1, (cy + y) >> 1, cx, cy);
+                        Setvertex(&vertices[NumVertices++], LINEOS_VCURVE, (cx + x) >> 1, (cy + y) >> 1, cx, cy);
                     cx = x;
                     cy = y;
                     WasOff = 1;
@@ -661,9 +661,9 @@ STATIC INT32 GetGlyphShapeTT(CONST FONT_INFO *info, INT32 GlyphIndex, VERTEX **p
                 else
                 {
                     if (WasOff)
-                        Setvertex(&vertices[NumVertices++], LINEOS_vcurve, x, y, cx, cy);
+                        Setvertex(&vertices[NumVertices++], LINEOS_VCURVE, x, y, cx, cy);
                     else
-                        Setvertex(&vertices[NumVertices++], LINEOS_vline, x, y, 0, 0);
+                        Setvertex(&vertices[NumVertices++], LINEOS_VLINE, x, y, 0, 0);
                     WasOff = 0;
                 }
             }
@@ -682,24 +682,24 @@ STATIC INT32 GetGlyphShapeTT(CONST FONT_INFO *info, INT32 GlyphIndex, VERTEX **p
             INT32   CompNumVerts = 0, i;
             VERTEX *CompVerts = 0, *tmp = 0;
             FLOAT32 mtx[6] = {1, 0, 0, 1, 0, 0}, m, n;
-            flags = ttSHORT(comp);
+            flags = TTSHORT(comp);
             comp += 2;
-            gidx = ttSHORT(comp);
+            gidx = TTSHORT(comp);
             comp += 2;
             if (flags & 2)
             {
                 if (flags & 1)
                 {
-                    mtx[4] = ttSHORT(comp);
+                    mtx[4] = TTSHORT(comp);
                     comp += 2;
-                    mtx[5] = ttSHORT(comp);
+                    mtx[5] = TTSHORT(comp);
                     comp += 2;
                 }
                 else
                 {
-                    mtx[4] = ttCHAR(comp);
+                    mtx[4] = TT_CHAR(comp);
                     comp += 1;
-                    mtx[5] = ttCHAR(comp);
+                    mtx[5] = TT_CHAR(comp);
                     comp += 1;
                 }
             }
@@ -709,27 +709,27 @@ STATIC INT32 GetGlyphShapeTT(CONST FONT_INFO *info, INT32 GlyphIndex, VERTEX **p
             }
             if (flags & (1 << 3))
             {
-                mtx[0] = mtx[3] = ttSHORT(comp) / 16384.0f;
+                mtx[0] = mtx[3] = TTSHORT(comp) / 16384.0f;
                 comp += 2;
                 mtx[1] = mtx[2] = 0;
             }
             else if (flags & (1 << 6))
             {
-                mtx[0] = ttSHORT(comp) / 16384.0f;
+                mtx[0] = TTSHORT(comp) / 16384.0f;
                 comp += 2;
                 mtx[1] = mtx[2] = 0;
-                mtx[3] = ttSHORT(comp) / 16384.0f;
+                mtx[3] = TTSHORT(comp) / 16384.0f;
                 comp += 2;
             }
             else if (flags & (1 << 7))
             {
-                mtx[0] = ttSHORT(comp) / 16384.0f;
+                mtx[0] = TTSHORT(comp) / 16384.0f;
                 comp += 2;
-                mtx[1] = ttSHORT(comp) / 16384.0f;
+                mtx[1] = TTSHORT(comp) / 16384.0f;
                 comp += 2;
-                mtx[2] = ttSHORT(comp) / 16384.0f;
+                mtx[2] = TTSHORT(comp) / 16384.0f;
                 comp += 2;
-                mtx[3] = ttSHORT(comp) / 16384.0f;
+                mtx[3] = TTSHORT(comp) / 16384.0f;
                 comp += 2;
             }
             m = (FLOAT32) KSqrt(mtx[0] * mtx[0] + mtx[1] * mtx[1]);
@@ -739,16 +739,16 @@ STATIC INT32 GetGlyphShapeTT(CONST FONT_INFO *info, INT32 GlyphIndex, VERTEX **p
             {
                 for (i = 0; i < CompNumVerts; ++i)
                 {
-                    VERTEX    *v = &CompVerts[i];
-                    VertexType x, y;
+                    VERTEX     *v = &CompVerts[i];
+                    VERTEX_TYPE x, y;
                     x = v->x;
                     y = v->y;
-                    v->x = (VertexType) (m * (mtx[0] * x + mtx[2] * y + mtx[4]));
-                    v->y = (VertexType) (n * (mtx[1] * x + mtx[3] * y + mtx[5]));
+                    v->x = (VERTEX_TYPE) (m * (mtx[0] * x + mtx[2] * y + mtx[4]));
+                    v->y = (VERTEX_TYPE) (n * (mtx[1] * x + mtx[3] * y + mtx[5]));
                     x = v->cx;
                     y = v->cy;
-                    v->cx = (VertexType) (m * (mtx[0] * x + mtx[2] * y + mtx[4]));
-                    v->cy = (VertexType) (n * (mtx[1] * x + mtx[3] * y + mtx[5]));
+                    v->cx = (VERTEX_TYPE) (m * (mtx[0] * x + mtx[2] * y + mtx[4]));
+                    v->cy = (VERTEX_TYPE) (n * (mtx[1] * x + mtx[3] * y + mtx[5]));
                 }
                 tmp = (VERTEX *) KTTFAlloc((NumVertices + CompNumVerts) * sizeof(VERTEX), info->userdata);
                 if (!tmp)
@@ -808,7 +808,7 @@ STATIC VOID CsctxV(CS_CONTEXT *c, UINT8 type, INT32 x, INT32 y, INT32 cx, INT32 
     if (c->bounds)
     {
         TrackVertex(c, x, y);
-        if (type == LINEOS_vcubic)
+        if (type == LINEOS_VCUBIC)
         {
             TrackVertex(c, cx, cy);
             TrackVertex(c, cx1, cy1);
@@ -825,20 +825,20 @@ STATIC VOID CsctxV(CS_CONTEXT *c, UINT8 type, INT32 x, INT32 y, INT32 cx, INT32 
 STATIC VOID CsctxCloseShape(CS_CONTEXT *ctx)
 {
     if (ctx->FirstX != ctx->x || ctx->FirstY != ctx->y)
-        CsctxV(ctx, LINEOS_vline, (INT32) ctx->FirstX, (INT32) ctx->FirstY, 0, 0, 0, 0);
+        CsctxV(ctx, LINEOS_VLINE, (INT32) ctx->FirstX, (INT32) ctx->FirstY, 0, 0, 0, 0);
 }
 STATIC VOID CsctxRmoveTo(CS_CONTEXT *ctx, FLOAT32 dx, FLOAT32 dy)
 {
     CsctxCloseShape(ctx);
     ctx->FirstX = ctx->x = ctx->x + dx;
     ctx->FirstY = ctx->y = ctx->y + dy;
-    CsctxV(ctx, LINEOS_vmove, (INT32) ctx->x, (INT32) ctx->y, 0, 0, 0, 0);
+    CsctxV(ctx, LINEOS_VMOVE, (INT32) ctx->x, (INT32) ctx->y, 0, 0, 0, 0);
 }
 STATIC VOID CsctxRlineTo(CS_CONTEXT *ctx, FLOAT32 dx, FLOAT32 dy)
 {
     ctx->x += dx;
     ctx->y += dy;
-    CsctxV(ctx, LINEOS_vline, (INT32) ctx->x, (INT32) ctx->y, 0, 0, 0, 0);
+    CsctxV(ctx, LINEOS_VLINE, (INT32) ctx->x, (INT32) ctx->y, 0, 0, 0, 0);
 }
 STATIC VOID CsctxRccurveTo(CS_CONTEXT *ctx, FLOAT32 dx1, FLOAT32 dy1, FLOAT32 dx2, FLOAT32 dy2, FLOAT32 dx3, FLOAT32 dy3)
 {
@@ -848,7 +848,7 @@ STATIC VOID CsctxRccurveTo(CS_CONTEXT *ctx, FLOAT32 dx1, FLOAT32 dy1, FLOAT32 dx
     FLOAT32 cy2 = cy1 + dy2;
     ctx->x = cx2 + dx3;
     ctx->y = cy2 + dy3;
-    CsctxV(ctx, LINEOS_vcubic, (INT32) ctx->x, (INT32) ctx->y, (INT32) cx1, (INT32) cy1, (INT32) cx2, (INT32) cy2);
+    CsctxV(ctx, LINEOS_VCUBIC, (INT32) ctx->x, (INT32) ctx->y, (INT32) cx1, (INT32) cy1, (INT32) cx2, (INT32) cy2);
 }
 STATIC BUFFER GetSubr(BUFFER idx, INT32 n)
 {
@@ -876,12 +876,12 @@ STATIC BUFFER CidGetGlyphSubrs(CONST FONT_INFO *info, INT32 GlyphIndex)
     }
     else if (fmt == 3)
     {
-        nranges = BufGet16(&fdselect);
-        start = BufGet16(&fdselect);
+        nranges = BUF_GET16(&fdselect);
+        start = BUF_GET16(&fdselect);
         for (i = 0; i < nranges; i++)
         {
             v = BufGet8(&fdselect);
-            end = BufGet16(&fdselect);
+            end = BUF_GET16(&fdselect);
             if (GlyphIndex >= start && GlyphIndex < end)
             {
                 fdselector = v;
@@ -1145,7 +1145,7 @@ STATIC INT32 RunCharstring(CONST FONT_INFO *info, INT32 GlyphIndex, CS_CONTEXT *
                 return LINEOS_CSERR("reserved operator");
             if (b0 == 255)
             {
-                f = (FLOAT32) (INT32) BufGet32(&b) / 0x10000;
+                f = (FLOAT32) (INT32) BUF_GET32(&b) / 0x10000;
             }
             else
             {
@@ -1195,60 +1195,60 @@ STATIC INT32 GetGlyphInfoT2(CONST FONT_INFO *info, INT32 GlyphIndex, INT32 *x0, 
         *y1 = r ? c.MaxY : 0;
     return r ? c.NumVertices : 0;
 }
-extern INT32 GetGlyphShape(CONST FONT_INFO *info, INT32 GlyphIndex, VERTEX **pvertices)
+EXTERN INT32 GetGlyphShape(CONST FONT_INFO *info, INT32 GlyphIndex, VERTEX **pvertices)
 {
     if (!info->cff.size)
         return GetGlyphShapeTT(info, GlyphIndex, pvertices);
     else
         return GetGlyphShapeT2(info, GlyphIndex, pvertices);
 }
-extern VOID GetGlyphHMetrics(CONST FONT_INFO *info, INT32 GlyphIndex, INT32 *AdvanceWidth, INT32 *LeftSideBearing)
+EXTERN VOID GetGlyphHMetrics(CONST FONT_INFO *info, INT32 GlyphIndex, INT32 *AdvanceWidth, INT32 *LeftSideBearing)
 {
-    UINT16 NumOfLongHorMetrics = ttUSHORT(info->data + info->hhea + 34);
+    UINT16 NumOfLongHorMetrics = TTUSHORT(info->data + info->hhea + 34);
     if (GlyphIndex < NumOfLongHorMetrics)
     {
         if (AdvanceWidth)
-            *AdvanceWidth = ttSHORT(info->data + info->hmtx + 4 * GlyphIndex);
+            *AdvanceWidth = TTSHORT(info->data + info->hmtx + 4 * GlyphIndex);
         if (LeftSideBearing)
-            *LeftSideBearing = ttSHORT(info->data + info->hmtx + 4 * GlyphIndex + 2);
+            *LeftSideBearing = TTSHORT(info->data + info->hmtx + 4 * GlyphIndex + 2);
     }
     else
     {
         if (AdvanceWidth)
-            *AdvanceWidth = ttSHORT(info->data + info->hmtx + 4 * (NumOfLongHorMetrics - 1));
+            *AdvanceWidth = TTSHORT(info->data + info->hmtx + 4 * (NumOfLongHorMetrics - 1));
         if (LeftSideBearing)
-            *LeftSideBearing = ttSHORT(info->data + info->hmtx + 4 * NumOfLongHorMetrics + 2 * (GlyphIndex - NumOfLongHorMetrics));
+            *LeftSideBearing = TTSHORT(info->data + info->hmtx + 4 * NumOfLongHorMetrics + 2 * (GlyphIndex - NumOfLongHorMetrics));
     }
 }
-extern INT32 GetKerningTableLength(CONST FONT_INFO *info)
+EXTERN INT32 GetKerningTableLength(CONST FONT_INFO *info)
 {
     UINT8 *data = info->data + info->kern;
     if (!info->kern)
         return 0;
-    if (ttUSHORT(data + 2) < 1)
+    if (TTUSHORT(data + 2) < 1)
         return 0;
-    if (ttUSHORT(data + 8) != 1)
+    if (TTUSHORT(data + 8) != 1)
         return 0;
-    return ttUSHORT(data + 10);
+    return TTUSHORT(data + 10);
 }
-extern INT32 GetKerningTable(CONST FONT_INFO *info, KERNING_ENTRY *table, INT32 TableLength)
+EXTERN INT32 GetKerningTable(CONST FONT_INFO *info, KERNING_ENTRY *table, INT32 TableLength)
 {
     UINT8 *data = info->data + info->kern;
     INT32  k, length;
     if (!info->kern)
         return 0;
-    if (ttUSHORT(data + 2) < 1)
+    if (TTUSHORT(data + 2) < 1)
         return 0;
-    if (ttUSHORT(data + 8) != 1)
+    if (TTUSHORT(data + 8) != 1)
         return 0;
-    length = ttUSHORT(data + 10);
+    length = TTUSHORT(data + 10);
     if (TableLength < length)
         length = TableLength;
     for (k = 0; k < length; k++)
     {
-        table[k].glyph1 = ttUSHORT(data + 18 + (k * 6));
-        table[k].glyph2 = ttUSHORT(data + 20 + (k * 6));
-        table[k].advance = ttSHORT(data + 22 + (k * 6));
+        table[k].glyph1 = TTUSHORT(data + 18 + (k * 6));
+        table[k].glyph2 = TTUSHORT(data + 20 + (k * 6));
+        table[k].advance = TTSHORT(data + 22 + (k * 6));
     }
     return length;
 }
@@ -1259,34 +1259,34 @@ STATIC INT32 GetGlyphKernInfoAdvance(CONST FONT_INFO *info, INT32 glyph1, INT32 
     INT32  l, r, m;
     if (!info->kern)
         return 0;
-    if (ttUSHORT(data + 2) < 1)
+    if (TTUSHORT(data + 2) < 1)
         return 0;
-    if (ttUSHORT(data + 8) != 1)
+    if (TTUSHORT(data + 8) != 1)
         return 0;
     l = 0;
-    r = ttUSHORT(data + 10) - 1;
+    r = TTUSHORT(data + 10) - 1;
     needle = glyph1 << 16 | glyph2;
     while (l <= r)
     {
         m = (l + r) >> 1;
-        straw = ttULONG(data + 18 + (m * 6));
+        straw = TTULONG(data + 18 + (m * 6));
         if (needle < straw)
             r = m - 1;
         else if (needle > straw)
             l = m + 1;
         else
-            return ttSHORT(data + 22 + (m * 6));
+            return TTSHORT(data + 22 + (m * 6));
     }
     return 0;
 }
 STATIC INT32 GetCoverageIndex(UINT8 *CoverageTable, INT32 glyph)
 {
-    UINT16 CoverageFormat = ttUSHORT(CoverageTable);
+    UINT16 CoverageFormat = TTUSHORT(CoverageTable);
     switch (CoverageFormat)
     {
     case 1:
     {
-        UINT16 GlyphCount = ttUSHORT(CoverageTable + 2);
+        UINT16 GlyphCount = TTUSHORT(CoverageTable + 2);
         INT32  l = 0, r = GlyphCount - 1, m;
         INT32  straw, needle = glyph;
         while (l <= r)
@@ -1294,7 +1294,7 @@ STATIC INT32 GetCoverageIndex(UINT8 *CoverageTable, INT32 glyph)
             UINT8 *GlyphArray = CoverageTable + 4;
             UINT16 GlyphID;
             m = (l + r) >> 1;
-            GlyphID = ttUSHORT(GlyphArray + 2 * m);
+            GlyphID = TTUSHORT(GlyphArray + 2 * m);
             straw = GlyphID;
             if (needle < straw)
                 r = m - 1;
@@ -1309,7 +1309,7 @@ STATIC INT32 GetCoverageIndex(UINT8 *CoverageTable, INT32 glyph)
     }
     case 2:
     {
-        UINT16 RangeCount = ttUSHORT(CoverageTable + 2);
+        UINT16 RangeCount = TTUSHORT(CoverageTable + 2);
         UINT8 *RangeArray = CoverageTable + 4;
         INT32  l = 0, r = RangeCount - 1, m;
         INT32  StrawStart, StrawEnd, needle = glyph;
@@ -1318,15 +1318,15 @@ STATIC INT32 GetCoverageIndex(UINT8 *CoverageTable, INT32 glyph)
             UINT8 *RangeRecord;
             m = (l + r) >> 1;
             RangeRecord = RangeArray + 6 * m;
-            StrawStart = ttUSHORT(RangeRecord);
-            StrawEnd = ttUSHORT(RangeRecord + 2);
+            StrawStart = TTUSHORT(RangeRecord);
+            StrawEnd = TTUSHORT(RangeRecord + 2);
             if (needle < StrawStart)
                 r = m - 1;
             else if (needle > StrawEnd)
                 l = m + 1;
             else
             {
-                UINT16 StartCoverageIndex = ttUSHORT(RangeRecord + 4);
+                UINT16 StartCoverageIndex = TTUSHORT(RangeRecord + 4);
                 return StartCoverageIndex + glyph - StrawStart;
             }
         }
@@ -1339,21 +1339,21 @@ STATIC INT32 GetCoverageIndex(UINT8 *CoverageTable, INT32 glyph)
 }
 STATIC INT32 GetGlyphClass(UINT8 *ClassDefTable, INT32 glyph)
 {
-    UINT16 ClassDefFormat = ttUSHORT(ClassDefTable);
+    UINT16 ClassDefFormat = TTUSHORT(ClassDefTable);
     switch (ClassDefFormat)
     {
     case 1:
     {
-        UINT16 StartGlyphID = ttUSHORT(ClassDefTable + 2);
-        UINT16 GlyphCount = ttUSHORT(ClassDefTable + 4);
+        UINT16 StartGlyphID = TTUSHORT(ClassDefTable + 2);
+        UINT16 GlyphCount = TTUSHORT(ClassDefTable + 4);
         UINT8 *ClassDef1ValueArray = ClassDefTable + 6;
         if (glyph >= StartGlyphID && glyph < StartGlyphID + GlyphCount)
-            return (INT32) ttUSHORT(ClassDef1ValueArray + 2 * (glyph - StartGlyphID));
+            return (INT32) TTUSHORT(ClassDef1ValueArray + 2 * (glyph - StartGlyphID));
         break;
     }
     case 2:
     {
-        UINT16 ClassRangeCount = ttUSHORT(ClassDefTable + 2);
+        UINT16 ClassRangeCount = TTUSHORT(ClassDefTable + 2);
         UINT8 *ClassRangeRecords = ClassDefTable + 4;
         INT32  l = 0, r = ClassRangeCount - 1, m;
         INT32  StrawStart, StrawEnd, needle = glyph;
@@ -1362,14 +1362,14 @@ STATIC INT32 GetGlyphClass(UINT8 *ClassDefTable, INT32 glyph)
             UINT8 *ClassRangeRecord;
             m = (l + r) >> 1;
             ClassRangeRecord = ClassRangeRecords + 6 * m;
-            StrawStart = ttUSHORT(ClassRangeRecord);
-            StrawEnd = ttUSHORT(ClassRangeRecord + 2);
+            StrawStart = TTUSHORT(ClassRangeRecord);
+            StrawEnd = TTUSHORT(ClassRangeRecord + 2);
             if (needle < StrawStart)
                 r = m - 1;
             else if (needle > StrawEnd)
                 l = m + 1;
             else
-                return (INT32) ttUSHORT(ClassRangeRecord + 4);
+                return (INT32) TTUSHORT(ClassRangeRecord + 4);
         }
         break;
     }
@@ -1378,7 +1378,7 @@ STATIC INT32 GetGlyphClass(UINT8 *ClassDefTable, INT32 glyph)
     }
     return 0;
 }
-#define LINEOS_GPOS_TODO_assert(x)
+#define LINEOS_GPOS_TODO_ASSERT(x)
 STATIC INT32 GetGlyphGPOSInfoAdvance(CONST FONT_INFO *info, INT32 glyph1, INT32 glyph2)
 {
     UINT16 LookupListOffset;
@@ -1389,28 +1389,28 @@ STATIC INT32 GetGlyphGPOSInfoAdvance(CONST FONT_INFO *info, INT32 glyph1, INT32 
     if (!info->gpos)
         return 0;
     data = info->data + info->gpos;
-    if (ttUSHORT(data + 0) != 1)
+    if (TTUSHORT(data + 0) != 1)
         return 0;
-    if (ttUSHORT(data + 2) != 0)
+    if (TTUSHORT(data + 2) != 0)
         return 0;
-    LookupListOffset = ttUSHORT(data + 8);
+    LookupListOffset = TTUSHORT(data + 8);
     LookupList = data + LookupListOffset;
-    LookupCount = ttUSHORT(LookupList);
+    LookupCount = TTUSHORT(LookupList);
     for (i = 0; i < LookupCount; ++i)
     {
-        UINT16 LookupOffset = ttUSHORT(LookupList + 2 + 2 * i);
+        UINT16 LookupOffset = TTUSHORT(LookupList + 2 + 2 * i);
         UINT8 *LookupTable = LookupList + LookupOffset;
-        UINT16 LookupType = ttUSHORT(LookupTable);
-        UINT16 SubTableCount = ttUSHORT(LookupTable + 4);
+        UINT16 LookupType = TTUSHORT(LookupTable);
+        UINT16 SubTableCount = TTUSHORT(LookupTable + 4);
         UINT8 *SubTableOffsets = LookupTable + 6;
         if (LookupType != 2)
             continue;
         for (sti = 0; sti < SubTableCount; sti++)
         {
-            UINT16 SubtableOffset = ttUSHORT(SubTableOffsets + 2 * sti);
+            UINT16 SubtableOffset = TTUSHORT(SubTableOffsets + 2 * sti);
             UINT8 *table = LookupTable + SubtableOffset;
-            UINT16 PosFormat = ttUSHORT(table);
-            UINT16 CoverageOffset = ttUSHORT(table + 2);
+            UINT16 PosFormat = TTUSHORT(table);
+            UINT16 CoverageOffset = TTUSHORT(table + 2);
             INT32  CoverageIndex = GetCoverageIndex(table + CoverageOffset, glyph1);
             if (CoverageIndex == -1)
                 continue;
@@ -1420,15 +1420,15 @@ STATIC INT32 GetGlyphGPOSInfoAdvance(CONST FONT_INFO *info, INT32 glyph1, INT32 
             {
                 INT32  l, r, m;
                 INT32  straw, needle;
-                UINT16 ValueFormat1 = ttUSHORT(table + 4);
-                UINT16 ValueFormat2 = ttUSHORT(table + 6);
+                UINT16 ValueFormat1 = TTUSHORT(table + 4);
+                UINT16 ValueFormat2 = TTUSHORT(table + 6);
                 if (ValueFormat1 == 4 && ValueFormat2 == 0)
                 {
                     INT32  ValueRecordPairSizeInBytes = 2;
-                    UINT16 PairSetCount = ttUSHORT(table + 8);
-                    UINT16 PairPosOffset = ttUSHORT(table + 10 + 2 * CoverageIndex);
+                    UINT16 PairSetCount = TTUSHORT(table + 8);
+                    UINT16 PairPosOffset = TTUSHORT(table + 10 + 2 * CoverageIndex);
                     UINT8 *PairValueTable = table + PairPosOffset;
-                    UINT16 PairValueCount = ttUSHORT(PairValueTable);
+                    UINT16 PairValueCount = TTUSHORT(PairValueTable);
                     UINT8 *PairValueArray = PairValueTable + 2;
                     if (CoverageIndex >= PairSetCount)
                         return 0;
@@ -1441,7 +1441,7 @@ STATIC INT32 GetGlyphGPOSInfoAdvance(CONST FONT_INFO *info, INT32 glyph1, INT32 
                         UINT8 *PairValue;
                         m = (l + r) >> 1;
                         PairValue = PairValueArray + (2 + ValueRecordPairSizeInBytes) * m;
-                        SecondGlyph = ttUSHORT(PairValue);
+                        SecondGlyph = TTUSHORT(PairValue);
                         straw = SecondGlyph;
                         if (needle < straw)
                             r = m - 1;
@@ -1449,7 +1449,7 @@ STATIC INT32 GetGlyphGPOSInfoAdvance(CONST FONT_INFO *info, INT32 glyph1, INT32 
                             l = m + 1;
                         else
                         {
-                            INT16 XAdvance = ttSHORT(PairValue + 2);
+                            INT16 XAdvance = TTSHORT(PairValue + 2);
                             return XAdvance;
                         }
                     }
@@ -1460,16 +1460,16 @@ STATIC INT32 GetGlyphGPOSInfoAdvance(CONST FONT_INFO *info, INT32 glyph1, INT32 
             }
             case 2:
             {
-                UINT16 ValueFormat1 = ttUSHORT(table + 4);
-                UINT16 ValueFormat2 = ttUSHORT(table + 6);
+                UINT16 ValueFormat1 = TTUSHORT(table + 4);
+                UINT16 ValueFormat2 = TTUSHORT(table + 6);
                 if (ValueFormat1 == 4 && ValueFormat2 == 0)
                 {
-                    UINT16 ClassDef1Offset = ttUSHORT(table + 8);
-                    UINT16 ClassDef2Offset = ttUSHORT(table + 10);
+                    UINT16 ClassDef1Offset = TTUSHORT(table + 8);
+                    UINT16 ClassDef2Offset = TTUSHORT(table + 10);
                     INT32  Glyph1Class = GetGlyphClass(table + ClassDef1Offset, glyph1);
                     INT32  Glyph2Class = GetGlyphClass(table + ClassDef2Offset, glyph2);
-                    UINT16 Class1Count = ttUSHORT(table + 12);
-                    UINT16 Class2Count = ttUSHORT(table + 14);
+                    UINT16 Class1Count = TTUSHORT(table + 12);
+                    UINT16 Class2Count = TTUSHORT(table + 14);
                     UINT8 *Class1Records, *Class2Records;
                     INT16  XAdvance;
                     if (Glyph1Class < 0 || Glyph1Class >= Class1Count)
@@ -1478,7 +1478,7 @@ STATIC INT32 GetGlyphGPOSInfoAdvance(CONST FONT_INFO *info, INT32 glyph1, INT32 
                         return 0;
                     Class1Records = table + 16;
                     Class2Records = Class1Records + 2 * (Glyph1Class * Class2Count);
-                    XAdvance = ttSHORT(Class2Records + 2 * Glyph2Class);
+                    XAdvance = TTSHORT(Class2Records + 2 * Glyph2Class);
                     return XAdvance;
                 }
                 else
@@ -1492,7 +1492,7 @@ STATIC INT32 GetGlyphGPOSInfoAdvance(CONST FONT_INFO *info, INT32 glyph1, INT32 
     }
     return 0;
 }
-extern INT32 GetGlyphKernAdvance(CONST FONT_INFO *info, INT32 g1, INT32 g2)
+EXTERN INT32 GetGlyphKernAdvance(CONST FONT_INFO *info, INT32 g1, INT32 g2)
 {
     INT32 XAdvance = 0;
     if (info->gpos)
@@ -1501,96 +1501,96 @@ extern INT32 GetGlyphKernAdvance(CONST FONT_INFO *info, INT32 g1, INT32 g2)
         XAdvance += GetGlyphKernInfoAdvance(info, g1, g2);
     return XAdvance;
 }
-extern INT32 GetCodepointKernAdvance(CONST FONT_INFO *info, INT32 ch1, INT32 ch2)
+EXTERN INT32 GetCodepointKernAdvance(CONST FONT_INFO *info, INT32 ch1, INT32 ch2)
 {
     if (!info->kern && !info->gpos)
         return 0;
     return GetGlyphKernAdvance(info, FindGlyphIndex(info, ch1), FindGlyphIndex(info, ch2));
 }
-extern VOID GetCodepointHMetrics(CONST FONT_INFO *info, INT32 codepoint, INT32 *AdvanceWidth, INT32 *LeftSideBearing)
+EXTERN VOID GetCodepointHMetrics(CONST FONT_INFO *info, INT32 codepoint, INT32 *AdvanceWidth, INT32 *LeftSideBearing)
 {
     GetGlyphHMetrics(info, FindGlyphIndex(info, codepoint), AdvanceWidth, LeftSideBearing);
 }
-extern VOID GetFontVMetrics(CONST FONT_INFO *info, INT32 *ascent, INT32 *descent, INT32 *LineGap)
+EXTERN VOID GetFontVMetrics(CONST FONT_INFO *info, INT32 *ascent, INT32 *descent, INT32 *LineGap)
 {
     if (ascent)
-        *ascent = ttSHORT(info->data + info->hhea + 4);
+        *ascent = TTSHORT(info->data + info->hhea + 4);
     if (descent)
-        *descent = ttSHORT(info->data + info->hhea + 6);
+        *descent = TTSHORT(info->data + info->hhea + 6);
     if (LineGap)
-        *LineGap = ttSHORT(info->data + info->hhea + 8);
+        *LineGap = TTSHORT(info->data + info->hhea + 8);
 }
-extern INT32 GetFontVMetricsOS2(CONST FONT_INFO *info, INT32 *TypoAscent, INT32 *TypoDescent, INT32 *TypoLineGap)
+EXTERN INT32 GetFontVMetricsOS2(CONST FONT_INFO *info, INT32 *TypoAscent, INT32 *TypoDescent, INT32 *TypoLineGap)
 {
     INT32 tab = FindTable(info->data, info->fontstart, "OS/2");
     if (!tab)
         return 0;
     if (TypoAscent)
-        *TypoAscent = ttSHORT(info->data + tab + 68);
+        *TypoAscent = TTSHORT(info->data + tab + 68);
     if (TypoDescent)
-        *TypoDescent = ttSHORT(info->data + tab + 70);
+        *TypoDescent = TTSHORT(info->data + tab + 70);
     if (TypoLineGap)
-        *TypoLineGap = ttSHORT(info->data + tab + 72);
+        *TypoLineGap = TTSHORT(info->data + tab + 72);
     return 1;
 }
-extern VOID GetFontBoundingBox(CONST FONT_INFO *info, INT32 *x0, INT32 *y0, INT32 *x1, INT32 *y1)
+EXTERN VOID GetFontBoundingBox(CONST FONT_INFO *info, INT32 *x0, INT32 *y0, INT32 *x1, INT32 *y1)
 {
-    *x0 = ttSHORT(info->data + info->head + 36);
-    *y0 = ttSHORT(info->data + info->head + 38);
-    *x1 = ttSHORT(info->data + info->head + 40);
-    *y1 = ttSHORT(info->data + info->head + 42);
+    *x0 = TTSHORT(info->data + info->head + 36);
+    *y0 = TTSHORT(info->data + info->head + 38);
+    *x1 = TTSHORT(info->data + info->head + 40);
+    *y1 = TTSHORT(info->data + info->head + 42);
 }
-extern FLOAT32 ScaleForPixelHeight(CONST FONT_INFO *info, FLOAT32 height)
+EXTERN FLOAT32 ScaleForPixelHeight(CONST FONT_INFO *info, FLOAT32 height)
 {
-    INT32 fheight = ttSHORT(info->data + info->hhea + 4) - ttSHORT(info->data + info->hhea + 6);
+    INT32 fheight = TTSHORT(info->data + info->hhea + 4) - TTSHORT(info->data + info->hhea + 6);
     return (FLOAT32) height / fheight;
 }
-extern FLOAT32 ScaleForMappingEmToPixels(CONST FONT_INFO *info, FLOAT32 pixels)
+EXTERN FLOAT32 ScaleForMappingEmToPixels(CONST FONT_INFO *info, FLOAT32 pixels)
 {
-    INT32 UnitsPerEm = ttUSHORT(info->data + info->head + 18);
+    INT32 UnitsPerEm = TTUSHORT(info->data + info->head + 18);
     return pixels / UnitsPerEm;
 }
-extern VOID FreeShape(CONST FONT_INFO *info, VERTEX *v)
+EXTERN VOID FreeShape(CONST FONT_INFO *info, VERTEX *v)
 {
     KTTFFree(v, info->userdata);
 }
-extern UINT8 *FindSVGDoc(CONST FONT_INFO *info, INT32 gl)
+EXTERN UINT8 *FindSVGDoc(CONST FONT_INFO *info, INT32 gl)
 {
     INT32  i;
     UINT8 *data = info->data;
-    UINT8 *SvgDocList = data + GetSvg((FONT_INFO *) info);
-    INT32  NumEntries = ttUSHORT(SvgDocList);
-    UINT8 *SvgDocs = SvgDocList + 2;
+    UINT8 *SVGDocList = data + GetSVG((FONT_INFO *) info);
+    INT32  NumEntries = TTUSHORT(SVGDocList);
+    UINT8 *SVGDocs = SVGDocList + 2;
     for (i = 0; i < NumEntries; i++)
     {
-        UINT8 *SvgDoc = SvgDocs + (12 * i);
-        if ((gl >= ttUSHORT(SvgDoc)) && (gl <= ttUSHORT(SvgDoc + 2)))
-            return SvgDoc;
+        UINT8 *SVGDoc = SVGDocs + (12 * i);
+        if ((gl >= TTUSHORT(SVGDoc)) && (gl <= TTUSHORT(SVGDoc + 2)))
+            return SVGDoc;
     }
     return 0;
 }
-extern INT32 GetGlyphSVG(CONST FONT_INFO *info, INT32 gl, CONST CHAR8 **svg)
+EXTERN INT32 GetGlyphSVG(CONST FONT_INFO *info, INT32 gl, CONST CHAR8 **svg)
 {
     UINT8 *data = info->data;
-    UINT8 *SvgDoc;
+    UINT8 *SVGDoc;
     if (info->svg == 0)
         return 0;
-    SvgDoc = FindSVGDoc(info, gl);
-    if (SvgDoc != NULL)
+    SVGDoc = FindSVGDoc(info, gl);
+    if (SVGDoc != NULL)
     {
-        *svg = (CHAR8 *) data + info->svg + ttULONG(SvgDoc + 4);
-        return ttULONG(SvgDoc + 8);
+        *svg = (CHAR8 *) data + info->svg + TTULONG(SVGDoc + 4);
+        return TTULONG(SVGDoc + 8);
     }
     else
     {
         return 0;
     }
 }
-extern INT32 GetCodepointSVG(CONST FONT_INFO *info, INT32 UnicodeCodepoint, CONST CHAR8 **svg)
+EXTERN INT32 GetCodepointSVG(CONST FONT_INFO *info, INT32 UnicodeCodepoint, CONST CHAR8 **svg)
 {
     return GetGlyphSVG(info, FindGlyphIndex(info, UnicodeCodepoint), svg);
 }
-extern VOID GetGlyphBitmapBoxSubpixel(CONST FONT_INFO *font, INT32 glyph, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 *ix0, INT32 *iy0, INT32 *ix1, INT32 *iy1)
+EXTERN VOID GetGlyphBitmapBoxSubpixel(CONST FONT_INFO *font, INT32 glyph, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 *ix0, INT32 *iy0, INT32 *ix1, INT32 *iy1)
 {
     INT32 x0 = 0, y0 = 0, x1, y1;
     if (!GetGlyphBox(font, glyph, &x0, &y0, &x1, &y1))
@@ -1616,15 +1616,15 @@ extern VOID GetGlyphBitmapBoxSubpixel(CONST FONT_INFO *font, INT32 glyph, FLOAT3
             *iy1 = KCeil(-y0 * ScaleY + ShiftY);
     }
 }
-extern VOID GetGlyphBitmapBox(CONST FONT_INFO *font, INT32 glyph, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 *ix0, INT32 *iy0, INT32 *ix1, INT32 *iy1)
+EXTERN VOID GetGlyphBitmapBox(CONST FONT_INFO *font, INT32 glyph, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 *ix0, INT32 *iy0, INT32 *ix1, INT32 *iy1)
 {
     GetGlyphBitmapBoxSubpixel(font, glyph, ScaleX, ScaleY, 0.0f, 0.0f, ix0, iy0, ix1, iy1);
 }
-extern VOID GetCodepointBitmapBoxSubpixel(CONST FONT_INFO *font, INT32 codepoint, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 *ix0, INT32 *iy0, INT32 *ix1, INT32 *iy1)
+EXTERN VOID GetCodepointBitmapBoxSubpixel(CONST FONT_INFO *font, INT32 codepoint, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 *ix0, INT32 *iy0, INT32 *ix1, INT32 *iy1)
 {
     GetGlyphBitmapBoxSubpixel(font, FindGlyphIndex(font, codepoint), ScaleX, ScaleY, ShiftX, ShiftY, ix0, iy0, ix1, iy1);
 }
-extern VOID GetCodepointBitmapBox(CONST FONT_INFO *font, INT32 codepoint, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 *ix0, INT32 *iy0, INT32 *ix1, INT32 *iy1)
+EXTERN VOID GetCodepointBitmapBox(CONST FONT_INFO *font, INT32 codepoint, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 *ix0, INT32 *iy0, INT32 *ix1, INT32 *iy1)
 {
     GetCodepointBitmapBoxSubpixel(font, codepoint, ScaleX, ScaleY, 0.0f, 0.0f, ix0, iy0, ix1, iy1);
 }
@@ -2207,7 +2207,7 @@ STATIC POINT *FlattenCurves(VERTEX *vertices, INT32 NumVerts, FLOAT32 ObjspaceFl
     FLOAT32 ObjspaceFlatnessSquared = ObjspaceFlatness * ObjspaceFlatness;
     INT32   i, n = 0, start = 0, pass;
     for (i = 0; i < NumVerts; ++i)
-        if (vertices[i].type == LINEOS_vmove)
+        if (vertices[i].type == LINEOS_VMOVE)
             ++n;
     *NumContours = n;
     if (n == 0)
@@ -2233,7 +2233,7 @@ STATIC POINT *FlattenCurves(VERTEX *vertices, INT32 NumVerts, FLOAT32 ObjspaceFl
         {
             switch (vertices[i].type)
             {
-            case LINEOS_vmove:
+            case LINEOS_VMOVE:
                 if (n >= 0)
                     (*ContourLengths)[n] = NumPoints - start;
                 ++n;
@@ -2241,15 +2241,15 @@ STATIC POINT *FlattenCurves(VERTEX *vertices, INT32 NumVerts, FLOAT32 ObjspaceFl
                 x = vertices[i].x, y = vertices[i].y;
                 AddPoint(points, NumPoints++, x, y);
                 break;
-            case LINEOS_vline:
+            case LINEOS_VLINE:
                 x = vertices[i].x, y = vertices[i].y;
                 AddPoint(points, NumPoints++, x, y);
                 break;
-            case LINEOS_vcurve:
+            case LINEOS_VCURVE:
                 TesselateCurve(points, &NumPoints, x, y, vertices[i].cx, vertices[i].cy, vertices[i].x, vertices[i].y, ObjspaceFlatnessSquared, 0);
                 x = vertices[i].x, y = vertices[i].y;
                 break;
-            case LINEOS_vcubic:
+            case LINEOS_VCUBIC:
                 TesselateCubic(points, &NumPoints, x, y, vertices[i].cx, vertices[i].cy, vertices[i].cx1, vertices[i].cy1, vertices[i].x, vertices[i].y, ObjspaceFlatnessSquared, 0);
                 x = vertices[i].x, y = vertices[i].y;
                 break;
@@ -2265,7 +2265,7 @@ error:
     *NumContours = 0;
     return NULL;
 }
-extern VOID Rasterize(BITMAP *result, FLOAT32 FlatnessInPixels, VERTEX *vertices, INT32 NumVerts, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 XOff, INT32 YOff, INT32 invert, VOID *userdata)
+EXTERN VOID Rasterize(BITMAP *result, FLOAT32 FlatnessInPixels, VERTEX *vertices, INT32 NumVerts, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 XOff, INT32 YOff, INT32 invert, VOID *userdata)
 {
     FLOAT32 scale = ScaleX > ScaleY ? ScaleY : ScaleX;
     INT32   WindingCount = 0;
@@ -2278,11 +2278,11 @@ extern VOID Rasterize(BITMAP *result, FLOAT32 FlatnessInPixels, VERTEX *vertices
         KTTFFree(windings, userdata);
     }
 }
-extern VOID FreeBitmap(UINT8 *bitmap, VOID *userdata)
+EXTERN VOID FreeBitmap(UINT8 *bitmap, VOID *userdata)
 {
     KTTFFree(bitmap, userdata);
 }
-extern UINT8 *GetGlyphBitmapSubpixel(CONST FONT_INFO *info, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 glyph, INT32 *width, INT32 *height, INT32 *xoff, INT32 *yoff)
+EXTERN UINT8 *GetGlyphBitmapSubpixel(CONST FONT_INFO *info, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 glyph, INT32 *width, INT32 *height, INT32 *xoff, INT32 *yoff)
 {
     INT32   ix0, iy0, ix1, iy1;
     BITMAP  gbm;
@@ -2323,11 +2323,11 @@ extern UINT8 *GetGlyphBitmapSubpixel(CONST FONT_INFO *info, FLOAT32 ScaleX, FLOA
     KTTFFree(vertices, info->userdata);
     return gbm.pixels;
 }
-extern UINT8 *GetGlyphBitmap(CONST FONT_INFO *info, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 glyph, INT32 *width, INT32 *height, INT32 *xoff, INT32 *yoff)
+EXTERN UINT8 *GetGlyphBitmap(CONST FONT_INFO *info, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 glyph, INT32 *width, INT32 *height, INT32 *xoff, INT32 *yoff)
 {
     return GetGlyphBitmapSubpixel(info, ScaleX, ScaleY, 0.0f, 0.0f, glyph, width, height, xoff, yoff);
 }
-extern VOID MakeGlyphBitmapSubpixel(CONST FONT_INFO *info, UINT8 *output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 glyph)
+EXTERN VOID MakeGlyphBitmapSubpixel(CONST FONT_INFO *info, UINT8 *output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 glyph)
 {
     INT32   ix0, iy0;
     VERTEX *vertices;
@@ -2342,27 +2342,27 @@ extern VOID MakeGlyphBitmapSubpixel(CONST FONT_INFO *info, UINT8 *output, INT32 
         Rasterize(&gbm, 0.35f, vertices, NumVerts, ScaleX, ScaleY, ShiftX, ShiftY, ix0, iy0, 1, info->userdata);
     KTTFFree(vertices, info->userdata);
 }
-extern VOID MakeGlyphBitmap(CONST FONT_INFO *info, UINT8 *output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 glyph)
+EXTERN VOID MakeGlyphBitmap(CONST FONT_INFO *info, UINT8 *output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 glyph)
 {
     MakeGlyphBitmapSubpixel(info, output, OutW, OutH, OutStride, ScaleX, ScaleY, 0.0f, 0.0f, glyph);
 }
-extern UINT8 *GetCodepointBitmapSubpixel(CONST FONT_INFO *info, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 codepoint, INT32 *width, INT32 *height, INT32 *xoff, INT32 *yoff)
+EXTERN UINT8 *GetCodepointBitmapSubpixel(CONST FONT_INFO *info, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 codepoint, INT32 *width, INT32 *height, INT32 *xoff, INT32 *yoff)
 {
     return GetGlyphBitmapSubpixel(info, ScaleX, ScaleY, ShiftX, ShiftY, FindGlyphIndex(info, codepoint), width, height, xoff, yoff);
 }
-extern VOID MakeCodepointBitmapSubpixelPrefilter(CONST FONT_INFO *info, UINT8 *output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 OversampleX, INT32 OversampleY, FLOAT32 *SubX, FLOAT32 *SubY, INT32 codepoint)
+EXTERN VOID MakeCodepointBitmapSubpixelPrefilter(CONST FONT_INFO *info, UINT8 *output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 OversampleX, INT32 OversampleY, FLOAT32 *SubX, FLOAT32 *SubY, INT32 codepoint)
 {
     MakeGlyphBitmapSubpixelPrefilter(info, output, OutW, OutH, OutStride, ScaleX, ScaleY, ShiftX, ShiftY, OversampleX, OversampleY, SubX, SubY, FindGlyphIndex(info, codepoint));
 }
-extern VOID MakeCodepointBitmapSubpixel(CONST FONT_INFO *info, UINT8 *output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 codepoint)
+EXTERN VOID MakeCodepointBitmapSubpixel(CONST FONT_INFO *info, UINT8 *output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 codepoint)
 {
     MakeGlyphBitmapSubpixel(info, output, OutW, OutH, OutStride, ScaleX, ScaleY, ShiftX, ShiftY, FindGlyphIndex(info, codepoint));
 }
-extern UINT8 *GetCodepointBitmap(CONST FONT_INFO *info, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 codepoint, INT32 *width, INT32 *height, INT32 *xoff, INT32 *yoff)
+EXTERN UINT8 *GetCodepointBitmap(CONST FONT_INFO *info, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 codepoint, INT32 *width, INT32 *height, INT32 *xoff, INT32 *yoff)
 {
     return GetCodepointBitmapSubpixel(info, ScaleX, ScaleY, 0.0f, 0.0f, codepoint, width, height, xoff, yoff);
 }
-extern VOID MakeCodepointBitmap(CONST FONT_INFO *info, UINT8 *output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 codepoint)
+EXTERN VOID MakeCodepointBitmap(CONST FONT_INFO *info, UINT8 *output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 codepoint)
 {
     MakeCodepointBitmapSubpixel(info, output, OutW, OutH, OutStride, ScaleX, ScaleY, 0.0f, 0.0f, codepoint);
 }
@@ -2406,7 +2406,7 @@ STATIC INT32 BakeFontBitmapInternal(UINT8 *data, INT32 offset, FLOAT32 PixelHeig
     }
     return BottomY;
 }
-extern VOID GetBakedQuad(CONST BAKED_CHAR *chardata, INT32 pw, INT32 ph, INT32 CharIndex, FLOAT32 *xpos, FLOAT32 *ypos, ALIGNED_QUAD *q, INT32 OpenglFillrule)
+EXTERN VOID GetBakedQuad(CONST BAKED_CHAR *chardata, INT32 pw, INT32 ph, INT32 CharIndex, FLOAT32 *xpos, FLOAT32 *ypos, ALIGNED_QUAD *q, INT32 OpenglFillrule)
 {
     FLOAT32           D3DBias = OpenglFillrule ? 0 : -0.5f;
     FLOAT32           ipw = 1.0f / pw, iph = 1.0f / ph;
@@ -2423,7 +2423,7 @@ extern VOID GetBakedQuad(CONST BAKED_CHAR *chardata, INT32 pw, INT32 ph, INT32 C
     q->T1 = b->y1 * iph;
     *xpos += b->xadvance;
 }
-typedef INT32 stbrp_coord;
+typedef INT32 STBRP_COORD;
 typedef struct
 {
     INT32 width, height;
@@ -2435,10 +2435,10 @@ typedef struct
 } STBRP_NODE;
 struct STBRP_RECT
 {
-    stbrp_coord x, y;
+    STBRP_COORD x, y;
     INT32       id, w, h, WasPacked;
 };
-STATIC VOID stbrp_init_target(STBRP_CONTEXT *con, INT32 pw, INT32 ph, STBRP_NODE *nodes, INT32 NumNodes)
+STATIC VOID STBRPInitTarget(STBRP_CONTEXT *con, INT32 pw, INT32 ph, STBRP_NODE *nodes, INT32 NumNodes)
 {
     con->width = pw;
     con->height = ph;
@@ -2448,7 +2448,7 @@ STATIC VOID stbrp_init_target(STBRP_CONTEXT *con, INT32 pw, INT32 ph, STBRP_NODE
     LINEOS_NOTUSED(nodes);
     LINEOS_NOTUSED(NumNodes);
 }
-STATIC VOID stbrp_pack_rects(STBRP_CONTEXT *con, STBRP_RECT *rects, INT32 NumRects)
+STATIC VOID STBRPPackRects(STBRP_CONTEXT *con, STBRP_RECT *rects, INT32 NumRects)
 {
     INT32 i;
     for (i = 0; i < NumRects; ++i)
@@ -2470,7 +2470,7 @@ STATIC VOID stbrp_pack_rects(STBRP_CONTEXT *con, STBRP_RECT *rects, INT32 NumRec
     for (; i < NumRects; ++i)
         rects[i].WasPacked = 0;
 }
-extern INT32 PackBegin(PACK_CONTEXT *spc, UINT8 *pixels, INT32 pw, INT32 ph, INT32 StrideInBytes, INT32 padding, VOID *AllocContext)
+EXTERN INT32 PackBegin(PACK_CONTEXT *spc, UINT8 *pixels, INT32 pw, INT32 ph, INT32 StrideInBytes, INT32 padding, VOID *AllocContext)
 {
     STBRP_CONTEXT *context = (STBRP_CONTEXT *) KTTFAlloc(sizeof(*context), AllocContext);
     INT32          NumNodes = pw - padding;
@@ -2494,17 +2494,17 @@ extern INT32 PackBegin(PACK_CONTEXT *spc, UINT8 *pixels, INT32 pw, INT32 ph, INT
     spc->HOversample = 1;
     spc->VOversample = 1;
     spc->SkipMissing = 0;
-    stbrp_init_target(context, pw - padding, ph - padding, nodes, NumNodes);
+    STBRPInitTarget(context, pw - padding, ph - padding, nodes, NumNodes);
     if (pixels)
         KMemSet(pixels, 0, pw * ph);
     return 1;
 }
-extern VOID PackEnd(PACK_CONTEXT *spc)
+EXTERN VOID PackEnd(PACK_CONTEXT *spc)
 {
     KTTFFree(spc->nodes, spc->UserAllocatorContext);
     KTTFFree(spc->PackInfo, spc->UserAllocatorContext);
 }
-extern VOID PackSetOversampling(PACK_CONTEXT *spc, UINT32 HOversample, UINT32 VOversample)
+EXTERN VOID PackSetOversampling(PACK_CONTEXT *spc, UINT32 HOversample, UINT32 VOversample)
 {
     KAssert(HOversample <= LINEOS_MAX_OVERSAMPLE);
     KAssert(VOversample <= LINEOS_MAX_OVERSAMPLE);
@@ -2513,7 +2513,7 @@ extern VOID PackSetOversampling(PACK_CONTEXT *spc, UINT32 HOversample, UINT32 VO
     if (VOversample <= LINEOS_MAX_OVERSAMPLE)
         spc->VOversample = VOversample;
 }
-extern VOID PackSetSkipMissingCodepoints(PACK_CONTEXT *spc, INT32 skip)
+EXTERN VOID PackSetSkipMissingCodepoints(PACK_CONTEXT *spc, INT32 skip)
 {
     spc->SkipMissing = skip;
 }
@@ -2652,7 +2652,7 @@ STATIC FLOAT32 OversampleShift(INT32 oversample)
         return 0.0f;
     return (FLOAT32) - (oversample - 1) / (2.0f * (FLOAT32) oversample);
 }
-extern INT32 PackFontRangesGatherRects(PACK_CONTEXT *spc, CONST FONT_INFO *info, PACK_RANGE *ranges, INT32 NumRanges, STBRP_RECT *rects)
+EXTERN INT32 PackFontRangesGatherRects(PACK_CONTEXT *spc, CONST FONT_INFO *info, PACK_RANGE *ranges, INT32 NumRanges, STBRP_RECT *rects)
 {
     INT32 i, j, k;
     INT32 MissingGlyphAdded = 0;
@@ -2675,8 +2675,8 @@ extern INT32 PackFontRangesGatherRects(PACK_CONTEXT *spc, CONST FONT_INFO *info,
             else
             {
                 GetGlyphBitmapBoxSubpixel(info, glyph, scale * spc->HOversample, scale * spc->VOversample, 0, 0, &x0, &y0, &x1, &y1);
-                rects[k].w = (stbrp_coord) (x1 - x0 + spc->padding + spc->HOversample - 1);
-                rects[k].h = (stbrp_coord) (y1 - y0 + spc->padding + spc->VOversample - 1);
+                rects[k].w = (STBRP_COORD) (x1 - x0 + spc->padding + spc->HOversample - 1);
+                rects[k].h = (STBRP_COORD) (y1 - y0 + spc->padding + spc->VOversample - 1);
                 if (glyph == 0)
                     MissingGlyphAdded = 1;
             }
@@ -2685,7 +2685,7 @@ extern INT32 PackFontRangesGatherRects(PACK_CONTEXT *spc, CONST FONT_INFO *info,
     }
     return k;
 }
-extern VOID MakeGlyphBitmapSubpixelPrefilter(CONST FONT_INFO *info, UINT8 *output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 PrefilterX, INT32 PrefilterY, FLOAT32 *SubX, FLOAT32 *SubY, INT32 glyph)
+EXTERN VOID MakeGlyphBitmapSubpixelPrefilter(CONST FONT_INFO *info, UINT8 *output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 PrefilterX, INT32 PrefilterY, FLOAT32 *SubX, FLOAT32 *SubY, INT32 glyph)
 {
     MakeGlyphBitmapSubpixel(info, output, OutW - (PrefilterX - 1), OutH - (PrefilterY - 1), OutStride, ScaleX, ScaleY, ShiftX, ShiftY, glyph);
     if (PrefilterX > 1)
@@ -2695,7 +2695,7 @@ extern VOID MakeGlyphBitmapSubpixelPrefilter(CONST FONT_INFO *info, UINT8 *outpu
     *SubX = OversampleShift(PrefilterX);
     *SubY = OversampleShift(PrefilterY);
 }
-extern INT32 PackFontRangesRenderIntoRects(PACK_CONTEXT *spc, CONST FONT_INFO *info, PACK_RANGE *ranges, INT32 NumRanges, STBRP_RECT *rects)
+EXTERN INT32 PackFontRangesRenderIntoRects(PACK_CONTEXT *spc, CONST FONT_INFO *info, PACK_RANGE *ranges, INT32 NumRanges, STBRP_RECT *rects)
 {
     INT32 i, j, k, MissingGlyph = -1, ReturnValue = 1;
     INT32 OldHOver = spc->HOversample;
@@ -2721,7 +2721,7 @@ extern INT32 PackFontRangesRenderIntoRects(PACK_CONTEXT *spc, CONST FONT_INFO *i
                 INT32        advance, lsb, x0, y0, x1, y1;
                 INT32        codepoint = ranges[i].ArrayOfUnicodeCodepoints == NULL ? ranges[i].FirstUnicodeCodepointInRange + j : ranges[i].ArrayOfUnicodeCodepoints[j];
                 INT32        glyph = FindGlyphIndex(info, codepoint);
-                stbrp_coord  pad = (stbrp_coord) spc->padding;
+                STBRP_COORD  pad = (STBRP_COORD) spc->padding;
                 r->x += pad;
                 r->y += pad;
                 r->w -= pad;
@@ -2764,11 +2764,11 @@ extern INT32 PackFontRangesRenderIntoRects(PACK_CONTEXT *spc, CONST FONT_INFO *i
     spc->VOversample = OldVOver;
     return ReturnValue;
 }
-extern VOID PackFontRangesPackRects(PACK_CONTEXT *spc, STBRP_RECT *rects, INT32 NumRects)
+EXTERN VOID PackFontRangesPackRects(PACK_CONTEXT *spc, STBRP_RECT *rects, INT32 NumRects)
 {
-    stbrp_pack_rects((STBRP_CONTEXT *) spc->PackInfo, rects, NumRects);
+    STBRPPackRects((STBRP_CONTEXT *) spc->PackInfo, rects, NumRects);
 }
-extern INT32 PackFontRanges(PACK_CONTEXT *spc, CONST UINT8 *fontdata, INT32 FontIndex, PACK_RANGE *ranges, INT32 NumRanges)
+EXTERN INT32 PackFontRanges(PACK_CONTEXT *spc, CONST UINT8 *fontdata, INT32 FontIndex, PACK_RANGE *ranges, INT32 NumRanges)
 {
     FONT_INFO   info;
     INT32       i, j, n, ReturnValue = 1;
@@ -2790,7 +2790,7 @@ extern INT32 PackFontRanges(PACK_CONTEXT *spc, CONST UINT8 *fontdata, INT32 Font
     KTTFFree(rects, spc->UserAllocatorContext);
     return ReturnValue;
 }
-extern INT32 PackFontRange(PACK_CONTEXT *spc, CONST UINT8 *fontdata, INT32 FontIndex, FLOAT32 FontSize, INT32 FirstUnicodeCodepointInRange, INT32 NumCharsInRange, PACKED_CHAR *ChardataForRange)
+EXTERN INT32 PackFontRange(PACK_CONTEXT *spc, CONST UINT8 *fontdata, INT32 FontIndex, FLOAT32 FontSize, INT32 FirstUnicodeCodepointInRange, INT32 NumCharsInRange, PACKED_CHAR *ChardataForRange)
 {
     PACK_RANGE range;
     range.FirstUnicodeCodepointInRange = FirstUnicodeCodepointInRange;
@@ -2800,7 +2800,7 @@ extern INT32 PackFontRange(PACK_CONTEXT *spc, CONST UINT8 *fontdata, INT32 FontI
     range.FontSize = FontSize;
     return PackFontRanges(spc, fontdata, FontIndex, &range, 1);
 }
-extern VOID GetScaledFontVMetrics(CONST UINT8 *fontdata, INT32 index, FLOAT32 size, FLOAT32 *ascent, FLOAT32 *descent, FLOAT32 *LineGap)
+EXTERN VOID GetScaledFontVMetrics(CONST UINT8 *fontdata, INT32 index, FLOAT32 size, FLOAT32 *ascent, FLOAT32 *descent, FLOAT32 *LineGap)
 {
     INT32     IAscent, IDescent, ILineGap;
     FLOAT32   scale;
@@ -2812,7 +2812,7 @@ extern VOID GetScaledFontVMetrics(CONST UINT8 *fontdata, INT32 index, FLOAT32 si
     *descent = (FLOAT32) IDescent * scale;
     *LineGap = (FLOAT32) ILineGap * scale;
 }
-extern VOID GetPackedQuad(CONST PACKED_CHAR *chardata, INT32 pw, INT32 ph, INT32 CharIndex, FLOAT32 *xpos, FLOAT32 *ypos, ALIGNED_QUAD *q, INT32 AlignToInteger)
+EXTERN VOID GetPackedQuad(CONST PACKED_CHAR *chardata, INT32 pw, INT32 ph, INT32 CharIndex, FLOAT32 *xpos, FLOAT32 *ypos, ALIGNED_QUAD *q, INT32 AlignToInteger)
 {
     FLOAT32            ipw = 1.0f / pw, iph = 1.0f / ph;
     CONST PACKED_CHAR *b = chardata + CharIndex;
@@ -2838,8 +2838,8 @@ extern VOID GetPackedQuad(CONST PACKED_CHAR *chardata, INT32 pw, INT32 ph, INT32
     q->T1 = b->y1 * iph;
     *xpos += b->xadvance;
 }
-#define LINEOS_min(a, b) ((a) < (b) ? (a) : (b))
-#define LINEOS_max(a, b) ((a) < (b) ? (b) : (a))
+#define LINEOS_MIN(a, b) ((a) < (b) ? (a) : (b))
+#define LINEOS_MAX(a, b) ((a) < (b) ? (b) : (a))
 STATIC INT32 RayIntersectBezier(FLOAT32 orig[2], FLOAT32 ray[2], FLOAT32 q0[2], FLOAT32 q1[2], FLOAT32 q2[2], FLOAT32 hits[2][2])
 {
     FLOAT32 q0perp = q0[1] * ray[0] - q0[0] * ray[1];
@@ -2903,7 +2903,7 @@ STATIC INT32 RayIntersectBezier(FLOAT32 orig[2], FLOAT32 ray[2], FLOAT32 q0[2], 
         }
     }
 }
-STATIC INT32 equal(FLOAT32 *a, FLOAT32 *b)
+STATIC INT32 Equal(FLOAT32 *a, FLOAT32 *b)
 {
     return (a[0] == b[0] && a[1] == b[1]);
 }
@@ -2922,24 +2922,24 @@ STATIC INT32 ComputeCrossingsX(FLOAT32 x, FLOAT32 y, INT32 nverts, VERTEX *verts
     orig[1] = y;
     for (i = 0; i < nverts; ++i)
     {
-        if (verts[i].type == LINEOS_vline)
+        if (verts[i].type == LINEOS_VLINE)
         {
             INT32 x0 = (INT32) verts[i - 1].x, y0 = (INT32) verts[i - 1].y;
             INT32 x1 = (INT32) verts[i].x, y1 = (INT32) verts[i].y;
-            if (y > LINEOS_min(y0, y1) && y < LINEOS_max(y0, y1) && x > LINEOS_min(x0, x1))
+            if (y > LINEOS_MIN(y0, y1) && y < LINEOS_MAX(y0, y1) && x > LINEOS_MIN(x0, x1))
             {
                 FLOAT32 XInter = (y - y0) / (y1 - y0) * (x1 - x0) + x0;
                 if (XInter < x)
                     winding += (y0 < y1) ? 1 : -1;
             }
         }
-        if (verts[i].type == LINEOS_vcurve)
+        if (verts[i].type == LINEOS_VCURVE)
         {
             INT32 x0 = (INT32) verts[i - 1].x, y0 = (INT32) verts[i - 1].y;
             INT32 x1 = (INT32) verts[i].cx, y1 = (INT32) verts[i].cy;
             INT32 x2 = (INT32) verts[i].x, y2 = (INT32) verts[i].y;
-            INT32 ax = LINEOS_min(x0, LINEOS_min(x1, x2)), ay = LINEOS_min(y0, LINEOS_min(y1, y2));
-            INT32 by = LINEOS_max(y0, LINEOS_max(y1, y2));
+            INT32 ax = LINEOS_MIN(x0, LINEOS_MIN(x1, x2)), ay = LINEOS_MIN(y0, LINEOS_MIN(y1, y2));
+            INT32 by = LINEOS_MAX(y0, LINEOS_MAX(y1, y2));
             if (y > ay && y < by && x > ax)
             {
                 FLOAT32 q0[2], q1[2], q2[2];
@@ -2950,13 +2950,13 @@ STATIC INT32 ComputeCrossingsX(FLOAT32 x, FLOAT32 y, INT32 nverts, VERTEX *verts
                 q1[1] = (FLOAT32) y1;
                 q2[0] = (FLOAT32) x2;
                 q2[1] = (FLOAT32) y2;
-                if (equal(q0, q1) || equal(q1, q2))
+                if (Equal(q0, q1) || Equal(q1, q2))
                 {
                     x0 = (INT32) verts[i - 1].x;
                     y0 = (INT32) verts[i - 1].y;
                     x1 = (INT32) verts[i].x;
                     y1 = (INT32) verts[i].y;
-                    if (y > LINEOS_min(y0, y1) && y < LINEOS_max(y0, y1) && x > LINEOS_min(x0, x1))
+                    if (y > LINEOS_MIN(y0, y1) && y < LINEOS_MAX(y0, y1) && x > LINEOS_MIN(x0, x1))
                     {
                         FLOAT32 XInter = (y - y0) / (y1 - y0) * (x1 - x0) + x0;
                         if (XInter < x)
@@ -3014,7 +3014,7 @@ STATIC INT32 SolveCubic(FLOAT32 a, FLOAT32 b, FLOAT32 c, FLOAT32 *r)
         return 3;
     }
 }
-extern UINT8 *GetGlyphSDF(CONST FONT_INFO *info, FLOAT32 scale, INT32 glyph, INT32 padding, UINT8 OnedgeValue, FLOAT32 PixelDistScale, INT32 *width, INT32 *height, INT32 *xoff, INT32 *yoff)
+EXTERN UINT8 *GetGlyphSDF(CONST FONT_INFO *info, FLOAT32 scale, INT32 glyph, INT32 padding, UINT8 OnedgeValue, FLOAT32 PixelDistScale, INT32 *width, INT32 *height, INT32 *xoff, INT32 *yoff)
 {
     FLOAT32 ScaleX = scale, ScaleY = scale;
     INT32   ix0, iy0, ix1, iy1;
@@ -3050,14 +3050,14 @@ extern UINT8 *GetGlyphSDF(CONST FONT_INFO *info, FLOAT32 scale, INT32 glyph, INT
         precompute = (FLOAT32 *) KTTFAlloc(NumVerts * sizeof(FLOAT32), info->userdata);
         for (i = 0, j = NumVerts - 1; i < NumVerts; j = i++)
         {
-            if (verts[i].type == LINEOS_vline)
+            if (verts[i].type == LINEOS_VLINE)
             {
                 FLOAT32 x0 = verts[i].x * ScaleX, y0 = verts[i].y * ScaleY;
                 FLOAT32 x1 = verts[j].x * ScaleX, y1 = verts[j].y * ScaleY;
                 FLOAT32 dist = (FLOAT32) KSqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0));
                 precompute[i] = (dist < eps) ? 0.0f : 1.0f / dist;
             }
-            else if (verts[i].type == LINEOS_vcurve)
+            else if (verts[i].type == LINEOS_VCURVE)
             {
                 FLOAT32 x2 = verts[j].x * ScaleX, y2 = verts[j].y * ScaleY;
                 FLOAT32 x1 = verts[i].cx * ScaleX, y1 = verts[i].cy * ScaleY;
@@ -3086,7 +3086,7 @@ extern UINT8 *GetGlyphSDF(CONST FONT_INFO *info, FLOAT32 scale, INT32 glyph, INT
                 for (i = 0; i < NumVerts; ++i)
                 {
                     FLOAT32 x0 = verts[i].x * ScaleX, y0 = verts[i].y * ScaleY;
-                    if (verts[i].type == LINEOS_vline && precompute[i] != 0.0f)
+                    if (verts[i].type == LINEOS_VLINE && precompute[i] != 0.0f)
                     {
                         FLOAT32 x1 = verts[i - 1].x * ScaleX, y1 = verts[i - 1].y * ScaleY;
                         FLOAT32 dist, dist2 = (x0 - sx) * (x0 - sx) + (y0 - sy) * (y0 - sy);
@@ -3103,14 +3103,14 @@ extern UINT8 *GetGlyphSDF(CONST FONT_INFO *info, FLOAT32 scale, INT32 glyph, INT
                                 MinDist = dist;
                         }
                     }
-                    else if (verts[i].type == LINEOS_vcurve)
+                    else if (verts[i].type == LINEOS_VCURVE)
                     {
                         FLOAT32 x2 = verts[i - 1].x * ScaleX, y2 = verts[i - 1].y * ScaleY;
                         FLOAT32 x1 = verts[i].cx * ScaleX, y1 = verts[i].cy * ScaleY;
-                        FLOAT32 BoxX0 = LINEOS_min(LINEOS_min(x0, x1), x2);
-                        FLOAT32 BoxY0 = LINEOS_min(LINEOS_min(y0, y1), y2);
-                        FLOAT32 BoxX1 = LINEOS_max(LINEOS_max(x0, x1), x2);
-                        FLOAT32 BoxY1 = LINEOS_max(LINEOS_max(y0, y1), y2);
+                        FLOAT32 BoxX0 = LINEOS_MIN(LINEOS_MIN(x0, x1), x2);
+                        FLOAT32 BoxY0 = LINEOS_MIN(LINEOS_MIN(y0, y1), y2);
+                        FLOAT32 BoxX1 = LINEOS_MAX(LINEOS_MAX(x0, x1), x2);
+                        FLOAT32 BoxY1 = LINEOS_MAX(LINEOS_MAX(y0, y1), y2);
                         if (sx > BoxX0 - MinDist && sx < BoxX1 + MinDist && sy > BoxY0 - MinDist && sy < BoxY1 + MinDist)
                         {
                             INT32   num = 0;
@@ -3201,27 +3201,27 @@ extern UINT8 *GetGlyphSDF(CONST FONT_INFO *info, FLOAT32 scale, INT32 glyph, INT
     }
     return data;
 }
-extern UINT8 *GetCodepointSDF(CONST FONT_INFO *info, FLOAT32 scale, INT32 codepoint, INT32 padding, UINT8 OnedgeValue, FLOAT32 PixelDistScale, INT32 *width, INT32 *height, INT32 *xoff, INT32 *yoff)
+EXTERN UINT8 *GetCodepointSDF(CONST FONT_INFO *info, FLOAT32 scale, INT32 codepoint, INT32 padding, UINT8 OnedgeValue, FLOAT32 PixelDistScale, INT32 *width, INT32 *height, INT32 *xoff, INT32 *yoff)
 {
     return GetGlyphSDF(info, scale, FindGlyphIndex(info, codepoint), padding, OnedgeValue, PixelDistScale, width, height, xoff, yoff);
 }
-extern VOID FreeSDF(UINT8 *bitmap, VOID *userdata)
+EXTERN VOID FreeSDF(UINT8 *bitmap, VOID *userdata)
 {
     KTTFFree(bitmap, userdata);
 }
-extern INT32 BakeFontBitmap(CONST UINT8 *data, INT32 offset, FLOAT32 PixelHeight, UINT8 *pixels, INT32 pw, INT32 ph, INT32 FirstChar, INT32 NumChars, BAKED_CHAR *chardata)
+EXTERN INT32 BakeFontBitmap(CONST UINT8 *data, INT32 offset, FLOAT32 PixelHeight, UINT8 *pixels, INT32 pw, INT32 ph, INT32 FirstChar, INT32 NumChars, BAKED_CHAR *chardata)
 {
     return BakeFontBitmapInternal((UINT8 *) data, offset, PixelHeight, pixels, pw, ph, FirstChar, NumChars, chardata);
 }
-extern INT32 GetFontOffsetForIndex(CONST UINT8 *data, INT32 index)
+EXTERN INT32 GetFontOffsetForIndex(CONST UINT8 *data, INT32 index)
 {
     return GetFontOffsetForIndexInternal((UINT8 *) data, index);
 }
-extern INT32 GetNumberOfFonts(CONST UINT8 *data)
+EXTERN INT32 GetNumberOfFonts(CONST UINT8 *data)
 {
     return GetNumberOfFontsInternal((UINT8 *) data);
 }
-extern INT32 InitFont(FONT_INFO *info, CONST UINT8 *data, INT32 offset)
+EXTERN INT32 InitFont(FONT_INFO *info, CONST UINT8 *data, INT32 offset)
 {
     return InitFontInternal(info, (UINT8 *) data, offset);
 }

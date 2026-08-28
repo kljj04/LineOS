@@ -16,38 +16,38 @@
 //
 // Make sure we are using the correct packing rules per EFI specification
 //
-#if !defined (__GNUC__)
-  #pragma pack()
+#if !defined(__GNUC__)
+#pragma pack()
 #endif
 
-#if defined (__INTEL_COMPILER)
+#if defined(__INTEL_COMPILER)
 //
 // Disable ICC's remark #869: "Parameter" was never referenced warning.
 // This is legal ANSI C code so we disable the remark that is turned on with -Wall
 //
-  #pragma warning ( disable : 869 )
+#pragma warning(disable : 869)
 
 //
 // Disable ICC's remark #1418: external function definition with no prior declaration.
 // This is legal ANSI C code so we disable the remark that is turned on with /W4
 //
-  #pragma warning ( disable : 1418 )
+#pragma warning(disable : 1418)
 
 //
 // Disable ICC's remark #1419: external declaration in primary source file
 // This is legal ANSI C code so we disable the remark that is turned on with /W4
 //
-  #pragma warning ( disable : 1419 )
+#pragma warning(disable : 1419)
 
 //
 // Disable ICC's remark #593: "Variable" was set but never used.
 // This is legal ANSI C code so we disable the remark that is turned on with /W4
 //
-  #pragma warning ( disable : 593 )
+#pragma warning(disable : 593)
 
 #endif
 
-#if defined (_MSC_EXTENSIONS)
+#if defined(_MSC_EXTENSIONS)
 
 //
 // Disable warning that make it impossible to compile at /W4
@@ -57,53 +57,53 @@
 //
 // Disabling bitfield type checking warnings.
 //
-  #pragma warning ( disable : 4214 )
+#pragma warning(disable : 4214)
 
 //
 // Disabling the unreferenced formal parameter warnings.
 //
-  #pragma warning ( disable : 4100 )
+#pragma warning(disable : 4100)
 
 //
 // Disable slightly different base types warning as CHAR8 * can not be set
 // to a constant string.
 //
-  #pragma warning ( disable : 4057 )
+#pragma warning(disable : 4057)
 
 //
 // ASSERT(FALSE) or while (TRUE) are legal constructs so suppress this warning
 //
-  #pragma warning ( disable : 4127 )
+#pragma warning(disable : 4127)
 
 //
 // This warning is caused by functions defined but not used. For precompiled header only.
 //
-  #pragma warning ( disable : 4505 )
+#pragma warning(disable : 4505)
 
 //
 // This warning is caused by empty (after preprocessing) source file. For precompiled header only.
 //
-  #pragma warning ( disable : 4206 )
+#pragma warning(disable : 4206)
 
-  #if defined (_MSC_VER) && _MSC_VER >= 1800
+#if defined(_MSC_VER) && _MSC_VER >= 1800
 
 //
 // This warning is for potentially uninitialized local variable, and it may cause false
 // positive issues in VS build
 //
-    #pragma warning ( disable : 4701 )
+#pragma warning(disable : 4701)
 
 //
 // This warning is for potentially uninitialized local pointer variable, and it may cause
 // false positive issues in VS build
 //
-    #pragma warning ( disable : 4703 )
-
-  #endif
+#pragma warning(disable : 4703)
 
 #endif
 
-#if defined (_MSC_EXTENSIONS)
+#endif
+
+#if defined(_MSC_EXTENSIONS)
 //
 // use Microsoft C compiler dependent integer width types
 //
@@ -221,43 +221,43 @@ typedef INT64 INTN;
 ///
 /// A value of native width with the highest bit set.
 ///
-#define MAX_BIT  0x8000000000000000ULL
+#define MAX_BIT 0x8000000000000000ULL
 ///
 /// A value of native width with the two highest bits set.
 ///
-#define MAX_2_BITS  0xC000000000000000ULL
+#define MAX_2_BITS 0xC000000000000000ULL
 
 ///
 /// Maximum legal x64 address
 ///
-#define MAX_ADDRESS  0xFFFFFFFFFFFFFFFFULL
+#define MAX_ADDRESS 0xFFFFFFFFFFFFFFFFULL
 
 ///
 /// Maximum usable address at boot time
 ///
-#define MAX_ALLOC_ADDRESS  MAX_ADDRESS
+#define MAX_ALLOC_ADDRESS MAX_ADDRESS
 
 ///
 /// Maximum legal x64 INTN and UINTN values.
 ///
-#define MAX_INTN   ((INTN)0x7FFFFFFFFFFFFFFFULL)
-#define MAX_UINTN  ((UINTN)0xFFFFFFFFFFFFFFFFULL)
+#define MAX_INTN  ((INTN) 0x7FFFFFFFFFFFFFFFULL)
+#define MAX_UINTN ((UINTN) 0xFFFFFFFFFFFFFFFFULL)
 
 ///
 /// Minimum legal x64 INTN value.
 ///
-#define MIN_INTN  (((INTN)-9223372036854775807LL) - 1)
+#define MIN_INTN (((INTN) - 9223372036854775807LL) - 1)
 
 ///
 /// The stack alignment required for x64
 ///
-#define CPU_STACK_ALIGNMENT  16
+#define CPU_STACK_ALIGNMENT 16
 
 ///
 /// Page allocation granularity for x64
 ///
-#define DEFAULT_PAGE_ALLOCATION_GRANULARITY  (0x1000)
-#define RUNTIME_PAGE_ALLOCATION_GRANULARITY  (0x1000)
+#define DEFAULT_PAGE_ALLOCATION_GRANULARITY (0x1000)
+#define RUNTIME_PAGE_ALLOCATION_GRANULARITY (0x1000)
 
 //
 // Modifier to ensure that all protocol member functions and EFI intrinsics
@@ -268,12 +268,12 @@ typedef INT64 INTN;
 ///
 /// If EFIAPI is already defined, then we use that definition.
 ///
-#elif defined (_MSC_EXTENSIONS)
+#elif defined(_MSC_EXTENSIONS)
 ///
 /// Microsoft* compiler specific method for EFIAPI calling convention.
 ///
-#define EFIAPI  __cdecl
-#elif defined (__GNUC__)
+#define EFIAPI __cdecl
+#elif defined(__GNUC__)
 ///
 /// Define the standard calling convention regardless of optimization level.
 /// The GCC support assumes a GCC compiler that supports the EFI ABI. The EFI
@@ -291,12 +291,12 @@ typedef INT64 INTN;
 #define EFIAPI
 #endif
 
-#if defined (__GNUC__) || defined (__clang__)
+#if defined(__GNUC__) || defined(__clang__)
 ///
 /// For GNU assembly code, .global or .globl can declare global symbols.
 /// Define this macro to unify the usage.
 ///
-#define ASM_GLOBAL  .globl
+#define ASM_GLOBAL .globl
 #endif
 
 /**
@@ -309,7 +309,7 @@ typedef INT64 INTN;
   @return The pointer to the first instruction of a function given a function pointer.
 
 **/
-#define FUNCTION_ENTRY_POINT(FunctionPointer)  (VOID *)(UINTN)(FunctionPointer)
+#define FUNCTION_ENTRY_POINT(FunctionPointer) (VOID *) (UINTN) (FunctionPointer)
 
 #ifndef __USER_LABEL_PREFIX__
 #define __USER_LABEL_PREFIX__

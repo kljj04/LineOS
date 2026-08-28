@@ -11,5 +11,5 @@
 //
 // Net function definition for OEM/Group command
 //
-#define IPMI_NETFN_OEM        0x2E
-#define IPMI_NETFN_OEM_GROUP  0x2F
+#define IPMI_NETFN_OEM       0x2E
+#define IPMI_NETFN_OEM_GROUP 0x2F

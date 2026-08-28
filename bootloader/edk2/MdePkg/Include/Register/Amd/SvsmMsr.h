@@ -17,16 +17,18 @@
   Secure VM Service Module CAA register
 
 **/
-#define MSR_SVSM_CAA  0xc001f000
+#define MSR_SVSM_CAA 0xc001f000
 
 /**
   MSR information returned for #MSR_SVSM_CAA
 **/
-typedef union {
-  struct {
-    UINT32    Lower32Bits;
-    UINT32    Upper32Bits;
-  } Bits;
+typedef union
+{
+    struct
+    {
+        UINT32 Lower32Bits;
+        UINT32 Upper32Bits;
+    } Bits;
 
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_SVSM_CAA_REGISTER;

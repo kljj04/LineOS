@@ -4,14 +4,14 @@
 
 #pragma once
 
-#include <Uefi.h>
+#include <lineos/typeinfo.h>
 
 #define ELF_MAGIC32 0x464C457F
-#define PT_LOAD 1
+#define PT_LOAD     1
 
 typedef struct
 {
-    UINT8 Ident[16];
+    UINT8  Ident[16];
     UINT16 Type;
     UINT16 Machine;
     UINT32 Version;
@@ -48,4 +48,4 @@ typedef struct
 
 BOOLEAN LoadKernel(VOID);
 
-extern LINEOS_KERNEL kernel;
+EXTERN LINEOS_KERNEL kernel;

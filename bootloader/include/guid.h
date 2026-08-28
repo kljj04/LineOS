@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include <Uefi.h>
+#include <lineos/typeinfo.h>
 
-extern EFI_GUID gEfiAcpi20TableGuid;
-extern EFI_GUID gEfiFileInfoGuid;
-extern EFI_GUID gEfiLoadedImageProtocolGuid;
-extern EFI_GUID gEfiSimpleFileSystemProtocolGuid;
-extern EFI_GUID gEfiGraphicsOutputProtocolGuid;
+EXTERN EFI_GUID gEfiAcpi20TableGuid;
+EXTERN EFI_GUID gEfiFileInfoGuid;
+EXTERN EFI_GUID gEfiLoadedImageProtocolGuid;
+EXTERN EFI_GUID gEfiSimpleFileSystemProtocolGuid;
+EXTERN EFI_GUID gEfiGraphicsOutputProtocolGuid;

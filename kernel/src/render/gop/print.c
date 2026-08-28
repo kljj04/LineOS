@@ -8,14 +8,14 @@
 #include <render/gop/print.h>
 #include <stdarg.h>
 
-#define KPRINT_TAB_SIZE 4
-#define KPRINT_LINE_HEIGHT 24
-#define KPRINT_BACKSPACE_WIDTH 12
+#define KPRINT_TAB_SIZE         4
+#define KPRINT_LINE_HEIGHT      24
+#define KPRINT_BACKSPACE_WIDTH  12
 #define KPRINT_BACKSPACE_HEIGHT 24
 
 STATIC UINT32 KPrintChar(UINT16 Unicode, UINT32 x, UINT32 BaseLine, UINT32 color)
 {
-    UINT16 advance = DrawGlyph(Unicode, x, BaseLine, color);
+    UINT16 advance = GOPDrawGlyph(Unicode, x, BaseLine, color);
 
     if (advance == 0)
     {
@@ -38,11 +38,11 @@ STATIC UINT32 KPrintString(CONST CHAR16 *msg, UINT32 x, UINT32 BaseLine, UINT32 
 
 STATIC UINT32 KPrintUnsigned(UINT64 value, UINT32 base, BOOLEAN UpperCase, UINT32 x, UINT32 BaseLine, UINT32 color)
 {
-    CHAR8 buffer[32];
+    CHAR8              buffer[32];
     STATIC CONST CHAR8 UpperDigits[] = "0123456789ABCDEF";
     STATIC CONST CHAR8 LowerDigits[] = "0123456789abcdef";
-    CONST CHAR8 *digits = UpperCase ? UpperDigits : LowerDigits;
-    UINT32 index = 0;
+    CONST CHAR8       *digits = UpperCase ? UpperDigits : LowerDigits;
+    UINT32             index = 0;
 
     if (value == 0)
     {
@@ -75,10 +75,10 @@ STATIC UINT32 KPrintSigned(INT64 value, UINT32 x, UINT32 BaseLine, UINT32 color)
     return KPrintUnsigned((UINT64) value, 10, FALSE, x, BaseLine, color);
 }
 
-VOID KPrint(CONST CHAR16 *msg, UINT32 x, UINT32 BaseLine, UINT32 color, ...)
+VOID GOPKPrint(CONST CHAR16 *msg, UINT32 x, UINT32 BaseLine, UINT32 color, ...)
 {
     va_list args;
-    UINT32 OriginX = x;
+    UINT32  OriginX = x;
 
     va_start(args, color);
 
@@ -114,8 +114,7 @@ VOID KPrint(CONST CHAR16 *msg, UINT32 x, UINT32 BaseLine, UINT32 color, ...)
             if (x >= OriginX + KPRINT_BACKSPACE_WIDTH)
             {
                 x -= KPRINT_BACKSPACE_WIDTH;
-                FillRect(x, BaseLine - KPRINT_BACKSPACE_HEIGHT, KPRINT_BACKSPACE_WIDTH, KPRINT_BACKSPACE_HEIGHT,
-                         0x000000);
+                GOPFillRect(x, BaseLine - KPRINT_BACKSPACE_HEIGHT, KPRINT_BACKSPACE_WIDTH, KPRINT_BACKSPACE_HEIGHT, 0x000000);
             }
 
             continue;

@@ -27,7 +27,7 @@ STATIC VOID *AllocQueueMemory(UINTN Bytes)
 
 STATIC VOID MemoryBarrier(VOID)
 {
-    __asm__ volatile("" ::: "memory");
+    ASM("" ::: "memory");
 }
 
 BOOLEAN VirtQueueInit(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, UINT16 QueueIndex, UINT16 WantedSize)

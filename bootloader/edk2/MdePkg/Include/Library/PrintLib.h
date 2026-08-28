@@ -185,16 +185,16 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 ///  Maximum Length TIME               = 18
 ///    "12/12/2006  12:12"
 ///
-#define MAXIMUM_VALUE_CHARACTERS  38
+#define MAXIMUM_VALUE_CHARACTERS 38
 
 ///
 /// Flags bitmask values use in UnicodeValueToString() and
 /// AsciiValueToString()
 ///
-#define LEFT_JUSTIFY  0x01
-#define COMMA_TYPE    0x08
-#define PREFIX_ZERO   0x20
-#define RADIX_HEX     0x80
+#define LEFT_JUSTIFY 0x01
+#define COMMA_TYPE   0x08
+#define PREFIX_ZERO  0x20
+#define RADIX_HEX    0x80
 
 /**
   Produces a Null-terminated Unicode string in an output buffer based on
@@ -238,12 +238,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 UINTN
 EFIAPI
-UnicodeVSPrint (
-  OUT CHAR16        *StartOfBuffer,
-  IN  UINTN         BufferSize,
-  IN  CONST CHAR16  *FormatString,
-  IN  VA_LIST       Marker
-  );
+UnicodeVSPrint(OUT CHAR16 *StartOfBuffer, IN UINTN BufferSize, IN CONST CHAR16 *FormatString, IN VA_LIST Marker);
 
 /**
   Produces a Null-terminated Unicode string in an output buffer based on
@@ -285,12 +280,7 @@ UnicodeVSPrint (
 **/
 UINTN
 EFIAPI
-UnicodeBSPrint (
-  OUT CHAR16        *StartOfBuffer,
-  IN  UINTN         BufferSize,
-  IN  CONST CHAR16  *FormatString,
-  IN  BASE_LIST     Marker
-  );
+UnicodeBSPrint(OUT CHAR16 *StartOfBuffer, IN UINTN BufferSize, IN CONST CHAR16 *FormatString, IN BASE_LIST Marker);
 
 /**
   Produces a Null-terminated Unicode string in an output buffer based on a Null-terminated
@@ -334,12 +324,7 @@ UnicodeBSPrint (
 **/
 UINTN
 EFIAPI
-UnicodeSPrint (
-  OUT CHAR16        *StartOfBuffer,
-  IN  UINTN         BufferSize,
-  IN  CONST CHAR16  *FormatString,
-  ...
-  );
+UnicodeSPrint(OUT CHAR16 *StartOfBuffer, IN UINTN BufferSize, IN CONST CHAR16 *FormatString, ...);
 
 /**
   Produces a Null-terminated Unicode string in an output buffer based on a Null-terminated
@@ -382,12 +367,7 @@ UnicodeSPrint (
 **/
 UINTN
 EFIAPI
-UnicodeVSPrintAsciiFormat (
-  OUT CHAR16       *StartOfBuffer,
-  IN  UINTN        BufferSize,
-  IN  CONST CHAR8  *FormatString,
-  IN  VA_LIST      Marker
-  );
+UnicodeVSPrintAsciiFormat(OUT CHAR16 *StartOfBuffer, IN UINTN BufferSize, IN CONST CHAR8 *FormatString, IN VA_LIST Marker);
 
 /**
   Produces a Null-terminated Unicode string in an output buffer based on a Null-terminated
@@ -428,12 +408,7 @@ UnicodeVSPrintAsciiFormat (
 **/
 UINTN
 EFIAPI
-UnicodeBSPrintAsciiFormat (
-  OUT CHAR16       *StartOfBuffer,
-  IN  UINTN        BufferSize,
-  IN  CONST CHAR8  *FormatString,
-  IN  BASE_LIST    Marker
-  );
+UnicodeBSPrintAsciiFormat(OUT CHAR16 *StartOfBuffer, IN UINTN BufferSize, IN CONST CHAR8 *FormatString, IN BASE_LIST Marker);
 
 /**
   Produces a Null-terminated Unicode string in an output buffer based on a Null-terminated
@@ -477,12 +452,7 @@ UnicodeBSPrintAsciiFormat (
 **/
 UINTN
 EFIAPI
-UnicodeSPrintAsciiFormat (
-  OUT CHAR16       *StartOfBuffer,
-  IN  UINTN        BufferSize,
-  IN  CONST CHAR8  *FormatString,
-  ...
-  );
+UnicodeSPrintAsciiFormat(OUT CHAR16 *StartOfBuffer, IN UINTN BufferSize, IN CONST CHAR8 *FormatString, ...);
 
 /**
   Converts a decimal value to a Null-terminated Unicode string.
@@ -537,13 +507,7 @@ UnicodeSPrintAsciiFormat (
 **/
 RETURN_STATUS
 EFIAPI
-UnicodeValueToStringS (
-  IN OUT CHAR16  *Buffer,
-  IN UINTN       BufferSize,
-  IN UINTN       Flags,
-  IN INT64       Value,
-  IN UINTN       Width
-  );
+UnicodeValueToStringS(IN OUT CHAR16 *Buffer, IN UINTN BufferSize, IN UINTN Flags, IN INT64 Value, IN UINTN Width);
 
 /**
   Produces a Null-terminated ASCII string in an output buffer based on a Null-terminated
@@ -584,12 +548,7 @@ UnicodeValueToStringS (
 **/
 UINTN
 EFIAPI
-AsciiVSPrint (
-  OUT CHAR8        *StartOfBuffer,
-  IN  UINTN        BufferSize,
-  IN  CONST CHAR8  *FormatString,
-  IN  VA_LIST      Marker
-  );
+AsciiVSPrint(OUT CHAR8 *StartOfBuffer, IN UINTN BufferSize, IN CONST CHAR8 *FormatString, IN VA_LIST Marker);
 
 /**
   Produces a Null-terminated ASCII string in an output buffer based on a Null-terminated
@@ -628,12 +587,7 @@ AsciiVSPrint (
 **/
 UINTN
 EFIAPI
-AsciiBSPrint (
-  OUT CHAR8        *StartOfBuffer,
-  IN  UINTN        BufferSize,
-  IN  CONST CHAR8  *FormatString,
-  IN  BASE_LIST    Marker
-  );
+AsciiBSPrint(OUT CHAR8 *StartOfBuffer, IN UINTN BufferSize, IN CONST CHAR8 *FormatString, IN BASE_LIST Marker);
 
 /**
   Produces a Null-terminated ASCII string in an output buffer based on a Null-terminated
@@ -675,12 +629,7 @@ AsciiBSPrint (
 **/
 UINTN
 EFIAPI
-AsciiSPrint (
-  OUT CHAR8        *StartOfBuffer,
-  IN  UINTN        BufferSize,
-  IN  CONST CHAR8  *FormatString,
-  ...
-  );
+AsciiSPrint(OUT CHAR8 *StartOfBuffer, IN UINTN BufferSize, IN CONST CHAR8 *FormatString, ...);
 
 /**
   Produces a Null-terminated ASCII string in an output buffer based on a Null-terminated
@@ -723,12 +672,7 @@ AsciiSPrint (
 **/
 UINTN
 EFIAPI
-AsciiVSPrintUnicodeFormat (
-  OUT CHAR8         *StartOfBuffer,
-  IN  UINTN         BufferSize,
-  IN  CONST CHAR16  *FormatString,
-  IN  VA_LIST       Marker
-  );
+AsciiVSPrintUnicodeFormat(OUT CHAR8 *StartOfBuffer, IN UINTN BufferSize, IN CONST CHAR16 *FormatString, IN VA_LIST Marker);
 
 /**
   Produces a Null-terminated ASCII string in an output buffer based on a Null-terminated
@@ -769,12 +713,7 @@ AsciiVSPrintUnicodeFormat (
 **/
 UINTN
 EFIAPI
-AsciiBSPrintUnicodeFormat (
-  OUT CHAR8         *StartOfBuffer,
-  IN  UINTN         BufferSize,
-  IN  CONST CHAR16  *FormatString,
-  IN  BASE_LIST     Marker
-  );
+AsciiBSPrintUnicodeFormat(OUT CHAR8 *StartOfBuffer, IN UINTN BufferSize, IN CONST CHAR16 *FormatString, IN BASE_LIST Marker);
 
 /**
   Produces a Null-terminated ASCII string in an output buffer based on a Null-terminated
@@ -818,12 +757,7 @@ AsciiBSPrintUnicodeFormat (
 **/
 UINTN
 EFIAPI
-AsciiSPrintUnicodeFormat (
-  OUT CHAR8         *StartOfBuffer,
-  IN  UINTN         BufferSize,
-  IN  CONST CHAR16  *FormatString,
-  ...
-  );
+AsciiSPrintUnicodeFormat(OUT CHAR8 *StartOfBuffer, IN UINTN BufferSize, IN CONST CHAR16 *FormatString, ...);
 
 /**
   Converts a decimal value to a Null-terminated Ascii string.
@@ -876,13 +810,7 @@ AsciiSPrintUnicodeFormat (
 **/
 RETURN_STATUS
 EFIAPI
-AsciiValueToStringS (
-  IN OUT CHAR8  *Buffer,
-  IN UINTN      BufferSize,
-  IN UINTN      Flags,
-  IN INT64      Value,
-  IN UINTN      Width
-  );
+AsciiValueToStringS(IN OUT CHAR8 *Buffer, IN UINTN BufferSize, IN UINTN Flags, IN INT64 Value, IN UINTN Width);
 
 /**
   Returns the number of characters that would be produced by if the formatted
@@ -903,10 +831,7 @@ AsciiValueToStringS (
 **/
 UINTN
 EFIAPI
-SPrintLength (
-  IN  CONST CHAR16  *FormatString,
-  IN  VA_LIST       Marker
-  );
+SPrintLength(IN CONST CHAR16 *FormatString, IN VA_LIST Marker);
 
 /**
   Returns the number of characters that would be produced by if the formatted
@@ -925,7 +850,4 @@ SPrintLength (
 **/
 UINTN
 EFIAPI
-SPrintLengthAsciiFormat (
-  IN  CONST CHAR8  *FormatString,
-  IN  VA_LIST      Marker
-  );
+SPrintLengthAsciiFormat(IN CONST CHAR8 *FormatString, IN VA_LIST Marker);

@@ -36,12 +36,7 @@ typedef struct _EFI_SERVICE_BINDING_PROTOCOL EFI_SERVICE_BINDING_PROTOCOL;
   @retval other                 The child handle was not created
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SERVICE_BINDING_CREATE_CHILD)(
-  IN     EFI_SERVICE_BINDING_PROTOCOL  *This,
-  IN OUT EFI_HANDLE                    *ChildHandle
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SERVICE_BINDING_CREATE_CHILD)(IN EFI_SERVICE_BINDING_PROTOCOL *This, IN OUT EFI_HANDLE *ChildHandle);
 
 /**
   Destroys a child handle with a protocol installed on it.
@@ -61,12 +56,7 @@ EFI_STATUS
   @retval other                 The child handle was not destroyed
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SERVICE_BINDING_DESTROY_CHILD)(
-  IN EFI_SERVICE_BINDING_PROTOCOL          *This,
-  IN EFI_HANDLE                            ChildHandle
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SERVICE_BINDING_DESTROY_CHILD)(IN EFI_SERVICE_BINDING_PROTOCOL *This, IN EFI_HANDLE ChildHandle);
 
 ///
 /// The EFI_SERVICE_BINDING_PROTOCOL provides member functions to create and destroy
@@ -79,7 +69,8 @@ EFI_STATUS
 /// a software protocol is responsible for calling CreateChild() when it requires the
 /// protocol and calling DestroyChild() when it is finished with that protocol.
 ///
-struct _EFI_SERVICE_BINDING_PROTOCOL {
-  EFI_SERVICE_BINDING_CREATE_CHILD     CreateChild;
-  EFI_SERVICE_BINDING_DESTROY_CHILD    DestroyChild;
+struct _EFI_SERVICE_BINDING_PROTOCOL
+{
+    EFI_SERVICE_BINDING_CREATE_CHILD  CreateChild;
+    EFI_SERVICE_BINDING_DESTROY_CHILD DestroyChild;
 };

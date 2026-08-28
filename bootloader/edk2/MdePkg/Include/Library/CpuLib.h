@@ -23,11 +23,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
   sleep state indefinitely.
 
 **/
-VOID
-EFIAPI
-CpuSleep (
-  VOID
-  );
+VOID EFIAPI CpuSleep(VOID);
 
 /**
   Flushes all the Translation Lookaside Buffers(TLB) entries in a CPU.
@@ -35,13 +31,9 @@ CpuSleep (
   Flushes all the Translation Lookaside Buffers(TLB) entries in a CPU.
 
 **/
-VOID
-EFIAPI
-CpuFlushTlb (
-  VOID
-  );
+VOID EFIAPI CpuFlushTlb(VOID);
 
-#if defined (MDE_CPU_IA32) || defined (MDE_CPU_X64) || defined (MDE_CPU_LOONGARCH64) || defined (MDE_CPU_RISCV64)
+#if defined(MDE_CPU_IA32) || defined(MDE_CPU_X64) || defined(MDE_CPU_LOONGARCH64) || defined(MDE_CPU_RISCV64)
 
 /**
   Initialize the CPU floating point units.
@@ -52,15 +44,11 @@ CpuFlushTlb (
   control word (if supported) to 0x1F80 (all exceptions masked, round-to-nearest,
   flush to zero for masked underflow).
 **/
-VOID
-EFIAPI
-InitializeFloatingPointUnits (
-  VOID
-  );
+VOID EFIAPI InitializeFloatingPointUnits(VOID);
 
 #endif
 
-#if defined (MDE_CPU_IA32) || defined (MDE_CPU_X64)
+#if defined(MDE_CPU_IA32) || defined(MDE_CPU_X64)
 
 /**
   Determine if the standard CPU signature is "AuthenticAMD".
@@ -69,9 +57,7 @@ InitializeFloatingPointUnits (
 **/
 BOOLEAN
 EFIAPI
-StandardSignatureIsAuthenticAMD (
-  VOID
-  );
+StandardSignatureIsAuthenticAMD(VOID);
 
 /**
   Return the 32bit CPU family and model value.
@@ -79,9 +65,7 @@ StandardSignatureIsAuthenticAMD (
 **/
 UINT32
 EFIAPI
-GetCpuFamilyModel (
-  VOID
-  );
+GetCpuFamilyModel(VOID);
 
 /**
   Return the CPU stepping ID.
@@ -89,34 +73,24 @@ GetCpuFamilyModel (
 **/
 UINT8
 EFIAPI
-GetCpuSteppingId (
-  VOID
-  );
+GetCpuSteppingId(VOID);
 
 #endif
 
-#if defined (MDE_CPU_LOONGARCH64)
+#if defined(MDE_CPU_LOONGARCH64)
 
 /**
   Enable the CPU floating point units.
 
   Enable the CPU floating point units.
 **/
-VOID
-EFIAPI
-EnableFloatingPointUnits (
-  VOID
-  );
+VOID EFIAPI EnableFloatingPointUnits(VOID);
 
 /**
   Disable the CPU floating point units.
 
   Disable the CPU floating point units.
 **/
-VOID
-EFIAPI
-DisableFloatingPointUnits (
-  VOID
-  );
+VOID EFIAPI DisableFloatingPointUnits(VOID);
 
 #endif

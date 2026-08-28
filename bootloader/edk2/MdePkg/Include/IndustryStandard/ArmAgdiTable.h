@@ -15,39 +15,41 @@
 
 #include <IndustryStandard/Acpi.h>
 
-#define EFI_ACPI_ARM_AGDI_TABLE_SIGNATURE  SIGNATURE_32('A', 'G', 'D', 'I')
+#define EFI_ACPI_ARM_AGDI_TABLE_SIGNATURE SIGNATURE_32('A', 'G', 'D', 'I')
 
-#define EFI_ACPI_ARM_AGDI_TABLE_REVISION  0
+#define EFI_ACPI_ARM_AGDI_TABLE_REVISION 0
 
 #pragma pack(1)
 
 /// Signaling Mode Values
-typedef enum {
-  ArmAgdiSdeiSignalingMode             = 0x0,
-  ArmAgdiInterruptSignalingMode        = 0x1,
-  ArmAgdiSdeiAndInterruptSignalingMode = 0x2,
-  ArmAgdiSignalingModeInval            = 0x3,
+typedef enum
+{
+    ArmAgdiSdeiSignalingMode = 0x0,
+    ArmAgdiInterruptSignalingMode = 0x1,
+    ArmAgdiSdeiAndInterruptSignalingMode = 0x2,
+    ArmAgdiSignalingModeInval = 0x3,
 } ARM_AGDI_SIGNALING_MODE;
 
 /// Arm AGDI Table definition
-typedef struct {
-  EFI_ACPI_DESCRIPTION_HEADER    Header;
+typedef struct
+{
+    EFI_ACPI_DESCRIPTION_HEADER Header;
 
-  /// Signaling Mode bits [1:0]
-  /// 0x0 - SDEI based signaling mode
-  /// 0x1 - Interrupt based signaling mode
-  /// 0x2 - Both SDEI and Interrupt based signaling mode
-  /// Rest of the bits [7:2] are reserved
-  UINT8                          Flags;
+    /// Signaling Mode bits [1:0]
+    /// 0x0 - SDEI based signaling mode
+    /// 0x1 - Interrupt based signaling mode
+    /// 0x2 - Both SDEI and Interrupt based signaling mode
+    /// Rest of the bits [7:2] are reserved
+    UINT8 Flags;
 
-  /// Reserved - Must be zero
-  UINT8                          Reserved[3];
+    /// Reserved - Must be zero
+    UINT8 Reserved[3];
 
-  /// SDEI event number
-  UINT32                         SdeiEventNum;
+    /// SDEI event number
+    UINT32 SdeiEventNum;
 
-  /// GSIV of the interrupt
-  UINT32                         Gsiv;
+    /// GSIV of the interrupt
+    UINT32 Gsiv;
 } EFI_ACPI_ARM_AGDI_TABLE;
 
 #pragma pack()

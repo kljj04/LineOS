@@ -18,9 +18,4 @@
           combination of Code and ContinuationBytes are not valid.
 
 **/
-CONST CHAR8 *
-EFIAPI
-Jep106GetManufacturerName (
-  IN UINT8  Code,
-  IN UINT8  ContinuationBytes
-  );
+CONST CHAR8 *EFIAPI Jep106GetManufacturerName(IN UINT8 Code, IN UINT8 ContinuationBytes);

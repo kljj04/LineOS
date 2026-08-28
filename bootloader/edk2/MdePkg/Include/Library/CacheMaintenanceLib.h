@@ -16,11 +16,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
   calling CPU.
 
 **/
-VOID
-EFIAPI
-InvalidateInstructionCache (
-  VOID
-  );
+VOID EFIAPI InvalidateInstructionCache(VOID);
 
 /**
   Invalidates a range of instruction cache lines in the cache coherency domain
@@ -47,12 +43,7 @@ InvalidateInstructionCache (
   @return Address.
 
 **/
-VOID *
-EFIAPI
-InvalidateInstructionCacheRange (
-  IN      VOID   *Address,
-  IN      UINTN  Length
-  );
+VOID *EFIAPI InvalidateInstructionCacheRange(IN VOID *Address, IN UINTN Length);
 
 /**
   Writes Back and Invalidates the entire data cache in cache coherency domain
@@ -64,11 +55,7 @@ InvalidateInstructionCacheRange (
   in the cache coherency domain of the calling CPU.
 
 **/
-VOID
-EFIAPI
-WriteBackInvalidateDataCache (
-  VOID
-  );
+VOID EFIAPI WriteBackInvalidateDataCache(VOID);
 
 /**
   Writes Back and Invalidates a range of data cache lines in the cache
@@ -96,12 +83,7 @@ WriteBackInvalidateDataCache (
   @return Address of cache invalidation.
 
 **/
-VOID *
-EFIAPI
-WriteBackInvalidateDataCacheRange (
-  IN      VOID   *Address,
-  IN      UINTN  Length
-  );
+VOID *EFIAPI WriteBackInvalidateDataCacheRange(IN VOID *Address, IN UINTN Length);
 
 /**
   Writes Back the entire data cache in cache coherency domain of the calling
@@ -113,11 +95,7 @@ WriteBackInvalidateDataCacheRange (
   the cache coherency domain of the calling CPU.
 
 **/
-VOID
-EFIAPI
-WriteBackDataCache (
-  VOID
-  );
+VOID EFIAPI WriteBackDataCache(VOID);
 
 /**
   Writes Back a range of data cache lines in the cache coherency domain of the
@@ -144,12 +122,7 @@ WriteBackDataCache (
   @return Address of cache written in main memory.
 
 **/
-VOID *
-EFIAPI
-WriteBackDataCacheRange (
-  IN      VOID   *Address,
-  IN      UINTN  Length
-  );
+VOID *EFIAPI WriteBackDataCacheRange(IN VOID *Address, IN UINTN Length);
 
 /**
   Invalidates the entire data cache in cache coherency domain of the calling
@@ -162,11 +135,7 @@ WriteBackDataCacheRange (
   back and invalidate operation should be performed on the entire data cache.
 
 **/
-VOID
-EFIAPI
-InvalidateDataCache (
-  VOID
-  );
+VOID EFIAPI InvalidateDataCache(VOID);
 
 /**
   Invalidates a range of data cache lines in the cache coherency domain of the
@@ -195,9 +164,4 @@ InvalidateDataCache (
   @return Address.
 
 **/
-VOID *
-EFIAPI
-InvalidateDataCacheRange (
-  IN      VOID   *Address,
-  IN      UINTN  Length
-  );
+VOID *EFIAPI InvalidateDataCacheRange(IN VOID *Address, IN UINTN Length);

@@ -16,10 +16,7 @@
 ///
 /// Global ID for the Deferred Image Load Protocol
 ///
-#define EFI_DEFERRED_IMAGE_LOAD_PROTOCOL_GUID \
-  { \
-    0x15853d7c, 0x3ddf, 0x43e0, { 0xa1, 0xcb, 0xeb, 0xf8, 0x5b, 0x8f, 0x87, 0x2c } \
-  };
+#define EFI_DEFERRED_IMAGE_LOAD_PROTOCOL_GUID {0x15853d7c, 0x3ddf, 0x43e0, {0xa1, 0xcb, 0xeb, 0xf8, 0x5b, 0x8f, 0x87, 0x2c}};
 
 typedef struct _EFI_DEFERRED_IMAGE_LOAD_PROTOCOL EFI_DEFERRED_IMAGE_LOAD_PROTOCOL;
 
@@ -50,22 +47,14 @@ typedef struct _EFI_DEFERRED_IMAGE_LOAD_PROTOCOL EFI_DEFERRED_IMAGE_LOAD_PROTOCO
   @retval EFI_INVALID_PARAMETER  ImageDevicePath is NULL or Image is NULL or ImageSize is NULL or
                                  BootOption is NULL.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_DEFERRED_IMAGE_INFO)(
-  IN  EFI_DEFERRED_IMAGE_LOAD_PROTOCOL  *This,
-  IN  UINTN                             ImageIndex,
-  OUT EFI_DEVICE_PATH_PROTOCOL          **ImageDevicePath,
-  OUT VOID                              **Image,
-  OUT UINTN                             *ImageSize,
-  OUT BOOLEAN                           *BootOption
-  );
+typedef EFI_STATUS(EFIAPI *EFI_DEFERRED_IMAGE_INFO)(IN EFI_DEFERRED_IMAGE_LOAD_PROTOCOL *This, IN UINTN ImageIndex, OUT EFI_DEVICE_PATH_PROTOCOL **ImageDevicePath, OUT VOID **Image, OUT UINTN *ImageSize, OUT BOOLEAN *BootOption);
 
 ///
 /// This protocol returns information about a deferred image.
 ///
-struct _EFI_DEFERRED_IMAGE_LOAD_PROTOCOL {
-  EFI_DEFERRED_IMAGE_INFO    GetImageInfo;
+struct _EFI_DEFERRED_IMAGE_LOAD_PROTOCOL
+{
+    EFI_DEFERRED_IMAGE_INFO GetImageInfo;
 };
 
-extern EFI_GUID  gEfiDeferredImageLoadProtocolGuid;
+extern EFI_GUID gEfiDeferredImageLoadProtocolGuid;

@@ -22,9 +22,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 BOOLEAN
 EFIAPI
-GetRandomNumber16 (
-  OUT     UINT16  *Rand
-  );
+GetRandomNumber16(OUT UINT16 *Rand);
 
 /**
   Generates a 32-bit random number.
@@ -39,9 +37,7 @@ GetRandomNumber16 (
 **/
 BOOLEAN
 EFIAPI
-GetRandomNumber32 (
-  OUT     UINT32  *Rand
-  );
+GetRandomNumber32(OUT UINT32 *Rand);
 
 /**
   Generates a 64-bit random number.
@@ -56,9 +52,7 @@ GetRandomNumber32 (
 **/
 BOOLEAN
 EFIAPI
-GetRandomNumber64 (
-  OUT     UINT64  *Rand
-  );
+GetRandomNumber64(OUT UINT64 *Rand);
 
 /**
   Generates a 128-bit random number.
@@ -73,9 +67,7 @@ GetRandomNumber64 (
 **/
 BOOLEAN
 EFIAPI
-GetRandomNumber128 (
-  OUT     UINT64  *Rand
-  );
+GetRandomNumber128(OUT UINT64 *Rand);
 
 /**
   Get a GUID identifying the RNG algorithm implementation.
@@ -89,6 +81,4 @@ GetRandomNumber128 (
 **/
 EFI_STATUS
 EFIAPI
-GetRngGuid (
-  GUID  *RngGuid
-  );
+GetRngGuid(GUID *RngGuid);

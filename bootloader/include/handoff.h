@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include <Uefi.h>
+#include <lineos/typeinfo.h>
 #include <lineos/bootinfo.h>
 
 BOOLEAN CreateBootInfo(VOID);
-VOID JumpKernel(VOID);
+VOID    JumpKernel(VOID);
 
-extern LINEOS_BOOT_INFO *BootInfo;
+EXTERN LINEOS_BOOT_INFO *BootInfo;

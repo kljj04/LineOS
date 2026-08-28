@@ -26,11 +26,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
-VOID *
-EFIAPI
-AllocatePages (
-  IN UINTN  Pages
-  );
+VOID *EFIAPI AllocatePages(IN UINTN Pages);
 
 /**
   Allocates one or more 4KB pages of type EfiRuntimeServicesData.
@@ -45,11 +41,7 @@ AllocatePages (
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
-VOID *
-EFIAPI
-AllocateRuntimePages (
-  IN UINTN  Pages
-  );
+VOID *EFIAPI AllocateRuntimePages(IN UINTN Pages);
 
 /**
   Allocates one or more 4KB pages of type EfiReservedMemoryType.
@@ -64,11 +56,7 @@ AllocateRuntimePages (
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
-VOID *
-EFIAPI
-AllocateReservedPages (
-  IN UINTN  Pages
-  );
+VOID *EFIAPI AllocateReservedPages(IN UINTN Pages);
 
 /**
   Frees one or more 4KB pages that were previously allocated with one of the page allocation
@@ -87,12 +75,7 @@ AllocateReservedPages (
   @param  Pages                 The number of 4 KB pages to free.
 
 **/
-VOID
-EFIAPI
-FreePages (
-  IN VOID   *Buffer,
-  IN UINTN  Pages
-  );
+VOID EFIAPI FreePages(IN VOID *Buffer, IN UINTN Pages);
 
 /**
   Allocates one or more 4KB pages of type EfiBootServicesData at a specified alignment.
@@ -112,12 +95,7 @@ FreePages (
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
-VOID *
-EFIAPI
-AllocateAlignedPages (
-  IN UINTN  Pages,
-  IN UINTN  Alignment
-  );
+VOID *EFIAPI AllocateAlignedPages(IN UINTN Pages, IN UINTN Alignment);
 
 /**
   Allocates one or more 4KB pages of type EfiRuntimeServicesData at a specified alignment.
@@ -137,12 +115,7 @@ AllocateAlignedPages (
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
-VOID *
-EFIAPI
-AllocateAlignedRuntimePages (
-  IN UINTN  Pages,
-  IN UINTN  Alignment
-  );
+VOID *EFIAPI AllocateAlignedRuntimePages(IN UINTN Pages, IN UINTN Alignment);
 
 /**
   Allocates one or more 4KB pages of type EfiReservedMemoryType at a specified alignment.
@@ -162,12 +135,7 @@ AllocateAlignedRuntimePages (
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
-VOID *
-EFIAPI
-AllocateAlignedReservedPages (
-  IN UINTN  Pages,
-  IN UINTN  Alignment
-  );
+VOID *EFIAPI AllocateAlignedReservedPages(IN UINTN Pages, IN UINTN Alignment);
 
 /**
   Frees one or more 4KB pages that were previously allocated with one of the aligned page
@@ -186,12 +154,7 @@ AllocateAlignedReservedPages (
   @param  Pages                 The number of 4 KB pages to free.
 
 **/
-VOID
-EFIAPI
-FreeAlignedPages (
-  IN VOID   *Buffer,
-  IN UINTN  Pages
-  );
+VOID EFIAPI FreeAlignedPages(IN VOID *Buffer, IN UINTN Pages);
 
 /**
   Allocates a buffer of type EfiBootServicesData.
@@ -205,11 +168,7 @@ FreeAlignedPages (
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
-VOID *
-EFIAPI
-AllocatePool (
-  IN UINTN  AllocationSize
-  );
+VOID *EFIAPI AllocatePool(IN UINTN AllocationSize);
 
 /**
   Allocates a buffer of type EfiRuntimeServicesData.
@@ -223,11 +182,7 @@ AllocatePool (
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
-VOID *
-EFIAPI
-AllocateRuntimePool (
-  IN UINTN  AllocationSize
-  );
+VOID *EFIAPI AllocateRuntimePool(IN UINTN AllocationSize);
 
 /**
   Allocates a buffer of type EfiReservedMemoryType.
@@ -241,11 +196,7 @@ AllocateRuntimePool (
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
-VOID *
-EFIAPI
-AllocateReservedPool (
-  IN UINTN  AllocationSize
-  );
+VOID *EFIAPI AllocateReservedPool(IN UINTN AllocationSize);
 
 /**
   Allocates and zeros a buffer of type EfiBootServicesData.
@@ -260,11 +211,7 @@ AllocateReservedPool (
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
-VOID *
-EFIAPI
-AllocateZeroPool (
-  IN UINTN  AllocationSize
-  );
+VOID *EFIAPI AllocateZeroPool(IN UINTN AllocationSize);
 
 /**
   Allocates and zeros a buffer of type EfiRuntimeServicesData.
@@ -279,11 +226,7 @@ AllocateZeroPool (
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
-VOID *
-EFIAPI
-AllocateRuntimeZeroPool (
-  IN UINTN  AllocationSize
-  );
+VOID *EFIAPI AllocateRuntimeZeroPool(IN UINTN AllocationSize);
 
 /**
   Allocates and zeros a buffer of type EfiReservedMemoryType.
@@ -298,11 +241,7 @@ AllocateRuntimeZeroPool (
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
-VOID *
-EFIAPI
-AllocateReservedZeroPool (
-  IN UINTN  AllocationSize
-  );
+VOID *EFIAPI AllocateReservedZeroPool(IN UINTN AllocationSize);
 
 /**
   Copies a buffer to an allocated buffer of type EfiBootServicesData.
@@ -321,12 +260,7 @@ AllocateReservedZeroPool (
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
-VOID *
-EFIAPI
-AllocateCopyPool (
-  IN UINTN       AllocationSize,
-  IN CONST VOID  *Buffer
-  );
+VOID *EFIAPI AllocateCopyPool(IN UINTN AllocationSize, IN CONST VOID *Buffer);
 
 /**
   Copies a buffer to an allocated buffer of type EfiRuntimeServicesData.
@@ -345,12 +279,7 @@ AllocateCopyPool (
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
-VOID *
-EFIAPI
-AllocateRuntimeCopyPool (
-  IN UINTN       AllocationSize,
-  IN CONST VOID  *Buffer
-  );
+VOID *EFIAPI AllocateRuntimeCopyPool(IN UINTN AllocationSize, IN CONST VOID *Buffer);
 
 /**
   Copies a buffer to an allocated buffer of type EfiReservedMemoryType.
@@ -369,12 +298,7 @@ AllocateRuntimeCopyPool (
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
-VOID *
-EFIAPI
-AllocateReservedCopyPool (
-  IN UINTN       AllocationSize,
-  IN CONST VOID  *Buffer
-  );
+VOID *EFIAPI AllocateReservedCopyPool(IN UINTN AllocationSize, IN CONST VOID *Buffer);
 
 /**
   Reallocates a buffer of type EfiBootServicesData.
@@ -397,13 +321,7 @@ AllocateReservedCopyPool (
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
-VOID *
-EFIAPI
-ReallocatePool (
-  IN UINTN  OldSize,
-  IN UINTN  NewSize,
-  IN VOID   *OldBuffer  OPTIONAL
-  );
+VOID *EFIAPI ReallocatePool(IN UINTN OldSize, IN UINTN NewSize, IN VOID *OldBuffer OPTIONAL);
 
 /**
   Reallocates a buffer of type EfiRuntimeServicesData.
@@ -426,13 +344,7 @@ ReallocatePool (
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
-VOID *
-EFIAPI
-ReallocateRuntimePool (
-  IN UINTN  OldSize,
-  IN UINTN  NewSize,
-  IN VOID   *OldBuffer  OPTIONAL
-  );
+VOID *EFIAPI ReallocateRuntimePool(IN UINTN OldSize, IN UINTN NewSize, IN VOID *OldBuffer OPTIONAL);
 
 /**
   Reallocates a buffer of type EfiReservedMemoryType.
@@ -455,13 +367,7 @@ ReallocateRuntimePool (
   @return A pointer to the allocated buffer or NULL if allocation fails.
 
 **/
-VOID *
-EFIAPI
-ReallocateReservedPool (
-  IN UINTN  OldSize,
-  IN UINTN  NewSize,
-  IN VOID   *OldBuffer  OPTIONAL
-  );
+VOID *EFIAPI ReallocateReservedPool(IN UINTN OldSize, IN UINTN NewSize, IN VOID *OldBuffer OPTIONAL);
 
 /**
   Frees a buffer that was previously allocated with one of the pool allocation functions in the
@@ -477,8 +383,4 @@ ReallocateReservedPool (
   @param  Buffer                Pointer to the buffer to free.
 
 **/
-VOID
-EFIAPI
-FreePool (
-  IN VOID  *Buffer
-  );
+VOID EFIAPI FreePool(IN VOID *Buffer);

@@ -28,9 +28,7 @@
 **/
 UINT8
 EFIAPI
-S3IoRead8 (
-  IN UINTN  Port
-  );
+S3IoRead8(IN UINTN Port);
 
 /**
   Writes an 8-bit I/O port, and saves the value in the S3 script to be replayed
@@ -50,10 +48,7 @@ S3IoRead8 (
 **/
 UINT8
 EFIAPI
-S3IoWrite8 (
-  IN UINTN  Port,
-  IN UINT8  Value
-  );
+S3IoWrite8(IN UINTN Port, IN UINT8 Value);
 
 /**
   Reads an 8-bit I/O port, performs a bitwise OR, writes the
@@ -76,10 +71,7 @@ S3IoWrite8 (
 **/
 UINT8
 EFIAPI
-S3IoOr8 (
-  IN UINTN  Port,
-  IN UINT8  OrData
-  );
+S3IoOr8(IN UINTN Port, IN UINT8 OrData);
 
 /**
   Reads an 8-bit I/O port, performs a bitwise AND, writes the result back
@@ -102,10 +94,7 @@ S3IoOr8 (
 **/
 UINT8
 EFIAPI
-S3IoAnd8 (
-  IN UINTN  Port,
-  IN UINT8  AndData
-  );
+S3IoAnd8(IN UINTN Port, IN UINT8 AndData);
 
 /**
   Reads an 8-bit I/O port, performs a bitwise AND followed by a bitwise
@@ -130,11 +119,7 @@ S3IoAnd8 (
 **/
 UINT8
 EFIAPI
-S3IoAndThenOr8 (
-  IN UINTN  Port,
-  IN UINT8  AndData,
-  IN UINT8  OrData
-  );
+S3IoAndThenOr8(IN UINTN Port, IN UINT8 AndData, IN UINT8 OrData);
 
 /**
   Reads a bit field of an I/O register, and saves the value in the S3 script to
@@ -159,11 +144,7 @@ S3IoAndThenOr8 (
 **/
 UINT8
 EFIAPI
-S3IoBitFieldRead8 (
-  IN UINTN  Port,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit
-  );
+S3IoBitFieldRead8(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to an I/O register and saves the value in the S3 script to
@@ -192,12 +173,7 @@ S3IoBitFieldRead8 (
 **/
 UINT8
 EFIAPI
-S3IoBitFieldWrite8 (
-  IN UINTN  Port,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit,
-  IN UINT8  Value
-  );
+S3IoBitFieldWrite8(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 Value);
 
 /**
   Reads a bit field in an 8-bit port, performs a bitwise OR, writes the
@@ -228,12 +204,7 @@ S3IoBitFieldWrite8 (
 **/
 UINT8
 EFIAPI
-S3IoBitFieldOr8 (
-  IN UINTN  Port,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit,
-  IN UINT8  OrData
-  );
+S3IoBitFieldOr8(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 OrData);
 
 /**
   Reads a bit field in an 8-bit port, performs a bitwise AND, writes the
@@ -264,12 +235,7 @@ S3IoBitFieldOr8 (
 **/
 UINT8
 EFIAPI
-S3IoBitFieldAnd8 (
-  IN UINTN  Port,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit,
-  IN UINT8  AndData
-  );
+S3IoBitFieldAnd8(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 AndData);
 
 /**
   Reads a bit field in an 8-bit port, performs a bitwise AND followed by a
@@ -303,13 +269,7 @@ S3IoBitFieldAnd8 (
 **/
 UINT8
 EFIAPI
-S3IoBitFieldAndThenOr8 (
-  IN UINTN  Port,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit,
-  IN UINT8  AndData,
-  IN UINT8  OrData
-  );
+S3IoBitFieldAndThenOr8(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 AndData, IN UINT8 OrData);
 
 /**
   Reads a 16-bit I/O port, and saves the value in the S3 script to be replayed
@@ -328,9 +288,7 @@ S3IoBitFieldAndThenOr8 (
 **/
 UINT16
 EFIAPI
-S3IoRead16 (
-  IN UINTN  Port
-  );
+S3IoRead16(IN UINTN Port);
 
 /**
   Writes a 16-bit I/O port, and saves the value in the S3 script to be replayed
@@ -350,10 +308,7 @@ S3IoRead16 (
 **/
 UINT16
 EFIAPI
-S3IoWrite16 (
-  IN UINTN   Port,
-  IN UINT16  Value
-  );
+S3IoWrite16(IN UINTN Port, IN UINT16 Value);
 
 /**
   Reads a 16-bit I/O port, performs a bitwise OR, writes the
@@ -376,10 +331,7 @@ S3IoWrite16 (
 **/
 UINT16
 EFIAPI
-S3IoOr16 (
-  IN UINTN   Port,
-  IN UINT16  OrData
-  );
+S3IoOr16(IN UINTN Port, IN UINT16 OrData);
 
 /**
   Reads a 16-bit I/O port, performs a bitwise AND, writes the result back
@@ -402,10 +354,7 @@ S3IoOr16 (
 **/
 UINT16
 EFIAPI
-S3IoAnd16 (
-  IN UINTN   Port,
-  IN UINT16  AndData
-  );
+S3IoAnd16(IN UINTN Port, IN UINT16 AndData);
 
 /**
   Reads a 16-bit I/O port, performs a bitwise AND followed by a bitwise
@@ -430,11 +379,7 @@ S3IoAnd16 (
 **/
 UINT16
 EFIAPI
-S3IoAndThenOr16 (
-  IN UINTN   Port,
-  IN UINT16  AndData,
-  IN UINT16  OrData
-  );
+S3IoAndThenOr16(IN UINTN Port, IN UINT16 AndData, IN UINT16 OrData);
 
 /**
   Reads a bit field of an I/O register saves the value in the S3 script to be
@@ -459,11 +404,7 @@ S3IoAndThenOr16 (
 **/
 UINT16
 EFIAPI
-S3IoBitFieldRead16 (
-  IN UINTN  Port,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit
-  );
+S3IoBitFieldRead16(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to an I/O register, and saves the value in the S3 script
@@ -492,12 +433,7 @@ S3IoBitFieldRead16 (
 **/
 UINT16
 EFIAPI
-S3IoBitFieldWrite16 (
-  IN UINTN   Port,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT16  Value
-  );
+S3IoBitFieldWrite16(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 Value);
 
 /**
   Reads a bit field in a 16-bit port, performs a bitwise OR, writes the
@@ -528,12 +464,7 @@ S3IoBitFieldWrite16 (
 **/
 UINT16
 EFIAPI
-S3IoBitFieldOr16 (
-  IN UINTN   Port,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT16  OrData
-  );
+S3IoBitFieldOr16(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 OrData);
 
 /**
   Reads a bit field in a 16-bit port, performs a bitwise AND, writes the
@@ -564,12 +495,7 @@ S3IoBitFieldOr16 (
 **/
 UINT16
 EFIAPI
-S3IoBitFieldAnd16 (
-  IN UINTN   Port,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT16  AndData
-  );
+S3IoBitFieldAnd16(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 AndData);
 
 /**
   Reads a bit field in a 16-bit port, performs a bitwise AND followed by a
@@ -604,13 +530,7 @@ S3IoBitFieldAnd16 (
 **/
 UINT16
 EFIAPI
-S3IoBitFieldAndThenOr16 (
-  IN UINTN   Port,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT16  AndData,
-  IN UINT16  OrData
-  );
+S3IoBitFieldAndThenOr16(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 AndData, IN UINT16 OrData);
 
 /**
   Reads a 32-bit I/O port, and saves the value in the S3 script to be replayed
@@ -629,9 +549,7 @@ S3IoBitFieldAndThenOr16 (
 **/
 UINT32
 EFIAPI
-S3IoRead32 (
-  IN UINTN  Port
-  );
+S3IoRead32(IN UINTN Port);
 
 /**
   Writes a 32-bit I/O port, and saves the value in the S3 script to be replayed
@@ -651,10 +569,7 @@ S3IoRead32 (
 **/
 UINT32
 EFIAPI
-S3IoWrite32 (
-  IN UINTN   Port,
-  IN UINT32  Value
-  );
+S3IoWrite32(IN UINTN Port, IN UINT32 Value);
 
 /**
   Reads a 32-bit I/O port, performs a bitwise OR, writes the
@@ -677,10 +592,7 @@ S3IoWrite32 (
 **/
 UINT32
 EFIAPI
-S3IoOr32 (
-  IN UINTN   Port,
-  IN UINT32  OrData
-  );
+S3IoOr32(IN UINTN Port, IN UINT32 OrData);
 
 /**
   Reads a 32-bit I/O port, performs a bitwise AND, writes the result back
@@ -703,10 +615,7 @@ S3IoOr32 (
 **/
 UINT32
 EFIAPI
-S3IoAnd32 (
-  IN UINTN   Port,
-  IN UINT32  AndData
-  );
+S3IoAnd32(IN UINTN Port, IN UINT32 AndData);
 
 /**
   Reads a 32-bit I/O port, performs a bitwise AND followed by a bitwise
@@ -731,11 +640,7 @@ S3IoAnd32 (
 **/
 UINT32
 EFIAPI
-S3IoAndThenOr32 (
-  IN UINTN   Port,
-  IN UINT32  AndData,
-  IN UINT32  OrData
-  );
+S3IoAndThenOr32(IN UINTN Port, IN UINT32 AndData, IN UINT32 OrData);
 
 /**
   Reads a bit field of an I/O register, and saves the value in the S3 script to
@@ -760,11 +665,7 @@ S3IoAndThenOr32 (
 **/
 UINT32
 EFIAPI
-S3IoBitFieldRead32 (
-  IN UINTN  Port,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit
-  );
+S3IoBitFieldRead32(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to an I/O register, and saves the value in the S3 script to
@@ -793,12 +694,7 @@ S3IoBitFieldRead32 (
 **/
 UINT32
 EFIAPI
-S3IoBitFieldWrite32 (
-  IN UINTN   Port,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT32  Value
-  );
+S3IoBitFieldWrite32(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 Value);
 
 /**
   Reads a bit field in a 32-bit port, performs a bitwise OR, writes the
@@ -829,12 +725,7 @@ S3IoBitFieldWrite32 (
 **/
 UINT32
 EFIAPI
-S3IoBitFieldOr32 (
-  IN UINTN   Port,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT32  OrData
-  );
+S3IoBitFieldOr32(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 OrData);
 
 /**
   Reads a bit field in a 32-bit port, performs a bitwise AND, writes the
@@ -865,12 +756,7 @@ S3IoBitFieldOr32 (
 **/
 UINT32
 EFIAPI
-S3IoBitFieldAnd32 (
-  IN UINTN   Port,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT32  AndData
-  );
+S3IoBitFieldAnd32(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 AndData);
 
 /**
   Reads a bit field in a 32-bit port, performs a bitwise AND followed by a
@@ -905,13 +791,7 @@ S3IoBitFieldAnd32 (
 **/
 UINT32
 EFIAPI
-S3IoBitFieldAndThenOr32 (
-  IN UINTN   Port,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT32  AndData,
-  IN UINT32  OrData
-  );
+S3IoBitFieldAndThenOr32(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 AndData, IN UINT32 OrData);
 
 /**
   Reads a 64-bit I/O port, and saves the value in the S3 script to be replayed
@@ -930,9 +810,7 @@ S3IoBitFieldAndThenOr32 (
 **/
 UINT64
 EFIAPI
-S3IoRead64 (
-  IN UINTN  Port
-  );
+S3IoRead64(IN UINTN Port);
 
 /**
   Writes a 64-bit I/O port, and saves the value in the S3 script to be replayed
@@ -952,10 +830,7 @@ S3IoRead64 (
 **/
 UINT64
 EFIAPI
-S3IoWrite64 (
-  IN UINTN   Port,
-  IN UINT64  Value
-  );
+S3IoWrite64(IN UINTN Port, IN UINT64 Value);
 
 /**
   Reads a 64-bit I/O port, performs a bitwise OR, writes the
@@ -978,10 +853,7 @@ S3IoWrite64 (
 **/
 UINT64
 EFIAPI
-S3IoOr64 (
-  IN UINTN   Port,
-  IN UINT64  OrData
-  );
+S3IoOr64(IN UINTN Port, IN UINT64 OrData);
 
 /**
   Reads a 64-bit I/O port, performs a bitwise AND, writes the result back
@@ -1004,10 +876,7 @@ S3IoOr64 (
 **/
 UINT64
 EFIAPI
-S3IoAnd64 (
-  IN UINTN   Port,
-  IN UINT64  AndData
-  );
+S3IoAnd64(IN UINTN Port, IN UINT64 AndData);
 
 /**
   Reads a 64-bit I/O port, performs a bitwise AND followed by a bitwise
@@ -1032,11 +901,7 @@ S3IoAnd64 (
 **/
 UINT64
 EFIAPI
-S3IoAndThenOr64 (
-  IN UINTN   Port,
-  IN UINT64  AndData,
-  IN UINT64  OrData
-  );
+S3IoAndThenOr64(IN UINTN Port, IN UINT64 AndData, IN UINT64 OrData);
 
 /**
   Reads a bit field of an I/O register, and saves the value in the S3 script to
@@ -1061,11 +926,7 @@ S3IoAndThenOr64 (
 **/
 UINT64
 EFIAPI
-S3IoBitFieldRead64 (
-  IN UINTN  Port,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit
-  );
+S3IoBitFieldRead64(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to an I/O register, and saves the value in the S3 script to
@@ -1094,12 +955,7 @@ S3IoBitFieldRead64 (
 **/
 UINT64
 EFIAPI
-S3IoBitFieldWrite64 (
-  IN UINTN   Port,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT64  Value
-  );
+S3IoBitFieldWrite64(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 Value);
 
 /**
   Reads a bit field in a 64-bit port, performs a bitwise OR, writes the
@@ -1130,12 +986,7 @@ S3IoBitFieldWrite64 (
 **/
 UINT64
 EFIAPI
-S3IoBitFieldOr64 (
-  IN UINTN   Port,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT64  OrData
-  );
+S3IoBitFieldOr64(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 OrData);
 
 /**
   Reads a bit field in a 64-bit port, performs a bitwise AND, writes the
@@ -1166,12 +1017,7 @@ S3IoBitFieldOr64 (
 **/
 UINT64
 EFIAPI
-S3IoBitFieldAnd64 (
-  IN UINTN   Port,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT64  AndData
-  );
+S3IoBitFieldAnd64(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 AndData);
 
 /**
   Reads a bit field in a 64-bit port, performs a bitwise AND followed by a
@@ -1206,13 +1052,7 @@ S3IoBitFieldAnd64 (
 **/
 UINT64
 EFIAPI
-S3IoBitFieldAndThenOr64 (
-  IN UINTN   Port,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT64  AndData,
-  IN UINT64  OrData
-  );
+S3IoBitFieldAndThenOr64(IN UINTN Port, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 AndData, IN UINT64 OrData);
 
 /**
   Reads an 8-bit MMIO register, and saves the value in the S3 script to be
@@ -1231,9 +1071,7 @@ S3IoBitFieldAndThenOr64 (
 **/
 UINT8
 EFIAPI
-S3MmioRead8 (
-  IN UINTN  Address
-  );
+S3MmioRead8(IN UINTN Address);
 
 /**
   Writes an 8-bit MMIO register, and saves the value in the S3 script to be
@@ -1253,10 +1091,7 @@ S3MmioRead8 (
 **/
 UINT8
 EFIAPI
-S3MmioWrite8 (
-  IN UINTN  Address,
-  IN UINT8  Value
-  );
+S3MmioWrite8(IN UINTN Address, IN UINT8 Value);
 
 /**
   Reads an 8-bit MMIO register, performs a bitwise OR, writes the
@@ -1279,10 +1114,7 @@ S3MmioWrite8 (
 **/
 UINT8
 EFIAPI
-S3MmioOr8 (
-  IN UINTN  Address,
-  IN UINT8  OrData
-  );
+S3MmioOr8(IN UINTN Address, IN UINT8 OrData);
 
 /**
   Reads an 8-bit MMIO register, performs a bitwise AND, writes the result
@@ -1305,10 +1137,7 @@ S3MmioOr8 (
 **/
 UINT8
 EFIAPI
-S3MmioAnd8 (
-  IN UINTN  Address,
-  IN UINT8  AndData
-  );
+S3MmioAnd8(IN UINTN Address, IN UINT8 AndData);
 
 /**
   Reads an 8-bit MMIO register, performs a bitwise AND followed by a bitwise
@@ -1333,11 +1162,7 @@ S3MmioAnd8 (
 **/
 UINT8
 EFIAPI
-S3MmioAndThenOr8 (
-  IN UINTN  Address,
-  IN UINT8  AndData,
-  IN UINT8  OrData
-  );
+S3MmioAndThenOr8(IN UINTN Address, IN UINT8 AndData, IN UINT8 OrData);
 
 /**
   Reads a bit field of a MMIO register, and saves the value in the S3 script to
@@ -1362,11 +1187,7 @@ S3MmioAndThenOr8 (
 **/
 UINT8
 EFIAPI
-S3MmioBitFieldRead8 (
-  IN UINTN  Address,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit
-  );
+S3MmioBitFieldRead8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to an MMIO register, and saves the value in the S3 script to
@@ -1394,12 +1215,7 @@ S3MmioBitFieldRead8 (
 **/
 UINT8
 EFIAPI
-S3MmioBitFieldWrite8 (
-  IN UINTN  Address,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit,
-  IN UINT8  Value
-  );
+S3MmioBitFieldWrite8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 Value);
 
 /**
   Reads a bit field in an 8-bit MMIO register, performs a bitwise OR,
@@ -1431,12 +1247,7 @@ S3MmioBitFieldWrite8 (
 **/
 UINT8
 EFIAPI
-S3MmioBitFieldOr8 (
-  IN UINTN  Address,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit,
-  IN UINT8  OrData
-  );
+S3MmioBitFieldOr8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 OrData);
 
 /**
   Reads a bit field in an 8-bit MMIO register, performs a bitwise AND, and
@@ -1468,12 +1279,7 @@ S3MmioBitFieldOr8 (
 **/
 UINT8
 EFIAPI
-S3MmioBitFieldAnd8 (
-  IN UINTN  Address,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit,
-  IN UINT8  AndData
-  );
+S3MmioBitFieldAnd8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 AndData);
 
 /**
   Reads a bit field in an 8-bit MMIO register, performs a bitwise AND followed
@@ -1508,13 +1314,7 @@ S3MmioBitFieldAnd8 (
 **/
 UINT8
 EFIAPI
-S3MmioBitFieldAndThenOr8 (
-  IN UINTN  Address,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit,
-  IN UINT8  AndData,
-  IN UINT8  OrData
-  );
+S3MmioBitFieldAndThenOr8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 AndData, IN UINT8 OrData);
 
 /**
   Reads a 16-bit MMIO register, and saves the value in the S3 script to be replayed
@@ -1533,9 +1333,7 @@ S3MmioBitFieldAndThenOr8 (
 **/
 UINT16
 EFIAPI
-S3MmioRead16 (
-  IN UINTN  Address
-  );
+S3MmioRead16(IN UINTN Address);
 
 /**
   Writes a 16-bit MMIO register, and saves the value in the S3 script to be replayed
@@ -1556,10 +1354,7 @@ S3MmioRead16 (
 **/
 UINT16
 EFIAPI
-S3MmioWrite16 (
-  IN UINTN   Address,
-  IN UINT16  Value
-  );
+S3MmioWrite16(IN UINTN Address, IN UINT16 Value);
 
 /**
   Reads a 16-bit MMIO register, performs a bitwise OR, writes the
@@ -1582,10 +1377,7 @@ S3MmioWrite16 (
 **/
 UINT16
 EFIAPI
-S3MmioOr16 (
-  IN UINTN   Address,
-  IN UINT16  OrData
-  );
+S3MmioOr16(IN UINTN Address, IN UINT16 OrData);
 
 /**
   Reads a 16-bit MMIO register, performs a bitwise AND, writes the result
@@ -1608,10 +1400,7 @@ S3MmioOr16 (
 **/
 UINT16
 EFIAPI
-S3MmioAnd16 (
-  IN UINTN   Address,
-  IN UINT16  AndData
-  );
+S3MmioAnd16(IN UINTN Address, IN UINT16 AndData);
 
 /**
   Reads a 16-bit MMIO register, performs a bitwise AND followed by a bitwise
@@ -1636,11 +1425,7 @@ S3MmioAnd16 (
 **/
 UINT16
 EFIAPI
-S3MmioAndThenOr16 (
-  IN UINTN   Address,
-  IN UINT16  AndData,
-  IN UINT16  OrData
-  );
+S3MmioAndThenOr16(IN UINTN Address, IN UINT16 AndData, IN UINT16 OrData);
 
 /**
   Reads a bit field of a MMIO register, and saves the value in the S3 script to
@@ -1665,11 +1450,7 @@ S3MmioAndThenOr16 (
 **/
 UINT16
 EFIAPI
-S3MmioBitFieldRead16 (
-  IN UINTN  Address,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit
-  );
+S3MmioBitFieldRead16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to a MMIO register, and saves the value in the S3 script to
@@ -1697,12 +1478,7 @@ S3MmioBitFieldRead16 (
 **/
 UINT16
 EFIAPI
-S3MmioBitFieldWrite16 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT16  Value
-  );
+S3MmioBitFieldWrite16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 Value);
 
 /**
   Reads a bit field in a 16-bit MMIO register, performs a bitwise OR,
@@ -1734,12 +1510,7 @@ S3MmioBitFieldWrite16 (
 **/
 UINT16
 EFIAPI
-S3MmioBitFieldOr16 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT16  OrData
-  );
+S3MmioBitFieldOr16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 OrData);
 
 /**
   Reads a bit field in a 16-bit MMIO register, performs a bitwise AND, and
@@ -1771,12 +1542,7 @@ S3MmioBitFieldOr16 (
 **/
 UINT16
 EFIAPI
-S3MmioBitFieldAnd16 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT16  AndData
-  );
+S3MmioBitFieldAnd16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 AndData);
 
 /**
   Reads a bit field in a 16-bit MMIO register, performs a bitwise AND followed
@@ -1811,13 +1577,7 @@ S3MmioBitFieldAnd16 (
 **/
 UINT16
 EFIAPI
-S3MmioBitFieldAndThenOr16 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT16  AndData,
-  IN UINT16  OrData
-  );
+S3MmioBitFieldAndThenOr16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 AndData, IN UINT16 OrData);
 
 /**
   Reads a 32-bit MMIO register saves the value in the S3 script to be
@@ -1836,9 +1596,7 @@ S3MmioBitFieldAndThenOr16 (
 **/
 UINT32
 EFIAPI
-S3MmioRead32 (
-  IN UINTN  Address
-  );
+S3MmioRead32(IN UINTN Address);
 
 /**
   Writes a 32-bit MMIO register, and saves the value in the S3 script to be
@@ -1858,10 +1616,7 @@ S3MmioRead32 (
 **/
 UINT32
 EFIAPI
-S3MmioWrite32 (
-  IN UINTN   Address,
-  IN UINT32  Value
-  );
+S3MmioWrite32(IN UINTN Address, IN UINT32 Value);
 
 /**
   Reads a 32-bit MMIO register, performs a bitwise OR, writes the
@@ -1884,10 +1639,7 @@ S3MmioWrite32 (
 **/
 UINT32
 EFIAPI
-S3MmioOr32 (
-  IN UINTN   Address,
-  IN UINT32  OrData
-  );
+S3MmioOr32(IN UINTN Address, IN UINT32 OrData);
 
 /**
   Reads a 32-bit MMIO register, performs a bitwise AND, writes the result
@@ -1910,10 +1662,7 @@ S3MmioOr32 (
 **/
 UINT32
 EFIAPI
-S3MmioAnd32 (
-  IN UINTN   Address,
-  IN UINT32  AndData
-  );
+S3MmioAnd32(IN UINTN Address, IN UINT32 AndData);
 
 /**
   Reads a 32-bit MMIO register, performs a bitwise AND followed by a bitwise
@@ -1938,11 +1687,7 @@ S3MmioAnd32 (
 **/
 UINT32
 EFIAPI
-S3MmioAndThenOr32 (
-  IN UINTN   Address,
-  IN UINT32  AndData,
-  IN UINT32  OrData
-  );
+S3MmioAndThenOr32(IN UINTN Address, IN UINT32 AndData, IN UINT32 OrData);
 
 /**
   Reads a bit field of a MMIO register, and saves the value in the S3 script
@@ -1967,11 +1712,7 @@ S3MmioAndThenOr32 (
 **/
 UINT32
 EFIAPI
-S3MmioBitFieldRead32 (
-  IN UINTN  Address,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit
-  );
+S3MmioBitFieldRead32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to a MMIO register, and saves the value in the S3 script
@@ -1999,12 +1740,7 @@ S3MmioBitFieldRead32 (
 **/
 UINT32
 EFIAPI
-S3MmioBitFieldWrite32 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT32  Value
-  );
+S3MmioBitFieldWrite32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 Value);
 
 /**
   Reads a bit field in a 32-bit MMIO register, performs a bitwise OR,
@@ -2036,12 +1772,7 @@ S3MmioBitFieldWrite32 (
 **/
 UINT32
 EFIAPI
-S3MmioBitFieldOr32 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT32  OrData
-  );
+S3MmioBitFieldOr32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 OrData);
 
 /**
   Reads a bit field in a 32-bit MMIO register, performs a bitwise AND, and
@@ -2073,12 +1804,7 @@ S3MmioBitFieldOr32 (
 **/
 UINT32
 EFIAPI
-S3MmioBitFieldAnd32 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT32  AndData
-  );
+S3MmioBitFieldAnd32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 AndData);
 
 /**
   Reads a bit field in a 32-bit MMIO register, performs a bitwise AND followed
@@ -2113,13 +1839,7 @@ S3MmioBitFieldAnd32 (
 **/
 UINT32
 EFIAPI
-S3MmioBitFieldAndThenOr32 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT32  AndData,
-  IN UINT32  OrData
-  );
+S3MmioBitFieldAndThenOr32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 AndData, IN UINT32 OrData);
 
 /**
   Reads a 64-bit MMIO register, and saves the value in the S3 script to be
@@ -2138,9 +1858,7 @@ S3MmioBitFieldAndThenOr32 (
 **/
 UINT64
 EFIAPI
-S3MmioRead64 (
-  IN UINTN  Address
-  );
+S3MmioRead64(IN UINTN Address);
 
 /**
   Writes a 64-bit MMIO register, and saves the value in the S3 script to be
@@ -2160,10 +1878,7 @@ S3MmioRead64 (
 **/
 UINT64
 EFIAPI
-S3MmioWrite64 (
-  IN UINTN   Address,
-  IN UINT64  Value
-  );
+S3MmioWrite64(IN UINTN Address, IN UINT64 Value);
 
 /**
   Reads a 64-bit MMIO register, performs a bitwise OR, writes the
@@ -2186,10 +1901,7 @@ S3MmioWrite64 (
 **/
 UINT64
 EFIAPI
-S3MmioOr64 (
-  IN UINTN   Address,
-  IN UINT64  OrData
-  );
+S3MmioOr64(IN UINTN Address, IN UINT64 OrData);
 
 /**
   Reads a 64-bit MMIO register, performs a bitwise AND, writes the result
@@ -2212,10 +1924,7 @@ S3MmioOr64 (
 **/
 UINT64
 EFIAPI
-S3MmioAnd64 (
-  IN UINTN   Address,
-  IN UINT64  AndData
-  );
+S3MmioAnd64(IN UINTN Address, IN UINT64 AndData);
 
 /**
   Reads a 64-bit MMIO register, performs a bitwise AND followed by a bitwise
@@ -2240,11 +1949,7 @@ S3MmioAnd64 (
 **/
 UINT64
 EFIAPI
-S3MmioAndThenOr64 (
-  IN UINTN   Address,
-  IN UINT64  AndData,
-  IN UINT64  OrData
-  );
+S3MmioAndThenOr64(IN UINTN Address, IN UINT64 AndData, IN UINT64 OrData);
 
 /**
   Reads a bit field of a MMIO register saves the value in the S3 script to
@@ -2269,11 +1974,7 @@ S3MmioAndThenOr64 (
 **/
 UINT64
 EFIAPI
-S3MmioBitFieldRead64 (
-  IN UINTN  Address,
-  IN UINTN  StartBit,
-  IN UINTN  EndBit
-  );
+S3MmioBitFieldRead64(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to a MMIO register, and saves the value in the S3 script to
@@ -2301,12 +2002,7 @@ S3MmioBitFieldRead64 (
 **/
 UINT64
 EFIAPI
-S3MmioBitFieldWrite64 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT64  Value
-  );
+S3MmioBitFieldWrite64(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 Value);
 
 /**
   Reads a bit field in a 64-bit MMIO register, performs a bitwise OR,
@@ -2338,12 +2034,7 @@ S3MmioBitFieldWrite64 (
 **/
 UINT64
 EFIAPI
-S3MmioBitFieldOr64 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT64  OrData
-  );
+S3MmioBitFieldOr64(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 OrData);
 
 /**
   Reads a bit field in a 64-bit MMIO register, performs a bitwise AND, and
@@ -2375,12 +2066,7 @@ S3MmioBitFieldOr64 (
 **/
 UINT64
 EFIAPI
-S3MmioBitFieldAnd64 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT64  AndData
-  );
+S3MmioBitFieldAnd64(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 AndData);
 
 /**
   Reads a bit field in a 64-bit MMIO register, performs a bitwise AND followed
@@ -2415,13 +2101,7 @@ S3MmioBitFieldAnd64 (
 **/
 UINT64
 EFIAPI
-S3MmioBitFieldAndThenOr64 (
-  IN UINTN   Address,
-  IN UINTN   StartBit,
-  IN UINTN   EndBit,
-  IN UINT64  AndData,
-  IN UINT64  OrData
-  );
+S3MmioBitFieldAndThenOr64(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 AndData, IN UINT64 OrData);
 
 /**
   Copies data from MMIO region to system memory by using 8-bit access,
@@ -2442,13 +2122,7 @@ S3MmioBitFieldAndThenOr64 (
   @return   Buffer.
 
 **/
-UINT8 *
-EFIAPI
-S3MmioReadBuffer8 (
-  IN  UINTN  StartAddress,
-  IN  UINTN  Length,
-  OUT UINT8  *Buffer
-  );
+UINT8 *EFIAPI S3MmioReadBuffer8(IN UINTN StartAddress, IN UINTN Length, OUT UINT8 *Buffer);
 
 /**
   Copies data from MMIO region to system memory by using 16-bit access,
@@ -2473,13 +2147,7 @@ S3MmioReadBuffer8 (
   @return   Buffer.
 
 **/
-UINT16 *
-EFIAPI
-S3MmioReadBuffer16 (
-  IN  UINTN   StartAddress,
-  IN  UINTN   Length,
-  OUT UINT16  *Buffer
-  );
+UINT16 *EFIAPI S3MmioReadBuffer16(IN UINTN StartAddress, IN UINTN Length, OUT UINT16 *Buffer);
 
 /**
   Copies data from MMIO region to system memory by using 32-bit access,
@@ -2504,13 +2172,7 @@ S3MmioReadBuffer16 (
   @return   Buffer.
 
 **/
-UINT32 *
-EFIAPI
-S3MmioReadBuffer32 (
-  IN  UINTN   StartAddress,
-  IN  UINTN   Length,
-  OUT UINT32  *Buffer
-  );
+UINT32 *EFIAPI S3MmioReadBuffer32(IN UINTN StartAddress, IN UINTN Length, OUT UINT32 *Buffer);
 
 /**
   Copies data from MMIO region to system memory by using 64-bit access,
@@ -2535,13 +2197,7 @@ S3MmioReadBuffer32 (
   @return   Buffer.
 
 **/
-UINT64 *
-EFIAPI
-S3MmioReadBuffer64 (
-  IN  UINTN   StartAddress,
-  IN  UINTN   Length,
-  OUT UINT64  *Buffer
-  );
+UINT64 *EFIAPI S3MmioReadBuffer64(IN UINTN StartAddress, IN UINTN Length, OUT UINT64 *Buffer);
 
 /**
   Copies data from system memory to MMIO region by using 8-bit access,
@@ -2562,13 +2218,7 @@ S3MmioReadBuffer64 (
   @return   Buffer.
 
 **/
-UINT8 *
-EFIAPI
-S3MmioWriteBuffer8 (
-  IN  UINTN        StartAddress,
-  IN  UINTN        Length,
-  IN  CONST UINT8  *Buffer
-  );
+UINT8 *EFIAPI S3MmioWriteBuffer8(IN UINTN StartAddress, IN UINTN Length, IN CONST UINT8 *Buffer);
 
 /**
   Copies data from system memory to MMIO region by using 16-bit access,
@@ -2594,13 +2244,7 @@ S3MmioWriteBuffer8 (
   @return   Buffer.
 
 **/
-UINT16 *
-EFIAPI
-S3MmioWriteBuffer16 (
-  IN  UINTN         StartAddress,
-  IN  UINTN         Length,
-  IN  CONST UINT16  *Buffer
-  );
+UINT16 *EFIAPI S3MmioWriteBuffer16(IN UINTN StartAddress, IN UINTN Length, IN CONST UINT16 *Buffer);
 
 /**
   Copies data from system memory to MMIO region by using 32-bit access,
@@ -2626,13 +2270,7 @@ S3MmioWriteBuffer16 (
   @return   Buffer.
 
 **/
-UINT32 *
-EFIAPI
-S3MmioWriteBuffer32 (
-  IN  UINTN         StartAddress,
-  IN  UINTN         Length,
-  IN  CONST UINT32  *Buffer
-  );
+UINT32 *EFIAPI S3MmioWriteBuffer32(IN UINTN StartAddress, IN UINTN Length, IN CONST UINT32 *Buffer);
 
 /**
   Copies data from system memory to MMIO region by using 64-bit access,
@@ -2658,10 +2296,4 @@ S3MmioWriteBuffer32 (
   @return   Buffer.
 
 **/
-UINT64 *
-EFIAPI
-S3MmioWriteBuffer64 (
-  IN  UINTN         StartAddress,
-  IN  UINTN         Length,
-  IN  CONST UINT64  *Buffer
-  );
+UINT64 *EFIAPI S3MmioWriteBuffer64(IN UINTN StartAddress, IN UINTN Length, IN CONST UINT64 *Buffer);

@@ -6,35 +6,35 @@
 #include <arch/x86_64/cpu.h>
 #include <pci/pci.h>
 
-#define ACPI_MCFG_SIGNATURE 0x4746434D
-#define ACPI_RSDT_SIGNATURE 0x54445352
-#define ACPI_XSDT_SIGNATURE 0x54445358
-#define PCI_CONFIG_ADDRESS 0xCF8
-#define PCI_CONFIG_DATA 0xCFC
-#define PCI_VENDOR_INVALID 0xFFFF
+#define ACPI_MCFG_SIGNATURE            0x4746434D
+#define ACPI_RSDT_SIGNATURE            0x54445352
+#define ACPI_XSDT_SIGNATURE            0x54445358
+#define PCI_CONFIG_ADDRESS             0xCF8
+#define PCI_CONFIG_DATA                0xCFC
+#define PCI_VENDOR_INVALID             0xFFFF
 #define PCI_HEADER_TYPE_MULTI_FUNCTION 0x80
 
 typedef struct PACKED
 {
-    CHAR8 Signature[8];
-    UINT8 Checksum;
-    CHAR8 OemId[6];
-    UINT8 Revision;
+    CHAR8  Signature[8];
+    UINT8  Checksum;
+    CHAR8  OemId[6];
+    UINT8  Revision;
     UINT32 RsdtAddress;
     UINT32 Length;
     UINT64 XsdtAddress;
-    UINT8 ExtendedChecksum;
-    UINT8 Reserved[3];
+    UINT8  ExtendedChecksum;
+    UINT8  Reserved[3];
 } ACPI_RSDP;
 
 typedef struct PACKED
 {
     UINT32 Signature;
     UINT32 Length;
-    UINT8 Revision;
-    UINT8 Checksum;
-    CHAR8 OemId[6];
-    CHAR8 OemTableId[8];
+    UINT8  Revision;
+    UINT8  Checksum;
+    CHAR8  OemId[6];
+    CHAR8  OemTableId[8];
     UINT32 OemRevision;
     UINT32 CreatorId;
     UINT32 CreatorRevision;
@@ -44,32 +44,31 @@ typedef struct PACKED
 {
     UINT64 BaseAddress;
     UINT16 SegmentGroup;
-    UINT8 StartBus;
-    UINT8 EndBus;
+    UINT8  StartBus;
+    UINT8  EndBus;
     UINT32 Reserved;
 } ACPI_MCFG_ALLOCATION;
 
-STATIC PCI_DEVICE Devices[PCI_MAX_DEVICES];
-STATIC UINT32 DeviceCount = 0;
+STATIC PCI_DEVICE       Devices[PCI_MAX_DEVICES];
+STATIC UINT32           DeviceCount = 0;
 STATIC ACPI_SDT_HEADER *MCFG = NULL;
-STATIC CONST CHAR16 *ScanMethodName = L"none";
-STATIC CONST CHAR16 *LastError = L"not initialized";
+STATIC CONST CHAR16    *ScanMethodName = L"none";
+STATIC CONST CHAR16    *LastError = L"not initialized";
 
 typedef struct
 {
-    UINT16 VendorId;
+    UINT16        VendorId;
     CONST CHAR16 *Name;
 } PCI_VENDOR_NAME;
 
 STATIC CONST PCI_VENDOR_NAME VendorNames[] = {
-    {0x8086, L"Intel"},   {0x1AF4, L"VirtIO"}, {0x1234, L"QEMU"},    {0x1B36, L"Red Hat"},
-    {0x10EC, L"Realtek"}, {0x1022, L"AMD"},    {0x1002, L"AMD/ATI"}, {0x15AD, L"VMware"},
+    {0x8086, L"Intel"}, {0x1AF4, L"VirtIO"}, {0x1234, L"QEMU"}, {0x1B36, L"Red Hat"}, {0x10EC, L"Realtek"}, {0x1022, L"AMD"}, {0x1002, L"AMD/ATI"}, {0x15AD, L"VMware"},
 };
 
 STATIC BOOLEAN ChecksumValid(CONST VOID *Data, UINT32 Length)
 {
     CONST UINT8 *Bytes = (CONST UINT8 *) Data;
-    UINT8 Sum = 0;
+    UINT8        Sum = 0;
 
     for (UINT32 Index = 0; Index < Length; Index++)
     {
@@ -101,7 +100,7 @@ STATIC BOOLEAN SDTValid(ACPI_SDT_HEADER *Header)
 
 STATIC ACPI_SDT_HEADER *FindTableInXSDT(ACPI_SDT_HEADER *XSDT, UINT32 Signature)
 {
-    UINT32 EntryCount;
+    UINT32  EntryCount;
     UINT64 *Entries;
 
     if (!SDTValid(XSDT) || XSDT->Signature != ACPI_XSDT_SIGNATURE)
@@ -127,7 +126,7 @@ STATIC ACPI_SDT_HEADER *FindTableInXSDT(ACPI_SDT_HEADER *XSDT, UINT32 Signature)
 
 STATIC ACPI_SDT_HEADER *FindTableInRSDT(ACPI_SDT_HEADER *RSDT, UINT32 Signature)
 {
-    UINT32 EntryCount;
+    UINT32  EntryCount;
     UINT32 *Entries;
 
     if (!SDTValid(RSDT) || RSDT->Signature != ACPI_RSDT_SIGNATURE)
@@ -153,7 +152,7 @@ STATIC ACPI_SDT_HEADER *FindTableInRSDT(ACPI_SDT_HEADER *RSDT, UINT32 Signature)
 
 STATIC ACPI_SDT_HEADER *FindACPITable(LINEOS_BOOT_INFO *BootInfo, UINT32 Signature)
 {
-    ACPI_RSDP *RSDP;
+    ACPI_RSDP       *RSDP;
     ACPI_SDT_HEADER *Table;
 
     if (BootInfo == NULL || BootInfo->RSDP == NULL)
@@ -186,22 +185,20 @@ STATIC ACPI_SDT_HEADER *FindACPITable(LINEOS_BOOT_INFO *BootInfo, UINT32 Signatu
 
 STATIC UINT64 PCIGetConfigAddress(ACPI_MCFG_ALLOCATION *Allocation, UINT8 Bus, UINT8 Device, UINT8 Function)
 {
-    return Allocation->BaseAddress + (((UINT64) Bus - Allocation->StartBus) << 20) + ((UINT64) Device << 15) +
-           ((UINT64) Function << 12);
+    return Allocation->BaseAddress + (((UINT64) Bus - Allocation->StartBus) << 20) + ((UINT64) Device << 15) + ((UINT64) Function << 12);
 }
 
 STATIC UINT8 PCIRead8(UINT64 ConfigAddress, UINT16 Offset)
 {
-    return *(volatile UINT8 *) (ConfigAddress + Offset);
+    return *(VOLATILE UINT8 *) (ConfigAddress + Offset);
 }
 
 STATIC UINT16 PCIRead16(UINT64 ConfigAddress, UINT16 Offset)
 {
-    return *(volatile UINT16 *) (ConfigAddress + Offset);
+    return *(VOLATILE UINT16 *) (ConfigAddress + Offset);
 }
 
-STATIC VOID PCIAddDevice(UINT16 Segment, UINT8 Bus, UINT8 Device, UINT8 Function, UINT16 VendorId, UINT16 DeviceId,
-                         UINT8 ClassCode, UINT8 SubClass, UINT8 ProgIf)
+STATIC VOID PCIAddDevice(UINT16 Segment, UINT8 Bus, UINT8 Device, UINT8 Function, UINT16 VendorId, UINT16 DeviceId, UINT8 ClassCode, UINT8 SubClass, UINT8 ProgIf)
 {
     PCI_DEVICE *PCI;
 
@@ -222,12 +219,9 @@ STATIC VOID PCIAddDevice(UINT16 Segment, UINT8 Bus, UINT8 Device, UINT8 Function
     PCI->ClassCode = ClassCode;
 }
 
-STATIC VOID PCIAddDeviceFromMCFG(ACPI_MCFG_ALLOCATION *Allocation, UINT8 Bus, UINT8 Device, UINT8 Function,
-                                 UINT64 ConfigAddress)
+STATIC VOID PCIAddDeviceFromMCFG(ACPI_MCFG_ALLOCATION *Allocation, UINT8 Bus, UINT8 Device, UINT8 Function, UINT64 ConfigAddress)
 {
-    PCIAddDevice(Allocation->SegmentGroup, Bus, Device, Function, PCIRead16(ConfigAddress, 0x00),
-                 PCIRead16(ConfigAddress, 0x02), PCIRead8(ConfigAddress, 0x0B), PCIRead8(ConfigAddress, 0x0A),
-                 PCIRead8(ConfigAddress, 0x09));
+    PCIAddDevice(Allocation->SegmentGroup, Bus, Device, Function, PCIRead16(ConfigAddress, 0x00), PCIRead16(ConfigAddress, 0x02), PCIRead8(ConfigAddress, 0x0B), PCIRead8(ConfigAddress, 0x0A), PCIRead8(ConfigAddress, 0x09));
 }
 
 STATIC VOID PCIScanFunctionMCFG(ACPI_MCFG_ALLOCATION *Allocation, UINT8 Bus, UINT8 Device, UINT8 Function)
@@ -247,8 +241,8 @@ STATIC VOID PCIScanDeviceMCFG(ACPI_MCFG_ALLOCATION *Allocation, UINT8 Bus, UINT8
 {
     UINT64 ConfigAddress = PCIGetConfigAddress(Allocation, Bus, Device, 0);
     UINT16 VendorId = PCIRead16(ConfigAddress, 0x00);
-    UINT8 HeaderType;
-    UINT8 FunctionCount;
+    UINT8  HeaderType;
+    UINT8  FunctionCount;
 
     if (VendorId == PCI_VENDOR_INVALID)
     {
@@ -274,7 +268,7 @@ STATIC VOID PCIScanBusMCFG(ACPI_MCFG_ALLOCATION *Allocation, UINT8 Bus)
 
 STATIC VOID PCIScanMCFG(ACPI_SDT_HEADER *MCFGHeader)
 {
-    UINT32 EntryCount;
+    UINT32                EntryCount;
     ACPI_MCFG_ALLOCATION *Allocations;
 
     EntryCount = (MCFGHeader->Length - sizeof(ACPI_SDT_HEADER) - 8) / sizeof(ACPI_MCFG_ALLOCATION);
@@ -331,16 +325,14 @@ STATIC VOID PCIScanFunctionIO(UINT8 Bus, UINT8 Device, UINT8 Function)
         return;
     }
 
-    PCIAddDevice(0, Bus, Device, Function, VendorId, PCIRead16IO(Bus, Device, Function, 0x02),
-                 PCIRead8IO(Bus, Device, Function, 0x0B), PCIRead8IO(Bus, Device, Function, 0x0A),
-                 PCIRead8IO(Bus, Device, Function, 0x09));
+    PCIAddDevice(0, Bus, Device, Function, VendorId, PCIRead16IO(Bus, Device, Function, 0x02), PCIRead8IO(Bus, Device, Function, 0x0B), PCIRead8IO(Bus, Device, Function, 0x0A), PCIRead8IO(Bus, Device, Function, 0x09));
 }
 
 STATIC VOID PCIScanDeviceIO(UINT8 Bus, UINT8 Device)
 {
     UINT16 VendorId = PCIRead16IO(Bus, Device, 0, 0x00);
-    UINT8 HeaderType;
-    UINT8 FunctionCount;
+    UINT8  HeaderType;
+    UINT8  FunctionCount;
 
     if (VendorId == PCI_VENDOR_INVALID)
     {
@@ -520,7 +512,7 @@ VOID PCIConfigWrite32(PCI_DEVICE *Device, UINT8 Offset, UINT32 Value)
 
 BOOLEAN PCIGetBAR(PCI_DEVICE *Device, UINT8 Index, PCI_BAR *BAR)
 {
-    UINT8 Offset;
+    UINT8  Offset;
     UINT32 Low;
 
     if (Device == NULL || BAR == NULL || Index >= 6)

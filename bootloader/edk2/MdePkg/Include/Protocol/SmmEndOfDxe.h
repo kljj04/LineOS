@@ -18,6 +18,6 @@
 
 #include <Protocol/MmEndOfDxe.h>
 
-#define EFI_SMM_END_OF_DXE_PROTOCOL_GUID  EFI_MM_END_OF_DXE_PROTOCOL_GUID
+#define EFI_SMM_END_OF_DXE_PROTOCOL_GUID EFI_MM_END_OF_DXE_PROTOCOL_GUID
 
-extern EFI_GUID  gEfiSmmEndOfDxeProtocolGuid;
+extern EFI_GUID gEfiSmmEndOfDxeProtocolGuid;

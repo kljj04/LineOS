@@ -36,12 +36,7 @@
                              RETURN_UNSUPPORTED    The SMBus operation is not supported.
 
 **/
-VOID
-EFIAPI
-S3SmBusQuickRead (
-  IN  UINTN          SmBusAddress,
-  OUT RETURN_STATUS  *Status       OPTIONAL
-  );
+VOID EFIAPI S3SmBusQuickRead(IN UINTN SmBusAddress, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS quick write command, and saves the value in the S3 script to be replayed
@@ -68,12 +63,7 @@ S3SmBusQuickRead (
                              RETURN_UNSUPPORTED    The SMBus operation is not supported.
 
 **/
-VOID
-EFIAPI
-S3SmBusQuickWrite (
-  IN  UINTN          SmBusAddress,
-  OUT RETURN_STATUS  *Status       OPTIONAL
-  );
+VOID EFIAPI S3SmBusQuickWrite(IN UINTN SmBusAddress, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS receive byte command, and saves the value in the S3 script to be replayed
@@ -105,10 +95,7 @@ S3SmBusQuickWrite (
 **/
 UINT8
 EFIAPI
-S3SmBusReceiveByte (
-  IN  UINTN          SmBusAddress,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+S3SmBusReceiveByte(IN UINTN SmBusAddress, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS send byte command, and saves the value in the S3 script to be replayed
@@ -141,11 +128,7 @@ S3SmBusReceiveByte (
 **/
 UINT8
 EFIAPI
-S3SmBusSendByte (
-  IN  UINTN          SmBusAddress,
-  IN  UINT8          Value,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+S3SmBusSendByte(IN UINTN SmBusAddress, IN UINT8 Value, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS read data byte command, and saves the value in the S3 script to be replayed
@@ -176,10 +159,7 @@ S3SmBusSendByte (
 **/
 UINT8
 EFIAPI
-S3SmBusReadDataByte (
-  IN  UINTN          SmBusAddress,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+S3SmBusReadDataByte(IN UINTN SmBusAddress, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS write data byte command, and saves the value in the S3 script to be replayed
@@ -212,11 +192,7 @@ S3SmBusReadDataByte (
 **/
 UINT8
 EFIAPI
-S3SmBusWriteDataByte (
-  IN  UINTN          SmBusAddress,
-  IN  UINT8          Value,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+S3SmBusWriteDataByte(IN UINTN SmBusAddress, IN UINT8 Value, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS read data word command, and saves the value in the S3 script to be replayed
@@ -247,10 +223,7 @@ S3SmBusWriteDataByte (
 **/
 UINT16
 EFIAPI
-S3SmBusReadDataWord (
-  IN  UINTN          SmBusAddress,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+S3SmBusReadDataWord(IN UINTN SmBusAddress, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS write data word command, and saves the value in the S3 script to be replayed
@@ -283,11 +256,7 @@ S3SmBusReadDataWord (
 **/
 UINT16
 EFIAPI
-S3SmBusWriteDataWord (
-  IN  UINTN          SmBusAddress,
-  IN  UINT16         Value,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+S3SmBusWriteDataWord(IN UINTN SmBusAddress, IN UINT16 Value, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS process call command, and saves the value in the S3 script to be replayed
@@ -320,11 +289,7 @@ S3SmBusWriteDataWord (
 **/
 UINT16
 EFIAPI
-S3SmBusProcessCall (
-  IN  UINTN          SmBusAddress,
-  IN  UINT16         Value,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+S3SmBusProcessCall(IN UINTN SmBusAddress, IN UINT16 Value, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS read block command, and saves the value in the S3 script to be replayed
@@ -360,11 +325,7 @@ S3SmBusProcessCall (
 **/
 UINTN
 EFIAPI
-S3SmBusReadBlock (
-  IN  UINTN          SmBusAddress,
-  OUT VOID           *Buffer,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+S3SmBusReadBlock(IN UINTN SmBusAddress, OUT VOID *Buffer, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS write block command, and saves the value in the S3 script to be replayed
@@ -397,11 +358,7 @@ S3SmBusReadBlock (
 **/
 UINTN
 EFIAPI
-S3SmBusWriteBlock (
-  IN  UINTN          SmBusAddress,
-  OUT VOID           *Buffer,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+S3SmBusWriteBlock(IN UINTN SmBusAddress, OUT VOID *Buffer, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS block process call command, and saves the value in the S3 script to be replayed
@@ -437,9 +394,4 @@ S3SmBusWriteBlock (
 **/
 UINTN
 EFIAPI
-S3SmBusBlockProcessCall (
-  IN  UINTN          SmBusAddress,
-  IN  VOID           *WriteBuffer,
-  OUT VOID           *ReadBuffer,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+S3SmBusBlockProcessCall(IN UINTN SmBusAddress, IN VOID *WriteBuffer, OUT VOID *ReadBuffer, OUT RETURN_STATUS *Status OPTIONAL);

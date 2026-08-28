@@ -19,7 +19,7 @@
 //
 // Net function definition for Group Extension command
 //
-#define IPMI_NETFN_GROUP_EXT  0x2C
+#define IPMI_NETFN_GROUP_EXT 0x2C
 
 //
 // All Group Extension commands and their structure definitions to follow here
@@ -36,59 +36,64 @@
 //
 // Definitions for send progress code command
 //
-#define IPMI_GROUP_EXTENSION_BOOT_PROGRESS_CODE_SEND  0x02
+#define IPMI_GROUP_EXTENSION_BOOT_PROGRESS_CODE_SEND 0x02
 
 //
 // Definitions for get progress code command
 //
-#define IPMI_GROUP_EXTENSION_BOOT_PROGRESS_CODE_GET  0x03
+#define IPMI_GROUP_EXTENSION_BOOT_PROGRESS_CODE_GET 0x03
 
 //
 // Definitions for send and get progress code command response
 //
-#define IPMI_GROUP_EXTENSION_BOOT_PROGRESS_CODE_COMPLETED_NORMALLY  0x00
-#define IPMI_GROUP_EXTENSION_BOOT_PROGRESS_CODE_COMPLETED_ERROR     0x80
-#define IPMI_GROUP_EXTENSION_BOOT_PROGRESS_CODE_DEFINING_BODY       0xAE
+#define IPMI_GROUP_EXTENSION_BOOT_PROGRESS_CODE_COMPLETED_NORMALLY 0x00
+#define IPMI_GROUP_EXTENSION_BOOT_PROGRESS_CODE_COMPLETED_ERROR    0x80
+#define IPMI_GROUP_EXTENSION_BOOT_PROGRESS_CODE_DEFINING_BODY      0xAE
 
 //
 // Structure for the format of the boot progress code data
 // See Table 29: SBMR Boot Progress Codes format
 //
-typedef struct {
-  EFI_STATUS_CODE_TYPE     CodeType;
-  EFI_STATUS_CODE_VALUE    CodeValue;
-  UINT8                    Instance;
+typedef struct
+{
+    EFI_STATUS_CODE_TYPE  CodeType;
+    EFI_STATUS_CODE_VALUE CodeValue;
+    UINT8                 Instance;
 } IPMI_GROUP_EXTENSION_BOOT_PROGRESS_CODE_FORMAT;
 
 //
 // Structure for the boot progress code send request
 //
-typedef struct {
-  UINT8                                             DefiningBody;
-  IPMI_GROUP_EXTENSION_BOOT_PROGRESS_CODE_FORMAT    BootProgressCode;
+typedef struct
+{
+    UINT8                                          DefiningBody;
+    IPMI_GROUP_EXTENSION_BOOT_PROGRESS_CODE_FORMAT BootProgressCode;
 } IPMI_GROUP_EXTENSION_BOOT_PROGRESS_CODE_SEND_REQUEST;
 
 //
 // Structure for the boot progress code send response
 //
-typedef struct {
-  UINT8    CompletionCode;
-  UINT8    DefiningBody;
+typedef struct
+{
+    UINT8 CompletionCode;
+    UINT8 DefiningBody;
 } IPMI_GROUP_EXTENSION_BOOT_PROGRESS_CODE_SEND_RESPONSE;
 
 //
 // Structure for the boot progress code get request
 //
-typedef struct {
-  UINT8    DefiningBody;
+typedef struct
+{
+    UINT8 DefiningBody;
 } IPMI_GROUP_EXTENSION_BOOT_PROGRESS_CODE_GET_REQUEST;
 
 //
 // Structure for the boot progress code get response
 //
-typedef struct {
-  UINT8                                             CompletionCode;
-  UINT8                                             DefiningBody;
-  IPMI_GROUP_EXTENSION_BOOT_PROGRESS_CODE_FORMAT    BootProgressCode;
+typedef struct
+{
+    UINT8                                          CompletionCode;
+    UINT8                                          DefiningBody;
+    IPMI_GROUP_EXTENSION_BOOT_PROGRESS_CODE_FORMAT BootProgressCode;
 } IPMI_GROUP_EXTENSION_BOOT_PROGRESS_CODE_GET_RESPONSE;
 #pragma pack()

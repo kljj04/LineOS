@@ -20,9 +20,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 UINTN
 EFIAPI
-MicroSecondDelay (
-  IN      UINTN  MicroSeconds
-  );
+MicroSecondDelay(IN UINTN MicroSeconds);
 
 /**
   Stalls the CPU for at least the given number of nanoseconds.
@@ -36,9 +34,7 @@ MicroSecondDelay (
 **/
 UINTN
 EFIAPI
-NanoSecondDelay (
-  IN      UINTN  NanoSeconds
-  );
+NanoSecondDelay(IN UINTN NanoSeconds);
 
 /**
   Retrieves the current value of a 64-bit free running performance counter.
@@ -53,9 +49,7 @@ NanoSecondDelay (
 **/
 UINT64
 EFIAPI
-GetPerformanceCounter (
-  VOID
-  );
+GetPerformanceCounter(VOID);
 
 /**
   Retrieves the 64-bit frequency in Hz and the range of performance counter
@@ -82,10 +76,7 @@ GetPerformanceCounter (
 **/
 UINT64
 EFIAPI
-GetPerformanceCounterProperties (
-  OUT      UINT64  *StartValue   OPTIONAL,
-  OUT      UINT64  *EndValue     OPTIONAL
-  );
+GetPerformanceCounterProperties(OUT UINT64 *StartValue OPTIONAL, OUT UINT64 *EndValue OPTIONAL);
 
 /**
   Converts elapsed ticks of performance counter to time in nanoseconds.
@@ -100,6 +91,4 @@ GetPerformanceCounterProperties (
 **/
 UINT64
 EFIAPI
-GetTimeInNanoSecond (
-  IN      UINT64  Ticks
-  );
+GetTimeInNanoSecond(IN UINT64 Ticks);

@@ -13,154 +13,162 @@
 
 #pragma once
 
-#define EFI_IPSEC_CONFIG_PROTOCOL_GUID \
-  { \
-    0xce5e5929, 0xc7a3, 0x4602, {0xad, 0x9e, 0xc9, 0xda, 0xf9, 0x4e, 0xbf, 0xcf } \
-  }
+#define EFI_IPSEC_CONFIG_PROTOCOL_GUID                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         \
+    {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
+        0xce5e5929, 0xc7a3, 0x4602,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            \
+        {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      \
+            0xad, 0x9e, 0xc9, 0xda, 0xf9, 0x4e, 0xbf, 0xcf                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     \
+        }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      \
+    }
 
 typedef struct _EFI_IPSEC_CONFIG_PROTOCOL EFI_IPSEC_CONFIG_PROTOCOL;
 
 ///
 /// EFI_IPSEC_CONFIG_DATA_TYPE
 ///
-typedef enum {
-  ///
-  /// The IPsec Security Policy Database (aka SPD) setting.  In IPsec,
-  /// an essential element of Security Association (SA) processing is
-  /// underlying SPD that specifies what services are to be offered to
-  /// IP datagram and in what fashion. The SPD must be consulted
-  /// during the processing of all traffic (inbound and outbound),
-  /// including traffic not protected by IPsec, that traverses the IPsec
-  /// boundary. With this DataType, SetData() function is to set
-  /// the SPD entry information, which may add one new entry, delete
-  /// one existed entry or flush the whole database according to the
-  /// parameter values. The corresponding Data is of type
-  /// EFI_IPSEC_SPD_DATA
-  ///
-  IPsecConfigDataTypeSpd,
-  ///
-  /// The IPsec Security Association Database (aka SAD) setting. A
-  /// SA is a simplex connection that affords security services to the
-  /// traffic carried by it. Security services are afforded to an SA by the
-  /// use of AH, or ESP, but not both. The corresponding Data is of
-  /// type EFI_IPSEC_SAD_DATA.
-  ///
-  IPsecConfigDataTypeSad,
-  ///
-  /// The IPsec Peer Authorization Database (aka PAD) setting, which
-  /// provides the link between the SPD and a security association
-  /// management protocol. The PAD entry specifies the
-  /// authentication protocol (e.g. IKEv1, IKEv2) method used and the
-  /// authentication data. The corresponding Data is of type
-  /// EFI_IPSEC_PAD_DATA.
-  ///
-  IPsecConfigDataTypePad,
-  IPsecConfigDataTypeMaximum
+typedef enum
+{
+    ///
+    /// The IPsec Security Policy Database (aka SPD) setting.  In IPsec,
+    /// an essential element of Security Association (SA) processing is
+    /// underlying SPD that specifies what services are to be offered to
+    /// IP datagram and in what fashion. The SPD must be consulted
+    /// during the processing of all traffic (inbound and outbound),
+    /// including traffic not protected by IPsec, that traverses the IPsec
+    /// boundary. With this DataType, SetData() function is to set
+    /// the SPD entry information, which may add one new entry, delete
+    /// one existed entry or flush the whole database according to the
+    /// parameter values. The corresponding Data is of type
+    /// EFI_IPSEC_SPD_DATA
+    ///
+    IPsecConfigDataTypeSpd,
+    ///
+    /// The IPsec Security Association Database (aka SAD) setting. A
+    /// SA is a simplex connection that affords security services to the
+    /// traffic carried by it. Security services are afforded to an SA by the
+    /// use of AH, or ESP, but not both. The corresponding Data is of
+    /// type EFI_IPSEC_SAD_DATA.
+    ///
+    IPsecConfigDataTypeSad,
+    ///
+    /// The IPsec Peer Authorization Database (aka PAD) setting, which
+    /// provides the link between the SPD and a security association
+    /// management protocol. The PAD entry specifies the
+    /// authentication protocol (e.g. IKEv1, IKEv2) method used and the
+    /// authentication data. The corresponding Data is of type
+    /// EFI_IPSEC_PAD_DATA.
+    ///
+    IPsecConfigDataTypePad,
+    IPsecConfigDataTypeMaximum
 } EFI_IPSEC_CONFIG_DATA_TYPE;
 
 ///
 /// EFI_IP_ADDRESS_INFO
 ///
-typedef struct _EFI_IP_ADDRESS_INFO {
-  EFI_IP_ADDRESS    Address;      ///< The IPv4 or IPv6 address
-  UINT8             PrefixLength; ///< The length of the prefix associated with the Address.
+typedef struct _EFI_IP_ADDRESS_INFO
+{
+    EFI_IP_ADDRESS Address;      ///< The IPv4 or IPv6 address
+    UINT8          PrefixLength; ///< The length of the prefix associated with the Address.
 } EFI_IP_ADDRESS_INFO;
 
 ///
 /// EFI_IPSEC_SPD_SELECTOR
 ///
-typedef struct _EFI_IPSEC_SPD_SELECTOR {
-  ///
-  /// Specifies the actual number of entries in LocalAddress.
-  ///
-  UINT32                 LocalAddressCount;
-  ///
-  /// A list of ranges of IPv4 or IPv6 addresses, which refers to the
-  /// addresses being protected by IPsec policy.
-  ///
-  EFI_IP_ADDRESS_INFO    *LocalAddress;
-  ///
-  /// Specifies the actual number of entries in RemoteAddress.
-  ///
-  UINT32                 RemoteAddressCount;
-  ///
-  /// A list of ranges of IPv4 or IPv6 addresses, which are peer entities
-  /// to LocalAddress.
-  ///
-  EFI_IP_ADDRESS_INFO    *RemoteAddress;
-  ///
-  /// Next layer protocol. Obtained from the IPv4 Protocol or the IPv6
-  /// Next Header fields. The next layer protocol is whatever comes
-  /// after any IP extension headers that are present. A zero value is a
-  /// wildcard that matches any value in NextLayerProtocol field.
-  ///
-  UINT16                 NextLayerProtocol;
-  ///
-  /// Local Port if the Next Layer Protocol uses two ports (as do TCP,
-  /// UDP, and others). A zero value is a wildcard that matches any
-  /// value in LocalPort field.
-  ///
-  UINT16                 LocalPort;
-  ///
-  /// A designed port range size. The start port is LocalPort, and
-  /// the total number of ports is described by LocalPortRange.
-  /// This field is ignored if NextLayerProtocol does not use
-  /// ports.
-  ///
-  UINT16                 LocalPortRange;
-  ///
-  /// Remote Port if the Next Layer Protocol uses two ports. A zero
-  /// value is a wildcard that matches any value in RemotePort field.
-  ///
-  UINT16                 RemotePort;
-  ///
-  /// A designed port range size. The start port is RemotePort, and
-  /// the total number of ports is described by RemotePortRange.
-  /// This field is ignored if NextLayerProtocol does not use ports.
-  ///
-  UINT16                 RemotePortRange;
+typedef struct _EFI_IPSEC_SPD_SELECTOR
+{
+    ///
+    /// Specifies the actual number of entries in LocalAddress.
+    ///
+    UINT32 LocalAddressCount;
+    ///
+    /// A list of ranges of IPv4 or IPv6 addresses, which refers to the
+    /// addresses being protected by IPsec policy.
+    ///
+    EFI_IP_ADDRESS_INFO *LocalAddress;
+    ///
+    /// Specifies the actual number of entries in RemoteAddress.
+    ///
+    UINT32 RemoteAddressCount;
+    ///
+    /// A list of ranges of IPv4 or IPv6 addresses, which are peer entities
+    /// to LocalAddress.
+    ///
+    EFI_IP_ADDRESS_INFO *RemoteAddress;
+    ///
+    /// Next layer protocol. Obtained from the IPv4 Protocol or the IPv6
+    /// Next Header fields. The next layer protocol is whatever comes
+    /// after any IP extension headers that are present. A zero value is a
+    /// wildcard that matches any value in NextLayerProtocol field.
+    ///
+    UINT16 NextLayerProtocol;
+    ///
+    /// Local Port if the Next Layer Protocol uses two ports (as do TCP,
+    /// UDP, and others). A zero value is a wildcard that matches any
+    /// value in LocalPort field.
+    ///
+    UINT16 LocalPort;
+    ///
+    /// A designed port range size. The start port is LocalPort, and
+    /// the total number of ports is described by LocalPortRange.
+    /// This field is ignored if NextLayerProtocol does not use
+    /// ports.
+    ///
+    UINT16 LocalPortRange;
+    ///
+    /// Remote Port if the Next Layer Protocol uses two ports. A zero
+    /// value is a wildcard that matches any value in RemotePort field.
+    ///
+    UINT16 RemotePort;
+    ///
+    /// A designed port range size. The start port is RemotePort, and
+    /// the total number of ports is described by RemotePortRange.
+    /// This field is ignored if NextLayerProtocol does not use ports.
+    ///
+    UINT16 RemotePortRange;
 } EFI_IPSEC_SPD_SELECTOR;
 
 ///
 /// EFI_IPSEC_TRAFFIC_DIR
 /// represents the directionality in an SPD entry.
 ///
-typedef enum {
-  ///
-  /// The EfiIPsecInBound refers to traffic entering an IPsec implementation via
-  /// the unprotected interface or emitted by the implementation on the unprotected
-  /// side of the boundary and directed towards the protected interface.
-  ///
-  EfiIPsecInBound,
-  ///
-  /// The EfiIPsecOutBound refers to traffic entering the implementation via
-  /// the protected interface, or emitted by the implementation on the protected side
-  /// of the boundary and directed toward the unprotected interface.
-  ///
-  EfiIPsecOutBound
+typedef enum
+{
+    ///
+    /// The EfiIPsecInBound refers to traffic entering an IPsec implementation via
+    /// the unprotected interface or emitted by the implementation on the unprotected
+    /// side of the boundary and directed towards the protected interface.
+    ///
+    EfiIPsecInBound,
+    ///
+    /// The EfiIPsecOutBound refers to traffic entering the implementation via
+    /// the protected interface, or emitted by the implementation on the protected side
+    /// of the boundary and directed toward the unprotected interface.
+    ///
+    EfiIPsecOutBound
 } EFI_IPSEC_TRAFFIC_DIR;
 
 ///
 /// EFI_IPSEC_ACTION
 /// represents three possible processing choices.
 ///
-typedef enum {
-  ///
-  /// Refers to traffic that is not allowed to traverse the IPsec boundary.
-  ///
-  EfiIPsecActionDiscard,
-  ///
-  /// Refers to traffic that is allowed to cross the IPsec boundary
-  /// without protection.
-  ///
-  EfiIPsecActionBypass,
-  ///
-  /// Refers to traffic that is afforded IPsec protection, and for such
-  /// traffic the SPD must specify the security protocols to be
-  /// employed, their mode, security service options, and the
-  /// cryptographic algorithms to be used.
-  ///
-  EfiIPsecActionProtect
+typedef enum
+{
+    ///
+    /// Refers to traffic that is not allowed to traverse the IPsec boundary.
+    ///
+    EfiIPsecActionDiscard,
+    ///
+    /// Refers to traffic that is allowed to cross the IPsec boundary
+    /// without protection.
+    ///
+    EfiIPsecActionBypass,
+    ///
+    /// Refers to traffic that is afforded IPsec protection, and for such
+    /// traffic the SPD must specify the security protocols to be
+    /// employed, their mode, security service options, and the
+    /// cryptographic algorithms to be used.
+    ///
+    EfiIPsecActionProtect
 } EFI_IPSEC_ACTION;
 
 ///
@@ -169,24 +177,25 @@ typedef enum {
 /// replaced or terminated. A value of all 0 for each field removes
 /// the limitation of a SA lifetime.
 ///
-typedef struct _EFI_IPSEC_SA_LIFETIME {
-  ///
-  /// The number of bytes to which the IPsec cryptographic algorithm
-  /// can be applied. For ESP, this is the encryption algorithm and for
-  /// AH, this is the authentication algorithm. The ByteCount
-  /// includes pad bytes for cryptographic operations.
-  ///
-  UINT64    ByteCount;
-  ///
-  /// A time interval in second that warns the implementation to
-  /// initiate action such as setting up a replacement SA.
-  ///
-  UINT64    SoftLifetime;
-  ///
-  /// A time interval in second when the current SA ends and is
-  /// destroyed.
-  ///
-  UINT64    HardLifetime;
+typedef struct _EFI_IPSEC_SA_LIFETIME
+{
+    ///
+    /// The number of bytes to which the IPsec cryptographic algorithm
+    /// can be applied. For ESP, this is the encryption algorithm and for
+    /// AH, this is the authentication algorithm. The ByteCount
+    /// includes pad bytes for cryptographic operations.
+    ///
+    UINT64 ByteCount;
+    ///
+    /// A time interval in second that warns the implementation to
+    /// initiate action such as setting up a replacement SA.
+    ///
+    UINT64 SoftLifetime;
+    ///
+    /// A time interval in second when the current SA ends and is
+    /// destroyed.
+    ///
+    UINT64 HardLifetime;
 } EFI_IPSEC_SA_LIFETIME;
 
 ///
@@ -195,9 +204,10 @@ typedef struct _EFI_IPSEC_SA_LIFETIME {
 /// EfiIPsecTransport mode, AH and ESP provide protection primarily for next layer protocols;
 /// In EfiIPsecTunnel mode, AH and ESP are applied to tunneled IP packets.
 ///
-typedef enum {
-  EfiIPsecTransport,
-  EfiIPsecTunnel
+typedef enum
+{
+    EfiIPsecTransport,
+    EfiIPsecTunnel
 } EFI_IPSEC_MODE;
 
 ///
@@ -207,162 +217,168 @@ typedef enum {
 /// via a tunnel mode SA. This applies to SAs where both inner and
 /// outer headers are IPv4.
 ///
-typedef enum {
-  EfiIPsecTunnelClearDf,  ///< Clear DF bit from inner header.
-  EfiIPsecTunnelSetDf,    ///< Set DF bit from inner header.
-  EfiIPsecTunnelCopyDf    ///< Copy DF bit from inner header.
+typedef enum
+{
+    EfiIPsecTunnelClearDf, ///< Clear DF bit from inner header.
+    EfiIPsecTunnelSetDf,   ///< Set DF bit from inner header.
+    EfiIPsecTunnelCopyDf   ///< Copy DF bit from inner header.
 } EFI_IPSEC_TUNNEL_DF_OPTION;
 
 ///
 /// EFI_IPSEC_TUNNEL_OPTION
 ///
-typedef struct _EFI_IPSEC_TUNNEL_OPTION {
-  ///
-  /// Local tunnel address when IPsec mode is EfiIPsecTunnel.
-  ///
-  EFI_IP_ADDRESS                LocalTunnelAddress;
-  ///
-  /// Remote tunnel address when IPsec mode is EfiIPsecTunnel.
-  ///
-  EFI_IP_ADDRESS                RemoteTunnelAddress;
-  ///
-  /// The option of copying the DF bit from an outbound package
-  /// to the tunnel mode header that it emits, when traffic is
-  /// carried via a tunnel mode SA.
-  ///
-  EFI_IPSEC_TUNNEL_DF_OPTION    DF;
+typedef struct _EFI_IPSEC_TUNNEL_OPTION
+{
+    ///
+    /// Local tunnel address when IPsec mode is EfiIPsecTunnel.
+    ///
+    EFI_IP_ADDRESS LocalTunnelAddress;
+    ///
+    /// Remote tunnel address when IPsec mode is EfiIPsecTunnel.
+    ///
+    EFI_IP_ADDRESS RemoteTunnelAddress;
+    ///
+    /// The option of copying the DF bit from an outbound package
+    /// to the tunnel mode header that it emits, when traffic is
+    /// carried via a tunnel mode SA.
+    ///
+    EFI_IPSEC_TUNNEL_DF_OPTION DF;
 } EFI_IPSEC_TUNNEL_OPTION;
 
 ///
 /// EFI_IPSEC_PROTOCOL_TYPE
 ///
-typedef enum {
-  EfiIPsecAH,  ///< IP Authentication Header protocol which is specified in RFC 4302.
-  EfiIPsecESP  ///< IP Encapsulating Security Payload which is specified in RFC 4303.
+typedef enum
+{
+    EfiIPsecAH, ///< IP Authentication Header protocol which is specified in RFC 4302.
+    EfiIPsecESP ///< IP Encapsulating Security Payload which is specified in RFC 4303.
 } EFI_IPSEC_PROTOCOL_TYPE;
 
 ///
 /// EFI_IPSEC_PROCESS_POLICY
 /// describes a policy list for traffic processing.
 ///
-typedef struct _EFI_IPSEC_PROCESS_POLICY {
-  ///
-  /// Extended Sequence Number. Is this SA using extended sequence
-  /// numbers. 64 bit counter is used if TRUE.
-  ///
-  BOOLEAN                    ExtSeqNum;
-  ///
-  /// A flag indicating whether overflow of the sequence number
-  /// counter should generate an auditable event and prevent
-  /// transmission of additional packets on the SA, or whether rollover
-  /// is permitted.
-  ///
-  BOOLEAN                    SeqOverflow;
-  ///
-  /// Is this SA using stateful fragment checking. TRUE represents
-  /// stateful fragment checking.
-  ///
-  BOOLEAN                    FragCheck;
-  ///
-  /// A time interval after which a SA must be replaced with a new SA
-  /// (and new SPI) or terminated.
-  ///
-  EFI_IPSEC_SA_LIFETIME      SaLifetime;
-  ///
-  /// IPsec mode: tunnel or transport.
-  ///
-  EFI_IPSEC_MODE             Mode;
-  ///
-  /// Tunnel Option. TunnelOption is ignored if Mode is EfiIPsecTransport.
-  ///
-  EFI_IPSEC_TUNNEL_OPTION    *TunnelOption;
-  ///
-  /// IPsec protocol: AH or ESP
-  ///
-  EFI_IPSEC_PROTOCOL_TYPE    Proto;
-  ///
-  /// Cryptographic algorithm type used for authentication.
-  ///
-  UINT8                      AuthAlgoId;
-  ///
-  /// Cryptographic algorithm type used for encryption. EncAlgo is
-  /// NULL when IPsec protocol is AH. For ESP protocol, EncAlgo
-  /// can also be used to describe the algorithm if a combined mode
-  /// algorithm is used.
-  ///
-  UINT8                      EncAlgoId;
+typedef struct _EFI_IPSEC_PROCESS_POLICY
+{
+    ///
+    /// Extended Sequence Number. Is this SA using extended sequence
+    /// numbers. 64 bit counter is used if TRUE.
+    ///
+    BOOLEAN ExtSeqNum;
+    ///
+    /// A flag indicating whether overflow of the sequence number
+    /// counter should generate an auditable event and prevent
+    /// transmission of additional packets on the SA, or whether rollover
+    /// is permitted.
+    ///
+    BOOLEAN SeqOverflow;
+    ///
+    /// Is this SA using stateful fragment checking. TRUE represents
+    /// stateful fragment checking.
+    ///
+    BOOLEAN FragCheck;
+    ///
+    /// A time interval after which a SA must be replaced with a new SA
+    /// (and new SPI) or terminated.
+    ///
+    EFI_IPSEC_SA_LIFETIME SaLifetime;
+    ///
+    /// IPsec mode: tunnel or transport.
+    ///
+    EFI_IPSEC_MODE Mode;
+    ///
+    /// Tunnel Option. TunnelOption is ignored if Mode is EfiIPsecTransport.
+    ///
+    EFI_IPSEC_TUNNEL_OPTION *TunnelOption;
+    ///
+    /// IPsec protocol: AH or ESP
+    ///
+    EFI_IPSEC_PROTOCOL_TYPE Proto;
+    ///
+    /// Cryptographic algorithm type used for authentication.
+    ///
+    UINT8 AuthAlgoId;
+    ///
+    /// Cryptographic algorithm type used for encryption. EncAlgo is
+    /// NULL when IPsec protocol is AH. For ESP protocol, EncAlgo
+    /// can also be used to describe the algorithm if a combined mode
+    /// algorithm is used.
+    ///
+    UINT8 EncAlgoId;
 } EFI_IPSEC_PROCESS_POLICY;
 
 ///
 /// EFI_IPSEC_SA_ID
 /// A triplet to identify an SA, consisting of the following members.
 ///
-typedef struct _EFI_IPSEC_SA_ID {
-  ///
-  /// Security Parameter Index (aka SPI).  An arbitrary 32-bit value
-  /// that is used by a receiver to identity the SA to which an incoming
-  /// package should be bound.
-  ///
-  UINT32                     Spi;
-  ///
-  /// IPsec protocol: AH or ESP
-  ///
-  EFI_IPSEC_PROTOCOL_TYPE    Proto;
-  ///
-  /// Destination IP address.
-  ///
-  EFI_IP_ADDRESS             DestAddress;
+typedef struct _EFI_IPSEC_SA_ID
+{
+    ///
+    /// Security Parameter Index (aka SPI).  An arbitrary 32-bit value
+    /// that is used by a receiver to identity the SA to which an incoming
+    /// package should be bound.
+    ///
+    UINT32 Spi;
+    ///
+    /// IPsec protocol: AH or ESP
+    ///
+    EFI_IPSEC_PROTOCOL_TYPE Proto;
+    ///
+    /// Destination IP address.
+    ///
+    EFI_IP_ADDRESS DestAddress;
 } EFI_IPSEC_SA_ID;
 
-#define MAX_PEERID_LEN  128
+#define MAX_PEERID_LEN 128
 
 ///
 /// EFI_IPSEC_SPD_DATA
 ///
-typedef struct _EFI_IPSEC_SPD_DATA {
-  ///
-  /// A null-terminated ASCII name string which is used as a symbolic
-  /// identifier for an IPsec Local or Remote address.
-  ///
-  UINT8    Name[MAX_PEERID_LEN];
-  ///
-  /// Bit-mapped list describing Populate from Packet flags. When
-  /// creating a SA, if PackageFlag bit is set to TRUE, instantiate
-  /// the selector from the corresponding field in the package that
-  /// triggered the creation of the SA, else from the value(s) in the
-  /// corresponding SPD entry. The PackageFlag bit setting for
-  /// corresponding selector field of EFI_IPSEC_SPD_SELECTOR:
-  ///     Bit 0: EFI_IPSEC_SPD_SELECTOR.LocalAddress
-  ///     Bit 1: EFI_IPSEC_SPD_SELECTOR.RemoteAddress
-  ///     Bit 2:
-  /// EFI_IPSEC_SPD_SELECTOR.NextLayerProtocol
-  ///     Bit 3: EFI_IPSEC_SPD_SELECTOR.LocalPort
-  ///     Bit 4: EFI_IPSEC_SPD_SELECTOR.RemotePort
-  ///     Others: Reserved.
-  ///
-  UINT32                      PackageFlag;
-  ///
-  /// The traffic direction of data gram.
-  ///
-  EFI_IPSEC_TRAFFIC_DIR       TrafficDirection;
-  ///
-  /// Processing choices to indicate which action is required by this
-  /// policy.
-  ///
-  EFI_IPSEC_ACTION            Action;
-  ///
-  /// The policy and rule information for a SPD entry.
-  ///
-  EFI_IPSEC_PROCESS_POLICY    *ProcessingPolicy;
-  ///
-  /// Specifies the actual number of entries in SaId list.
-  ///
-  UINTN                       SaIdCount;
-  ///
-  /// The SAD entry used for the traffic processing. The
-  /// existed SAD entry links indicate this is the manual key case.
-  ///
-  EFI_IPSEC_SA_ID             SaId[1];
+typedef struct _EFI_IPSEC_SPD_DATA
+{
+    ///
+    /// A null-terminated ASCII name string which is used as a symbolic
+    /// identifier for an IPsec Local or Remote address.
+    ///
+    UINT8 Name[MAX_PEERID_LEN];
+    ///
+    /// Bit-mapped list describing Populate from Packet flags. When
+    /// creating a SA, if PackageFlag bit is set to TRUE, instantiate
+    /// the selector from the corresponding field in the package that
+    /// triggered the creation of the SA, else from the value(s) in the
+    /// corresponding SPD entry. The PackageFlag bit setting for
+    /// corresponding selector field of EFI_IPSEC_SPD_SELECTOR:
+    ///     Bit 0: EFI_IPSEC_SPD_SELECTOR.LocalAddress
+    ///     Bit 1: EFI_IPSEC_SPD_SELECTOR.RemoteAddress
+    ///     Bit 2:
+    /// EFI_IPSEC_SPD_SELECTOR.NextLayerProtocol
+    ///     Bit 3: EFI_IPSEC_SPD_SELECTOR.LocalPort
+    ///     Bit 4: EFI_IPSEC_SPD_SELECTOR.RemotePort
+    ///     Others: Reserved.
+    ///
+    UINT32 PackageFlag;
+    ///
+    /// The traffic direction of data gram.
+    ///
+    EFI_IPSEC_TRAFFIC_DIR TrafficDirection;
+    ///
+    /// Processing choices to indicate which action is required by this
+    /// policy.
+    ///
+    EFI_IPSEC_ACTION Action;
+    ///
+    /// The policy and rule information for a SPD entry.
+    ///
+    EFI_IPSEC_PROCESS_POLICY *ProcessingPolicy;
+    ///
+    /// Specifies the actual number of entries in SaId list.
+    ///
+    UINTN SaIdCount;
+    ///
+    /// The SAD entry used for the traffic processing. The
+    /// existed SAD entry links indicate this is the manual key case.
+    ///
+    EFI_IPSEC_SA_ID SaId[1];
 } EFI_IPSEC_SPD_DATA;
 
 ///
@@ -370,10 +386,11 @@ typedef struct _EFI_IPSEC_SPD_DATA {
 /// The security algorithm selection for IPsec AH authentication.
 /// The required authentication algorithm is specified in RFC 4305.
 ///
-typedef struct _EFI_IPSEC_AH_ALGO_INFO {
-  UINT8    AuthAlgoId;
-  UINTN    AuthKeyLength;
-  VOID     *AuthKey;
+typedef struct _EFI_IPSEC_AH_ALGO_INFO
+{
+    UINT8 AuthAlgoId;
+    UINTN AuthKeyLength;
+    VOID *AuthKey;
 } EFI_IPSEC_AH_ALGO_INFO;
 
 ///
@@ -384,115 +401,119 @@ typedef struct _EFI_IPSEC_AH_ALGO_INFO {
 /// (e.g. AES with CCM mode, specified in RFC 4309), which provides both
 /// confidentiality and authentication services.
 ///
-typedef struct _EFI_IPSEC_ESP_ALGO_INFO {
-  UINT8    EncAlgoId;
-  UINTN    EncKeyLength;
-  VOID     *EncKey;
-  UINT8    AuthAlgoId;
-  UINTN    AuthKeyLength;
-  VOID     *AuthKey;
+typedef struct _EFI_IPSEC_ESP_ALGO_INFO
+{
+    UINT8 EncAlgoId;
+    UINTN EncKeyLength;
+    VOID *EncKey;
+    UINT8 AuthAlgoId;
+    UINTN AuthKeyLength;
+    VOID *AuthKey;
 } EFI_IPSEC_ESP_ALGO_INFO;
 
 ///
 /// EFI_IPSEC_ALGO_INFO
 ///
-typedef union {
-  EFI_IPSEC_AH_ALGO_INFO     AhAlgoInfo;
-  EFI_IPSEC_ESP_ALGO_INFO    EspAlgoInfo;
+typedef union
+{
+    EFI_IPSEC_AH_ALGO_INFO  AhAlgoInfo;
+    EFI_IPSEC_ESP_ALGO_INFO EspAlgoInfo;
 } EFI_IPSEC_ALGO_INFO;
 
 ///
 /// EFI_IPSEC_SA_DATA
 ///
-typedef struct _EFI_IPSEC_SA_DATA {
-  ///
-  /// IPsec mode: tunnel or transport.
-  ///
-  EFI_IPSEC_MODE            Mode;
-  ///
-  /// Sequence Number Counter. A 64-bit counter used to generate the
-  /// sequence number field in AH or ESP headers.
-  ///
-  UINT64                    SNCount;
-  ///
-  /// Anti-Replay Window. A 64-bit counter and a bit-map used to
-  /// determine whether an inbound AH or ESP packet is a replay.
-  ///
-  UINT8                     AntiReplayWindows;
-  ///
-  /// AH/ESP cryptographic algorithm, key and parameters.
-  ///
-  EFI_IPSEC_ALGO_INFO       AlgoInfo;
-  ///
-  /// Lifetime of this SA.
-  ///
-  EFI_IPSEC_SA_LIFETIME     SaLifetime;
-  ///
-  /// Any observed path MTU and aging variables. The Path MTU
-  /// processing is defined in section 8 of RFC 4301.
-  ///
-  UINT32                    PathMTU;
-  ///
-  /// Link to one SPD entry.
-  ///
-  EFI_IPSEC_SPD_SELECTOR    *SpdSelector;
-  ///
-  /// Indication of whether it's manually set or negotiated automatically.
-  /// If ManualSet is FALSE, the corresponding SA entry is inserted through
-  /// IKE protocol negotiation.
-  ///
-  BOOLEAN                   ManualSet;
+typedef struct _EFI_IPSEC_SA_DATA
+{
+    ///
+    /// IPsec mode: tunnel or transport.
+    ///
+    EFI_IPSEC_MODE Mode;
+    ///
+    /// Sequence Number Counter. A 64-bit counter used to generate the
+    /// sequence number field in AH or ESP headers.
+    ///
+    UINT64 SNCount;
+    ///
+    /// Anti-Replay Window. A 64-bit counter and a bit-map used to
+    /// determine whether an inbound AH or ESP packet is a replay.
+    ///
+    UINT8 AntiReplayWindows;
+    ///
+    /// AH/ESP cryptographic algorithm, key and parameters.
+    ///
+    EFI_IPSEC_ALGO_INFO AlgoInfo;
+    ///
+    /// Lifetime of this SA.
+    ///
+    EFI_IPSEC_SA_LIFETIME SaLifetime;
+    ///
+    /// Any observed path MTU and aging variables. The Path MTU
+    /// processing is defined in section 8 of RFC 4301.
+    ///
+    UINT32 PathMTU;
+    ///
+    /// Link to one SPD entry.
+    ///
+    EFI_IPSEC_SPD_SELECTOR *SpdSelector;
+    ///
+    /// Indication of whether it's manually set or negotiated automatically.
+    /// If ManualSet is FALSE, the corresponding SA entry is inserted through
+    /// IKE protocol negotiation.
+    ///
+    BOOLEAN ManualSet;
 } EFI_IPSEC_SA_DATA;
 
 ///
 /// EFI_IPSEC_SA_DATA2
 ///
-typedef struct _EFI_IPSEC_SA_DATA2 {
-  ///
-  /// IPsec mode: tunnel or transport
-  ///
-  EFI_IPSEC_MODE            Mode;
-  ///
-  /// Sequence Number Counter. A 64-bit counter used to generate the sequence
-  /// number field in AH or ESP headers.
-  ///
-  UINT64                    SNCount;
-  ///
-  /// Anti-Replay Window. A 64-bit counter and a bit-map used to determine
-  /// whether an inbound AH or ESP packet is a replay.
-  ///
-  UINT8                     AntiReplayWindows;
-  ///
-  /// AH/ESP cryptographic algorithm, key and parameters.
-  ///
-  EFI_IPSEC_ALGO_INFO       AlgoInfo;
-  ///
-  /// Lifetime of this SA.
-  ///
-  EFI_IPSEC_SA_LIFETIME     SaLifetime;
-  ///
-  /// Any observed path MTU and aging variables. The Path MTU processing is
-  /// defined in section 8 of RFC 4301.
-  ///
-  UINT32                    PathMTU;
-  ///
-  /// Link to one SPD entry
-  ///
-  EFI_IPSEC_SPD_SELECTOR    *SpdSelector;
-  ///
-  /// Indication of whether it's manually set or negotiated automatically.
-  /// If ManualSet is FALSE, the corresponding SA entry is inserted through IKE
-  /// protocol negotiation
-  ///
-  BOOLEAN                   ManualSet;
-  ///
-  /// The tunnel header IP source address.
-  ///
-  EFI_IP_ADDRESS            TunnelSourceAddress;
-  ///
-  /// The tunnel header IP destination address.
-  ///
-  EFI_IP_ADDRESS            TunnelDestinationAddress;
+typedef struct _EFI_IPSEC_SA_DATA2
+{
+    ///
+    /// IPsec mode: tunnel or transport
+    ///
+    EFI_IPSEC_MODE Mode;
+    ///
+    /// Sequence Number Counter. A 64-bit counter used to generate the sequence
+    /// number field in AH or ESP headers.
+    ///
+    UINT64 SNCount;
+    ///
+    /// Anti-Replay Window. A 64-bit counter and a bit-map used to determine
+    /// whether an inbound AH or ESP packet is a replay.
+    ///
+    UINT8 AntiReplayWindows;
+    ///
+    /// AH/ESP cryptographic algorithm, key and parameters.
+    ///
+    EFI_IPSEC_ALGO_INFO AlgoInfo;
+    ///
+    /// Lifetime of this SA.
+    ///
+    EFI_IPSEC_SA_LIFETIME SaLifetime;
+    ///
+    /// Any observed path MTU and aging variables. The Path MTU processing is
+    /// defined in section 8 of RFC 4301.
+    ///
+    UINT32 PathMTU;
+    ///
+    /// Link to one SPD entry
+    ///
+    EFI_IPSEC_SPD_SELECTOR *SpdSelector;
+    ///
+    /// Indication of whether it's manually set or negotiated automatically.
+    /// If ManualSet is FALSE, the corresponding SA entry is inserted through IKE
+    /// protocol negotiation
+    ///
+    BOOLEAN ManualSet;
+    ///
+    /// The tunnel header IP source address.
+    ///
+    EFI_IP_ADDRESS TunnelSourceAddress;
+    ///
+    /// The tunnel header IP destination address.
+    ///
+    EFI_IP_ADDRESS TunnelDestinationAddress;
 } EFI_IPSEC_SA_DATA2;
 
 ///
@@ -500,24 +521,26 @@ typedef struct _EFI_IPSEC_SA_DATA2 {
 /// specifies the identifier for PAD entry, which is also used for SPD lookup.
 /// IpAddress Pointer to the IPv4 or IPv6 address range.
 ///
-typedef struct _EFI_IPSEC_PAD_ID {
-  ///
-  /// Flag to identify which type of PAD Id is used.
-  ///
-  BOOLEAN    PeerIdValid;
-  union {
+typedef struct _EFI_IPSEC_PAD_ID
+{
     ///
-    /// Pointer to the IPv4 or IPv6 address range.
+    /// Flag to identify which type of PAD Id is used.
     ///
-    EFI_IP_ADDRESS_INFO    IpAddress;
-    ///
-    /// Pointer to a null terminated ASCII string
-    /// representing the symbolic names. A PeerId can be a DNS
-    /// name, Distinguished Name, RFC 822 email address or Key ID
-    /// (specified in section 4.4.3.1 of RFC 4301)
-    ///
-    UINT8                  PeerId[MAX_PEERID_LEN];
-  } Id;
+    BOOLEAN PeerIdValid;
+    union
+    {
+        ///
+        /// Pointer to the IPv4 or IPv6 address range.
+        ///
+        EFI_IP_ADDRESS_INFO IpAddress;
+        ///
+        /// Pointer to a null terminated ASCII string
+        /// representing the symbolic names. A PeerId can be a DNS
+        /// name, Distinguished Name, RFC 822 email address or Key ID
+        /// (specified in section 4.4.3.1 of RFC 4301)
+        ///
+        UINT8 PeerId[MAX_PEERID_LEN];
+    } Id;
 } EFI_IPSEC_PAD_ID;
 
 ///
@@ -525,10 +548,11 @@ typedef struct _EFI_IPSEC_PAD_ID {
 /// describes the expected IPsec configuration data selector
 /// of type EFI_IPSEC_CONFIG_DATA_TYPE.
 ///
-typedef union {
-  EFI_IPSEC_SPD_SELECTOR    SpdSelector;
-  EFI_IPSEC_SA_ID           SaId;
-  EFI_IPSEC_PAD_ID          PadId;
+typedef union
+{
+    EFI_IPSEC_SPD_SELECTOR SpdSelector;
+    EFI_IPSEC_SA_ID        SaId;
+    EFI_IPSEC_PAD_ID       PadId;
 } EFI_IPSEC_CONFIG_SELECTOR;
 
 ///
@@ -536,64 +560,67 @@ typedef union {
 /// defines the possible authentication protocol for IPsec
 /// security association management.
 ///
-typedef enum {
-  EfiIPsecAuthProtocolIKEv1,
-  EfiIPsecAuthProtocolIKEv2,
-  EfiIPsecAuthProtocolMaximum
+typedef enum
+{
+    EfiIPsecAuthProtocolIKEv1,
+    EfiIPsecAuthProtocolIKEv2,
+    EfiIPsecAuthProtocolMaximum
 } EFI_IPSEC_AUTH_PROTOCOL_TYPE;
 
 ///
 /// EFI_IPSEC_AUTH_METHOD
 ///
-typedef enum {
-  ///
-  /// Using Pre-shared Keys for manual security associations.
-  ///
-  EfiIPsecAuthMethodPreSharedSecret,
-  ///
-  /// IKE employs X.509 certificates for SA establishment.
-  ///
-  EfiIPsecAuthMethodCertificates,
-  EfiIPsecAuthMethodMaximum
+typedef enum
+{
+    ///
+    /// Using Pre-shared Keys for manual security associations.
+    ///
+    EfiIPsecAuthMethodPreSharedSecret,
+    ///
+    /// IKE employs X.509 certificates for SA establishment.
+    ///
+    EfiIPsecAuthMethodCertificates,
+    EfiIPsecAuthMethodMaximum
 } EFI_IPSEC_AUTH_METHOD;
 
 ///
 /// EFI_IPSEC_PAD_DATA
 ///
-typedef struct _EFI_IPSEC_PAD_DATA {
-  ///
-  /// Authentication Protocol for IPsec security association  management.
-  ///
-  EFI_IPSEC_AUTH_PROTOCOL_TYPE    AuthProtocol;
-  ///
-  /// Authentication method used.
-  ///
-  EFI_IPSEC_AUTH_METHOD           AuthMethod;
-  ///
-  /// The IKE ID payload will be used as a symbolic name for SPD
-  /// lookup if IkeIdFlag is TRUE. Otherwise, the remote IP
-  /// address provided in traffic selector playloads will be used.
-  ///
-  BOOLEAN                         IkeIdFlag;
-  ///
-  /// The size of Authentication data buffer, in bytes.
-  ///
-  UINTN                           AuthDataSize;
-  ///
-  /// Buffer for Authentication data, (e.g., the pre-shared secret or the
-  /// trust anchor relative to which the peer's certificate will be
-  /// validated).
-  ///
-  VOID                            *AuthData;
-  ///
-  /// The size of RevocationData, in bytes
-  ///
-  UINTN                           RevocationDataSize;
-  ///
-  /// Pointer to CRL or OCSP data, if certificates are used for
-  /// authentication method.
-  ///
-  VOID                            *RevocationData;
+typedef struct _EFI_IPSEC_PAD_DATA
+{
+    ///
+    /// Authentication Protocol for IPsec security association  management.
+    ///
+    EFI_IPSEC_AUTH_PROTOCOL_TYPE AuthProtocol;
+    ///
+    /// Authentication method used.
+    ///
+    EFI_IPSEC_AUTH_METHOD AuthMethod;
+    ///
+    /// The IKE ID payload will be used as a symbolic name for SPD
+    /// lookup if IkeIdFlag is TRUE. Otherwise, the remote IP
+    /// address provided in traffic selector playloads will be used.
+    ///
+    BOOLEAN IkeIdFlag;
+    ///
+    /// The size of Authentication data buffer, in bytes.
+    ///
+    UINTN AuthDataSize;
+    ///
+    /// Buffer for Authentication data, (e.g., the pre-shared secret or the
+    /// trust anchor relative to which the peer's certificate will be
+    /// validated).
+    ///
+    VOID *AuthData;
+    ///
+    /// The size of RevocationData, in bytes
+    ///
+    UINTN RevocationDataSize;
+    ///
+    /// Pointer to CRL or OCSP data, if certificates are used for
+    /// authentication method.
+    ///
+    VOID *RevocationData;
 } EFI_IPSEC_PAD_DATA;
 
 /**
@@ -625,15 +652,7 @@ typedef struct _EFI_IPSEC_PAD_DATA {
   @retval EFI_OUT_OF_RESOURCED  The required system resource could not be allocated.
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_IPSEC_CONFIG_SET_DATA)(
-  IN EFI_IPSEC_CONFIG_PROTOCOL        *This,
-  IN EFI_IPSEC_CONFIG_DATA_TYPE       DataType,
-  IN EFI_IPSEC_CONFIG_SELECTOR        *Selector,
-  IN VOID                             *Data,
-  IN EFI_IPSEC_CONFIG_SELECTOR        *InsertBefore   OPTIONAL
-  );
+typedef EFI_STATUS(EFIAPI *EFI_IPSEC_CONFIG_SET_DATA)(IN EFI_IPSEC_CONFIG_PROTOCOL *This, IN EFI_IPSEC_CONFIG_DATA_TYPE DataType, IN EFI_IPSEC_CONFIG_SELECTOR *Selector, IN VOID *Data, IN EFI_IPSEC_CONFIG_SELECTOR *InsertBefore OPTIONAL);
 
 /**
   Return the configuration value for the EFI IPsec driver.
@@ -662,15 +681,7 @@ EFI_STATUS
                                 updated with the size needed to complete the request.
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_IPSEC_CONFIG_GET_DATA)(
-  IN EFI_IPSEC_CONFIG_PROTOCOL        *This,
-  IN EFI_IPSEC_CONFIG_DATA_TYPE       DataType,
-  IN EFI_IPSEC_CONFIG_SELECTOR        *Selector,
-  IN OUT UINTN                        *DataSize,
-  OUT VOID                            *Data
-  );
+typedef EFI_STATUS(EFIAPI *EFI_IPSEC_CONFIG_GET_DATA)(IN EFI_IPSEC_CONFIG_PROTOCOL *This, IN EFI_IPSEC_CONFIG_DATA_TYPE DataType, IN EFI_IPSEC_CONFIG_SELECTOR *Selector, IN OUT UINTN *DataSize, OUT VOID *Data);
 
 /**
   Enumerates the current selector for IPsec configuration data entry.
@@ -709,14 +720,7 @@ EFI_STATUS
                                 request.
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_IPSEC_CONFIG_GET_NEXT_SELECTOR)(
-  IN EFI_IPSEC_CONFIG_PROTOCOL        *This,
-  IN EFI_IPSEC_CONFIG_DATA_TYPE       DataType,
-  IN OUT UINTN                        *SelectorSize,
-  IN OUT EFI_IPSEC_CONFIG_SELECTOR    *Selector
-  );
+typedef EFI_STATUS(EFIAPI *EFI_IPSEC_CONFIG_GET_NEXT_SELECTOR)(IN EFI_IPSEC_CONFIG_PROTOCOL *This, IN EFI_IPSEC_CONFIG_DATA_TYPE DataType, IN OUT UINTN *SelectorSize, IN OUT EFI_IPSEC_CONFIG_SELECTOR *Selector);
 
 /**
   Register an event that is to be signaled whenever a configuration process on the
@@ -739,13 +743,7 @@ EFI_STATUS
                                 DataType is not supported.
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_IPSEC_CONFIG_REGISTER_NOTIFY)(
-  IN EFI_IPSEC_CONFIG_PROTOCOL        *This,
-  IN EFI_IPSEC_CONFIG_DATA_TYPE       DataType,
-  IN EFI_EVENT                        Event
-  );
+typedef EFI_STATUS(EFIAPI *EFI_IPSEC_CONFIG_REGISTER_NOTIFY)(IN EFI_IPSEC_CONFIG_PROTOCOL *This, IN EFI_IPSEC_CONFIG_DATA_TYPE DataType, IN EFI_EVENT Event);
 
 /**
   Remove the specified event that is previously registered on the specified IPsec
@@ -765,13 +763,7 @@ EFI_STATUS
                                 DataType is not supported.
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_IPSEC_CONFIG_UNREGISTER_NOTIFY)(
-  IN EFI_IPSEC_CONFIG_PROTOCOL        *This,
-  IN EFI_IPSEC_CONFIG_DATA_TYPE       DataType,
-  IN EFI_EVENT                        Event
-  );
+typedef EFI_STATUS(EFIAPI *EFI_IPSEC_CONFIG_UNREGISTER_NOTIFY)(IN EFI_IPSEC_CONFIG_PROTOCOL *This, IN EFI_IPSEC_CONFIG_DATA_TYPE DataType, IN EFI_EVENT Event);
 
 ///
 /// EFI_IPSEC_CONFIG_PROTOCOL
@@ -782,12 +774,13 @@ EFI_STATUS
 /// EFI_IPSEC_CONFIG_PROTOCOL can be bound to both IPv4 and IPv6 stack. User can use this
 /// protocol for IPsec configuration in both IPv4 and IPv6 environment.
 ///
-struct _EFI_IPSEC_CONFIG_PROTOCOL {
-  EFI_IPSEC_CONFIG_SET_DATA             SetData;
-  EFI_IPSEC_CONFIG_GET_DATA             GetData;
-  EFI_IPSEC_CONFIG_GET_NEXT_SELECTOR    GetNextSelector;
-  EFI_IPSEC_CONFIG_REGISTER_NOTIFY      RegisterDataNotify;
-  EFI_IPSEC_CONFIG_UNREGISTER_NOTIFY    UnregisterDataNotify;
+struct _EFI_IPSEC_CONFIG_PROTOCOL
+{
+    EFI_IPSEC_CONFIG_SET_DATA          SetData;
+    EFI_IPSEC_CONFIG_GET_DATA          GetData;
+    EFI_IPSEC_CONFIG_GET_NEXT_SELECTOR GetNextSelector;
+    EFI_IPSEC_CONFIG_REGISTER_NOTIFY   RegisterDataNotify;
+    EFI_IPSEC_CONFIG_UNREGISTER_NOTIFY UnregisterDataNotify;
 };
 
-extern EFI_GUID  gEfiIpSecConfigProtocolGuid;
+extern EFI_GUID gEfiIpSecConfigProtocolGuid;

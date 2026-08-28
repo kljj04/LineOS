@@ -13,24 +13,25 @@
 
 #include <Uefi.h>
 
-typedef enum {
-  MpxyChanAttrProtId,
-  MpxyChanAttrProtVersion,
-  MpxyChanAttrMsgDataMaxLen,
-  MpxyChanAttrMsgSendTimeout,
-  MpxyChanAttrMsgCompletionTimeout,
-  MpxyChanAttrChannelCapability,
-  MpxyChanAttrSseEventId,
-  MpxyChanAttrMsiControl,
-  MpxyChanAttrMsiAddrLow,
-  MpxyChanAttrMsiAddrHigh,
-  MpxyChanAttrMsiData,
-  MpxyChanAttrEventStateControl,
-  MpxyChanAttrMax
+typedef enum
+{
+    MpxyChanAttrProtId,
+    MpxyChanAttrProtVersion,
+    MpxyChanAttrMsgDataMaxLen,
+    MpxyChanAttrMsgSendTimeout,
+    MpxyChanAttrMsgCompletionTimeout,
+    MpxyChanAttrChannelCapability,
+    MpxyChanAttrSseEventId,
+    MpxyChanAttrMsiControl,
+    MpxyChanAttrMsiAddrLow,
+    MpxyChanAttrMsiAddrHigh,
+    MpxyChanAttrMsiData,
+    MpxyChanAttrEventStateControl,
+    MpxyChanAttrMax
 } MPXY_CHAN_ATTR;
 
-#define MPXY_MSG_PROTO_ATTR_START  0x80000000
-#define MPXY_MSG_PROTO_ATTR_END    0xffffffff
+#define MPXY_MSG_PROTO_ATTR_START 0x80000000
+#define MPXY_MSG_PROTO_ATTR_END   0xffffffff
 
 /**
   Initialize the MPXY library
@@ -41,9 +42,7 @@ typedef enum {
 **/
 RETURN_STATUS
 EFIAPI
-SbiMpxyLibInit (
-  VOID
-  );
+SbiMpxyLibInit(VOID);
 
 /**
   Get the list of channels available on MPXY.
@@ -58,12 +57,7 @@ SbiMpxyLibInit (
 **/
 EFI_STATUS
 EFIAPI
-SbiMpxyGetChannelList (
-  IN  UINTN  StartIndex,
-  OUT UINTN  *ChannelList,
-  OUT UINTN  *Remaining,
-  OUT UINTN  *Returned
-  );
+SbiMpxyGetChannelList(IN UINTN StartIndex, OUT UINTN *ChannelList, OUT UINTN *Remaining, OUT UINTN *Returned);
 
 /**
   Read the attributes (both base and protocol specific) of a channel
@@ -78,12 +72,7 @@ SbiMpxyGetChannelList (
 
 EFI_STATUS
 EFIAPI
-SbiMpxyReadChannelAttrs (
-  IN UINTN    ChannelId,
-  IN UINT32   BaseAttrId,
-  IN UINT32   NrAttrs,
-  OUT UINT32  *Attrs
-  );
+SbiMpxyReadChannelAttrs(IN UINTN ChannelId, IN UINT32 BaseAttrId, IN UINT32 NrAttrs, OUT UINT32 *Attrs);
 
 /**
   Open specified MPXY channel for communication. It will allocate the shared
@@ -95,9 +84,7 @@ SbiMpxyReadChannelAttrs (
 **/
 EFI_STATUS
 EFIAPI
-SbiMpxyChannelOpen (
-  IN UINTN  ChannelId
-  );
+SbiMpxyChannelOpen(IN UINTN ChannelId);
 
 /**
   Close the specified MPXY channel.
@@ -108,9 +95,7 @@ SbiMpxyChannelOpen (
 **/
 EFI_STATUS
 EFIAPI
-SbiMpxyChannelClose (
-  IN UINTN  ChannelId
-  );
+SbiMpxyChannelClose(IN UINTN ChannelId);
 
 /**
   Send a message with response over Mpxy.
@@ -127,11 +112,4 @@ SbiMpxyChannelClose (
 **/
 EFI_STATUS
 EFIAPI
-SbiMpxySendMessage (
-  IN UINTN   ChannelId,
-  IN UINTN   MessageId,
-  IN VOID    *Message,
-  IN UINTN   MessageDataLen,
-  OUT VOID   *Response,
-  OUT UINTN  *ResponseLen
-  );
+SbiMpxySendMessage(IN UINTN ChannelId, IN UINTN MessageId, IN VOID *Message, IN UINTN MessageDataLen, OUT VOID *Response, OUT UINTN *ResponseLen);

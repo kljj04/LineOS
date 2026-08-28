@@ -14,40 +14,40 @@
 //
 // It is common for -1 to be used as an error value
 //
-#define INT8_ERROR    ((INT8) -1)
-#define UINT8_ERROR   MAX_UINT8
-#define CHAR8_ERROR   ((CHAR8)(MAX_INT8))
-#define INT16_ERROR   ((INT16) -1)
-#define UINT16_ERROR  MAX_UINT16
-#define CHAR16_ERROR  MAX_UINT16
-#define INT32_ERROR   ((INT32) -1)
-#define UINT32_ERROR  MAX_UINT32
-#define INT64_ERROR   ((INT64) -1)
-#define UINT64_ERROR  MAX_UINT64
-#define INTN_ERROR    ((INTN) -1)
-#define UINTN_ERROR   MAX_UINTN
+#define INT8_ERROR   ((INT8) - 1)
+#define UINT8_ERROR  MAX_UINT8
+#define CHAR8_ERROR  ((CHAR8) (MAX_INT8))
+#define INT16_ERROR  ((INT16) - 1)
+#define UINT16_ERROR MAX_UINT16
+#define CHAR16_ERROR MAX_UINT16
+#define INT32_ERROR  ((INT32) - 1)
+#define UINT32_ERROR MAX_UINT32
+#define INT64_ERROR  ((INT64) - 1)
+#define UINT64_ERROR MAX_UINT64
+#define INTN_ERROR   ((INTN) - 1)
+#define UINTN_ERROR  MAX_UINTN
 
 //
 // CHAR16 is defined to be the same as UINT16, so for CHAR16
 // operations redirect to the UINT16 ones:
 //
-#define SafeInt8ToChar16    SafeInt8ToUint16
-#define SafeInt16ToChar16   SafeInt16ToUint16
-#define SafeInt32ToChar16   SafeInt32ToUint16
-#define SafeUint32ToChar16  SafeUint32ToUint16
-#define SafeInt64ToChar16   SafeInt64ToUint16
-#define SafeUint64ToChar16  SafeUint64ToUint16
-#define SafeIntnToChar16    SafeIntnToUint16
-#define SafeUintnToChar16   SafeUintnToUint16
+#define SafeInt8ToChar16   SafeInt8ToUint16
+#define SafeInt16ToChar16  SafeInt16ToUint16
+#define SafeInt32ToChar16  SafeInt32ToUint16
+#define SafeUint32ToChar16 SafeUint32ToUint16
+#define SafeInt64ToChar16  SafeInt64ToUint16
+#define SafeUint64ToChar16 SafeUint64ToUint16
+#define SafeIntnToChar16   SafeIntnToUint16
+#define SafeUintnToChar16  SafeUintnToUint16
 
-#define SafeChar16ToInt8   SafeUint16ToInt8
-#define SafeChar16ToUint8  SafeUint16ToUint8
-#define SafeChar16ToChar8  SafeUint16ToChar8
-#define SafeChar16ToInt16  SafeUint16ToInt16
+#define SafeChar16ToInt8  SafeUint16ToInt8
+#define SafeChar16ToUint8 SafeUint16ToUint8
+#define SafeChar16ToChar8 SafeUint16ToChar8
+#define SafeChar16ToInt16 SafeUint16ToInt16
 
-#define SafeChar16Mult  SafeUint16Mult
-#define SafeChar16Sub   SafeUint16Sub
-#define SafeChar16Add   SafeUint16Add
+#define SafeChar16Mult SafeUint16Mult
+#define SafeChar16Sub  SafeUint16Sub
+#define SafeChar16Add  SafeUint16Add
 
 //
 // Conversion functions
@@ -86,10 +86,7 @@
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt8ToUint8 (
-  IN  INT8   Operand,
-  OUT UINT8  *Result
-  );
+SafeInt8ToUint8(IN INT8 Operand, OUT UINT8 *Result);
 
 /**
   INT8 -> CHAR8 conversion
@@ -113,10 +110,7 @@ SafeInt8ToUint8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt8ToChar8 (
-  IN  INT8   Operand,
-  OUT CHAR8  *Result
-  );
+SafeInt8ToChar8(IN INT8 Operand, OUT CHAR8 *Result);
 
 /**
   INT8 -> UINT16 conversion
@@ -140,10 +134,7 @@ SafeInt8ToChar8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt8ToUint16 (
-  IN  INT8    Operand,
-  OUT UINT16  *Result
-  );
+SafeInt8ToUint16(IN INT8 Operand, OUT UINT16 *Result);
 
 /**
   INT8 -> UINT32 conversion
@@ -167,10 +158,7 @@ SafeInt8ToUint16 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt8ToUint32 (
-  IN  INT8    Operand,
-  OUT UINT32  *Result
-  );
+SafeInt8ToUint32(IN INT8 Operand, OUT UINT32 *Result);
 
 /**
   INT8 -> UINTN conversion
@@ -194,10 +182,7 @@ SafeInt8ToUint32 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt8ToUintn (
-  IN  INT8   Operand,
-  OUT UINTN  *Result
-  );
+SafeInt8ToUintn(IN INT8 Operand, OUT UINTN *Result);
 
 /**
   INT8 -> UINT64 conversion
@@ -221,10 +206,7 @@ SafeInt8ToUintn (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt8ToUint64 (
-  IN  INT8    Operand,
-  OUT UINT64  *Result
-  );
+SafeInt8ToUint64(IN INT8 Operand, OUT UINT64 *Result);
 
 /**
   UINT8 -> INT8 conversion
@@ -248,10 +230,7 @@ SafeInt8ToUint64 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint8ToInt8 (
-  IN  UINT8  Operand,
-  OUT INT8   *Result
-  );
+SafeUint8ToInt8(IN UINT8 Operand, OUT INT8 *Result);
 
 /**
   UINT8 -> CHAR8 conversion
@@ -275,10 +254,7 @@ SafeUint8ToInt8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint8ToChar8 (
-  IN  UINT8  Operand,
-  OUT CHAR8  *Result
-  );
+SafeUint8ToChar8(IN UINT8 Operand, OUT CHAR8 *Result);
 
 /**
   INT16 -> INT8 conversion
@@ -302,10 +278,7 @@ SafeUint8ToChar8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt16ToInt8 (
-  IN  INT16  Operand,
-  OUT INT8   *Result
-  );
+SafeInt16ToInt8(IN INT16 Operand, OUT INT8 *Result);
 
 /**
   INT16 -> CHAR8 conversion
@@ -329,10 +302,7 @@ SafeInt16ToInt8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt16ToChar8 (
-  IN  INT16  Operand,
-  OUT CHAR8  *Result
-  );
+SafeInt16ToChar8(IN INT16 Operand, OUT CHAR8 *Result);
 
 /**
   INT16 -> UINT8 conversion
@@ -356,10 +326,7 @@ SafeInt16ToChar8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt16ToUint8 (
-  IN INT16   Operand,
-  OUT UINT8  *Result
-  );
+SafeInt16ToUint8(IN INT16 Operand, OUT UINT8 *Result);
 
 /**
   INT16 -> UINT16 conversion
@@ -383,10 +350,7 @@ SafeInt16ToUint8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt16ToUint16 (
-  IN  INT16   Operand,
-  OUT UINT16  *Result
-  );
+SafeInt16ToUint16(IN INT16 Operand, OUT UINT16 *Result);
 
 /**
   INT16 -> UINT32 conversion
@@ -410,10 +374,7 @@ SafeInt16ToUint16 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt16ToUint32 (
-  IN  INT16   Operand,
-  OUT UINT32  *Result
-  );
+SafeInt16ToUint32(IN INT16 Operand, OUT UINT32 *Result);
 
 /**
   INT16 -> UINTN conversion
@@ -437,10 +398,7 @@ SafeInt16ToUint32 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt16ToUintn (
-  IN  INT16  Operand,
-  OUT UINTN  *Result
-  );
+SafeInt16ToUintn(IN INT16 Operand, OUT UINTN *Result);
 
 /**
   INT16 -> UINT64 conversion
@@ -464,10 +422,7 @@ SafeInt16ToUintn (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt16ToUint64 (
-  IN  INT16   Operand,
-  OUT UINT64  *Result
-  );
+SafeInt16ToUint64(IN INT16 Operand, OUT UINT64 *Result);
 
 /**
   UINT16 -> INT8 conversion
@@ -491,10 +446,7 @@ SafeInt16ToUint64 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint16ToInt8 (
-  IN  UINT16  Operand,
-  OUT INT8    *Result
-  );
+SafeUint16ToInt8(IN UINT16 Operand, OUT INT8 *Result);
 
 /**
   UINT16 -> CHAR8 conversion
@@ -518,10 +470,7 @@ SafeUint16ToInt8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint16ToChar8 (
-  IN  UINT16  Operand,
-  OUT CHAR8   *Result
-  );
+SafeUint16ToChar8(IN UINT16 Operand, OUT CHAR8 *Result);
 
 /**
   UINT16 -> UINT8 conversion
@@ -545,10 +494,7 @@ SafeUint16ToChar8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint16ToUint8 (
-  IN UINT16  Operand,
-  OUT UINT8  *Result
-  );
+SafeUint16ToUint8(IN UINT16 Operand, OUT UINT8 *Result);
 
 /**
   UINT16 -> INT16 conversion
@@ -572,10 +518,7 @@ SafeUint16ToUint8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint16ToInt16 (
-  IN  UINT16  Operand,
-  OUT INT16   *Result
-  );
+SafeUint16ToInt16(IN UINT16 Operand, OUT INT16 *Result);
 
 /**
   INT32 -> INT8 conversion
@@ -599,10 +542,7 @@ SafeUint16ToInt16 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt32ToInt8 (
-  IN  INT32  Operand,
-  OUT INT8   *Result
-  );
+SafeInt32ToInt8(IN INT32 Operand, OUT INT8 *Result);
 
 /**
   INT32 -> CHAR8 conversion
@@ -626,10 +566,7 @@ SafeInt32ToInt8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt32ToChar8 (
-  IN  INT32  Operand,
-  OUT CHAR8  *Result
-  );
+SafeInt32ToChar8(IN INT32 Operand, OUT CHAR8 *Result);
 
 /**
   INT32 -> UINT8 conversion
@@ -653,10 +590,7 @@ SafeInt32ToChar8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt32ToUint8 (
-  IN INT32   Operand,
-  OUT UINT8  *Result
-  );
+SafeInt32ToUint8(IN INT32 Operand, OUT UINT8 *Result);
 
 /**
   INT32 -> INT16 conversion
@@ -680,10 +614,7 @@ SafeInt32ToUint8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt32ToInt16 (
-  IN  INT32  Operand,
-  OUT INT16  *Result
-  );
+SafeInt32ToInt16(IN INT32 Operand, OUT INT16 *Result);
 
 /**
   INT32 -> UINT16 conversion
@@ -707,10 +638,7 @@ SafeInt32ToInt16 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt32ToUint16 (
-  IN  INT32   Operand,
-  OUT UINT16  *Result
-  );
+SafeInt32ToUint16(IN INT32 Operand, OUT UINT16 *Result);
 
 /**
   INT32 -> UINT32 conversion
@@ -734,10 +662,7 @@ SafeInt32ToUint16 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt32ToUint32 (
-  IN  INT32   Operand,
-  OUT UINT32  *Result
-  );
+SafeInt32ToUint32(IN INT32 Operand, OUT UINT32 *Result);
 
 /**
   INT32 -> UINTN conversion
@@ -761,10 +686,7 @@ SafeInt32ToUint32 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt32ToUintn (
-  IN  INT32  Operand,
-  OUT UINTN  *Result
-  );
+SafeInt32ToUintn(IN INT32 Operand, OUT UINTN *Result);
 
 /**
   INT32 -> UINT64 conversion
@@ -788,10 +710,7 @@ SafeInt32ToUintn (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt32ToUint64 (
-  IN  INT32   Operand,
-  OUT UINT64  *Result
-  );
+SafeInt32ToUint64(IN INT32 Operand, OUT UINT64 *Result);
 
 /**
   UINT32 -> INT8 conversion
@@ -815,10 +734,7 @@ SafeInt32ToUint64 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint32ToInt8 (
-  IN  UINT32  Operand,
-  OUT INT8    *Result
-  );
+SafeUint32ToInt8(IN UINT32 Operand, OUT INT8 *Result);
 
 /**
   UINT32 -> CHAR8 conversion
@@ -842,10 +758,7 @@ SafeUint32ToInt8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint32ToChar8 (
-  IN  UINT32  Operand,
-  OUT CHAR8   *Result
-  );
+SafeUint32ToChar8(IN UINT32 Operand, OUT CHAR8 *Result);
 
 /**
   UINT32 -> UINT8 conversion
@@ -869,10 +782,7 @@ SafeUint32ToChar8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint32ToUint8 (
-  IN UINT32  Operand,
-  OUT UINT8  *Result
-  );
+SafeUint32ToUint8(IN UINT32 Operand, OUT UINT8 *Result);
 
 /**
   UINT32 -> INT16 conversion
@@ -896,10 +806,7 @@ SafeUint32ToUint8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint32ToInt16 (
-  IN  UINT32  Operand,
-  OUT INT16   *Result
-  );
+SafeUint32ToInt16(IN UINT32 Operand, OUT INT16 *Result);
 
 /**
   UINT32 -> UINT16 conversion
@@ -923,10 +830,7 @@ SafeUint32ToInt16 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint32ToUint16 (
-  IN  UINT32  Operand,
-  OUT UINT16  *Result
-  );
+SafeUint32ToUint16(IN UINT32 Operand, OUT UINT16 *Result);
 
 /**
   UINT32 -> INT32 conversion
@@ -950,10 +854,7 @@ SafeUint32ToUint16 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint32ToInt32 (
-  IN  UINT32  Operand,
-  OUT INT32   *Result
-  );
+SafeUint32ToInt32(IN UINT32 Operand, OUT INT32 *Result);
 
 /**
   UINT32 -> INTN conversion
@@ -977,10 +878,7 @@ SafeUint32ToInt32 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint32ToIntn (
-  IN  UINT32  Operand,
-  OUT INTN    *Result
-  );
+SafeUint32ToIntn(IN UINT32 Operand, OUT INTN *Result);
 
 /**
   INTN -> INT8 conversion
@@ -1004,10 +902,7 @@ SafeUint32ToIntn (
 **/
 RETURN_STATUS
 EFIAPI
-SafeIntnToInt8 (
-  IN  INTN  Operand,
-  OUT INT8  *Result
-  );
+SafeIntnToInt8(IN INTN Operand, OUT INT8 *Result);
 
 /**
   INTN -> CHAR8 conversion
@@ -1031,10 +926,7 @@ SafeIntnToInt8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeIntnToChar8 (
-  IN  INTN   Operand,
-  OUT CHAR8  *Result
-  );
+SafeIntnToChar8(IN INTN Operand, OUT CHAR8 *Result);
 
 /**
   INTN -> UINT8 conversion
@@ -1058,10 +950,7 @@ SafeIntnToChar8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeIntnToUint8 (
-  IN INTN    Operand,
-  OUT UINT8  *Result
-  );
+SafeIntnToUint8(IN INTN Operand, OUT UINT8 *Result);
 
 /**
   INTN -> INT16 conversion
@@ -1085,10 +974,7 @@ SafeIntnToUint8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeIntnToInt16 (
-  IN  INTN   Operand,
-  OUT INT16  *Result
-  );
+SafeIntnToInt16(IN INTN Operand, OUT INT16 *Result);
 
 /**
   INTN -> UINT16 conversion
@@ -1112,10 +998,7 @@ SafeIntnToInt16 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeIntnToUint16 (
-  IN  INTN    Operand,
-  OUT UINT16  *Result
-  );
+SafeIntnToUint16(IN INTN Operand, OUT UINT16 *Result);
 
 /**
   INTN -> INT32 conversion
@@ -1139,10 +1022,7 @@ SafeIntnToUint16 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeIntnToInt32 (
-  IN  INTN   Operand,
-  OUT INT32  *Result
-  );
+SafeIntnToInt32(IN INTN Operand, OUT INT32 *Result);
 
 /**
   INTN -> UINT32 conversion
@@ -1166,10 +1046,7 @@ SafeIntnToInt32 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeIntnToUint32 (
-  IN  INTN    Operand,
-  OUT UINT32  *Result
-  );
+SafeIntnToUint32(IN INTN Operand, OUT UINT32 *Result);
 
 /**
   INTN -> UINTN conversion
@@ -1193,10 +1070,7 @@ SafeIntnToUint32 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeIntnToUintn (
-  IN  INTN   Operand,
-  OUT UINTN  *Result
-  );
+SafeIntnToUintn(IN INTN Operand, OUT UINTN *Result);
 
 /**
   INTN -> UINT64 conversion
@@ -1220,10 +1094,7 @@ SafeIntnToUintn (
 **/
 RETURN_STATUS
 EFIAPI
-SafeIntnToUint64 (
-  IN  INTN    Operand,
-  OUT UINT64  *Result
-  );
+SafeIntnToUint64(IN INTN Operand, OUT UINT64 *Result);
 
 /**
   UINTN -> INT8 conversion
@@ -1247,10 +1118,7 @@ SafeIntnToUint64 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUintnToInt8 (
-  IN  UINTN  Operand,
-  OUT INT8   *Result
-  );
+SafeUintnToInt8(IN UINTN Operand, OUT INT8 *Result);
 
 /**
   UINTN -> CHAR8 conversion
@@ -1274,10 +1142,7 @@ SafeUintnToInt8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUintnToChar8 (
-  IN  UINTN  Operand,
-  OUT CHAR8  *Result
-  );
+SafeUintnToChar8(IN UINTN Operand, OUT CHAR8 *Result);
 
 /**
   UINTN -> UINT8 conversion
@@ -1301,10 +1166,7 @@ SafeUintnToChar8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUintnToUint8 (
-  IN UINTN   Operand,
-  OUT UINT8  *Result
-  );
+SafeUintnToUint8(IN UINTN Operand, OUT UINT8 *Result);
 
 /**
   UINTN -> INT16 conversion
@@ -1328,10 +1190,7 @@ SafeUintnToUint8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUintnToInt16 (
-  IN  UINTN  Operand,
-  OUT INT16  *Result
-  );
+SafeUintnToInt16(IN UINTN Operand, OUT INT16 *Result);
 
 /**
   UINTN -> UINT16 conversion
@@ -1355,10 +1214,7 @@ SafeUintnToInt16 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUintnToUint16 (
-  IN  UINTN   Operand,
-  OUT UINT16  *Result
-  );
+SafeUintnToUint16(IN UINTN Operand, OUT UINT16 *Result);
 
 /**
   UINTN -> INT32 conversion
@@ -1382,10 +1238,7 @@ SafeUintnToUint16 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUintnToInt32 (
-  IN  UINTN  Operand,
-  OUT INT32  *Result
-  );
+SafeUintnToInt32(IN UINTN Operand, OUT INT32 *Result);
 
 /**
   UINTN -> UINT32 conversion
@@ -1409,10 +1262,7 @@ SafeUintnToInt32 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUintnToUint32 (
-  IN  UINTN   Operand,
-  OUT UINT32  *Result
-  );
+SafeUintnToUint32(IN UINTN Operand, OUT UINT32 *Result);
 
 /**
   UINTN -> INTN conversion
@@ -1436,10 +1286,7 @@ SafeUintnToUint32 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUintnToIntn (
-  IN  UINTN  Operand,
-  OUT INTN   *Result
-  );
+SafeUintnToIntn(IN UINTN Operand, OUT INTN *Result);
 
 /**
   UINTN -> INT64 conversion
@@ -1463,10 +1310,7 @@ SafeUintnToIntn (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUintnToInt64 (
-  IN  UINTN  Operand,
-  OUT INT64  *Result
-  );
+SafeUintnToInt64(IN UINTN Operand, OUT INT64 *Result);
 
 /**
   INT64 -> INT8 conversion
@@ -1490,10 +1334,7 @@ SafeUintnToInt64 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt64ToInt8 (
-  IN  INT64  Operand,
-  OUT INT8   *Result
-  );
+SafeInt64ToInt8(IN INT64 Operand, OUT INT8 *Result);
 
 /**
   INT64 -> CHAR8 conversion
@@ -1517,10 +1358,7 @@ SafeInt64ToInt8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt64ToChar8 (
-  IN  INT64  Operand,
-  OUT CHAR8  *Result
-  );
+SafeInt64ToChar8(IN INT64 Operand, OUT CHAR8 *Result);
 
 /**
   INT64 -> UINT8 conversion
@@ -1544,10 +1382,7 @@ SafeInt64ToChar8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt64ToUint8 (
-  IN  INT64  Operand,
-  OUT UINT8  *Result
-  );
+SafeInt64ToUint8(IN INT64 Operand, OUT UINT8 *Result);
 
 /**
   INT64 -> INT16 conversion
@@ -1571,10 +1406,7 @@ SafeInt64ToUint8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt64ToInt16 (
-  IN  INT64  Operand,
-  OUT INT16  *Result
-  );
+SafeInt64ToInt16(IN INT64 Operand, OUT INT16 *Result);
 
 /**
   INT64 -> UINT16 conversion
@@ -1598,10 +1430,7 @@ SafeInt64ToInt16 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt64ToUint16 (
-  IN  INT64   Operand,
-  OUT UINT16  *Result
-  );
+SafeInt64ToUint16(IN INT64 Operand, OUT UINT16 *Result);
 
 /**
   INT64 -> INT32 conversion
@@ -1625,10 +1454,7 @@ SafeInt64ToUint16 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt64ToInt32 (
-  IN  INT64  Operand,
-  OUT INT32  *Result
-  );
+SafeInt64ToInt32(IN INT64 Operand, OUT INT32 *Result);
 
 /**
   INT64 -> UINT32 conversion
@@ -1652,10 +1478,7 @@ SafeInt64ToInt32 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt64ToUint32 (
-  IN  INT64   Operand,
-  OUT UINT32  *Result
-  );
+SafeInt64ToUint32(IN INT64 Operand, OUT UINT32 *Result);
 
 /**
   INT64 -> INTN conversion
@@ -1679,10 +1502,7 @@ SafeInt64ToUint32 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt64ToIntn (
-  IN  INT64  Operand,
-  OUT INTN   *Result
-  );
+SafeInt64ToIntn(IN INT64 Operand, OUT INTN *Result);
 
 /**
   INT64 -> UINTN conversion
@@ -1706,10 +1526,7 @@ SafeInt64ToIntn (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt64ToUintn (
-  IN  INT64  Operand,
-  OUT UINTN  *Result
-  );
+SafeInt64ToUintn(IN INT64 Operand, OUT UINTN *Result);
 
 /**
   INT64 -> UINT64 conversion
@@ -1733,10 +1550,7 @@ SafeInt64ToUintn (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt64ToUint64 (
-  IN  INT64   Operand,
-  OUT UINT64  *Result
-  );
+SafeInt64ToUint64(IN INT64 Operand, OUT UINT64 *Result);
 
 /**
   UINT64 -> INT8 conversion
@@ -1760,10 +1574,7 @@ SafeInt64ToUint64 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint64ToInt8 (
-  IN  UINT64  Operand,
-  OUT INT8    *Result
-  );
+SafeUint64ToInt8(IN UINT64 Operand, OUT INT8 *Result);
 
 /**
   UINT64 -> CHAR8 conversion
@@ -1787,10 +1598,7 @@ SafeUint64ToInt8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint64ToChar8 (
-  IN  UINT64  Operand,
-  OUT CHAR8   *Result
-  );
+SafeUint64ToChar8(IN UINT64 Operand, OUT CHAR8 *Result);
 
 /**
   UINT64 -> UINT8 conversion
@@ -1814,10 +1622,7 @@ SafeUint64ToChar8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint64ToUint8 (
-  IN  UINT64  Operand,
-  OUT UINT8   *Result
-  );
+SafeUint64ToUint8(IN UINT64 Operand, OUT UINT8 *Result);
 
 /**
   UINT64 -> INT16 conversion
@@ -1841,10 +1646,7 @@ SafeUint64ToUint8 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint64ToInt16 (
-  IN  UINT64  Operand,
-  OUT INT16   *Result
-  );
+SafeUint64ToInt16(IN UINT64 Operand, OUT INT16 *Result);
 
 /**
   UINT64 -> UINT16 conversion
@@ -1868,10 +1670,7 @@ SafeUint64ToInt16 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint64ToUint16 (
-  IN  UINT64  Operand,
-  OUT UINT16  *Result
-  );
+SafeUint64ToUint16(IN UINT64 Operand, OUT UINT16 *Result);
 
 /**
   UINT64 -> INT32 conversion
@@ -1895,10 +1694,7 @@ SafeUint64ToUint16 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint64ToInt32 (
-  IN  UINT64  Operand,
-  OUT INT32   *Result
-  );
+SafeUint64ToInt32(IN UINT64 Operand, OUT INT32 *Result);
 
 /**
   UINT64 -> UINT32 conversion
@@ -1922,10 +1718,7 @@ SafeUint64ToInt32 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint64ToUint32 (
-  IN  UINT64  Operand,
-  OUT UINT32  *Result
-  );
+SafeUint64ToUint32(IN UINT64 Operand, OUT UINT32 *Result);
 
 /**
   UINT64 -> INTN conversion
@@ -1949,10 +1742,7 @@ SafeUint64ToUint32 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint64ToIntn (
-  IN  UINT64  Operand,
-  OUT INTN    *Result
-  );
+SafeUint64ToIntn(IN UINT64 Operand, OUT INTN *Result);
 
 /**
   UINT64 -> UINTN conversion
@@ -1976,10 +1766,7 @@ SafeUint64ToIntn (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint64ToUintn (
-  IN  UINT64  Operand,
-  OUT UINTN   *Result
-  );
+SafeUint64ToUintn(IN UINT64 Operand, OUT UINTN *Result);
 
 /**
   UINT64 -> INT64 conversion
@@ -2003,10 +1790,7 @@ SafeUint64ToUintn (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint64ToInt64 (
-  IN  UINT64  Operand,
-  OUT INT64   *Result
-  );
+SafeUint64ToInt64(IN UINT64 Operand, OUT INT64 *Result);
 
 //
 // Addition functions
@@ -2035,11 +1819,7 @@ SafeUint64ToInt64 (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint8Add (
-  IN  UINT8  Augend,
-  IN  UINT8  Addend,
-  OUT UINT8  *Result
-  );
+SafeUint8Add(IN UINT8 Augend, IN UINT8 Addend, OUT UINT8 *Result);
 
 /**
   UINT16 addition
@@ -2064,11 +1844,7 @@ SafeUint8Add (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint16Add (
-  IN  UINT16  Augend,
-  IN  UINT16  Addend,
-  OUT UINT16  *Result
-  );
+SafeUint16Add(IN UINT16 Augend, IN UINT16 Addend, OUT UINT16 *Result);
 
 /**
   UINT32 addition
@@ -2093,11 +1869,7 @@ SafeUint16Add (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint32Add (
-  IN  UINT32  Augend,
-  IN  UINT32  Addend,
-  OUT UINT32  *Result
-  );
+SafeUint32Add(IN UINT32 Augend, IN UINT32 Addend, OUT UINT32 *Result);
 
 /**
   UINTN addition
@@ -2122,11 +1894,7 @@ SafeUint32Add (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUintnAdd (
-  IN  UINTN  Augend,
-  IN  UINTN  Addend,
-  OUT UINTN  *Result
-  );
+SafeUintnAdd(IN UINTN Augend, IN UINTN Addend, OUT UINTN *Result);
 
 /**
   UINT64 addition
@@ -2151,11 +1919,7 @@ SafeUintnAdd (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint64Add (
-  IN  UINT64  Augend,
-  IN  UINT64  Addend,
-  OUT UINT64  *Result
-  );
+SafeUint64Add(IN UINT64 Augend, IN UINT64 Addend, OUT UINT64 *Result);
 
 //
 // Subtraction functions
@@ -2184,11 +1948,7 @@ SafeUint64Add (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint8Sub (
-  IN  UINT8  Minuend,
-  IN  UINT8  Subtrahend,
-  OUT UINT8  *Result
-  );
+SafeUint8Sub(IN UINT8 Minuend, IN UINT8 Subtrahend, OUT UINT8 *Result);
 
 /**
   UINT16 subtraction
@@ -2213,11 +1973,7 @@ SafeUint8Sub (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint16Sub (
-  IN  UINT16  Minuend,
-  IN  UINT16  Subtrahend,
-  OUT UINT16  *Result
-  );
+SafeUint16Sub(IN UINT16 Minuend, IN UINT16 Subtrahend, OUT UINT16 *Result);
 
 /**
   UINT32 subtraction
@@ -2242,11 +1998,7 @@ SafeUint16Sub (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint32Sub (
-  IN  UINT32  Minuend,
-  IN  UINT32  Subtrahend,
-  OUT UINT32  *Result
-  );
+SafeUint32Sub(IN UINT32 Minuend, IN UINT32 Subtrahend, OUT UINT32 *Result);
 
 /**
   UINTN subtraction
@@ -2271,11 +2023,7 @@ SafeUint32Sub (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUintnSub (
-  IN  UINTN  Minuend,
-  IN  UINTN  Subtrahend,
-  OUT UINTN  *Result
-  );
+SafeUintnSub(IN UINTN Minuend, IN UINTN Subtrahend, OUT UINTN *Result);
 
 /**
   UINT64 subtraction
@@ -2300,11 +2048,7 @@ SafeUintnSub (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint64Sub (
-  IN  UINT64  Minuend,
-  IN  UINT64  Subtrahend,
-  OUT UINT64  *Result
-  );
+SafeUint64Sub(IN UINT64 Minuend, IN UINT64 Subtrahend, OUT UINT64 *Result);
 
 //
 // Multiplication functions
@@ -2333,11 +2077,7 @@ SafeUint64Sub (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint8Mult (
-  IN  UINT8  Multiplicand,
-  IN  UINT8  Multiplier,
-  OUT UINT8  *Result
-  );
+SafeUint8Mult(IN UINT8 Multiplicand, IN UINT8 Multiplier, OUT UINT8 *Result);
 
 /**
   UINT16 multiplication
@@ -2362,11 +2102,7 @@ SafeUint8Mult (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint16Mult (
-  IN  UINT16  Multiplicand,
-  IN  UINT16  Multiplier,
-  OUT UINT16  *Result
-  );
+SafeUint16Mult(IN UINT16 Multiplicand, IN UINT16 Multiplier, OUT UINT16 *Result);
 
 /**
   UINT32 multiplication
@@ -2391,11 +2127,7 @@ SafeUint16Mult (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint32Mult (
-  IN  UINT32  Multiplicand,
-  IN  UINT32  Multiplier,
-  OUT UINT32  *Result
-  );
+SafeUint32Mult(IN UINT32 Multiplicand, IN UINT32 Multiplier, OUT UINT32 *Result);
 
 /**
   UINTN multiplication
@@ -2420,11 +2152,7 @@ SafeUint32Mult (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUintnMult (
-  IN  UINTN  Multiplicand,
-  IN  UINTN  Multiplier,
-  OUT UINTN  *Result
-  );
+SafeUintnMult(IN UINTN Multiplicand, IN UINTN Multiplier, OUT UINTN *Result);
 
 /**
   UINT64 multiplication
@@ -2449,11 +2177,7 @@ SafeUintnMult (
 **/
 RETURN_STATUS
 EFIAPI
-SafeUint64Mult (
-  IN  UINT64  Multiplicand,
-  IN  UINT64  Multiplier,
-  OUT UINT64  *Result
-  );
+SafeUint64Mult(IN UINT64 Multiplicand, IN UINT64 Multiplier, OUT UINT64 *Result);
 
 //
 // Signed operations
@@ -2502,11 +2226,7 @@ SafeUint64Mult (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt8Add (
-  IN  INT8  Augend,
-  IN  INT8  Addend,
-  OUT INT8  *Result
-  );
+SafeInt8Add(IN INT8 Augend, IN INT8 Addend, OUT INT8 *Result);
 
 /**
   CHAR8 Addition
@@ -2531,11 +2251,7 @@ SafeInt8Add (
 **/
 RETURN_STATUS
 EFIAPI
-SafeChar8Add (
-  IN  CHAR8  Augend,
-  IN  CHAR8  Addend,
-  OUT CHAR8  *Result
-  );
+SafeChar8Add(IN CHAR8 Augend, IN CHAR8 Addend, OUT CHAR8 *Result);
 
 /**
   INT16 Addition
@@ -2560,11 +2276,7 @@ SafeChar8Add (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt16Add (
-  IN  INT16  Augend,
-  IN  INT16  Addend,
-  OUT INT16  *Result
-  );
+SafeInt16Add(IN INT16 Augend, IN INT16 Addend, OUT INT16 *Result);
 
 /**
   INT32 Addition
@@ -2589,11 +2301,7 @@ SafeInt16Add (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt32Add (
-  IN  INT32  Augend,
-  IN  INT32  Addend,
-  OUT INT32  *Result
-  );
+SafeInt32Add(IN INT32 Augend, IN INT32 Addend, OUT INT32 *Result);
 
 /**
   INTN Addition
@@ -2618,11 +2326,7 @@ SafeInt32Add (
 **/
 RETURN_STATUS
 EFIAPI
-SafeIntnAdd (
-  IN  INTN  Augend,
-  IN  INTN  Addend,
-  OUT INTN  *Result
-  );
+SafeIntnAdd(IN INTN Augend, IN INTN Addend, OUT INTN *Result);
 
 /**
   INT64 Addition
@@ -2647,11 +2351,7 @@ SafeIntnAdd (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt64Add (
-  IN  INT64  Augend,
-  IN  INT64  Addend,
-  OUT INT64  *Result
-  );
+SafeInt64Add(IN INT64 Augend, IN INT64 Addend, OUT INT64 *Result);
 
 //
 // Signed subtraction functions
@@ -2680,11 +2380,7 @@ SafeInt64Add (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt8Sub (
-  IN  INT8  Minuend,
-  IN  INT8  Subtrahend,
-  OUT INT8  *Result
-  );
+SafeInt8Sub(IN INT8 Minuend, IN INT8 Subtrahend, OUT INT8 *Result);
 
 /**
   CHAR8 Subtraction
@@ -2709,11 +2405,7 @@ SafeInt8Sub (
 **/
 RETURN_STATUS
 EFIAPI
-SafeChar8Sub (
-  IN  CHAR8  Minuend,
-  IN  CHAR8  Subtrahend,
-  OUT CHAR8  *Result
-  );
+SafeChar8Sub(IN CHAR8 Minuend, IN CHAR8 Subtrahend, OUT CHAR8 *Result);
 
 /**
   INT16 Subtraction
@@ -2738,11 +2430,7 @@ SafeChar8Sub (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt16Sub (
-  IN  INT16  Minuend,
-  IN  INT16  Subtrahend,
-  OUT INT16  *Result
-  );
+SafeInt16Sub(IN INT16 Minuend, IN INT16 Subtrahend, OUT INT16 *Result);
 
 /**
   INT32 Subtraction
@@ -2767,11 +2455,7 @@ SafeInt16Sub (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt32Sub (
-  IN  INT32  Minuend,
-  IN  INT32  Subtrahend,
-  OUT INT32  *Result
-  );
+SafeInt32Sub(IN INT32 Minuend, IN INT32 Subtrahend, OUT INT32 *Result);
 
 /**
   INTN Subtraction
@@ -2796,11 +2480,7 @@ SafeInt32Sub (
 **/
 RETURN_STATUS
 EFIAPI
-SafeIntnSub (
-  IN  INTN  Minuend,
-  IN  INTN  Subtrahend,
-  OUT INTN  *Result
-  );
+SafeIntnSub(IN INTN Minuend, IN INTN Subtrahend, OUT INTN *Result);
 
 /**
   INT64 Subtraction
@@ -2825,11 +2505,7 @@ SafeIntnSub (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt64Sub (
-  IN  INT64  Minuend,
-  IN  INT64  Subtrahend,
-  OUT INT64  *Result
-  );
+SafeInt64Sub(IN INT64 Minuend, IN INT64 Subtrahend, OUT INT64 *Result);
 
 //
 // Signed multiplication functions
@@ -2858,11 +2534,7 @@ SafeInt64Sub (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt8Mult (
-  IN  INT8  Multiplicand,
-  IN  INT8  Multiplier,
-  OUT INT8  *Result
-  );
+SafeInt8Mult(IN INT8 Multiplicand, IN INT8 Multiplier, OUT INT8 *Result);
 
 /**
   CHAR8 multiplication
@@ -2887,11 +2559,7 @@ SafeInt8Mult (
 **/
 RETURN_STATUS
 EFIAPI
-SafeChar8Mult (
-  IN  CHAR8  Multiplicand,
-  IN  CHAR8  Multiplier,
-  OUT CHAR8  *Result
-  );
+SafeChar8Mult(IN CHAR8 Multiplicand, IN CHAR8 Multiplier, OUT CHAR8 *Result);
 
 /**
   INT16 multiplication
@@ -2916,11 +2584,7 @@ SafeChar8Mult (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt16Mult (
-  IN  INT16  Multiplicand,
-  IN  INT16  Multiplier,
-  OUT INT16  *Result
-  );
+SafeInt16Mult(IN INT16 Multiplicand, IN INT16 Multiplier, OUT INT16 *Result);
 
 /**
   INT32 multiplication
@@ -2945,11 +2609,7 @@ SafeInt16Mult (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt32Mult (
-  IN  INT32  Multiplicand,
-  IN  INT32  Multiplier,
-  OUT INT32  *Result
-  );
+SafeInt32Mult(IN INT32 Multiplicand, IN INT32 Multiplier, OUT INT32 *Result);
 
 /**
   INTN multiplication
@@ -2974,11 +2634,7 @@ SafeInt32Mult (
 **/
 RETURN_STATUS
 EFIAPI
-SafeIntnMult (
-  IN  INTN  Multiplicand,
-  IN  INTN  Multiplier,
-  OUT INTN  *Result
-  );
+SafeIntnMult(IN INTN Multiplicand, IN INTN Multiplier, OUT INTN *Result);
 
 /**
   INT64 multiplication
@@ -3003,8 +2659,4 @@ SafeIntnMult (
 **/
 RETURN_STATUS
 EFIAPI
-SafeInt64Mult (
-  IN  INT64  Multiplicand,
-  IN  INT64  Multiplier,
-  OUT INT64  *Result
-  );
+SafeInt64Mult(IN INT64 Multiplicand, IN INT64 Multiplier, OUT INT64 *Result);

@@ -26,10 +26,7 @@
 **/
 EFI_STATUS
 EFIAPI
-HstiLibSetTable (
-  IN VOID   *Hsti,
-  IN UINTN  HstiSize
-  );
+HstiLibSetTable(IN VOID *Hsti, IN UINTN HstiSize);
 
 /**
   Search HSTI table in AIP protocol, and return the data.
@@ -49,12 +46,7 @@ HstiLibSetTable (
 **/
 EFI_STATUS
 EFIAPI
-HstiLibGetTable (
-  IN UINT32  Role,
-  IN CHAR16  *ImplementationID OPTIONAL,
-  OUT VOID   **Hsti,
-  OUT UINTN  *HstiSize
-  );
+HstiLibGetTable(IN UINT32 Role, IN CHAR16 *ImplementationID OPTIONAL, OUT VOID **Hsti, OUT UINTN *HstiSize);
 
 /**
   Set FeaturesVerified in published HSTI table.
@@ -73,12 +65,7 @@ HstiLibGetTable (
 **/
 EFI_STATUS
 EFIAPI
-HstiLibSetFeaturesVerified (
-  IN UINT32  Role,
-  IN CHAR16  *ImplementationID  OPTIONAL,
-  IN UINT32  ByteIndex,
-  IN UINT8   BitMask
-  );
+HstiLibSetFeaturesVerified(IN UINT32 Role, IN CHAR16 *ImplementationID OPTIONAL, IN UINT32 ByteIndex, IN UINT8 BitMask);
 
 /**
   Clear FeaturesVerified in published HSTI table.
@@ -97,12 +84,7 @@ HstiLibSetFeaturesVerified (
 **/
 EFI_STATUS
 EFIAPI
-HstiLibClearFeaturesVerified (
-  IN UINT32  Role,
-  IN CHAR16  *ImplementationID  OPTIONAL,
-  IN UINT32  ByteIndex,
-  IN UINT8   BitMask
-  );
+HstiLibClearFeaturesVerified(IN UINT32 Role, IN CHAR16 *ImplementationID OPTIONAL, IN UINT32 ByteIndex, IN UINT8 BitMask);
 
 /**
   Append ErrorString in published HSTI table.
@@ -120,11 +102,7 @@ HstiLibClearFeaturesVerified (
 **/
 EFI_STATUS
 EFIAPI
-HstiLibAppendErrorString (
-  IN UINT32  Role,
-  IN CHAR16  *ImplementationID  OPTIONAL,
-  IN CHAR16  *ErrorString
-  );
+HstiLibAppendErrorString(IN UINT32 Role, IN CHAR16 *ImplementationID OPTIONAL, IN CHAR16 *ErrorString);
 
 /**
   Set a new ErrorString in published HSTI table.
@@ -142,8 +120,4 @@ HstiLibAppendErrorString (
 **/
 EFI_STATUS
 EFIAPI
-HstiLibSetErrorString (
-  IN UINT32  Role,
-  IN CHAR16  *ImplementationID  OPTIONAL,
-  IN CHAR16  *ErrorString
-  );
+HstiLibSetErrorString(IN UINT32 Role, IN CHAR16 *ImplementationID OPTIONAL, IN CHAR16 *ErrorString);

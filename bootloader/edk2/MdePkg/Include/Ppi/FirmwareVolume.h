@@ -42,14 +42,7 @@ typedef struct _EFI_PEI_FIRMWARE_VOLUME_PPI EFI_PEI_FIRMWARE_VOLUME_PPI;
   @retval EFI_VOLUME_CORRUPTED  Volume was corrupt.
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_PEI_FV_PROCESS_FV)(
-  IN  CONST  EFI_PEI_FIRMWARE_VOLUME_PPI *This,
-  IN  VOID                               *Buffer,
-  IN  UINTN                              BufferSize,
-  OUT EFI_PEI_FV_HANDLE                  *FvHandle
-  );
+typedef EFI_STATUS(EFIAPI *EFI_PEI_FV_PROCESS_FV)(IN CONST EFI_PEI_FIRMWARE_VOLUME_PPI *This, IN VOID *Buffer, IN UINTN BufferSize, OUT EFI_PEI_FV_HANDLE *FvHandle);
 
 /**
   Finds the next file of the specified type.
@@ -73,14 +66,7 @@ EFI_STATUS
   @retval EFI_NOT_FOUND The file was not found. FileHandle contains NULL.
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_PEI_FV_FIND_FILE_TYPE)(
-  IN     CONST EFI_PEI_FIRMWARE_VOLUME_PPI   *This,
-  IN     EFI_FV_FILETYPE                     SearchType,
-  IN     EFI_PEI_FV_HANDLE                   FvHandle,
-  IN OUT EFI_PEI_FILE_HANDLE                 *FileHandle
-  );
+typedef EFI_STATUS(EFIAPI *EFI_PEI_FV_FIND_FILE_TYPE)(IN CONST EFI_PEI_FIRMWARE_VOLUME_PPI *This, IN EFI_FV_FILETYPE SearchType, IN EFI_PEI_FV_HANDLE FvHandle, IN OUT EFI_PEI_FILE_HANDLE *FileHandle);
 
 /**
   Find a file within a volume by its name.
@@ -107,14 +93,7 @@ EFI_STATUS
 
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_PEI_FV_FIND_FILE_NAME)(
-  IN  CONST  EFI_PEI_FIRMWARE_VOLUME_PPI *This,
-  IN  CONST  EFI_GUID                    *FileName,
-  IN  EFI_PEI_FV_HANDLE                  *FvHandle,
-  OUT EFI_PEI_FILE_HANDLE                *FileHandle
-  );
+typedef EFI_STATUS(EFIAPI *EFI_PEI_FV_FIND_FILE_NAME)(IN CONST EFI_PEI_FIRMWARE_VOLUME_PPI *This, IN CONST EFI_GUID *FileName, IN EFI_PEI_FV_HANDLE *FvHandle, OUT EFI_PEI_FILE_HANDLE *FileHandle);
 
 /**
   Returns information about a specific file.
@@ -135,13 +114,7 @@ EFI_STATUS
   @retval EFI_INVALID_PARAMETER   If FileInfo is NULL.
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_PEI_FV_GET_FILE_INFO)(
-  IN  CONST EFI_PEI_FIRMWARE_VOLUME_PPI   *This,
-  IN  EFI_PEI_FILE_HANDLE                 FileHandle,
-  OUT EFI_FV_FILE_INFO                    *FileInfo
-  );
+typedef EFI_STATUS(EFIAPI *EFI_PEI_FV_GET_FILE_INFO)(IN CONST EFI_PEI_FIRMWARE_VOLUME_PPI *This, IN EFI_PEI_FILE_HANDLE FileHandle, OUT EFI_FV_FILE_INFO *FileInfo);
 
 /**
   Returns information about a specific file.
@@ -162,13 +135,7 @@ EFI_STATUS
   @retval EFI_INVALID_PARAMETER   If FileInfo is NULL.
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_PEI_FV_GET_FILE_INFO2)(
-  IN  CONST EFI_PEI_FIRMWARE_VOLUME_PPI   *This,
-  IN  EFI_PEI_FILE_HANDLE                 FileHandle,
-  OUT EFI_FV_FILE_INFO2                   *FileInfo
-  );
+typedef EFI_STATUS(EFIAPI *EFI_PEI_FV_GET_FILE_INFO2)(IN CONST EFI_PEI_FIRMWARE_VOLUME_PPI *This, IN EFI_PEI_FILE_HANDLE FileHandle, OUT EFI_FV_FILE_INFO2 *FileInfo);
 
 /**
   This function returns information about the firmware volume.
@@ -184,13 +151,7 @@ EFI_STATUS
                                   firmware volume or VolumeInfo is NULL.
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_PEI_FV_GET_INFO)(
-  IN  CONST  EFI_PEI_FIRMWARE_VOLUME_PPI   *This,
-  IN  EFI_PEI_FV_HANDLE                    FvHandle,
-  OUT EFI_FV_INFO                          *VolumeInfo
-  );
+typedef EFI_STATUS(EFIAPI *EFI_PEI_FV_GET_INFO)(IN CONST EFI_PEI_FIRMWARE_VOLUME_PPI *This, IN EFI_PEI_FV_HANDLE FvHandle, OUT EFI_FV_INFO *VolumeInfo);
 
 /**
   Find the next matching section in the firmware file.
@@ -211,14 +172,7 @@ EFI_STATUS
   @retval EFI_NOT_FOUND   Section of the specified type was not
                           found. SectionData contains NULL.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_PEI_FV_FIND_SECTION)(
-  IN  CONST EFI_PEI_FIRMWARE_VOLUME_PPI    *This,
-  IN  EFI_SECTION_TYPE                     SearchType,
-  IN  EFI_PEI_FILE_HANDLE                  FileHandle,
-  OUT VOID                                 **SectionData
-  );
+typedef EFI_STATUS(EFIAPI *EFI_PEI_FV_FIND_SECTION)(IN CONST EFI_PEI_FIRMWARE_VOLUME_PPI *This, IN EFI_SECTION_TYPE SearchType, IN EFI_PEI_FILE_HANDLE FileHandle, OUT VOID **SectionData);
 
 /**
   Find the next matching section in the firmware file.
@@ -243,40 +197,32 @@ EFI_STATUS
   @retval EFI_NOT_FOUND   Section of the specified type was not
                           found. SectionData contains NULL.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_PEI_FV_FIND_SECTION2)(
-  IN  CONST EFI_PEI_FIRMWARE_VOLUME_PPI    *This,
-  IN  EFI_SECTION_TYPE                     SearchType,
-  IN  UINTN                                SearchInstance,
-  IN  EFI_PEI_FILE_HANDLE                  FileHandle,
-  OUT VOID                                 **SectionData,
-  OUT UINT32                               *AuthenticationStatus
-  );
+typedef EFI_STATUS(EFIAPI *EFI_PEI_FV_FIND_SECTION2)(IN CONST EFI_PEI_FIRMWARE_VOLUME_PPI *This, IN EFI_SECTION_TYPE SearchType, IN UINTN SearchInstance, IN EFI_PEI_FILE_HANDLE FileHandle, OUT VOID **SectionData, OUT UINT32 *AuthenticationStatus);
 
-#define EFI_PEI_FIRMWARE_VOLUME_PPI_SIGNATURE  SIGNATURE_32 ('P', 'F', 'V', 'P')
-#define EFI_PEI_FIRMWARE_VOLUME_PPI_REVISION   0x00010030
+#define EFI_PEI_FIRMWARE_VOLUME_PPI_SIGNATURE SIGNATURE_32('P', 'F', 'V', 'P')
+#define EFI_PEI_FIRMWARE_VOLUME_PPI_REVISION  0x00010030
 
 ///
 /// This PPI provides functions for accessing a memory-mapped firmware volume of a specific format.
 ///
-struct _EFI_PEI_FIRMWARE_VOLUME_PPI {
-  EFI_PEI_FV_PROCESS_FV        ProcessVolume;
-  EFI_PEI_FV_FIND_FILE_TYPE    FindFileByType;
-  EFI_PEI_FV_FIND_FILE_NAME    FindFileByName;
-  EFI_PEI_FV_GET_FILE_INFO     GetFileInfo;
-  EFI_PEI_FV_GET_INFO          GetVolumeInfo;
-  EFI_PEI_FV_FIND_SECTION      FindSectionByType;
-  EFI_PEI_FV_GET_FILE_INFO2    GetFileInfo2;
-  EFI_PEI_FV_FIND_SECTION2     FindSectionByType2;
-  ///
-  /// Signature is used to keep backward-compatibility, set to {'P','F','V','P'}.
-  ///
-  UINT32                       Signature;
-  ///
-  /// Revision for further extension.
-  ///
-  UINT32                       Revision;
+struct _EFI_PEI_FIRMWARE_VOLUME_PPI
+{
+    EFI_PEI_FV_PROCESS_FV     ProcessVolume;
+    EFI_PEI_FV_FIND_FILE_TYPE FindFileByType;
+    EFI_PEI_FV_FIND_FILE_NAME FindFileByName;
+    EFI_PEI_FV_GET_FILE_INFO  GetFileInfo;
+    EFI_PEI_FV_GET_INFO       GetVolumeInfo;
+    EFI_PEI_FV_FIND_SECTION   FindSectionByType;
+    EFI_PEI_FV_GET_FILE_INFO2 GetFileInfo2;
+    EFI_PEI_FV_FIND_SECTION2  FindSectionByType2;
+    ///
+    /// Signature is used to keep backward-compatibility, set to {'P','F','V','P'}.
+    ///
+    UINT32 Signature;
+    ///
+    /// Revision for further extension.
+    ///
+    UINT32 Revision;
 };
 
-extern EFI_GUID  gEfiPeiFirmwareVolumePpiGuid;
+extern EFI_GUID gEfiPeiFirmwareVolumePpiGuid;

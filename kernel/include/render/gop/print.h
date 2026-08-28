@@ -35,4 +35,4 @@
 #define CODE_MACRO      0xF38BA8
 #define CODE_SYMBOL     0xBAC2DE
 
-VOID KPrint(const CHAR16 *msg, UINT32 x, UINT32 BaseLine, UINT32 color, ...);
+VOID GOPKPrint(CONST CHAR16 *msg, UINT32 x, UINT32 BaseLine, UINT32 color, ...);

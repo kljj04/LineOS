@@ -21,13 +21,13 @@
 #pragma once
 
 /* Error codes: informative error codes */
-#define FDT_ERR_NOTFOUND  1
+#define FDT_ERR_NOTFOUND 1
 /* FDT_ERR_NOTFOUND: The requested node or property does not exist */
-#define FDT_ERR_EXISTS  2
+#define FDT_ERR_EXISTS 2
 
 /* FDT_ERR_EXISTS: Attempted to create a node or property which
  * already exists */
-#define FDT_ERR_NOSPACE  3
+#define FDT_ERR_NOSPACE 3
 
 /* FDT_ERR_NOSPACE: Operation needed to expand the device
  * tree, but its buffer did not have sufficient space to
@@ -35,51 +35,51 @@
  * device tree to a buffer with more space. */
 
 /* Error codes: codes for bad parameters */
-#define FDT_ERR_BADOFFSET  4
+#define FDT_ERR_BADOFFSET 4
 
 /* FDT_ERR_BADOFFSET: Function was passed a structure block
  * offset which is out-of-bounds, or which points to an
  * unsuitable part of the structure for the operation. */
-#define FDT_ERR_BADPATH  5
+#define FDT_ERR_BADPATH 5
 
 /* FDT_ERR_BADPATH: Function was passed a badly formatted path
  * (e.g. missing a leading / for a function which requires an
  * absolute path) */
-#define FDT_ERR_BADPHANDLE  6
+#define FDT_ERR_BADPHANDLE 6
 
 /* FDT_ERR_BADPHANDLE: Function was passed an invalid phandle.
  * This can be caused either by an invalid phandle property
  * length, or the phandle value was either 0 or -1, which are
  * not permitted. */
-#define FDT_ERR_BADSTATE  7
+#define FDT_ERR_BADSTATE 7
 
 /* FDT_ERR_BADSTATE: Function was passed an incomplete device
  * tree created by the sequential-write functions, which is
  * not sufficiently complete for the requested operation. */
 
 /* Error codes: codes for bad device tree blobs */
-#define FDT_ERR_TRUNCATED  8
+#define FDT_ERR_TRUNCATED 8
 
 /* FDT_ERR_TRUNCATED: FDT or a sub-block is improperly
  * terminated (overflows, goes outside allowed bounds, or
  * isn't properly terminated).  */
-#define FDT_ERR_BADMAGIC  9
+#define FDT_ERR_BADMAGIC 9
 
 /* FDT_ERR_BADMAGIC: Given "device tree" appears not to be a
  * device tree at all - it is missing the flattened device
  * tree magic number. */
-#define FDT_ERR_BADVERSION  10
+#define FDT_ERR_BADVERSION 10
 
 /* FDT_ERR_BADVERSION: Given device tree has a version which
  * can't be handled by the requested operation.  For
  * read-write functions, this may mean that fdt_open_into() is
  * required to convert the tree to the expected version. */
-#define FDT_ERR_BADSTRUCTURE  11
+#define FDT_ERR_BADSTRUCTURE 11
 
 /* FDT_ERR_BADSTRUCTURE: Given device tree has a corrupt
  * structure block or other serious error (e.g. misnested
  * nodes, or subnodes preceding properties). */
-#define FDT_ERR_BADLAYOUT  12
+#define FDT_ERR_BADLAYOUT 12
 
 /* FDT_ERR_BADLAYOUT: For read-write functions, the given
  * device tree has it's sub-blocks in an order that the
@@ -88,46 +88,46 @@
  * into a form suitable for the read-write operations. */
 
 /* "Can't happen" error indicating a bug in libfdt */
-#define FDT_ERR_INTERNAL  13
+#define FDT_ERR_INTERNAL 13
 
 /* FDT_ERR_INTERNAL: libfdt has failed an internal assertion.
  * Should never be returned, if it is, it indicates a bug in
  * libfdt itself. */
 
 /* Errors in device tree content */
-#define FDT_ERR_BADNCELLS  14
+#define FDT_ERR_BADNCELLS 14
 
 /* FDT_ERR_BADNCELLS: Device tree has a #address-cells, #size-cells
  * or similar property with a bad format or value */
 
-#define FDT_ERR_BADVALUE  15
+#define FDT_ERR_BADVALUE 15
 
 /* FDT_ERR_BADVALUE: Device tree has a property with an unexpected
  * value. For example: a property expected to contain a string list
  * is not NUL-terminated within the length of its value. */
 
-#define FDT_ERR_BADOVERLAY  16
+#define FDT_ERR_BADOVERLAY 16
 
 /* FDT_ERR_BADOVERLAY: The device tree overlay, while
  * correctly structured, cannot be applied due to some
  * unexpected or missing value, property or node. */
 
-#define FDT_ERR_NOPHANDLES  17
+#define FDT_ERR_NOPHANDLES 17
 
 /* FDT_ERR_NOPHANDLES: The device tree doesn't have any
  * phandle available anymore without causing an overflow */
 
-#define FDT_ERR_BADFLAGS  18
+#define FDT_ERR_BADFLAGS 18
 
 /* FDT_ERR_BADFLAGS: The function was passed a flags field that
  * contains invalid flags or an invalid combination of flags. */
 
-#define FDT_ERR_ALIGNMENT  19
+#define FDT_ERR_ALIGNMENT 19
 
 /* FDT_ERR_ALIGNMENT: The device tree base address is not 8-byte
  * aligned. */
 
-#define FDT_ERR_MAX  19
+#define FDT_ERR_MAX 19
 
 /**
   Flattened Device Tree definition
@@ -137,77 +137,72 @@
   provided by this library may be called to convert data between
   big-endian and little-endian.
 **/
-typedef struct {
-  UINT32    Magic;               /* magic word FDT_MAGIC */
-  UINT32    TotalSize;           /* total size of DT block */
-  UINT32    OffsetDtStruct;      /* offset to structure */
-  UINT32    OffsetDtStrings;     /* offset to strings */
-  UINT32    OffsetMemRsvmap;     /* offset to memory reserve map */
-  UINT32    Version;             /* format version */
-  UINT32    LastCompVersion;     /* last compatible version */
+typedef struct
+{
+    UINT32 Magic;           /* magic word FDT_MAGIC */
+    UINT32 TotalSize;       /* total size of DT block */
+    UINT32 OffsetDtStruct;  /* offset to structure */
+    UINT32 OffsetDtStrings; /* offset to strings */
+    UINT32 OffsetMemRsvmap; /* offset to memory reserve map */
+    UINT32 Version;         /* format version */
+    UINT32 LastCompVersion; /* last compatible version */
 
-  /* version 2 fields below */
-  UINT32    BootCpuidPhys;       /* Which physical CPU id we're
-                                    booting on */
-  /* version 3 fields below */
-  UINT32    SizeDtStrings;       /* size of the strings block */
+    /* version 2 fields below */
+    UINT32 BootCpuidPhys; /* Which physical CPU id we're
+                             booting on */
+    /* version 3 fields below */
+    UINT32 SizeDtStrings; /* size of the strings block */
 
-  /* version 17 fields below */
-  UINT32    SizeDtStruct;        /* size of the structure block */
+    /* version 17 fields below */
+    UINT32 SizeDtStruct; /* size of the structure block */
 } FDT_HEADER;
 
-typedef struct {
-  UINT64    Address;
-  UINT64    Size;
+typedef struct
+{
+    UINT64 Address;
+    UINT64 Size;
 } FDT_RESERVE_ENTRY;
 
-typedef struct {
-  UINT32    Tag;
-  CHAR8     Name[];
+typedef struct
+{
+    UINT32 Tag;
+    CHAR8  Name[];
 } FDT_NODE_HEADER;
 
-typedef struct {
-  UINT32    Tag;
-  UINT32    Length;
-  UINT32    NameOffset;
-  CHAR8     Data[];
+typedef struct
+{
+    UINT32 Tag;
+    UINT32 Length;
+    UINT32 NameOffset;
+    CHAR8  Data[];
 } FDT_PROPERTY;
 
 #ifndef FDT_TAGSIZE
-#define FDT_TAGSIZE  sizeof(UINT32)
+#define FDT_TAGSIZE sizeof(UINT32)
 #endif
 #ifndef FDT_MAX_NCELLS
-#define FDT_MAX_NCELLS  4
+#define FDT_MAX_NCELLS 4
 #endif
 
-#define FdtGetHeader(Fdt, Field) \
-  (Fdt32ToCpu (((const FDT_HEADER *)(Fdt))->Field))
-#define FdtMagic(Fdt)            (FdtGetHeader ((Fdt), Magic))
-#define FdtTotalSize(Fdt)        (FdtGetHeader ((Fdt), TotalSize))
-#define FdtOffsetDtStruct(Fdt)   (FdtGetHeader ((Fdt), OffsetDtStruct))
-#define FdtOffsetDtStrings(Fdt)  (FdtGetHeader ((Fdt), OffsetDtStrings))
-#define FdtOffsetMemRsvmap(Fdt)  (FdtGetHeader ((Fdt), OffsetMemRsvmap))
-#define FdtVersion(Fdt)          (FdtGetHeader ((Fdt), Version))
-#define FdtLastCompVersion(Fdt)  (FdtGetHeader ((Fdt), LastCompVersion))
-#define FdtBootCpuidPhys(Fdt)    (FdtGetHeader ((Fdt), BootCpuidPhys))
-#define FdtSizeDtStrings(Fdt)    (FdtGetHeader ((Fdt), SizeDtStrings))
-#define FdtSizeDtStruct(Fdt)     (FdtGetHeader ((Fdt), SizeDtStruct))
+#define FdtGetHeader(Fdt, Field) (Fdt32ToCpu(((const FDT_HEADER *) (Fdt))->Field))
+#define FdtMagic(Fdt)            (FdtGetHeader((Fdt), Magic))
+#define FdtTotalSize(Fdt)        (FdtGetHeader((Fdt), TotalSize))
+#define FdtOffsetDtStruct(Fdt)   (FdtGetHeader((Fdt), OffsetDtStruct))
+#define FdtOffsetDtStrings(Fdt)  (FdtGetHeader((Fdt), OffsetDtStrings))
+#define FdtOffsetMemRsvmap(Fdt)  (FdtGetHeader((Fdt), OffsetMemRsvmap))
+#define FdtVersion(Fdt)          (FdtGetHeader((Fdt), Version))
+#define FdtLastCompVersion(Fdt)  (FdtGetHeader((Fdt), LastCompVersion))
+#define FdtBootCpuidPhys(Fdt)    (FdtGetHeader((Fdt), BootCpuidPhys))
+#define FdtSizeDtStrings(Fdt)    (FdtGetHeader((Fdt), SizeDtStrings))
+#define FdtSizeDtStruct(Fdt)     (FdtGetHeader((Fdt), SizeDtStruct))
 
-#define FdtForEachSubnode(Node, Fdt, Parent) \
-  for (Node = FdtFirstSubnode (Fdt, Parent); \
-       Node >= 0;                            \
-       Node = FdtNextSubnode (Fdt, Node))
+#define FdtForEachSubnode(Node, Fdt, Parent) for (Node = FdtFirstSubnode(Fdt, Parent); Node >= 0; Node = FdtNextSubnode(Fdt, Node))
 
-#define FdtSetPropString(Fdt, NodeOffset, Name, String) \
-  FdtSetProp ((Fdt), (NodeOffset), (Name), (String), AsciiStrLen (String) + 1)
+#define FdtSetPropString(Fdt, NodeOffset, Name, String) FdtSetProp((Fdt), (NodeOffset), (Name), (String), AsciiStrLen(String) + 1)
 
-#define FdtSetPropEmpty(Fdt, NodeOffset, Name) \
-  FdtSetProp ((Fdt), (NodeOffset), (Name), NULL, 0)
+#define FdtSetPropEmpty(Fdt, NodeOffset, Name) FdtSetProp((Fdt), (NodeOffset), (Name), NULL, 0)
 
-#define FdtForEachPropertyOffset(Property, Fdt, Node)   \
-  for (Property = FdtFirstPropertyOffset(Fdt, Node);    \
-       Property >= 0;                                   \
-       Property = FdtNextPropertyOffset(Fdt, Property))
+#define FdtForEachPropertyOffset(Property, Fdt, Node) for (Property = FdtFirstPropertyOffset(Fdt, Node); Property >= 0; Property = FdtNextPropertyOffset(Fdt, Property))
 
 /**
   Convert UINT16 data of the FDT blob to little-endian
@@ -219,9 +214,7 @@ typedef struct {
 **/
 UINT16
 EFIAPI
-Fdt16ToCpu (
-  IN UINT16  Value
-  );
+Fdt16ToCpu(IN UINT16 Value);
 
 /**
   Convert UINT16 data to big-endian for aligned with the FDT blob
@@ -233,9 +226,7 @@ Fdt16ToCpu (
 **/
 UINT16
 EFIAPI
-CpuToFdt16 (
-  IN UINT16  Value
-  );
+CpuToFdt16(IN UINT16 Value);
 
 /**
   Convert UINT32 data of the FDT blob to little-endian
@@ -247,9 +238,7 @@ CpuToFdt16 (
 **/
 UINT32
 EFIAPI
-Fdt32ToCpu (
-  IN UINT32  Value
-  );
+Fdt32ToCpu(IN UINT32 Value);
 
 /**
   Convert UINT32 data to big-endian for aligned with the FDT blob
@@ -261,9 +250,7 @@ Fdt32ToCpu (
 **/
 UINT32
 EFIAPI
-CpuToFdt32 (
-  IN UINT32  Value
-  );
+CpuToFdt32(IN UINT32 Value);
 
 /**
   Convert UINT64 data of the FDT blob to little-endian
@@ -275,9 +262,7 @@ CpuToFdt32 (
 **/
 UINT64
 EFIAPI
-Fdt64ToCpu (
-  IN UINT64  Value
-  );
+Fdt64ToCpu(IN UINT64 Value);
 
 /**
   Convert UINT64 data to big-endian for aligned with the FDT blob
@@ -289,9 +274,7 @@ Fdt64ToCpu (
 **/
 UINT64
 EFIAPI
-CpuToFdt64 (
-  IN UINT64  Value
-  );
+CpuToFdt64(IN UINT64 Value);
 
 /**
   Verify the header of the Flattened Device Tree
@@ -303,9 +286,7 @@ CpuToFdt64 (
 **/
 INT32
 EFIAPI
-FdtCheckHeader (
-  IN CONST VOID  *Fdt
-  );
+FdtCheckHeader(IN CONST VOID *Fdt);
 
 /**
   Unpack FDT blob into new buffer
@@ -319,11 +300,7 @@ FdtCheckHeader (
  **/
 INT32
 EFIAPI
-FdtOpenInto (
-  IN  CONST VOID  *Fdt,
-  OUT VOID        *Buffer,
-  IN  INT32       BufferSize
-  );
+FdtOpenInto(IN CONST VOID *Fdt, OUT VOID *Buffer, IN INT32 BufferSize);
 
 /**
   Pack FDT blob in place.
@@ -334,9 +311,7 @@ FdtOpenInto (
 **/
 INT32
 EFIAPI
-FdtPack (
-  IN OUT VOID  *Fdt
-  );
+FdtPack(IN OUT VOID *Fdt);
 
 /**
   Create a empty Flattened Device Tree.
@@ -349,10 +324,7 @@ FdtPack (
 **/
 INT32
 EFIAPI
-FdtCreateEmptyTree (
-  IN VOID    *Buffer,
-  IN UINT32  BufferSize
-  );
+FdtCreateEmptyTree(IN VOID *Buffer, IN UINT32 BufferSize);
 
 /**
   Returns a pointer to the node at a given offset.
@@ -363,13 +335,7 @@ FdtCreateEmptyTree (
 
   @return pointer to node.
 **/
-CONST VOID *
-EFIAPI
-FdtOffsetPointer (
-  IN CONST VOID  *Fdt,
-  IN INT32       Offset,
-  IN UINT32      Length
-  );
+CONST VOID *EFIAPI FdtOffsetPointer(IN CONST VOID *Fdt, IN INT32 Offset, IN UINT32 Length);
 
 /**
   Returns a offset of next node from the given node.
@@ -383,11 +349,7 @@ FdtOffsetPointer (
 **/
 INT32
 EFIAPI
-FdtNextNode (
-  IN CONST VOID  *Fdt,
-  IN INT32       Offset,
-  IN INT32       *Depth
-  );
+FdtNextNode(IN CONST VOID *Fdt, IN INT32 Offset, IN INT32 *Depth);
 
 /**
   Returns a offset of first node under the given node.
@@ -400,10 +362,7 @@ FdtNextNode (
 **/
 INT32
 EFIAPI
-FdtFirstSubnode (
-  IN CONST VOID  *Fdt,
-  IN INT32       Offset
-  );
+FdtFirstSubnode(IN CONST VOID *Fdt, IN INT32 Offset);
 
 /**
   Returns a offset of next node from the given node.
@@ -416,10 +375,7 @@ FdtFirstSubnode (
 **/
 INT32
 EFIAPI
-FdtNextSubnode (
-  IN CONST VOID  *Fdt,
-  IN INT32       Offset
-  );
+FdtNextSubnode(IN CONST VOID *Fdt, IN INT32 Offset);
 
 /**
   Returns a offset of first node which includes the given name.
@@ -434,12 +390,7 @@ FdtNextSubnode (
 **/
 INT32
 EFIAPI
-FdtSubnodeOffsetNameLen (
-  IN CONST VOID   *Fdt,
-  IN INT32        ParentOffset,
-  IN CONST CHAR8  *Name,
-  IN INT32        NameLength
-  );
+FdtSubnodeOffsetNameLen(IN CONST VOID *Fdt, IN INT32 ParentOffset, IN CONST CHAR8 *Name, IN INT32 NameLength);
 
 /**
   Returns a offset of first node which matches the given name.
@@ -453,11 +404,7 @@ FdtSubnodeOffsetNameLen (
  **/
 INT32
 EFIAPI
-FdtSubnodeOffset (
-  IN CONST VOID   *Fdt,
-  IN INT32        ParentOffset,
-  IN CONST CHAR8  *Name
-  );
+FdtSubnodeOffset(IN CONST VOID *Fdt, IN INT32 ParentOffset, IN CONST CHAR8 *Name);
 
 /**
   Returns the number of memory reserve map entries.
@@ -467,11 +414,7 @@ FdtSubnodeOffset (
   @return The number of entries in the reserve map.
 
 **/
-INTN
-EFIAPI
-FdtGetNumberOfReserveMapEntries (
-  IN CONST VOID  *Fdt
-  );
+INTN EFIAPI FdtGetNumberOfReserveMapEntries(IN CONST VOID *Fdt);
 
 /**
   Returns a memory reserve map entry.
@@ -484,14 +427,7 @@ FdtGetNumberOfReserveMapEntries (
   @return 0 on success, or negative error code.
 
 **/
-INTN
-EFIAPI
-FdtGetReserveMapEntry (
-  IN CONST VOID  *Fdt,
-  IN INTN        Index,
-  OUT UINT64     *Addr,
-  OUT UINT64     *Size
-  );
+INTN EFIAPI FdtGetReserveMapEntry(IN CONST VOID *Fdt, IN INTN Index, OUT UINT64 *Addr, OUT UINT64 *Size);
 
 /**
   Find the parent of a given node.
@@ -503,10 +439,7 @@ FdtGetReserveMapEntry (
 **/
 INT32
 EFIAPI
-FdtParentOffset (
-  IN CONST VOID  *Fdt,
-  IN INT32       NodeOffset
-  );
+FdtParentOffset(IN CONST VOID *Fdt, IN INT32 NodeOffset);
 
 /**
   Returns a offset of first node which includes the given property name and value.
@@ -522,13 +455,7 @@ FdtParentOffset (
 **/
 INT32
 EFIAPI
-FdtNodeOffsetByPropValue (
-  IN CONST VOID   *Fdt,
-  IN INT32        StartOffset,
-  IN CONST CHAR8  *PropertyName,
-  IN CONST VOID   *PropertyValue,
-  IN INT32        PropertyLength
-  );
+FdtNodeOffsetByPropValue(IN CONST VOID *Fdt, IN INT32 StartOffset, IN CONST CHAR8 *PropertyName, IN CONST VOID *PropertyValue, IN INT32 PropertyLength);
 
 /**
   Returns a offset of first node which includes the given property name and value.
@@ -540,10 +467,7 @@ FdtNodeOffsetByPropValue (
 **/
 INT32
 EFIAPI
-FdtNodeOffsetByPhandle (
-  IN CONST VOID  *Fdt,
-  IN UINT32      Phandle
-  );
+FdtNodeOffsetByPhandle(IN CONST VOID *Fdt, IN UINT32 Phandle);
 
 /**
   Look for a string in  a stringlist
@@ -556,11 +480,7 @@ FdtNodeOffsetByPhandle (
 **/
 INT32
 EFIAPI
-FdtStringListContains (
-  IN CONST CHAR8  *StringList,
-  IN INT32        ListLength,
-  IN CONST CHAR8  *String
-  );
+FdtStringListContains(IN CONST CHAR8 *StringList, IN INT32 ListLength, IN CONST CHAR8 *String);
 
 /**
   Returns the number of strings in the given property.
@@ -576,11 +496,7 @@ FdtStringListContains (
 **/
 INT32
 EFIAPI
-FdtStringListCount (
-  IN CONST VOID   *Fdt,
-  IN INT32        NodeOffset,
-  IN CONST CHAR8  *Property
-  );
+FdtStringListCount(IN CONST VOID *Fdt, IN INT32 NodeOffset, IN CONST CHAR8 *Property);
 
 /**
   Searches for a string in a string list property and returns its index.
@@ -598,12 +514,7 @@ FdtStringListCount (
 **/
 INT32
 EFIAPI
-FdtStringListSearch (
-  IN CONST VOID   *Fdt,
-  IN INT32        NodeOffset,
-  IN CONST CHAR8  *Property,
-  IN CONST CHAR8  *String
-  );
+FdtStringListSearch(IN CONST VOID *Fdt, IN INT32 NodeOffset, IN CONST CHAR8 *Property, IN CONST CHAR8 *String);
 
 /**
   Returns a property with the given name from the given node.
@@ -617,14 +528,7 @@ FdtStringListSearch (
           come from FDT blob, it's encoding with big-endian.
 
 **/
-CONST FDT_PROPERTY *
-EFIAPI
-FdtGetProperty (
-  IN CONST VOID   *Fdt,
-  IN INT32        NodeOffset,
-  IN CONST CHAR8  *Name,
-  IN INT32        *Length
-  );
+CONST FDT_PROPERTY *EFIAPI FdtGetProperty(IN CONST VOID *Fdt, IN INT32 NodeOffset, IN CONST CHAR8 *Name, IN INT32 *Length);
 
 /**
   Returns a property with the given name from the given node.
@@ -638,14 +542,7 @@ FdtGetProperty (
           come from FDT blob, it's encoding with big-endian.
 
 **/
-FDT_PROPERTY *
-EFIAPI
-FdtGetPropertyW (
-  IN CONST VOID   *Fdt,
-  IN INT32        NodeOffset,
-  IN CONST CHAR8  *Name,
-  IN INT32        *Length
-  );
+FDT_PROPERTY *EFIAPI FdtGetPropertyW(IN CONST VOID *Fdt, IN INT32 NodeOffset, IN CONST CHAR8 *Name, IN INT32 *Length);
 
 /**
   Returns the value of a given property.
@@ -660,14 +557,7 @@ FdtGetPropertyW (
           NULL on error, with error-code stored at Length (if non-NULL).
 
 **/
-CONST VOID *
-EFIAPI
-FdtGetProp (
-  IN CONST VOID   *Fdt,
-  IN INT32        NodeOffset,
-  IN CONST CHAR8  *Name,
-  IN INT32        *Length
-  );
+CONST VOID *EFIAPI FdtGetProp(IN CONST VOID *Fdt, IN INT32 NodeOffset, IN CONST CHAR8 *Name, IN INT32 *Length);
 
 /**
   Returns a pointer to a node mapped to an alias matching a substring.
@@ -680,13 +570,7 @@ FdtGetProp (
           or NULL if alias not found.
 
 **/
-CONST CHAR8 *
-EFIAPI
-FdtGetAliasNameLen (
-  IN CONST VOID   *Fdt,
-  IN CONST CHAR8  *Name,
-  IN INT32        Length
-  );
+CONST CHAR8 *EFIAPI FdtGetAliasNameLen(IN CONST VOID *Fdt, IN CONST CHAR8 *Name, IN INT32 Length);
 
 /**
   Returns a offset of first property in the given node.
@@ -699,10 +583,7 @@ FdtGetAliasNameLen (
 **/
 INT32
 EFIAPI
-FdtFirstPropertyOffset (
-  IN CONST VOID  *Fdt,
-  IN INT32       NodeOffset
-  );
+FdtFirstPropertyOffset(IN CONST VOID *Fdt, IN INT32 NodeOffset);
 
 /**
   Returns a offset of next property from the given property.
@@ -715,10 +596,7 @@ FdtFirstPropertyOffset (
 **/
 INT32
 EFIAPI
-FdtNextPropertyOffset (
-  IN CONST VOID  *Fdt,
-  IN INT32       Offset
-  );
+FdtNextPropertyOffset(IN CONST VOID *Fdt, IN INT32 Offset);
 
 /**
   Returns a property from the given offset of the property.
@@ -730,13 +608,7 @@ FdtNextPropertyOffset (
   @return The property to the structure of the given property offset.
 
 **/
-CONST FDT_PROPERTY *
-EFIAPI
-FdtGetPropertyByOffset (
-  IN CONST VOID  *Fdt,
-  IN INT32       Offset,
-  IN INT32       *Length
-  );
+CONST FDT_PROPERTY *EFIAPI FdtGetPropertyByOffset(IN CONST VOID *Fdt, IN INT32 Offset, IN INT32 *Length);
 
 /**
   Returns a string by the given string offset.
@@ -748,13 +620,7 @@ FdtGetPropertyByOffset (
   @return The string to the given string offset.
 
 **/
-CONST CHAR8 *
-EFIAPI
-FdtGetString (
-  IN CONST VOID  *Fdt,
-  IN INT32       StrOffset,
-  IN INT32       *Length        OPTIONAL
-  );
+CONST CHAR8 *EFIAPI FdtGetString(IN CONST VOID *Fdt, IN INT32 StrOffset, IN INT32 *Length OPTIONAL);
 
 /**
   Add a new node to the FDT.
@@ -768,11 +634,7 @@ FdtGetString (
 **/
 INT32
 EFIAPI
-FdtAddSubnode (
-  IN VOID         *Fdt,
-  IN INT32        ParentOffset,
-  IN CONST CHAR8  *Name
-  );
+FdtAddSubnode(IN VOID *Fdt, IN INT32 ParentOffset, IN CONST CHAR8 *Name);
 
 /**
   Delete a node (subtree)
@@ -785,10 +647,7 @@ FdtAddSubnode (
  **/
 INT32
 EFIAPI
-FdtDelNode (
-  IN VOID   *Fdt,
-  IN INT32  NodeOffset
-  );
+FdtDelNode(IN VOID *Fdt, IN INT32 NodeOffset);
 
 /**
   Add or modify a property in the given node.
@@ -804,13 +663,7 @@ FdtDelNode (
 **/
 INT32
 EFIAPI
-FdtSetProp (
-  IN VOID         *Fdt,
-  IN INT32        NodeOffset,
-  IN CONST CHAR8  *Name,
-  IN CONST VOID   *Value,
-  IN UINT32       Length
-  );
+FdtSetProp(IN VOID *Fdt, IN INT32 NodeOffset, IN CONST CHAR8 *Name, IN CONST VOID *Value, IN UINT32 Length);
 
 /**
   Set a property to a 64-bit integer.
@@ -825,12 +678,7 @@ FdtSetProp (
  **/
 INT32
 EFIAPI
-FdtSetPropU64 (
-  IN VOID         *Fdt,
-  IN INT32        NodeOffset,
-  IN CONST CHAR8  *Name,
-  IN UINT64       Value
-  );
+FdtSetPropU64(IN VOID *Fdt, IN INT32 NodeOffset, IN CONST CHAR8 *Name, IN UINT64 Value);
 
 /**
   Append or create a property in the given node.
@@ -846,13 +694,7 @@ FdtSetPropU64 (
  **/
 INT32
 EFIAPI
-FdtAppendProp (
-  IN VOID         *Fdt,
-  IN INT32        NodeOffset,
-  IN CONST CHAR8  *Name,
-  IN CONST VOID   *Value,
-  IN UINT32       Length
-  );
+FdtAppendProp(IN VOID *Fdt, IN INT32 NodeOffset, IN CONST CHAR8 *Name, IN CONST VOID *Value, IN UINT32 Length);
 
 /**
   Delete a property.
@@ -868,11 +710,7 @@ FdtAppendProp (
 
 **/
 INT32
-FdtDelProp (
-  IN OUT VOID         *Fdt,
-  IN     INT32        NodeOffset,
-  IN     CONST CHAR8  *Name
-  );
+FdtDelProp(IN OUT VOID *Fdt, IN INT32 NodeOffset, IN CONST CHAR8 *Name);
 
 /**
   Finds a tree node by substring
@@ -885,11 +723,7 @@ FdtDelProp (
 **/
 INT32
 EFIAPI
-FdtPathOffsetNameLen (
-  IN CONST VOID   *Fdt,
-  IN CONST CHAR8  *Path,
-  IN INT32        NameLength
-  );
+FdtPathOffsetNameLen(IN CONST VOID *Fdt, IN CONST CHAR8 *Path, IN INT32 NameLength);
 
 /**
   Finds a tree node by its full path.
@@ -901,10 +735,7 @@ FdtPathOffsetNameLen (
 **/
 INT32
 EFIAPI
-FdtPathOffset (
-  IN CONST VOID   *Fdt,
-  IN CONST CHAR8  *Path
-  );
+FdtPathOffset(IN CONST VOID *Fdt, IN CONST CHAR8 *Path);
 
 /**
   Returns the name of a given node.
@@ -916,13 +747,7 @@ FdtPathOffset (
   @return The pointer to the node's name.
 
 **/
-CONST CHAR8 *
-EFIAPI
-FdtGetName (
-  IN CONST VOID  *Fdt,
-  IN INT32       NodeOffset,
-  IN INT32       *Length
-  );
+CONST CHAR8 *EFIAPI FdtGetName(IN CONST VOID *Fdt, IN INT32 NodeOffset, IN INT32 *Length);
 
 /**
   Determine the full path of a node.
@@ -936,12 +761,7 @@ FdtGetName (
 **/
 INT32
 EFIAPI
-FdtGetPath (
-  IN CONST VOID  *Fdt,
-  IN INT32       NodeOffset,
-  IN VOID        *Buffer,
-  IN UINT32      BufferSize
-  );
+FdtGetPath(IN CONST VOID *Fdt, IN INT32 NodeOffset, IN VOID *Buffer, IN UINT32 BufferSize);
 
 /**
   FdtNodeDepth() finds the depth of a given node.  The root node
@@ -954,10 +774,7 @@ FdtGetPath (
 **/
 INT32
 EFIAPI
-FdtNodeDepth (
-  IN CONST VOID  *Fdt,
-  IN INT32       NodeOffset
-  );
+FdtNodeDepth(IN CONST VOID *Fdt, IN INT32 NodeOffset);
 
 /**
   Find nodes with a given 'compatible' value.
@@ -970,11 +787,7 @@ FdtNodeDepth (
 **/
 INT32
 EFIAPI
-FdtNodeOffsetByCompatible (
-  IN CONST VOID   *Fdt,
-  IN INT32        StartOffset,
-  IN CONST CHAR8  *Compatible
-  );
+FdtNodeOffsetByCompatible(IN CONST VOID *Fdt, IN INT32 StartOffset, IN CONST CHAR8 *Compatible);
 
 /**
    Retrieve address size for a bus represented in the tree
@@ -986,10 +799,7 @@ FdtNodeOffsetByCompatible (
 **/
 INT32
 EFIAPI
-FdtAddressCells (
-  IN CONST VOID  *Fdt,
-  IN INT32       NodeOffset
-  );
+FdtAddressCells(IN CONST VOID *Fdt, IN INT32 NodeOffset);
 
 /**
    Retrieve address range size for a bus represented in the tree
@@ -1001,10 +811,7 @@ FdtAddressCells (
 **/
 INT32
 EFIAPI
-FdtSizeCells (
-  IN CONST VOID  *Fdt,
-  IN INT32       NodeOffset
-  );
+FdtSizeCells(IN CONST VOID *Fdt, IN INT32 NodeOffset);
 
 /**
   Retrieve the phandle of a given node
@@ -1016,10 +823,7 @@ FdtSizeCells (
 **/
 UINT32
 EFIAPI
-FdtGetPhandle (
-  IN CONST VOID  *Fdt,
-  IN INT32       NodeOffset
-  );
+FdtGetPhandle(IN CONST VOID *Fdt, IN INT32 NodeOffset);
 
 /**
   Find and return the highest phandle in a tree. The value returned in Phandle
@@ -1032,10 +836,7 @@ FdtGetPhandle (
 **/
 INT32
 EFIAPI
-FdtFindMaxPhandle (
-  IN CONST VOID  *Fdt,
-  OUT UINT32     *Phandle
-  );
+FdtFindMaxPhandle(IN CONST VOID *Fdt, OUT UINT32 *Phandle);
 
 /**
   Applies a DT overlay on a base DT.
@@ -1047,13 +848,7 @@ FdtFindMaxPhandle (
 **/
 INT32
 EFIAPI
-FdtOverlayApply (
-  IN OUT VOID  *Fdt,
-  IN     VOID  *Fdto
-  );
+FdtOverlayApply(IN OUT VOID *Fdt, IN VOID *Fdto);
 
 /* Debug functions. */
-CONST CHAR8 *
-FdtStrerror (
-  IN INT32  ErrVal
-  );
+CONST CHAR8 *FdtStrerror(IN INT32 ErrVal);
