@@ -14,7 +14,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 ///
 /// Cache pointer to the SMM Services Table
 ///
-extern EFI_SMM_SYSTEM_TABLE2  *gSmst;
+extern EFI_SMM_SYSTEM_TABLE2 *gSmst;
 
 /**
   This function allows the caller to determine if the driver is executing in
@@ -29,6 +29,4 @@ extern EFI_SMM_SYSTEM_TABLE2  *gSmst;
 **/
 BOOLEAN
 EFIAPI
-InSmm (
-  VOID
-  );
+InSmm(VOID);

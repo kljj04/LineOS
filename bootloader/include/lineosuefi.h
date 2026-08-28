@@ -4,12 +4,12 @@
 
 #pragma once
 
-#include <Uefi.h>
+#include <lineos/typeinfo.h>
 
-extern EFI_SYSTEM_TABLE *UEFISystemTable;
-extern EFI_BOOT_SERVICES *UEFIBootServices;
-extern EFI_HANDLE UEFIImageHandle;
-extern EFI_STATUS LineOSLastWatchdogStatus;
+EXTERN EFI_SYSTEM_TABLE  *UEFISystemTable;
+EXTERN EFI_BOOT_SERVICES *UEFIBootServices;
+EXTERN EFI_HANDLE         UEFIImageHandle;
+EXTERN EFI_STATUS         LineOSLastWatchdogStatus;
 
 BOOLEAN LineOSDisableWatchdog(VOID);
-VOID LineOSHaltWithMessage(CONST CHAR16 *Message, EFI_STATUS Status);
+VOID    LineOSHaltWithMessage(CONST CHAR16 *Message, EFI_STATUS Status);

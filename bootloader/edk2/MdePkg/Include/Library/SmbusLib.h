@@ -23,47 +23,42 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
   @param  Pec             TRUE if Packet Error Checking is enabled.  Otherwise FALSE.
 
 **/
-#define SMBUS_LIB_ADDRESS(SlaveAddress, Command, Length, Pec)  \
-  ( ((Pec) ? BIT22: 0)                  | \
-    (((SlaveAddress) & 0x7f) << 1)      | \
-    (((Command)      & 0xff) << 8)      | \
-    (((Length)       & 0x3f) << 16)       \
-  )
+#define SMBUS_LIB_ADDRESS(SlaveAddress, Command, Length, Pec) (((Pec) ? BIT22 : 0) | (((SlaveAddress) & 0x7f) << 1) | (((Command) & 0xff) << 8) | (((Length) & 0x3f) << 16))
 
 /**
   Macro that returns the SMBUS Slave Address value from an SmBusAddress Parameter value.
 
   @param SmBusAddress   Address that encodes the SMBUS Slave Address, SMBUS Command, SMBUS Data Length, and PEC
 **/
-#define SMBUS_LIB_SLAVE_ADDRESS(SmBusAddress)  (((SmBusAddress) >> 1)  & 0x7f)
+#define SMBUS_LIB_SLAVE_ADDRESS(SmBusAddress) (((SmBusAddress) >> 1) & 0x7f)
 
 /**
   Macro that returns the SMBUS Command value from an SmBusAddress Parameter value.
 
   @param SmBusAddress   Address that encodes the SMBUS Slave Address, SMBUS Command, SMBUS Data Length, and PEC
 **/
-#define SMBUS_LIB_COMMAND(SmBusAddress)  (((SmBusAddress) >> 8)  & 0xff)
+#define SMBUS_LIB_COMMAND(SmBusAddress) (((SmBusAddress) >> 8) & 0xff)
 
 /**
   Macro that returns the SMBUS Data Length value from an SmBusAddress Parameter value.
 
   @param SmBusAddress Address that encodes the SMBUS Slave Address, SMBUS Command, SMBUS Data Length, and PEC
 **/
-#define SMBUS_LIB_LENGTH(SmBusAddress)  (((SmBusAddress) >> 16) & 0x3f)
+#define SMBUS_LIB_LENGTH(SmBusAddress) (((SmBusAddress) >> 16) & 0x3f)
 
 /**
   Macro that returns the SMBUS PEC value from an SmBusAddress Parameter value.
 
   @param SmBusAddress Address that encodes the SMBUS Slave Address, SMBUS Command, SMBUS Data Length, and PEC
 **/
-#define SMBUS_LIB_PEC(SmBusAddress)  ((BOOLEAN) (((SmBusAddress) & BIT22) != 0))
+#define SMBUS_LIB_PEC(SmBusAddress) ((BOOLEAN) (((SmBusAddress) & BIT22) != 0))
 
 /**
   Macro that returns the set of reserved bits from an SmBusAddress Parameter value.
 
   @param SmBusAddress Address that encodes the SMBUS Slave Address, SMBUS Command, SMBUS Data Length, and PEC
 **/
-#define SMBUS_LIB_RESERVED(SmBusAddress)  ((SmBusAddress) & ~(BIT23 - 2))
+#define SMBUS_LIB_RESERVED(SmBusAddress) ((SmBusAddress) & ~(BIT23 - 2))
 
 /**
   Executes an SMBUS quick read command.
@@ -89,12 +84,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
                         RETURN_UNSUPPORTED  The SMBus operation is not supported.
 
 **/
-VOID
-EFIAPI
-SmBusQuickRead (
-  IN  UINTN          SmBusAddress,
-  OUT RETURN_STATUS  *Status       OPTIONAL
-  );
+VOID EFIAPI SmBusQuickRead(IN UINTN SmBusAddress, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS quick write command.
@@ -120,12 +110,7 @@ SmBusQuickRead (
                         RETURN_UNSUPPORTED  The SMBus operation is not supported.
 
 **/
-VOID
-EFIAPI
-SmBusQuickWrite (
-  IN  UINTN          SmBusAddress,
-  OUT RETURN_STATUS  *Status       OPTIONAL
-  );
+VOID EFIAPI SmBusQuickWrite(IN UINTN SmBusAddress, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS receive byte command.
@@ -156,10 +141,7 @@ SmBusQuickWrite (
 **/
 UINT8
 EFIAPI
-SmBusReceiveByte (
-  IN  UINTN          SmBusAddress,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+SmBusReceiveByte(IN UINTN SmBusAddress, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS send byte command.
@@ -191,11 +173,7 @@ SmBusReceiveByte (
 **/
 UINT8
 EFIAPI
-SmBusSendByte (
-  IN  UINTN          SmBusAddress,
-  IN  UINT8          Value,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+SmBusSendByte(IN UINTN SmBusAddress, IN UINT8 Value, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS read data byte command.
@@ -225,10 +203,7 @@ SmBusSendByte (
 **/
 UINT8
 EFIAPI
-SmBusReadDataByte (
-  IN  UINTN          SmBusAddress,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+SmBusReadDataByte(IN UINTN SmBusAddress, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS write data byte command.
@@ -260,11 +235,7 @@ SmBusReadDataByte (
 **/
 UINT8
 EFIAPI
-SmBusWriteDataByte (
-  IN  UINTN          SmBusAddress,
-  IN  UINT8          Value,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+SmBusWriteDataByte(IN UINTN SmBusAddress, IN UINT8 Value, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS read data word command.
@@ -294,10 +265,7 @@ SmBusWriteDataByte (
 **/
 UINT16
 EFIAPI
-SmBusReadDataWord (
-  IN  UINTN          SmBusAddress,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+SmBusReadDataWord(IN UINTN SmBusAddress, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS write data word command.
@@ -329,11 +297,7 @@ SmBusReadDataWord (
 **/
 UINT16
 EFIAPI
-SmBusWriteDataWord (
-  IN  UINTN          SmBusAddress,
-  IN  UINT16         Value,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+SmBusWriteDataWord(IN UINTN SmBusAddress, IN UINT16 Value, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS process call command.
@@ -365,11 +329,7 @@ SmBusWriteDataWord (
 **/
 UINT16
 EFIAPI
-SmBusProcessCall (
-  IN  UINTN          SmBusAddress,
-  IN  UINT16         Value,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+SmBusProcessCall(IN UINTN SmBusAddress, IN UINT16 Value, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS read block command.
@@ -404,11 +364,7 @@ SmBusProcessCall (
 **/
 UINTN
 EFIAPI
-SmBusReadBlock (
-  IN  UINTN          SmBusAddress,
-  OUT VOID           *Buffer,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+SmBusReadBlock(IN UINTN SmBusAddress, OUT VOID *Buffer, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS write block command.
@@ -440,11 +396,7 @@ SmBusReadBlock (
 **/
 UINTN
 EFIAPI
-SmBusWriteBlock (
-  IN  UINTN          SmBusAddress,
-  OUT VOID           *Buffer,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+SmBusWriteBlock(IN UINTN SmBusAddress, OUT VOID *Buffer, OUT RETURN_STATUS *Status OPTIONAL);
 
 /**
   Executes an SMBUS block process call command.
@@ -479,9 +431,4 @@ SmBusWriteBlock (
 **/
 UINTN
 EFIAPI
-SmBusBlockProcessCall (
-  IN  UINTN          SmBusAddress,
-  IN  VOID           *WriteBuffer,
-  OUT VOID           *ReadBuffer,
-  OUT RETURN_STATUS  *Status        OPTIONAL
-  );
+SmBusBlockProcessCall(IN UINTN SmBusAddress, IN VOID *WriteBuffer, OUT VOID *ReadBuffer, OUT RETURN_STATUS *Status OPTIONAL);

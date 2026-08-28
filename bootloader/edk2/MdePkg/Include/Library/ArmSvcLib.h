@@ -1,10 +1,10 @@
 /** @file
-*
-*  Copyright (c) 2016 - 2017, ARM Limited. All rights reserved.
-*
-*  SPDX-License-Identifier: BSD-2-Clause-Patent
-*
-**/
+ *
+ *  Copyright (c) 2016 - 2017, ARM Limited. All rights reserved.
+ *
+ *  SPDX-License-Identifier: BSD-2-Clause-Patent
+ *
+ **/
 
 #pragma once
 
@@ -12,25 +12,26 @@
  * The size of the SVC arguments are different between AArch64 and AArch32.
  * The native size is used for the arguments.
  */
-typedef struct {
-  UINTN    Arg0;
-  UINTN    Arg1;
-  UINTN    Arg2;
-  UINTN    Arg3;
-  UINTN    Arg4;
-  UINTN    Arg5;
-  UINTN    Arg6;
-  UINTN    Arg7;
-  UINTN    Arg8;
-  UINTN    Arg9;
-  UINTN    Arg10;
-  UINTN    Arg11;
-  UINTN    Arg12;
-  UINTN    Arg13;
-  UINTN    Arg14;
-  UINTN    Arg15;
-  UINTN    Arg16;
-  UINTN    Arg17;
+typedef struct
+{
+    UINTN Arg0;
+    UINTN Arg1;
+    UINTN Arg2;
+    UINTN Arg3;
+    UINTN Arg4;
+    UINTN Arg5;
+    UINTN Arg6;
+    UINTN Arg7;
+    UINTN Arg8;
+    UINTN Arg9;
+    UINTN Arg10;
+    UINTN Arg11;
+    UINTN Arg12;
+    UINTN Arg13;
+    UINTN Arg14;
+    UINTN Arg15;
+    UINTN Arg16;
+    UINTN Arg17;
 } ARM_SVC_ARGS;
 
 /**
@@ -47,7 +48,4 @@ typedef struct {
   @retval None
 
 **/
-VOID
-ArmCallSvc (
-  IN OUT ARM_SVC_ARGS  *Args
-  );
+VOID ArmCallSvc(IN OUT ARM_SVC_ARGS *Args);

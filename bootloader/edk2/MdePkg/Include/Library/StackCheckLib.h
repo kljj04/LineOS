@@ -11,7 +11,7 @@
 
 #include <Base.h>
 
-#if defined (__GNUC__) || defined (__clang__)
+#if defined(__GNUC__) || defined(__clang__)
 
 // The __stack_chk_guard is a random value placed on the stack between the stack variables
 // and the return address so that continuously writing past the stack variables will cause
@@ -20,47 +20,35 @@
 // __UINTPTR_TYPE__ will be the same bitwidth as UINTN, but is a different type that edk2 does
 // not define (e.g. on X64 this is unsigned long) and so we cannot use UINTN here. Newer versions
 // of GCC define this as uintptr_t, which is unsigned long on X64.
-extern __UINTPTR_TYPE__  __stack_chk_guard;
+extern __UINTPTR_TYPE__ __stack_chk_guard;
 
 /**
   Called when a stack cookie check fails. The return address is the failing address.
 
 **/
-VOID
-EFIAPI
-__stack_chk_fail (
-  VOID
-  );
+VOID EFIAPI __stack_chk_fail(VOID);
 
-#elif defined (_MSC_VER)
+#elif defined(_MSC_VER)
 
 // The __security_cookie is a random value placed on the stack between the stack variables
 // and the return address so that continuously writing past the stack variables will cause
 // the stack cookie to be overwritten. Before the function returns, the stack cookie value
 // will be checked and if there is a mismatch then StackCheckLib handles the failure.
-extern VOID  *__security_cookie;
+extern VOID *__security_cookie;
 
 /**
   Called when a buffer check fails. This functionality is dependent on MSVC
   C runtime libraries and so is unsupported in UEFI.
 
 **/
-VOID
-EFIAPI
-__report_rangecheckfailure (
-  VOID
-  );
+VOID EFIAPI __report_rangecheckfailure(VOID);
 
 /**
    The GS handler is for checking the stack cookie during SEH or
    EH exceptions and is unsupported in UEFI.
 
 **/
-VOID
-EFIAPI
-__GSHandlerCheck (
-  VOID
-  );
+VOID EFIAPI __GSHandlerCheck(VOID);
 
 /**
    Checks the stack cookie value against __security_cookie and calls the
@@ -69,10 +57,6 @@ __GSHandlerCheck (
    @param UINTN  CheckValue The value to check against __security_cookie
 
 **/
-VOID
-EFIAPI
-__security_check_cookie (
-  UINTN  CheckValue
-  );
+VOID EFIAPI __security_check_cookie(UINTN CheckValue);
 
 #endif // Compiler type

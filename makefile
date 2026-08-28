@@ -3,6 +3,9 @@ TARGET2 = LineOS/KERNEL/LINEOS_KERNEL.ELF
 
 CC = clang
 LD = ld.lld
+DEPFLAGS = -MMD -MP
+CLANG_FORMAT = clang-format
+PYTHON = python3
 
 MAKEFLAGS += --no-print-directory --silent
 
@@ -64,8 +67,9 @@ KERN_CFLAGS = -target x86_64-elf \
 KERN_FLOAT_CFLAGS = $(filter-out -mgeneral-regs-only,$(KERN_CFLAGS)) \
 					-msse2 \
 					-mfpmath=sse
+KERN_OBJ_CFLAGS = $(KERN_CFLAGS)
 
-.PHONY: all clean compile_boot compile_kernel link_boot link_kernel
+.PHONY: all clean compile_boot compile_kernel link_boot link_kernel format naming
 
 rwildcard = $(foreach d,$(wildcard $1/*),$(call rwildcard,$d,$2)) $(wildcard $1/$2)
 
@@ -73,13 +77,36 @@ BOOT_SRCS = $(call rwildcard,bootloader,*.c)
 KERN_SRCS = $(call rwildcard,kernel,*.c)
 KERN_ASM_SRCS = $(call rwildcard,kernel,*.S)
 
+FORMAT_EXCLUDE_SRCS = bootloader/edk2/% \
+					  kernel/assets/fonts/font.c
+FORMAT_ALL_SRCS = $(call rwildcard,bootloader,*.c) \
+				  $(call rwildcard,bootloader,*.h) \
+				  $(call rwildcard,common,*.c) \
+				  $(call rwildcard,common,*.h) \
+				  $(call rwildcard,kernel,*.c) \
+				  $(call rwildcard,kernel,*.h)
+FORMAT_SRCS = $(filter-out $(FORMAT_EXCLUDE_SRCS),$(FORMAT_ALL_SRCS))
+FORMAT_TARGETS = $(addprefix format/,$(FORMAT_SRCS))
+NAMING_EXCLUDE_SRCS = $(FORMAT_EXCLUDE_SRCS)
+NAMING_SRCS = $(filter-out $(NAMING_EXCLUDE_SRCS),$(FORMAT_ALL_SRCS))
+
 BOOT_OBJS = $(BOOT_SRCS:.c=.o)
 BOOT_OBJS := $(patsubst %,build/obj/%,$(BOOT_OBJS))
+
 KERN_OBJS = $(KERN_SRCS:.c=.o)
 KERN_OBJS := $(patsubst %,build/obj/%,$(KERN_OBJS))
+
 KERN_ASM_OBJS = $(KERN_ASM_SRCS:.S=.o)
 KERN_ASM_OBJS := $(patsubst %,build/obj/%,$(KERN_ASM_OBJS))
+
 KERN_OBJS += $(KERN_ASM_OBJS)
+KERN_FLOAT_OBJS = build/obj/kernel/kernel.o \
+				  build/obj/kernel/src/render/truetype/truetype.o \
+				  build/obj/kernel/src/render/truetype/truetype_engine.o \
+				  build/obj/kernel/src/render/truetype/truetype_runtime.o
+FONT_ASSETS = kernel/assets/fonts/JBMNFSB.ttf \
+			  kernel/assets/fonts/PTDSB.ttf
+DEPS = $(BOOT_OBJS:.o=.d) $(KERN_OBJS:.o=.d)
 
 all:
 	@$(call PRINT_YELLOW,    [*] compile:)
@@ -113,7 +140,7 @@ $(TARGET1): $(BOOT_OBJS)
 		-subsystem:efi_application \
 		-out:$(TARGET1)
 
-$(TARGET2): $(KERN_OBJS)
+$(TARGET2): $(KERN_OBJS) link/link.ld
 	@$(call MKDIR_P,LineOS/KERNEL)
 	@$(LINK_KERNEL) -static \
 		-T link/link.ld \
@@ -123,33 +150,35 @@ $(TARGET2): $(KERN_OBJS)
 
 build/obj/bootloader/%.o: bootloader/%.c
 	@$(call MKDIR_P,$(dir $@))
-	@$(CC) $(EFI_CFLAGS) -c $< -o $@
+	@$(CC) $(EFI_CFLAGS) $(DEPFLAGS) -c $< -o $@
 
 build/obj/kernel/%.o: kernel/%.c
 	@$(call MKDIR_P,$(dir $@))
-	@$(CC) $(KERN_CFLAGS) -c $< -o $@
+	@$(CC) $(KERN_OBJ_CFLAGS) $(DEPFLAGS) -c $< -o $@
 
 build/obj/kernel/%.o: kernel/%.S
 	@$(call MKDIR_P,$(dir $@))
-	@$(CC) $(KERN_CFLAGS) -c $< -o $@
+	@$(CC) $(KERN_OBJ_CFLAGS) $(DEPFLAGS) -c $< -o $@
 
-build/obj/kernel/kernel.o: kernel/kernel.c
-	@$(call MKDIR_P,$(dir $@))
-	@$(CC) $(KERN_FLOAT_CFLAGS) -c $< -o $@
+$(KERN_FLOAT_OBJS): KERN_OBJ_CFLAGS = $(KERN_FLOAT_CFLAGS)
 
-build/obj/kernel/src/render/truetype.o: kernel/src/render/truetype.c
-	@$(call MKDIR_P,$(dir $@))
-	@$(CC) $(KERN_FLOAT_CFLAGS) -c $< -o $@
-
-build/obj/kernel/src/render/truetype_engine.o: kernel/src/render/truetype_engine.c
-	@$(call MKDIR_P,$(dir $@))
-	@$(CC) $(KERN_FLOAT_CFLAGS) -c $< -o $@
-
-build/obj/kernel/src/render/truetype_runtime.o: kernel/src/render/truetype_runtime.c
-	@$(call MKDIR_P,$(dir $@))
-	@$(CC) $(KERN_FLOAT_CFLAGS) -c $< -o $@
+build/obj/kernel/assets/fonts/fonts.o: $(FONT_ASSETS)
 
 clean:
 	@$(call RM_RF,build)
 	@$(call RM_RF,$(TARGET1))
 	@$(call RM_RF,$(TARGET2))
+
+format:
+	@$(call PRINT_YELLOW,    [*] format:)
+	@$(MAKE) $(FORMAT_TARGETS)
+	@$(call PRINT_GREEN,    [*] Done.)
+
+$(FORMAT_TARGETS):
+	@$(CLANG_FORMAT) -i $(patsubst format/%,%,$@)
+
+naming:
+	@$(call PRINT_YELLOW,    [*] naming:)
+	@$(PYTHON) tools/check_naming.py $(NAMING_SRCS)
+
+-include $(DEPS)

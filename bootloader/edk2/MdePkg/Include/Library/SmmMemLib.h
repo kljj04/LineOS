@@ -23,10 +23,7 @@
 **/
 BOOLEAN
 EFIAPI
-SmmIsBufferOutsideSmmValid (
-  IN EFI_PHYSICAL_ADDRESS  Buffer,
-  IN UINT64                Length
-  );
+SmmIsBufferOutsideSmmValid(IN EFI_PHYSICAL_ADDRESS Buffer, IN UINT64 Length);
 
 /**
   Copies a source buffer (non-SMRAM) to a destination buffer (SMRAM).
@@ -47,11 +44,7 @@ SmmIsBufferOutsideSmmValid (
 **/
 EFI_STATUS
 EFIAPI
-SmmCopyMemToSmram (
-  OUT VOID       *DestinationBuffer,
-  IN CONST VOID  *SourceBuffer,
-  IN UINTN       Length
-  );
+SmmCopyMemToSmram(OUT VOID *DestinationBuffer, IN CONST VOID *SourceBuffer, IN UINTN Length);
 
 /**
   Copies a source buffer (SMRAM) to a destination buffer (NON-SMRAM).
@@ -72,11 +65,7 @@ SmmCopyMemToSmram (
 **/
 EFI_STATUS
 EFIAPI
-SmmCopyMemFromSmram (
-  OUT VOID       *DestinationBuffer,
-  IN CONST VOID  *SourceBuffer,
-  IN UINTN       Length
-  );
+SmmCopyMemFromSmram(OUT VOID *DestinationBuffer, IN CONST VOID *SourceBuffer, IN UINTN Length);
 
 /**
   Copies a source buffer (NON-SMRAM) to a destination buffer (NON-SMRAM).
@@ -98,11 +87,7 @@ SmmCopyMemFromSmram (
 **/
 EFI_STATUS
 EFIAPI
-SmmCopyMem (
-  OUT VOID       *DestinationBuffer,
-  IN CONST VOID  *SourceBuffer,
-  IN UINTN       Length
-  );
+SmmCopyMem(OUT VOID *DestinationBuffer, IN CONST VOID *SourceBuffer, IN UINTN Length);
 
 /**
   Fills a target buffer (NON-SMRAM) with a byte value.
@@ -122,8 +107,4 @@ SmmCopyMem (
 **/
 EFI_STATUS
 EFIAPI
-SmmSetMem (
-  OUT VOID  *Buffer,
-  IN UINTN  Length,
-  IN UINT8  Value
-  );
+SmmSetMem(OUT VOID *Buffer, IN UINTN Length, IN UINT8 Value);

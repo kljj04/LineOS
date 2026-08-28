@@ -27,7 +27,4 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 RETURN_STATUS
 EFIAPI
-PublishSystemMemory (
-  IN PHYSICAL_ADDRESS  MemoryBegin,
-  IN UINT64            MemoryLength
-  );
+PublishSystemMemory(IN PHYSICAL_ADDRESS MemoryBegin, IN UINT64 MemoryLength);

@@ -16,9 +16,7 @@
 **/
 UINT32
 EFIAPI
-GetDebugPrintErrorLevel (
-  VOID
-  );
+GetDebugPrintErrorLevel(VOID);
 
 /**
   Sets the global debug print error level mask fpr the entire platform.
@@ -31,6 +29,4 @@ GetDebugPrintErrorLevel (
 **/
 BOOLEAN
 EFIAPI
-SetDebugPrintErrorLevel (
-  UINT32  ErrorLevel
-  );
+SetDebugPrintErrorLevel(UINT32 ErrorLevel);

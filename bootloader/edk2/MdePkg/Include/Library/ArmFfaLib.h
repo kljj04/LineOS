@@ -25,75 +25,77 @@
 /**
  * Arguments to call FF-A request via SMC/SVC.
  */
-typedef struct ArmFfaArgs {
-  UINTN    Arg0;
-  UINTN    Arg1;
-  UINTN    Arg2;
-  UINTN    Arg3;
-  UINTN    Arg4;
-  UINTN    Arg5;
-  UINTN    Arg6;
-  UINTN    Arg7;
-  UINTN    Arg8;
-  UINTN    Arg9;
-  UINTN    Arg10;
-  UINTN    Arg11;
-  UINTN    Arg12;
-  UINTN    Arg13;
-  UINTN    Arg14;
-  UINTN    Arg15;
-  UINTN    Arg16;
-  UINTN    Arg17;
+typedef struct ArmFfaArgs
+{
+    UINTN Arg0;
+    UINTN Arg1;
+    UINTN Arg2;
+    UINTN Arg3;
+    UINTN Arg4;
+    UINTN Arg5;
+    UINTN Arg6;
+    UINTN Arg7;
+    UINTN Arg8;
+    UINTN Arg9;
+    UINTN Arg10;
+    UINTN Arg11;
+    UINTN Arg12;
+    UINTN Arg13;
+    UINTN Arg14;
+    UINTN Arg15;
+    UINTN Arg16;
+    UINTN Arg17;
 } ARM_FFA_ARGS;
 
-#define FFA_RXTX_MAP_INPUT_PROPERTY_DEFAULT  0x00
+#define FFA_RXTX_MAP_INPUT_PROPERTY_DEFAULT 0x00
 
 /** Implementation define arguments used in
  *  FFA_SEND_MSG_DIRECT_REQ/FFA_SEND_MSG_DIRECT_RESP (i.e. v1) and
  *  FFA_SEND_MSG_DIRECT_REQ2/FFA_SEND_MSG_DIRECT_RESP2 (i.e. v2)
  */
-typedef struct DirectMsgArgs {
-  /// Implementation define argument 0, this will be set to/from x3(v1) or x4(v2)
-  UINTN    Arg0;
+typedef struct DirectMsgArgs
+{
+    /// Implementation define argument 0, this will be set to/from x3(v1) or x4(v2)
+    UINTN Arg0;
 
-  /// Implementation define argument 1, this will be set to/from x4(v1) or x5(v2)
-  UINTN    Arg1;
+    /// Implementation define argument 1, this will be set to/from x4(v1) or x5(v2)
+    UINTN Arg1;
 
-  /// Implementation define argument 2, this will be set to/from x5(v1) or x6(v2)
-  UINTN    Arg2;
+    /// Implementation define argument 2, this will be set to/from x5(v1) or x6(v2)
+    UINTN Arg2;
 
-  /// Implementation define argument 3, this will be set to/from x6(v1) or x7(v2)
-  UINTN    Arg3;
+    /// Implementation define argument 3, this will be set to/from x6(v1) or x7(v2)
+    UINTN Arg3;
 
-  /// Implementation define argument 4, this will be set to/from x7(v1) or x8(v2)
-  UINTN    Arg4;
+    /// Implementation define argument 4, this will be set to/from x7(v1) or x8(v2)
+    UINTN Arg4;
 
-  /// Implementation define argument 5, this will be set to/from x9(v2)
-  UINTN    Arg5;
+    /// Implementation define argument 5, this will be set to/from x9(v2)
+    UINTN Arg5;
 
-  /// Implementation define argument 6, this will be set to/from x10(v2)
-  UINTN    Arg6;
+    /// Implementation define argument 6, this will be set to/from x10(v2)
+    UINTN Arg6;
 
-  /// Implementation define argument 7, this will be set to/from x11(v2)
-  UINTN    Arg7;
+    /// Implementation define argument 7, this will be set to/from x11(v2)
+    UINTN Arg7;
 
-  /// Implementation define argument 8, this will be set to/from x12(v2)
-  UINTN    Arg8;
+    /// Implementation define argument 8, this will be set to/from x12(v2)
+    UINTN Arg8;
 
-  /// Implementation define argument 9, this will be set to/from x13(v2)
-  UINTN    Arg9;
+    /// Implementation define argument 9, this will be set to/from x13(v2)
+    UINTN Arg9;
 
-  /// Implementation define argument 10, this will be set to/from x14(v2)
-  UINTN    Arg10;
+    /// Implementation define argument 10, this will be set to/from x14(v2)
+    UINTN Arg10;
 
-  /// Implementation define argument 11, this will be set to/from x15(v2)
-  UINTN    Arg11;
+    /// Implementation define argument 11, this will be set to/from x15(v2)
+    UINTN Arg11;
 
-  /// Implementation define argument 12, this will be set to/from x16(v2)
-  UINTN    Arg12;
+    /// Implementation define argument 12, this will be set to/from x16(v2)
+    UINTN Arg12;
 
-  /// Implementation define argument 13, this will be set to/from x17(v2)
-  UINTN    Arg13;
+    /// Implementation define argument 13, this will be set to/from x17(v2)
+    UINTN Arg13;
 } DIRECT_MSG_ARGS;
 
 /**
@@ -102,11 +104,7 @@ typedef struct DirectMsgArgs {
   @param [in, out]  FfaArgs        Ffa arguments
 
 **/
-VOID
-EFIAPI
-ArmCallFfa (
-  IN OUT ARM_FFA_ARGS  *FfaArgs
-  );
+VOID EFIAPI ArmCallFfa(IN OUT ARM_FFA_ARGS *FfaArgs);
 
 /**
   Convert EFI_STATUS to FFA return code.
@@ -117,9 +115,7 @@ ArmCallFfa (
 **/
 UINTN
 EFIAPI
-EfiStatusToFfaStatus (
-  IN EFI_STATUS  Status
-  );
+EfiStatusToFfaStatus(IN EFI_STATUS Status);
 
 /**
   Convert FFA return code to EFI_STATUS.
@@ -131,9 +127,7 @@ EfiStatusToFfaStatus (
 **/
 EFI_STATUS
 EFIAPI
-FfaStatusToEfiStatus (
-  IN UINTN  FfaStatus
-  );
+FfaStatusToEfiStatus(IN UINTN FfaStatus);
 
 /**
   Check FF-A support or not.
@@ -144,9 +138,7 @@ FfaStatusToEfiStatus (
 **/
 BOOLEAN
 EFIAPI
-IsFfaSupported (
-  IN VOID
-  );
+IsFfaSupported(IN VOID);
 
 /**
   Get mapped Rx/Tx buffers.
@@ -162,12 +154,7 @@ IsFfaSupported (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaLibGetRxTxBuffers (
-  OUT VOID    **TxBuffer OPTIONAL,
-  OUT UINT64  *TxBufferSize OPTIONAL,
-  OUT VOID    **RxBuffer OPTIONAL,
-  OUT UINT64  *RxBufferSize OPTIONAL
-  );
+ArmFfaLibGetRxTxBuffers(OUT VOID **TxBuffer OPTIONAL, OUT UINT64 *TxBufferSize OPTIONAL, OUT VOID **RxBuffer OPTIONAL, OUT UINT64 *RxBufferSize OPTIONAL);
 
 /**
   Get FF-A version
@@ -178,10 +165,7 @@ ArmFfaLibGetRxTxBuffers (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaLibGetVersion (
-  IN  UINT32  RequestVersion,
-  OUT UINT32  *CurrentVersion
-  );
+ArmFfaLibGetVersion(IN UINT32 RequestVersion, OUT UINT32 *CurrentVersion);
 
 /**
   Get FF-A features.
@@ -197,12 +181,7 @@ ArmFfaLibGetVersion (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaLibGetFeatures (
-  IN  UINT32  Id,
-  IN  UINT32  InputProperties,
-  OUT UINTN   *Property1,
-  OUT UINTN   *Property2
-  );
+ArmFfaLibGetFeatures(IN UINT32 Id, IN UINT32 InputProperties, OUT UINTN *Property1, OUT UINTN *Property2);
 
 /**
   Acquire ownership of the Rx buffer.
@@ -215,9 +194,7 @@ ArmFfaLibGetFeatures (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaLibRxAcquire (
-  IN UINT16  PartId
-  );
+ArmFfaLibRxAcquire(IN UINT16 PartId);
 
 /**
   Release ownership of the Rx buffer.
@@ -230,9 +207,7 @@ ArmFfaLibRxAcquire (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaLibRxRelease (
-  IN UINT16  PartId
-  );
+ArmFfaLibRxRelease(IN UINT16 PartId);
 
 /**
   Get Partition info.
@@ -253,12 +228,7 @@ ArmFfaLibRxRelease (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaLibPartitionInfoGet (
-  IN  EFI_GUID  *ServiceGuid,
-  IN  UINT32    Flags,
-  OUT UINT32    *Count,
-  OUT UINT32    *Size OPTIONAL
-  );
+ArmFfaLibPartitionInfoGet(IN EFI_GUID *ServiceGuid, IN UINT32 Flags, OUT UINT32 *Count, OUT UINT32 *Size OPTIONAL);
 
 /**
   Get number of Partitions via registers.
@@ -276,10 +246,7 @@ ArmFfaLibPartitionInfoGet (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaLibPartitionCountGetRegs (
-  IN  EFI_GUID  *ServiceGuid,
-  OUT UINT32    *PartDescCount
-  );
+ArmFfaLibPartitionCountGetRegs(IN EFI_GUID *ServiceGuid, OUT UINT32 *PartDescCount);
 
 /**
   Get Partition info via registers.
@@ -300,11 +267,7 @@ ArmFfaLibPartitionCountGetRegs (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaLibPartitionInfoGetRegs (
-  IN EFI_GUID                 *ServiceGuid,
-  IN OUT UINT32               *PartDescCount,
-  OUT EFI_FFA_PART_INFO_DESC  *PartDesc OPTIONAL
-  );
+ArmFfaLibPartitionInfoGetRegs(IN EFI_GUID *ServiceGuid, IN OUT UINT32 *PartDescCount, OUT EFI_FFA_PART_INFO_DESC *PartDesc OPTIONAL);
 
 /**
   Get partition or VM id.
@@ -318,9 +281,7 @@ ArmFfaLibPartitionInfoGetRegs (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaLibPartitionIdGet (
-  OUT UINT16  *PartId
-  );
+ArmFfaLibPartitionIdGet(OUT UINT16 *PartId);
 
 /**
   Get spmc or spmd partition id.
@@ -333,9 +294,7 @@ ArmFfaLibPartitionIdGet (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaLibSpmIdGet (
-  OUT UINT16  *SpmPartId
-  );
+ArmFfaLibSpmIdGet(OUT UINT16 *SpmPartId);
 
 /**
   Invoked by an endpoint to yield control back to the component
@@ -353,9 +312,7 @@ ArmFfaLibSpmIdGet (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaLibYield (
-  IN  UINT64  TimeoutUs
-  );
+ArmFfaLibYield(IN UINT64 TimeoutUs);
 
 /**
   Restore context which interrupted with FFA_INTERRUPT (EFI_INTERRUPT_PENDING).
@@ -370,11 +327,7 @@ ArmFfaLibYield (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaLibRun (
-  IN  UINT16           PartId,
-  IN  UINT16           CpuNumber,
-  OUT DIRECT_MSG_ARGS  *DirectMsgArg OPTIONAL
-  );
+ArmFfaLibRun(IN UINT16 PartId, IN UINT16 CpuNumber, OUT DIRECT_MSG_ARGS *DirectMsgArg OPTIONAL);
 
 /**
   Send direct message request version 1.
@@ -390,11 +343,7 @@ ArmFfaLibRun (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaLibMsgSendDirectReq (
-  IN  UINT16               DestPartId,
-  IN  UINT32               Flags,
-  IN  OUT DIRECT_MSG_ARGS  *ImpDefArgs
-  );
+ArmFfaLibMsgSendDirectReq(IN UINT16 DestPartId, IN UINT32 Flags, IN OUT DIRECT_MSG_ARGS *ImpDefArgs);
 
 /**
   Send direct message request version 2.
@@ -410,11 +359,7 @@ ArmFfaLibMsgSendDirectReq (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaLibMsgSendDirectReq2 (
-  IN  UINT16               DestPartId,
-  IN  EFI_GUID             *ServiceGuid,
-  IN  OUT DIRECT_MSG_ARGS  *ImpDefArgs
-  );
+ArmFfaLibMsgSendDirectReq2(IN UINT16 DestPartId, IN EFI_GUID *ServiceGuid, IN OUT DIRECT_MSG_ARGS *ImpDefArgs);
 
 /**
   Helper to retrieve the first partition information associated with
@@ -435,7 +380,4 @@ ArmFfaLibMsgSendDirectReq2 (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaLibGetPartitionInfo (
-  IN EFI_GUID                 *ServiceGuid,
-  OUT EFI_FFA_PART_INFO_DESC  *PartDesc
-  );
+ArmFfaLibGetPartitionInfo(IN EFI_GUID *ServiceGuid, OUT EFI_FFA_PART_INFO_DESC *PartDesc);

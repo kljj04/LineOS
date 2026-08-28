@@ -18,93 +18,97 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 //
 // Definitions for architecture-specific types
 //
-#if   defined (MDE_CPU_IA32)
+#if defined(MDE_CPU_IA32)
 ///
 /// The IA-32 architecture context buffer used by SetJump() and LongJump().
 ///
-typedef struct {
-  UINT32    Ebx;
-  UINT32    Esi;
-  UINT32    Edi;
-  UINT32    Ebp;
-  UINT32    Esp;
-  UINT32    Eip;
-  UINT32    Ssp;
+typedef struct
+{
+    UINT32 Ebx;
+    UINT32 Esi;
+    UINT32 Edi;
+    UINT32 Ebp;
+    UINT32 Esp;
+    UINT32 Eip;
+    UINT32 Ssp;
 } BASE_LIBRARY_JUMP_BUFFER;
 
-#define BASE_LIBRARY_JUMP_BUFFER_ALIGNMENT  4
+#define BASE_LIBRARY_JUMP_BUFFER_ALIGNMENT 4
 
 #endif // defined (MDE_CPU_IA32)
 
-#if defined (MDE_CPU_X64)
+#if defined(MDE_CPU_X64)
 ///
 /// The x64 architecture context buffer used by SetJump() and LongJump().
 ///
-typedef struct {
-  UINT64    Rbx;
-  UINT64    Rsp;
-  UINT64    Rbp;
-  UINT64    Rdi;
-  UINT64    Rsi;
-  UINT64    R12;
-  UINT64    R13;
-  UINT64    R14;
-  UINT64    R15;
-  UINT64    Rip;
-  UINT64    MxCsr;
-  UINT8     XmmBuffer[160];                         ///< XMM6-XMM15.
-  UINT64    Ssp;
+typedef struct
+{
+    UINT64 Rbx;
+    UINT64 Rsp;
+    UINT64 Rbp;
+    UINT64 Rdi;
+    UINT64 Rsi;
+    UINT64 R12;
+    UINT64 R13;
+    UINT64 R14;
+    UINT64 R15;
+    UINT64 Rip;
+    UINT64 MxCsr;
+    UINT8  XmmBuffer[160]; ///< XMM6-XMM15.
+    UINT64 Ssp;
 } BASE_LIBRARY_JUMP_BUFFER;
 
-#define BASE_LIBRARY_JUMP_BUFFER_ALIGNMENT  8
+#define BASE_LIBRARY_JUMP_BUFFER_ALIGNMENT 8
 
 #endif // defined (MDE_CPU_X64)
 
-#if defined (MDE_CPU_EBC)
+#if defined(MDE_CPU_EBC)
 ///
 /// The EBC context buffer used by SetJump() and LongJump().
 ///
-typedef struct {
-  UINT64    R0;
-  UINT64    R1;
-  UINT64    R2;
-  UINT64    R3;
-  UINT64    IP;
+typedef struct
+{
+    UINT64 R0;
+    UINT64 R1;
+    UINT64 R2;
+    UINT64 R3;
+    UINT64 IP;
 } BASE_LIBRARY_JUMP_BUFFER;
 
-#define BASE_LIBRARY_JUMP_BUFFER_ALIGNMENT  8
+#define BASE_LIBRARY_JUMP_BUFFER_ALIGNMENT 8
 
 #endif // defined (MDE_CPU_EBC)
 
-#if defined (MDE_CPU_AARCH64)
-typedef struct {
-  // GP regs
-  UINT64    X19;
-  UINT64    X20;
-  UINT64    X21;
-  UINT64    X22;
-  UINT64    X23;
-  UINT64    X24;
-  UINT64    X25;
-  UINT64    X26;
-  UINT64    X27;
-  UINT64    X28;
-  UINT64    FP;
-  UINT64    LR;
-  UINT64    IP0;
+#if defined(MDE_CPU_AARCH64)
+typedef struct
+{
+    // GP regs
+    UINT64 X19;
+    UINT64 X20;
+    UINT64 X21;
+    UINT64 X22;
+    UINT64 X23;
+    UINT64 X24;
+    UINT64 X25;
+    UINT64 X26;
+    UINT64 X27;
+    UINT64 X28;
+    UINT64 FP;
+    UINT64 LR;
+    UINT64 IP0;
 
-  // FP regs
-  UINT64    D8;
-  UINT64    D9;
-  UINT64    D10;
-  UINT64    D11;
-  UINT64    D12;
-  UINT64    D13;
-  UINT64    D14;
-  UINT64    D15;
+    // FP regs
+    UINT64 D8;
+    UINT64 D9;
+    UINT64 D10;
+    UINT64 D11;
+    UINT64 D12;
+    UINT64 D13;
+    UINT64 D14;
+    UINT64 D15;
 } BASE_LIBRARY_JUMP_BUFFER;
 
-#define BASE_LIBRARY_JUMP_BUFFER_ALIGNMENT  8
+#define BASE_LIBRARY_JUMP_BUFFER_ALIGNMENT 8
 
 /**
   Reads the current value of CNTPCT_EL0 register.
@@ -116,67 +120,65 @@ typedef struct {
 **/
 UINT64
 EFIAPI
-ArmReadCntPctReg (
-  VOID
-  );
+ArmReadCntPctReg(VOID);
 
 //
 // Bit shifts for the ID_AA64ISAR0_EL1 register.
 //
-#define ARM_ID_AA64ISAR0_EL1_AES_SHIFT     (4U)
-#define ARM_ID_AA64ISAR0_EL1_SHA1_SHIFT    (8U)
-#define ARM_ID_AA64ISAR0_EL1_SHA2_SHIFT    (12U)
-#define ARM_ID_AA64ISAR0_EL1_CRC32_SHIFT   (16U)
-#define ARM_ID_AA64ISAR0_EL1_ATOMIC_SHIFT  (20U)
-#define ARM_ID_AA64ISAR0_EL1_RDM_SHIFT     (28U)
-#define ARM_ID_AA64ISAR0_EL1_SHA3_SHIFT    (32U)
-#define ARM_ID_AA64ISAR0_EL1_SM3_SHIFT     (36U)
-#define ARM_ID_AA64ISAR0_EL1_SM4_SHIFT     (40U)
-#define ARM_ID_AA64ISAR0_EL1_DP_SHIFT      (44U)
-#define ARM_ID_AA64ISAR0_EL1_FHM_SHIFT     (48U)
-#define ARM_ID_AA64ISAR0_EL1_TS_SHIFT      (52U)
-#define ARM_ID_AA64ISAR0_EL1_TLB_SHIFT     (56U)
-#define ARM_ID_AA64ISAR0_EL1_RNDR_SHIFT    (60U)
+#define ARM_ID_AA64ISAR0_EL1_AES_SHIFT    (4U)
+#define ARM_ID_AA64ISAR0_EL1_SHA1_SHIFT   (8U)
+#define ARM_ID_AA64ISAR0_EL1_SHA2_SHIFT   (12U)
+#define ARM_ID_AA64ISAR0_EL1_CRC32_SHIFT  (16U)
+#define ARM_ID_AA64ISAR0_EL1_ATOMIC_SHIFT (20U)
+#define ARM_ID_AA64ISAR0_EL1_RDM_SHIFT    (28U)
+#define ARM_ID_AA64ISAR0_EL1_SHA3_SHIFT   (32U)
+#define ARM_ID_AA64ISAR0_EL1_SM3_SHIFT    (36U)
+#define ARM_ID_AA64ISAR0_EL1_SM4_SHIFT    (40U)
+#define ARM_ID_AA64ISAR0_EL1_DP_SHIFT     (44U)
+#define ARM_ID_AA64ISAR0_EL1_FHM_SHIFT    (48U)
+#define ARM_ID_AA64ISAR0_EL1_TS_SHIFT     (52U)
+#define ARM_ID_AA64ISAR0_EL1_TLB_SHIFT    (56U)
+#define ARM_ID_AA64ISAR0_EL1_RNDR_SHIFT   (60U)
 
 //
 // Bit masks for the ID_AA64ISAR0_EL1 fields.
 //
-#define ARM_ID_AA64ISAR0_EL1_AES_MASK     (0xFU)
-#define ARM_ID_AA64ISAR0_EL1_SHA1_MASK    (0xFU)
-#define ARM_ID_AA64ISAR0_EL1_SHA2_MASK    (0xFU)
-#define ARM_ID_AA64ISAR0_EL1_CRC32_MASK   (0xFU)
-#define ARM_ID_AA64ISAR0_EL1_ATOMIC_MASK  (0xFU)
-#define ARM_ID_AA64ISAR0_EL1_RDM_MASK     (0xFU)
-#define ARM_ID_AA64ISAR0_EL1_SHA3_MASK    (0xFU)
-#define ARM_ID_AA64ISAR0_EL1_SM3_MASK     (0xFU)
-#define ARM_ID_AA64ISAR0_EL1_SM4_MASK     (0xFU)
-#define ARM_ID_AA64ISAR0_EL1_DP_MASK      (0xFU)
-#define ARM_ID_AA64ISAR0_EL1_FHM_MASK     (0xFU)
-#define ARM_ID_AA64ISAR0_EL1_TS_MASK      (0xFU)
-#define ARM_ID_AA64ISAR0_EL1_TLB_MASK     (0xFU)
-#define ARM_ID_AA64ISAR0_EL1_RNDR_MASK    (0xFU)
+#define ARM_ID_AA64ISAR0_EL1_AES_MASK    (0xFU)
+#define ARM_ID_AA64ISAR0_EL1_SHA1_MASK   (0xFU)
+#define ARM_ID_AA64ISAR0_EL1_SHA2_MASK   (0xFU)
+#define ARM_ID_AA64ISAR0_EL1_CRC32_MASK  (0xFU)
+#define ARM_ID_AA64ISAR0_EL1_ATOMIC_MASK (0xFU)
+#define ARM_ID_AA64ISAR0_EL1_RDM_MASK    (0xFU)
+#define ARM_ID_AA64ISAR0_EL1_SHA3_MASK   (0xFU)
+#define ARM_ID_AA64ISAR0_EL1_SM3_MASK    (0xFU)
+#define ARM_ID_AA64ISAR0_EL1_SM4_MASK    (0xFU)
+#define ARM_ID_AA64ISAR0_EL1_DP_MASK     (0xFU)
+#define ARM_ID_AA64ISAR0_EL1_FHM_MASK    (0xFU)
+#define ARM_ID_AA64ISAR0_EL1_TS_MASK     (0xFU)
+#define ARM_ID_AA64ISAR0_EL1_TLB_MASK    (0xFU)
+#define ARM_ID_AA64ISAR0_EL1_RNDR_MASK   (0xFU)
 
 //
 // Bit masks for the ID_AA64ISAR0_EL1 field values.
 //
-#define ARM_ID_AA64ISAR0_EL1_AES_FEAT_AES_MASK        (0x1U)
-#define ARM_ID_AA64ISAR0_EL1_AES_FEAT_PMULL_MASK      (0x2U)
-#define ARM_ID_AA64ISAR0_EL1_SHA1_FEAT_SHA1_MASK      (0x1U)
-#define ARM_ID_AA64ISAR0_EL1_SHA2_FEAT_SHA256_MASK    (0x1U)
-#define ARM_ID_AA64ISAR0_EL1_SHA2_FEAT_SHA512_MASK    (0x2U)
-#define ARM_ID_AA64ISAR0_EL1_CRC32_HAVE_CRC32_MASK    (0x1U)
-#define ARM_ID_AA64ISAR0_EL1_ATOMIC_FEAT_LSE_MASK     (0x2U)
-#define ARM_ID_AA64ISAR0_EL1_RDM_FEAT_RDM_MASK        (0x1U)
-#define ARM_ID_AA64ISAR0_EL1_SHA3_FEAT_SHA3_MASK      (0x1U)
-#define ARM_ID_AA64ISAR0_EL1_SM3_FEAT_SM3_MASK        (0x1U)
-#define ARM_ID_AA64ISAR0_EL1_SM4_FEAT_SM4_MASK        (0x1U)
-#define ARM_ID_AA64ISAR0_EL1_DP_FEAT_DOTPROD_MASK     (0x1U)
-#define ARM_ID_AA64ISAR0_EL1_FHM_FEAT_FHM_MASK        (0x1U)
-#define ARM_ID_AA64ISAR0_EL1_TS_FEAT_FLAGM_MASK       (0x1U)
-#define ARM_ID_AA64ISAR0_EL1_TS_FEAT_FLAGM2_MASK      (0x2U)
-#define ARM_ID_AA64ISAR0_EL1_TLB_FEAT_TLBIOS_MASK     (0x1U)
-#define ARM_ID_AA64ISAR0_EL1_TLB_FEAT_TLBIRANGE_MASK  (0x2U)
-#define ARM_ID_AA64ISAR0_EL1_RNDR_FEAT_RNG_MASK       (0x1U)
+#define ARM_ID_AA64ISAR0_EL1_AES_FEAT_AES_MASK       (0x1U)
+#define ARM_ID_AA64ISAR0_EL1_AES_FEAT_PMULL_MASK     (0x2U)
+#define ARM_ID_AA64ISAR0_EL1_SHA1_FEAT_SHA1_MASK     (0x1U)
+#define ARM_ID_AA64ISAR0_EL1_SHA2_FEAT_SHA256_MASK   (0x1U)
+#define ARM_ID_AA64ISAR0_EL1_SHA2_FEAT_SHA512_MASK   (0x2U)
+#define ARM_ID_AA64ISAR0_EL1_CRC32_HAVE_CRC32_MASK   (0x1U)
+#define ARM_ID_AA64ISAR0_EL1_ATOMIC_FEAT_LSE_MASK    (0x2U)
+#define ARM_ID_AA64ISAR0_EL1_RDM_FEAT_RDM_MASK       (0x1U)
+#define ARM_ID_AA64ISAR0_EL1_SHA3_FEAT_SHA3_MASK     (0x1U)
+#define ARM_ID_AA64ISAR0_EL1_SM3_FEAT_SM3_MASK       (0x1U)
+#define ARM_ID_AA64ISAR0_EL1_SM4_FEAT_SM4_MASK       (0x1U)
+#define ARM_ID_AA64ISAR0_EL1_DP_FEAT_DOTPROD_MASK    (0x1U)
+#define ARM_ID_AA64ISAR0_EL1_FHM_FEAT_FHM_MASK       (0x1U)
+#define ARM_ID_AA64ISAR0_EL1_TS_FEAT_FLAGM_MASK      (0x1U)
+#define ARM_ID_AA64ISAR0_EL1_TS_FEAT_FLAGM2_MASK     (0x2U)
+#define ARM_ID_AA64ISAR0_EL1_TLB_FEAT_TLBIOS_MASK    (0x1U)
+#define ARM_ID_AA64ISAR0_EL1_TLB_FEAT_TLBIRANGE_MASK (0x2U)
+#define ARM_ID_AA64ISAR0_EL1_RNDR_FEAT_RNG_MASK      (0x1U)
 
 /**
   Reads the current value of ID_AA64ISAR0_EL1 register.
@@ -188,125 +190,81 @@ ArmReadCntPctReg (
 **/
 UINT64
 EFIAPI
-ArmReadIdAA64Isar0Reg (
-  VOID
-  );
+ArmReadIdAA64Isar0Reg(VOID);
 
 #endif // defined (MDE_CPU_AARCH64)
 
-#if defined (MDE_CPU_RISCV64)
+#if defined(MDE_CPU_RISCV64)
 ///
 /// The RISC-V architecture context buffer used by SetJump() and LongJump().
 ///
-typedef struct {
-  UINT64    RA;
-  UINT64    S0;
-  UINT64    S1;
-  UINT64    S2;
-  UINT64    S3;
-  UINT64    S4;
-  UINT64    S5;
-  UINT64    S6;
-  UINT64    S7;
-  UINT64    S8;
-  UINT64    S9;
-  UINT64    S10;
-  UINT64    S11;
-  UINT64    SP;
+typedef struct
+{
+    UINT64 RA;
+    UINT64 S0;
+    UINT64 S1;
+    UINT64 S2;
+    UINT64 S3;
+    UINT64 S4;
+    UINT64 S5;
+    UINT64 S6;
+    UINT64 S7;
+    UINT64 S8;
+    UINT64 S9;
+    UINT64 S10;
+    UINT64 S11;
+    UINT64 SP;
 } BASE_LIBRARY_JUMP_BUFFER;
 
-#define BASE_LIBRARY_JUMP_BUFFER_ALIGNMENT  8
+#define BASE_LIBRARY_JUMP_BUFFER_ALIGNMENT 8
 
-VOID
-RiscVSetSupervisorScratch (
-  IN UINT64
-  );
+VOID RiscVSetSupervisorScratch(IN UINT64);
 
 UINT64
-RiscVGetSupervisorScratch (
-  VOID
-  );
+RiscVGetSupervisorScratch(VOID);
 
-VOID
-RiscVSetSupervisorStvec (
-  IN UINT64
-  );
+VOID RiscVSetSupervisorStvec(IN UINT64);
 
 UINT64
-RiscVGetSupervisorStvec (
-  VOID
-  );
+RiscVGetSupervisorStvec(VOID);
 
 UINT64
-RiscVGetSupervisorTrapCause (
-  VOID
-  );
+RiscVGetSupervisorTrapCause(VOID);
 
-VOID
-RiscVSetSupervisorAddressTranslationRegister (
-  IN UINT64
-  );
+VOID RiscVSetSupervisorAddressTranslationRegister(IN UINT64);
 
 UINT64
-RiscVGetSupervisorAddressTranslationRegister (
-  VOID
-  );
+RiscVGetSupervisorAddressTranslationRegister(VOID);
 
 UINT64
-RiscVReadTimer (
-  VOID
-  );
+RiscVReadTimer(VOID);
 
-VOID
-RiscVSetSupervisorTimeCompareRegister (
-  IN UINT64
-  );
+VOID RiscVSetSupervisorTimeCompareRegister(IN UINT64);
 
-VOID
-RiscVEnableTimerInterrupt (
-  VOID
-  );
+VOID RiscVEnableTimerInterrupt(VOID);
 
-VOID
-RiscVDisableTimerInterrupt (
-  VOID
-  );
+VOID RiscVDisableTimerInterrupt(VOID);
 
-VOID
-RiscVClearPendingTimerInterrupt (
-  VOID
-  );
+VOID RiscVClearPendingTimerInterrupt(VOID);
 
 /**
   RISC-V invalidate instruction cache.
 
 **/
-VOID
-EFIAPI
-RiscVInvalidateInstCacheFenceAsm (
-  VOID
-  );
+VOID EFIAPI RiscVInvalidateInstCacheFenceAsm(VOID);
 
 /**
   RISC-V invalidate data cache.
 
 **/
-VOID
-EFIAPI
-RiscVInvalidateDataCacheFenceAsm (
-  VOID
-  );
+VOID EFIAPI RiscVInvalidateDataCacheFenceAsm(VOID);
 
 /**
   RISC-V flush cache block. Atomically perform a clean operation
   followed by an invalidate operation
 
 **/
-VOID
-EFIAPI
-RiscVCpuCacheFlushCmoAsm (
-  IN UINTN
-  );
+VOID EFIAPI RiscVCpuCacheFlushCmoAsm(IN UINTN);
 
 /**
 Perform a write transfer to another cache or to memory if the
@@ -314,84 +272,65 @@ data in the copy of the cache block have been modified by a store
 operation
 
 **/
-VOID
-EFIAPI
-RiscVCpuCacheCleanCmoAsm (
-  IN UINTN
-  );
+VOID EFIAPI RiscVCpuCacheCleanCmoAsm(IN UINTN);
 
 /**
 Deallocate the copy of the cache block
 
 **/
-VOID
-EFIAPI
-RiscVCpuCacheInvalCmoAsm (
-  IN UINTN
-  );
+VOID EFIAPI RiscVCpuCacheInvalCmoAsm(IN UINTN);
 
 #endif // defined (MDE_CPU_RISCV64)
 
-#if defined (MDE_CPU_LOONGARCH64)
+#if defined(MDE_CPU_LOONGARCH64)
 ///
 /// The LoongArch architecture context buffer used by SetJump() and LongJump()
 ///
-typedef struct {
-  UINT64    S0;
-  UINT64    S1;
-  UINT64    S2;
-  UINT64    S3;
-  UINT64    S4;
-  UINT64    S5;
-  UINT64    S6;
-  UINT64    S7;
-  UINT64    S8;
-  UINT64    SP;
-  UINT64    FP;
-  UINT64    RA;
+typedef struct
+{
+    UINT64 S0;
+    UINT64 S1;
+    UINT64 S2;
+    UINT64 S3;
+    UINT64 S4;
+    UINT64 S5;
+    UINT64 S6;
+    UINT64 S7;
+    UINT64 S8;
+    UINT64 SP;
+    UINT64 FP;
+    UINT64 RA;
 } BASE_LIBRARY_JUMP_BUFFER;
 
-#define BASE_LIBRARY_JUMP_BUFFER_ALIGNMENT  8
+#define BASE_LIBRARY_JUMP_BUFFER_ALIGNMENT 8
 
 /*
  * Set the exception base address for LoongArch.
  *
  * @param  ExceptionBaseAddress   The exception base address, must be aligned greater than or equal to 4K .
  */
-VOID
-SetExceptionBaseAddress (
-  IN UINT64
-  );
+VOID SetExceptionBaseAddress(IN UINT64);
 
 /*
  * Set the TlbRebase address for LoongArch.
  *
  * @param  TlbRebaseAddress   The TlbRebase address, must be aligned greater than or equal to 4K .
  */
-VOID
-SetTlbRebaseAddress (
-  IN UINT64
-  );
+VOID SetTlbRebaseAddress(IN UINT64);
 
 /**
   Enables local CPU interrupts.
 
   @param  Needs to enable local interrupt bit.
 **/
-VOID
-EnableLocalInterrupts (
-  IN UINT16
-  );
+VOID EnableLocalInterrupts(IN UINT16);
 
 /**
   Disables local CPU interrupts.
 
   @param  Needs to disable local interrupt bit.
 **/
-VOID
-DisableLocalInterrupts (
-  IN UINT16
-  );
+VOID DisableLocalInterrupts(IN UINT16);
 
 /**
   Read CPUCFG register.
@@ -399,11 +338,7 @@ DisableLocalInterrupts (
   @param  Index  Specifies the register number of the CPUCFG to read the data.
   @param  Data   A pointer to the variable used to store the CPUCFG register value.
 **/
-VOID
-AsmCpucfg (
-  IN  UINT32  Index,
-  OUT UINT32  *Data
-  );
+VOID AsmCpucfg(IN UINT32 Index, OUT UINT32 *Data);
 
 /**
   Gets the timer count value.
@@ -413,9 +348,7 @@ AsmCpucfg (
 
 **/
 UINTN
-AsmReadStableCounter (
-  VOID
-  );
+AsmReadStableCounter(VOID);
 
 /**
   CSR read operation.
@@ -426,9 +359,7 @@ AsmReadStableCounter (
               is found.
 **/
 UINTN
-CsrRead (
-  IN UINT16  Select
-  );
+CsrRead(IN UINT16 Select);
 
 /**
   CSR write operation.
@@ -440,10 +371,7 @@ CsrRead (
               the register, return -1 means no CSR instruction is found.
 **/
 UINTN
-CsrWrite (
-  IN UINT16  Select,
-  IN UINTN   Value
-  );
+CsrWrite(IN UINT16 Select, IN UINTN Value);
 
 /**
   CSR exchange operation.
@@ -456,11 +384,7 @@ CsrWrite (
               the register, return -1 means no CSR instruction is found.
 **/
 UINTN
-CsrXChg (
-  IN UINT16  Select,
-  IN UINTN   Value,
-  IN UINTN   Mask
-  );
+CsrXChg(IN UINT16 Select, IN UINTN Value, IN UINTN Mask);
 
 /**
   IO CSR read byte operation.
@@ -471,9 +395,7 @@ CsrXChg (
 
 **/
 UINT8
-IoCsrRead8 (
-  IN UINTN  Select
-  );
+IoCsrRead8(IN UINTN Select);
 
 /**
   IO CSR read half word operation.
@@ -484,9 +406,7 @@ IoCsrRead8 (
 
 **/
 UINT16
-IoCsrRead16 (
-  IN UINTN  Select
-  );
+IoCsrRead16(IN UINTN Select);
 
 /**
   IO CSR read word operation.
@@ -497,9 +417,7 @@ IoCsrRead16 (
 
 **/
 UINT32
-IoCsrRead32 (
-  IN UINTN  Select
-  );
+IoCsrRead32(IN UINTN Select);
 
 /**
   IO CSR read double word operation. Only for LoongArch64.
@@ -510,9 +428,7 @@ IoCsrRead32 (
 
 **/
 UINT64
-IoCsrRead64 (
-  IN UINTN  Select
-  );
+IoCsrRead64(IN UINTN Select);
 
 /**
   IO CSR write byte operation.
@@ -523,11 +439,7 @@ IoCsrRead64 (
   @return     VOID.
 
 **/
-VOID
-IoCsrWrite8 (
-  IN UINTN  Select,
-  IN UINT8  Value
-  );
+VOID IoCsrWrite8(IN UINTN Select, IN UINT8 Value);
 
 /**
   IO CSR write half word operation.
@@ -538,11 +450,7 @@ IoCsrWrite8 (
   @return     VOID.
 
 **/
-VOID
-IoCsrWrite16 (
-  IN UINTN   Select,
-  IN UINT16  Value
-  );
+VOID IoCsrWrite16(IN UINTN Select, IN UINT16 Value);
 
 /**
   IO CSR write word operation.
@@ -553,11 +461,7 @@ IoCsrWrite16 (
   @return     VOID.
 
 **/
-VOID
-IoCsrWrite32 (
-  IN UINTN   Select,
-  IN UINT32  Value
-  );
+VOID IoCsrWrite32(IN UINTN Select, IN UINT32 Value);
 
 /**
   IO CSR write double word operation. Only for LoongArch64.
@@ -568,11 +472,7 @@ IoCsrWrite32 (
   @return     VOID.
 
 **/
-VOID
-IoCsrWrite64 (
-  IN UINTN   Select,
-  IN UINT64  Value
-  );
+VOID IoCsrWrite64(IN UINTN Select, IN UINT64 Value);
 
 #endif // defined (MDE_CPU_LOONGARCH64)
 
@@ -598,10 +498,7 @@ IoCsrWrite64 (
 **/
 UINTN
 EFIAPI
-StrnLenS (
-  IN CONST CHAR16  *String,
-  IN UINTN         MaxSize
-  );
+StrnLenS(IN CONST CHAR16 *String, IN UINTN MaxSize);
 
 /**
   Returns the size of a Null-terminated Unicode string in bytes, including the
@@ -626,10 +523,7 @@ StrnLenS (
 **/
 UINTN
 EFIAPI
-StrnSizeS (
-  IN CONST CHAR16  *String,
-  IN UINTN         MaxSize
-  );
+StrnSizeS(IN CONST CHAR16 *String, IN UINTN MaxSize);
 
 /**
   Copies the string pointed to by Source (including the terminating null char)
@@ -659,11 +553,7 @@ StrnSizeS (
 **/
 RETURN_STATUS
 EFIAPI
-StrCpyS (
-  OUT CHAR16        *Destination,
-  IN  UINTN         DestMax,
-  IN  CONST CHAR16  *Source
-  );
+StrCpyS(OUT CHAR16 *Destination, IN UINTN DestMax, IN CONST CHAR16 *Source);
 
 /**
   Copies not more than Length successive char from the string pointed to by
@@ -696,12 +586,7 @@ StrCpyS (
 **/
 RETURN_STATUS
 EFIAPI
-StrnCpyS (
-  OUT CHAR16        *Destination,
-  IN  UINTN         DestMax,
-  IN  CONST CHAR16  *Source,
-  IN  UINTN         Length
-  );
+StrnCpyS(OUT CHAR16 *Destination, IN UINTN DestMax, IN CONST CHAR16 *Source, IN UINTN Length);
 
 /**
   Appends a copy of the string pointed to by Source (including the terminating
@@ -734,11 +619,7 @@ StrnCpyS (
 **/
 RETURN_STATUS
 EFIAPI
-StrCatS (
-  IN OUT CHAR16        *Destination,
-  IN     UINTN         DestMax,
-  IN     CONST CHAR16  *Source
-  );
+StrCatS(IN OUT CHAR16 *Destination, IN UINTN DestMax, IN CONST CHAR16 *Source);
 
 /**
   Appends not more than Length successive char from the string pointed to by
@@ -774,12 +655,7 @@ StrCatS (
 **/
 RETURN_STATUS
 EFIAPI
-StrnCatS (
-  IN OUT CHAR16        *Destination,
-  IN     UINTN         DestMax,
-  IN     CONST CHAR16  *Source,
-  IN     UINTN         Length
-  );
+StrnCatS(IN OUT CHAR16 *Destination, IN UINTN DestMax, IN CONST CHAR16 *Source, IN UINTN Length);
 
 /**
   Convert a Null-terminated Unicode decimal string to a value of type UINTN.
@@ -826,11 +702,7 @@ StrnCatS (
 **/
 RETURN_STATUS
 EFIAPI
-StrDecimalToUintnS (
-  IN  CONST CHAR16  *String,
-  OUT       CHAR16  **EndPointer   OPTIONAL,
-  OUT       UINTN   *Data
-  );
+StrDecimalToUintnS(IN CONST CHAR16 *String, OUT CHAR16 **EndPointer OPTIONAL, OUT UINTN *Data);
 
 /**
   Convert a Null-terminated Unicode decimal string to a value of type UINT64.
@@ -877,11 +749,7 @@ StrDecimalToUintnS (
 **/
 RETURN_STATUS
 EFIAPI
-StrDecimalToUint64S (
-  IN  CONST CHAR16  *String,
-  OUT       CHAR16  **EndPointer   OPTIONAL,
-  OUT       UINT64  *Data
-  );
+StrDecimalToUint64S(IN CONST CHAR16 *String, OUT CHAR16 **EndPointer OPTIONAL, OUT UINT64 *Data);
 
 /**
   Convert a Null-terminated Unicode hexadecimal string to a value of type
@@ -933,11 +801,7 @@ StrDecimalToUint64S (
 **/
 RETURN_STATUS
 EFIAPI
-StrHexToUintnS (
-  IN  CONST CHAR16  *String,
-  OUT       CHAR16  **EndPointer   OPTIONAL,
-  OUT       UINTN   *Data
-  );
+StrHexToUintnS(IN CONST CHAR16 *String, OUT CHAR16 **EndPointer OPTIONAL, OUT UINTN *Data);
 
 /**
   Convert a Null-terminated Unicode hexadecimal string to a value of type
@@ -989,11 +853,7 @@ StrHexToUintnS (
 **/
 RETURN_STATUS
 EFIAPI
-StrHexToUint64S (
-  IN  CONST CHAR16  *String,
-  OUT       CHAR16  **EndPointer   OPTIONAL,
-  OUT       UINT64  *Data
-  );
+StrHexToUint64S(IN CONST CHAR16 *String, OUT CHAR16 **EndPointer OPTIONAL, OUT UINT64 *Data);
 
 /**
   Returns the length of a Null-terminated Ascii string.
@@ -1011,10 +871,7 @@ StrHexToUint64S (
 **/
 UINTN
 EFIAPI
-AsciiStrnLenS (
-  IN CONST CHAR8  *String,
-  IN UINTN        MaxSize
-  );
+AsciiStrnLenS(IN CONST CHAR8 *String, IN UINTN MaxSize);
 
 /**
   Returns the size of a Null-terminated Ascii string in bytes, including the
@@ -1037,10 +894,7 @@ AsciiStrnLenS (
 **/
 UINTN
 EFIAPI
-AsciiStrnSizeS (
-  IN CONST CHAR8  *String,
-  IN UINTN        MaxSize
-  );
+AsciiStrnSizeS(IN CONST CHAR8 *String, IN UINTN MaxSize);
 
 /**
   Copies the string pointed to by Source (including the terminating null char)
@@ -1067,11 +921,7 @@ AsciiStrnSizeS (
 **/
 RETURN_STATUS
 EFIAPI
-AsciiStrCpyS (
-  OUT CHAR8        *Destination,
-  IN  UINTN        DestMax,
-  IN  CONST CHAR8  *Source
-  );
+AsciiStrCpyS(OUT CHAR8 *Destination, IN UINTN DestMax, IN CONST CHAR8 *Source);
 
 /**
   Copies not more than Length successive char from the string pointed to by
@@ -1101,12 +951,7 @@ AsciiStrCpyS (
 **/
 RETURN_STATUS
 EFIAPI
-AsciiStrnCpyS (
-  OUT CHAR8        *Destination,
-  IN  UINTN        DestMax,
-  IN  CONST CHAR8  *Source,
-  IN  UINTN        Length
-  );
+AsciiStrnCpyS(OUT CHAR8 *Destination, IN UINTN DestMax, IN CONST CHAR8 *Source, IN UINTN Length);
 
 /**
   Appends a copy of the string pointed to by Source (including the terminating
@@ -1136,11 +981,7 @@ AsciiStrnCpyS (
 **/
 RETURN_STATUS
 EFIAPI
-AsciiStrCatS (
-  IN OUT CHAR8        *Destination,
-  IN     UINTN        DestMax,
-  IN     CONST CHAR8  *Source
-  );
+AsciiStrCatS(IN OUT CHAR8 *Destination, IN UINTN DestMax, IN CONST CHAR8 *Source);
 
 /**
   Appends not more than Length successive char from the string pointed to by
@@ -1173,12 +1014,7 @@ AsciiStrCatS (
 **/
 RETURN_STATUS
 EFIAPI
-AsciiStrnCatS (
-  IN OUT CHAR8        *Destination,
-  IN     UINTN        DestMax,
-  IN     CONST CHAR8  *Source,
-  IN     UINTN        Length
-  );
+AsciiStrnCatS(IN OUT CHAR8 *Destination, IN UINTN DestMax, IN CONST CHAR8 *Source, IN UINTN Length);
 
 /**
   Convert a Null-terminated Ascii decimal string to a value of type UINTN.
@@ -1223,11 +1059,7 @@ AsciiStrnCatS (
 **/
 RETURN_STATUS
 EFIAPI
-AsciiStrDecimalToUintnS (
-  IN  CONST CHAR8  *String,
-  OUT       CHAR8  **EndPointer   OPTIONAL,
-  OUT       UINTN  *Data
-  );
+AsciiStrDecimalToUintnS(IN CONST CHAR8 *String, OUT CHAR8 **EndPointer OPTIONAL, OUT UINTN *Data);
 
 /**
   Convert a Null-terminated Ascii decimal string to a value of type UINT64.
@@ -1272,11 +1104,7 @@ AsciiStrDecimalToUintnS (
 **/
 RETURN_STATUS
 EFIAPI
-AsciiStrDecimalToUint64S (
-  IN  CONST CHAR8   *String,
-  OUT       CHAR8   **EndPointer   OPTIONAL,
-  OUT       UINT64  *Data
-  );
+AsciiStrDecimalToUint64S(IN CONST CHAR8 *String, OUT CHAR8 **EndPointer OPTIONAL, OUT UINT64 *Data);
 
 /**
   Convert a Null-terminated Ascii hexadecimal string to a value of type UINTN.
@@ -1325,11 +1153,7 @@ AsciiStrDecimalToUint64S (
 **/
 RETURN_STATUS
 EFIAPI
-AsciiStrHexToUintnS (
-  IN  CONST CHAR8  *String,
-  OUT       CHAR8  **EndPointer   OPTIONAL,
-  OUT       UINTN  *Data
-  );
+AsciiStrHexToUintnS(IN CONST CHAR8 *String, OUT CHAR8 **EndPointer OPTIONAL, OUT UINTN *Data);
 
 /**
   Convert a Null-terminated Ascii hexadecimal string to a value of type UINT64.
@@ -1378,11 +1202,7 @@ AsciiStrHexToUintnS (
 **/
 RETURN_STATUS
 EFIAPI
-AsciiStrHexToUint64S (
-  IN  CONST CHAR8   *String,
-  OUT       CHAR8   **EndPointer   OPTIONAL,
-  OUT       UINT64  *Data
-  );
+AsciiStrHexToUint64S(IN CONST CHAR8 *String, OUT CHAR8 **EndPointer OPTIONAL, OUT UINT64 *Data);
 
 /**
   Returns the length of a Null-terminated Unicode string.
@@ -1403,9 +1223,7 @@ AsciiStrHexToUint64S (
 **/
 UINTN
 EFIAPI
-StrLen (
-  IN      CONST CHAR16  *String
-  );
+StrLen(IN CONST CHAR16 *String);
 
 /**
   Returns the size of a Null-terminated Unicode string in bytes, including the
@@ -1427,9 +1245,7 @@ StrLen (
 **/
 UINTN
 EFIAPI
-StrSize (
-  IN      CONST CHAR16  *String
-  );
+StrSize(IN CONST CHAR16 *String);
 
 /**
   Compares two Null-terminated Unicode strings, and returns the difference
@@ -1459,12 +1275,7 @@ StrSize (
   @return others FirstString is not identical to SecondString.
 
 **/
-INTN
-EFIAPI
-StrCmp (
-  IN      CONST CHAR16  *FirstString,
-  IN      CONST CHAR16  *SecondString
-  );
+INTN EFIAPI StrCmp(IN CONST CHAR16 *FirstString, IN CONST CHAR16 *SecondString);
 
 /**
   Compares up to a specified length the contents of two Null-terminated Unicode strings,
@@ -1498,13 +1309,7 @@ StrCmp (
   @return others FirstString is not identical to SecondString.
 
 **/
-INTN
-EFIAPI
-StrnCmp (
-  IN      CONST CHAR16  *FirstString,
-  IN      CONST CHAR16  *SecondString,
-  IN      UINTN         Length
-  );
+INTN EFIAPI StrnCmp(IN CONST CHAR16 *FirstString, IN CONST CHAR16 *SecondString, IN UINTN Length);
 
 /**
   Returns the first occurrence of a Null-terminated Unicode sub-string
@@ -1531,12 +1336,7 @@ StrnCmp (
   @return others          If there is a match.
 
 **/
-CHAR16 *
-EFIAPI
-StrStr (
-  IN      CONST CHAR16  *String,
-  IN      CONST CHAR16  *SearchString
-  );
+CHAR16 *EFIAPI StrStr(IN CONST CHAR16 *String, IN CONST CHAR16 *SearchString);
 
 /**
   Convert a Null-terminated Unicode decimal string to a value of
@@ -1574,9 +1374,7 @@ StrStr (
 **/
 UINTN
 EFIAPI
-StrDecimalToUintn (
-  IN      CONST CHAR16  *String
-  );
+StrDecimalToUintn(IN CONST CHAR16 *String);
 
 /**
   Convert a Null-terminated Unicode decimal string to a value of
@@ -1614,9 +1412,7 @@ StrDecimalToUintn (
 **/
 UINT64
 EFIAPI
-StrDecimalToUint64 (
-  IN      CONST CHAR16  *String
-  );
+StrDecimalToUint64(IN CONST CHAR16 *String);
 
 /**
   Convert a Null-terminated Unicode hexadecimal string to a value of type UINTN.
@@ -1655,9 +1451,7 @@ StrDecimalToUint64 (
 **/
 UINTN
 EFIAPI
-StrHexToUintn (
-  IN      CONST CHAR16  *String
-  );
+StrHexToUintn(IN CONST CHAR16 *String);
 
 /**
   Convert a Null-terminated Unicode hexadecimal string to a value of type UINT64.
@@ -1696,9 +1490,7 @@ StrHexToUintn (
 **/
 UINT64
 EFIAPI
-StrHexToUint64 (
-  IN      CONST CHAR16  *String
-  );
+StrHexToUint64(IN CONST CHAR16 *String);
 
 /**
   Convert a Null-terminated Unicode string to IPv6 address and prefix length.
@@ -1752,12 +1544,7 @@ StrHexToUint64 (
 **/
 RETURN_STATUS
 EFIAPI
-StrToIpv6Address (
-  IN  CONST CHAR16  *String,
-  OUT CHAR16        **EndPointer  OPTIONAL,
-  OUT IPv6_ADDRESS  *Address,
-  OUT UINT8         *PrefixLength OPTIONAL
-  );
+StrToIpv6Address(IN CONST CHAR16 *String, OUT CHAR16 **EndPointer OPTIONAL, OUT IPv6_ADDRESS *Address, OUT UINT8 *PrefixLength OPTIONAL);
 
 /**
   Convert a Null-terminated Unicode string to IPv4 address and prefix length.
@@ -1802,14 +1589,9 @@ StrToIpv6Address (
 **/
 RETURN_STATUS
 EFIAPI
-StrToIpv4Address (
-  IN  CONST CHAR16  *String,
-  OUT CHAR16        **EndPointer  OPTIONAL,
-  OUT IPv4_ADDRESS  *Address,
-  OUT UINT8         *PrefixLength OPTIONAL
-  );
+StrToIpv4Address(IN CONST CHAR16 *String, OUT CHAR16 **EndPointer OPTIONAL, OUT IPv4_ADDRESS *Address, OUT UINT8 *PrefixLength OPTIONAL);
 
-#define GUID_STRING_LENGTH  36
+#define GUID_STRING_LENGTH 36
 
 /**
   Convert a Null-terminated Unicode GUID string to a value of type
@@ -1855,10 +1637,7 @@ StrToIpv4Address (
 **/
 RETURN_STATUS
 EFIAPI
-StrToGuid (
-  IN  CONST CHAR16  *String,
-  OUT GUID          *Guid
-  );
+StrToGuid(IN CONST CHAR16 *String, OUT GUID *Guid);
 
 /**
   Convert a Null-terminated Unicode hexadecimal string to a byte array.
@@ -1895,12 +1674,7 @@ StrToGuid (
 **/
 RETURN_STATUS
 EFIAPI
-StrHexToBytes (
-  IN  CONST CHAR16  *String,
-  IN  UINTN         Length,
-  OUT UINT8         *Buffer,
-  IN  UINTN         MaxBufferSize
-  );
+StrHexToBytes(IN CONST CHAR16 *String, IN UINTN Length, OUT UINT8 *Buffer, IN UINTN MaxBufferSize);
 
 /**
   Convert a Null-terminated Unicode string to a Null-terminated
@@ -1944,11 +1718,7 @@ StrHexToBytes (
 **/
 RETURN_STATUS
 EFIAPI
-UnicodeStrToAsciiStrS (
-  IN      CONST CHAR16  *Source,
-  OUT     CHAR8         *Destination,
-  IN      UINTN         DestMax
-  );
+UnicodeStrToAsciiStrS(IN CONST CHAR16 *Source, OUT CHAR8 *Destination, IN UINTN DestMax);
 
 /**
   Convert not more than Length successive characters from a Null-terminated
@@ -1995,13 +1765,7 @@ UnicodeStrToAsciiStrS (
 **/
 RETURN_STATUS
 EFIAPI
-UnicodeStrnToAsciiStrS (
-  IN      CONST CHAR16  *Source,
-  IN      UINTN         Length,
-  OUT     CHAR8         *Destination,
-  IN      UINTN         DestMax,
-  OUT     UINTN         *DestinationLength
-  );
+UnicodeStrnToAsciiStrS(IN CONST CHAR16 *Source, IN UINTN Length, OUT CHAR8 *Destination, IN UINTN DestMax, OUT UINTN *DestinationLength);
 
 /**
   Returns the length of a Null-terminated ASCII string.
@@ -2022,9 +1786,7 @@ UnicodeStrnToAsciiStrS (
 **/
 UINTN
 EFIAPI
-AsciiStrLen (
-  IN      CONST CHAR8  *String
-  );
+AsciiStrLen(IN CONST CHAR8 *String);
 
 /**
   Returns the size of a Null-terminated ASCII string in bytes, including the
@@ -2045,9 +1807,7 @@ AsciiStrLen (
 **/
 UINTN
 EFIAPI
-AsciiStrSize (
-  IN      CONST CHAR8  *String
-  );
+AsciiStrSize(IN CONST CHAR8 *String);
 
 /**
   Compares two Null-terminated ASCII strings, and returns the difference
@@ -2075,12 +1835,7 @@ AsciiStrSize (
   @retval !=0      FirstString is not identical to SecondString.
 
 **/
-INTN
-EFIAPI
-AsciiStrCmp (
-  IN      CONST CHAR8  *FirstString,
-  IN      CONST CHAR8  *SecondString
-  );
+INTN EFIAPI AsciiStrCmp(IN CONST CHAR8 *FirstString, IN CONST CHAR8 *SecondString);
 
 /**
   Performs a case insensitive comparison of two Null-terminated ASCII strings,
@@ -2111,12 +1866,7 @@ AsciiStrCmp (
                  insensitive comparisons.
 
 **/
-INTN
-EFIAPI
-AsciiStriCmp (
-  IN      CONST CHAR8  *FirstString,
-  IN      CONST CHAR8  *SecondString
-  );
+INTN EFIAPI AsciiStriCmp(IN CONST CHAR8 *FirstString, IN CONST CHAR8 *SecondString);
 
 /**
   Compares two Null-terminated ASCII strings with maximum lengths, and returns
@@ -2148,13 +1898,7 @@ AsciiStriCmp (
   @retval !=0       FirstString is not identical to SecondString.
 
 **/
-INTN
-EFIAPI
-AsciiStrnCmp (
-  IN      CONST CHAR8  *FirstString,
-  IN      CONST CHAR8  *SecondString,
-  IN      UINTN        Length
-  );
+INTN EFIAPI AsciiStrnCmp(IN CONST CHAR8 *FirstString, IN CONST CHAR8 *SecondString, IN UINTN Length);
 
 /**
   Returns the first occurrence of a Null-terminated ASCII sub-string
@@ -2180,12 +1924,7 @@ AsciiStrnCmp (
                           If the length of SearchString is zero,return String.
 
 **/
-CHAR8 *
-EFIAPI
-AsciiStrStr (
-  IN      CONST CHAR8  *String,
-  IN      CONST CHAR8  *SearchString
-  );
+CHAR8 *EFIAPI AsciiStrStr(IN CONST CHAR8 *String, IN CONST CHAR8 *SearchString);
 
 /**
   Convert a Null-terminated ASCII decimal string to a value of type
@@ -2219,9 +1958,7 @@ AsciiStrStr (
 **/
 UINTN
 EFIAPI
-AsciiStrDecimalToUintn (
-  IN      CONST CHAR8  *String
-  );
+AsciiStrDecimalToUintn(IN CONST CHAR8 *String);
 
 /**
   Convert a Null-terminated ASCII decimal string to a value of type
@@ -2255,9 +1992,7 @@ AsciiStrDecimalToUintn (
 **/
 UINT64
 EFIAPI
-AsciiStrDecimalToUint64 (
-  IN      CONST CHAR8  *String
-  );
+AsciiStrDecimalToUint64(IN CONST CHAR8 *String);
 
 /**
   Convert a Null-terminated ASCII hexadecimal string to a value of type UINTN.
@@ -2295,9 +2030,7 @@ AsciiStrDecimalToUint64 (
 **/
 UINTN
 EFIAPI
-AsciiStrHexToUintn (
-  IN      CONST CHAR8  *String
-  );
+AsciiStrHexToUintn(IN CONST CHAR8 *String);
 
 /**
   Convert a Null-terminated ASCII hexadecimal string to a value of type UINT64.
@@ -2335,9 +2068,7 @@ AsciiStrHexToUintn (
 **/
 UINT64
 EFIAPI
-AsciiStrHexToUint64 (
-  IN      CONST CHAR8  *String
-  );
+AsciiStrHexToUint64(IN CONST CHAR8 *String);
 
 /**
   Convert a Null-terminated ASCII string to IPv6 address and prefix length.
@@ -2389,12 +2120,7 @@ AsciiStrHexToUint64 (
 **/
 RETURN_STATUS
 EFIAPI
-AsciiStrToIpv6Address (
-  IN  CONST CHAR8   *String,
-  OUT CHAR8         **EndPointer  OPTIONAL,
-  OUT IPv6_ADDRESS  *Address,
-  OUT UINT8         *PrefixLength OPTIONAL
-  );
+AsciiStrToIpv6Address(IN CONST CHAR8 *String, OUT CHAR8 **EndPointer OPTIONAL, OUT IPv6_ADDRESS *Address, OUT UINT8 *PrefixLength OPTIONAL);
 
 /**
   Convert a Null-terminated ASCII string to IPv4 address and prefix length.
@@ -2437,12 +2163,7 @@ AsciiStrToIpv6Address (
 **/
 RETURN_STATUS
 EFIAPI
-AsciiStrToIpv4Address (
-  IN  CONST CHAR8   *String,
-  OUT CHAR8         **EndPointer  OPTIONAL,
-  OUT IPv4_ADDRESS  *Address,
-  OUT UINT8         *PrefixLength OPTIONAL
-  );
+AsciiStrToIpv4Address(IN CONST CHAR8 *String, OUT CHAR8 **EndPointer OPTIONAL, OUT IPv4_ADDRESS *Address, OUT UINT8 *PrefixLength OPTIONAL);
 
 /**
   Convert a Null-terminated ASCII GUID string to a value of type
@@ -2486,10 +2207,7 @@ AsciiStrToIpv4Address (
 **/
 RETURN_STATUS
 EFIAPI
-AsciiStrToGuid (
-  IN  CONST CHAR8  *String,
-  OUT GUID         *Guid
-  );
+AsciiStrToGuid(IN CONST CHAR8 *String, OUT GUID *Guid);
 
 /**
   Convert a Null-terminated ASCII hexadecimal string to a byte array.
@@ -2524,12 +2242,7 @@ AsciiStrToGuid (
 **/
 RETURN_STATUS
 EFIAPI
-AsciiStrHexToBytes (
-  IN  CONST CHAR8  *String,
-  IN  UINTN        Length,
-  OUT UINT8        *Buffer,
-  IN  UINTN        MaxBufferSize
-  );
+AsciiStrHexToBytes(IN CONST CHAR8 *String, IN UINTN Length, OUT UINT8 *Buffer, IN UINTN MaxBufferSize);
 
 /**
   Convert one Null-terminated ASCII string to a Null-terminated
@@ -2569,11 +2282,7 @@ AsciiStrHexToBytes (
 **/
 RETURN_STATUS
 EFIAPI
-AsciiStrToUnicodeStrS (
-  IN      CONST CHAR8  *Source,
-  OUT     CHAR16       *Destination,
-  IN      UINTN        DestMax
-  );
+AsciiStrToUnicodeStrS(IN CONST CHAR8 *Source, OUT CHAR16 *Destination, IN UINTN DestMax);
 
 /**
   Convert not more than Length successive characters from a Null-terminated
@@ -2619,13 +2328,7 @@ AsciiStrToUnicodeStrS (
 **/
 RETURN_STATUS
 EFIAPI
-AsciiStrnToUnicodeStrS (
-  IN      CONST CHAR8  *Source,
-  IN      UINTN        Length,
-  OUT     CHAR16       *Destination,
-  IN      UINTN        DestMax,
-  OUT     UINTN        *DestinationLength
-  );
+AsciiStrnToUnicodeStrS(IN CONST CHAR8 *Source, IN UINTN Length, OUT CHAR16 *Destination, IN UINTN DestMax, OUT UINTN *DestinationLength);
 
 /**
   Convert a Unicode character to upper case only if
@@ -2644,9 +2347,7 @@ AsciiStrnToUnicodeStrS (
 **/
 CHAR16
 EFIAPI
-CharToUpper (
-  IN      CHAR16  Char
-  );
+CharToUpper(IN CHAR16 Char);
 
 /**
   Converts a lowercase Ascii character to upper one.
@@ -2663,9 +2364,7 @@ CharToUpper (
 **/
 CHAR8
 EFIAPI
-AsciiCharToUpper (
-  IN      CHAR8  Chr
-  );
+AsciiCharToUpper(IN CHAR8 Chr);
 
 /**
   Convert binary data to a Base64 encoded ascii string based on RFC4648.
@@ -2688,12 +2387,7 @@ AsciiCharToUpper (
 **/
 RETURN_STATUS
 EFIAPI
-Base64Encode (
-  IN  CONST UINT8  *Source,
-  IN        UINTN  SourceLength,
-  OUT       CHAR8  *Destination  OPTIONAL,
-  IN OUT    UINTN  *DestinationSize
-  );
+Base64Encode(IN CONST UINT8 *Source, IN UINTN SourceLength, OUT CHAR8 *Destination OPTIONAL, IN OUT UINTN *DestinationSize);
 
 /**
   Decode Base64 ASCII encoded data to 8-bit binary representation, based on
@@ -2779,12 +2473,7 @@ Base64Encode (
 **/
 RETURN_STATUS
 EFIAPI
-Base64Decode (
-  IN     CONST CHAR8  *Source          OPTIONAL,
-  IN     UINTN        SourceSize,
-  OUT    UINT8        *Destination     OPTIONAL,
-  IN OUT UINTN        *DestinationSize
-  );
+Base64Decode(IN CONST CHAR8 *Source OPTIONAL, IN UINTN SourceSize, OUT UINT8 *Destination OPTIONAL, IN OUT UINTN *DestinationSize);
 
 /**
   Converts an 8-bit value to an 8-bit BCD value.
@@ -2801,9 +2490,7 @@ Base64Decode (
 **/
 UINT8
 EFIAPI
-DecimalToBcd8 (
-  IN      UINT8  Value
-  );
+DecimalToBcd8(IN UINT8 Value);
 
 /**
   Converts an 8-bit BCD value to an 8-bit value.
@@ -2821,9 +2508,7 @@ DecimalToBcd8 (
 **/
 UINT8
 EFIAPI
-BcdToDecimal8 (
-  IN      UINT8  Value
-  );
+BcdToDecimal8(IN UINT8 Value);
 
 //
 //  File Path Manipulation Functions
@@ -2839,9 +2524,7 @@ BcdToDecimal8 (
 **/
 BOOLEAN
 EFIAPI
-PathRemoveLastItem (
-  IN OUT CHAR16  *Path
-  );
+PathRemoveLastItem(IN OUT CHAR16 *Path);
 
 /**
   Function to clean up paths.
@@ -2856,11 +2539,7 @@ PathRemoveLastItem (
 
   @return       Returns Path, otherwise returns NULL to indicate that an error has occurred.
 **/
-CHAR16 *
-EFIAPI
-PathCleanUpDirectories (
-  IN CHAR16  *Path
-  );
+CHAR16 *EFIAPI PathCleanUpDirectories(IN CHAR16 *Path);
 
 //
 // Linked List Functions and Macros
@@ -2880,7 +2559,10 @@ PathCleanUpDirectories (
   @param  ListHead  The head note of a list to initialize.
 
 **/
-#define INITIALIZE_LIST_HEAD_VARIABLE(ListHead)  {&(ListHead), &(ListHead)}
+#define INITIALIZE_LIST_HEAD_VARIABLE(ListHead)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
+    {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
+        &(ListHead), &(ListHead)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               \
+    }
 
 /**
   Iterates over each node in a doubly linked list using each node's forward link.
@@ -2889,8 +2571,7 @@ PathCleanUpDirectories (
   @param  ListHead  The head node of the doubly linked list
 
 **/
-#define BASE_LIST_FOR_EACH(Entry, ListHead)    \
-  for(Entry = (ListHead)->ForwardLink; Entry != (ListHead); Entry = Entry->ForwardLink)
+#define BASE_LIST_FOR_EACH(Entry, ListHead) for (Entry = (ListHead)->ForwardLink; Entry != (ListHead); Entry = Entry->ForwardLink)
 
 /**
   Iterates over each node in a doubly linked list using each node's forward link
@@ -2905,9 +2586,7 @@ PathCleanUpDirectories (
   @param  ListHead  The head node of the doubly linked list
 
 **/
-#define BASE_LIST_FOR_EACH_SAFE(Entry, NextEntry, ListHead)            \
-  for(Entry = (ListHead)->ForwardLink, NextEntry = Entry->ForwardLink;\
-      Entry != (ListHead); Entry = NextEntry, NextEntry = Entry->ForwardLink)
+#define BASE_LIST_FOR_EACH_SAFE(Entry, NextEntry, ListHead) for (Entry = (ListHead)->ForwardLink, NextEntry = Entry->ForwardLink; Entry != (ListHead); Entry = NextEntry, NextEntry = Entry->ForwardLink)
 
 /**
   Checks whether FirstEntry and SecondEntry are part of the same doubly-linked
@@ -2930,10 +2609,7 @@ PathCleanUpDirectories (
 **/
 BOOLEAN
 EFIAPI
-IsNodeInList (
-  IN      CONST LIST_ENTRY  *FirstEntry,
-  IN      CONST LIST_ENTRY  *SecondEntry
-  );
+IsNodeInList(IN CONST LIST_ENTRY *FirstEntry, IN CONST LIST_ENTRY *SecondEntry);
 
 /**
   Initializes the head node of a doubly linked list, and returns the pointer to
@@ -2951,11 +2627,7 @@ IsNodeInList (
   @return ListHead
 
 **/
-LIST_ENTRY *
-EFIAPI
-InitializeListHead (
-  IN OUT  LIST_ENTRY  *ListHead
-  );
+LIST_ENTRY *EFIAPI InitializeListHead(IN OUT LIST_ENTRY *ListHead);
 
 /**
   Adds a node to the beginning of a doubly linked list, and returns the pointer
@@ -2979,12 +2651,7 @@ InitializeListHead (
   @return ListHead
 
 **/
-LIST_ENTRY *
-EFIAPI
-InsertHeadList (
-  IN OUT  LIST_ENTRY  *ListHead,
-  IN OUT  LIST_ENTRY  *Entry
-  );
+LIST_ENTRY *EFIAPI InsertHeadList(IN OUT LIST_ENTRY *ListHead, IN OUT LIST_ENTRY *Entry);
 
 /**
   Adds a node to the end of a doubly linked list, and returns the pointer to
@@ -3008,12 +2675,7 @@ InsertHeadList (
   @return ListHead
 
 **/
-LIST_ENTRY *
-EFIAPI
-InsertTailList (
-  IN OUT  LIST_ENTRY  *ListHead,
-  IN OUT  LIST_ENTRY  *Entry
-  );
+LIST_ENTRY *EFIAPI InsertTailList(IN OUT LIST_ENTRY *ListHead, IN OUT LIST_ENTRY *Entry);
 
 /**
   Retrieves the first node of a doubly linked list.
@@ -3035,11 +2697,7 @@ InsertTailList (
   @retval List  The list is empty.
 
 **/
-LIST_ENTRY *
-EFIAPI
-GetFirstNode (
-  IN      CONST LIST_ENTRY  *List
-  );
+LIST_ENTRY *EFIAPI GetFirstNode(IN CONST LIST_ENTRY *List);
 
 /**
   Retrieves the next node of a doubly linked list.
@@ -3062,12 +2720,7 @@ GetFirstNode (
   @return The pointer to the next node if one exists. Otherwise List is returned.
 
 **/
-LIST_ENTRY *
-EFIAPI
-GetNextNode (
-  IN      CONST LIST_ENTRY  *List,
-  IN      CONST LIST_ENTRY  *Node
-  );
+LIST_ENTRY *EFIAPI GetNextNode(IN CONST LIST_ENTRY *List, IN CONST LIST_ENTRY *Node);
 
 /**
   Retrieves the previous node of a doubly linked list.
@@ -3090,12 +2743,7 @@ GetNextNode (
   @return The pointer to the previous node if one exists. Otherwise List is returned.
 
 **/
-LIST_ENTRY *
-EFIAPI
-GetPreviousNode (
-  IN      CONST LIST_ENTRY  *List,
-  IN      CONST LIST_ENTRY  *Node
-  );
+LIST_ENTRY *EFIAPI GetPreviousNode(IN CONST LIST_ENTRY *List, IN CONST LIST_ENTRY *Node);
 
 /**
   Checks to see if a doubly linked list is empty or not.
@@ -3118,9 +2766,7 @@ GetPreviousNode (
 **/
 BOOLEAN
 EFIAPI
-IsListEmpty (
-  IN      CONST LIST_ENTRY  *ListHead
-  );
+IsListEmpty(IN CONST LIST_ENTRY *ListHead);
 
 /**
   Determines if a node in a doubly linked list is the head node of a the same
@@ -3150,10 +2796,7 @@ IsListEmpty (
 **/
 BOOLEAN
 EFIAPI
-IsNull (
-  IN      CONST LIST_ENTRY  *List,
-  IN      CONST LIST_ENTRY  *Node
-  );
+IsNull(IN CONST LIST_ENTRY *List, IN CONST LIST_ENTRY *Node);
 
 /**
   Determines if a node the last node in a doubly linked list.
@@ -3180,10 +2823,7 @@ IsNull (
 **/
 BOOLEAN
 EFIAPI
-IsNodeAtEnd (
-  IN      CONST LIST_ENTRY  *List,
-  IN      CONST LIST_ENTRY  *Node
-  );
+IsNodeAtEnd(IN CONST LIST_ENTRY *List, IN CONST LIST_ENTRY *Node);
 
 /**
   Swaps the location of two nodes in a doubly linked list, and returns the
@@ -3211,12 +2851,7 @@ IsNodeAtEnd (
   @return SecondEntry.
 
 **/
-LIST_ENTRY *
-EFIAPI
-SwapListEntries (
-  IN OUT  LIST_ENTRY  *FirstEntry,
-  IN OUT  LIST_ENTRY  *SecondEntry
-  );
+LIST_ENTRY *EFIAPI SwapListEntries(IN OUT LIST_ENTRY *FirstEntry, IN OUT LIST_ENTRY *SecondEntry);
 
 /**
   Removes a node from a doubly linked list, and returns the node that follows
@@ -3239,11 +2874,7 @@ SwapListEntries (
   @return Entry.
 
 **/
-LIST_ENTRY *
-EFIAPI
-RemoveEntryList (
-  IN      CONST LIST_ENTRY  *Entry
-  );
+LIST_ENTRY *EFIAPI RemoveEntryList(IN CONST LIST_ENTRY *Entry);
 
 //
 // Math Services
@@ -3259,12 +2890,7 @@ RemoveEntryList (
   @return <0                          Buffer1 is less than Buffer2.
   @return >0                          Buffer1 is greater than Buffer2.
 **/
-typedef
-INTN
-(EFIAPI *BASE_SORT_COMPARE)(
-  IN CONST VOID                 *Buffer1,
-  IN CONST VOID                 *Buffer2
-  );
+typedef INTN(EFIAPI *BASE_SORT_COMPARE)(IN CONST VOID *Buffer1, IN CONST VOID *Buffer2);
 
 /**
   This function is identical to perform QuickSort,
@@ -3289,15 +2915,7 @@ INTN
   @param[out] BufferOneElement   Caller provided buffer whose size equals to ElementSize.
                                  It's used by QuickSort() for swapping in sorting.
 **/
-VOID
-EFIAPI
-QuickSort (
-  IN OUT VOID                 *BufferToSort,
-  IN CONST UINTN              Count,
-  IN CONST UINTN              ElementSize,
-  IN       BASE_SORT_COMPARE  CompareFunction,
-  OUT VOID                    *BufferOneElement
-  );
+VOID EFIAPI QuickSort(IN OUT VOID *BufferToSort, IN CONST UINTN Count, IN CONST UINTN ElementSize, IN BASE_SORT_COMPARE CompareFunction, OUT VOID *BufferOneElement);
 
 /**
   Shifts a 64-bit integer left between 0 and 63 bits. The low bits are filled
@@ -3316,10 +2934,7 @@ QuickSort (
 **/
 UINT64
 EFIAPI
-LShiftU64 (
-  IN      UINT64  Operand,
-  IN      UINTN   Count
-  );
+LShiftU64(IN UINT64 Operand, IN UINTN Count);
 
 /**
   Shifts a 64-bit integer right between 0 and 63 bits. This high bits are
@@ -3338,10 +2953,7 @@ LShiftU64 (
 **/
 UINT64
 EFIAPI
-RShiftU64 (
-  IN      UINT64  Operand,
-  IN      UINTN   Count
-  );
+RShiftU64(IN UINT64 Operand, IN UINTN Count);
 
 /**
   Shifts a 64-bit integer right between 0 and 63 bits. The high bits are filled
@@ -3360,10 +2972,7 @@ RShiftU64 (
 **/
 UINT64
 EFIAPI
-ARShiftU64 (
-  IN      UINT64  Operand,
-  IN      UINTN   Count
-  );
+ARShiftU64(IN UINT64 Operand, IN UINTN Count);
 
 /**
   Rotates a 32-bit integer left between 0 and 31 bits, filling the low bits
@@ -3383,10 +2992,7 @@ ARShiftU64 (
 **/
 UINT32
 EFIAPI
-LRotU32 (
-  IN      UINT32  Operand,
-  IN      UINTN   Count
-  );
+LRotU32(IN UINT32 Operand, IN UINTN Count);
 
 /**
   Rotates a 32-bit integer right between 0 and 31 bits, filling the high bits
@@ -3406,10 +3012,7 @@ LRotU32 (
 **/
 UINT32
 EFIAPI
-RRotU32 (
-  IN      UINT32  Operand,
-  IN      UINTN   Count
-  );
+RRotU32(IN UINT32 Operand, IN UINTN Count);
 
 /**
   Rotates a 64-bit integer left between 0 and 63 bits, filling the low bits
@@ -3429,10 +3032,7 @@ RRotU32 (
 **/
 UINT64
 EFIAPI
-LRotU64 (
-  IN      UINT64  Operand,
-  IN      UINTN   Count
-  );
+LRotU64(IN UINT64 Operand, IN UINTN Count);
 
 /**
   Rotates a 64-bit integer right between 0 and 63 bits, filling the high bits
@@ -3452,10 +3052,7 @@ LRotU64 (
 **/
 UINT64
 EFIAPI
-RRotU64 (
-  IN      UINT64  Operand,
-  IN      UINTN   Count
-  );
+RRotU64(IN UINT64 Operand, IN UINTN Count);
 
 /**
   Returns the bit position of the lowest bit set in a 32-bit value.
@@ -3470,11 +3067,7 @@ RRotU64 (
   @retval -1    Operand is zero.
 
 **/
-INTN
-EFIAPI
-LowBitSet32 (
-  IN      UINT32  Operand
-  );
+INTN EFIAPI LowBitSet32(IN UINT32 Operand);
 
 /**
   Returns the bit position of the lowest bit set in a 64-bit value.
@@ -3490,11 +3083,7 @@ LowBitSet32 (
 
 
 **/
-INTN
-EFIAPI
-LowBitSet64 (
-  IN      UINT64  Operand
-  );
+INTN EFIAPI LowBitSet64(IN UINT64 Operand);
 
 /**
   Returns the bit position of the highest bit set in a 32-bit value. Equivalent
@@ -3510,11 +3099,7 @@ LowBitSet64 (
   @retval -1    Operand is zero.
 
 **/
-INTN
-EFIAPI
-HighBitSet32 (
-  IN      UINT32  Operand
-  );
+INTN EFIAPI HighBitSet32(IN UINT32 Operand);
 
 /**
   Returns the bit position of the highest bit set in a 64-bit value. Equivalent
@@ -3530,11 +3115,7 @@ HighBitSet32 (
   @retval -1     Operand is zero.
 
 **/
-INTN
-EFIAPI
-HighBitSet64 (
-  IN      UINT64  Operand
-  );
+INTN EFIAPI HighBitSet64(IN UINT64 Operand);
 
 /**
   Returns the value of the highest bit set in a 32-bit value. Equivalent to
@@ -3551,9 +3132,7 @@ HighBitSet64 (
 **/
 UINT32
 EFIAPI
-GetPowerOfTwo32 (
-  IN      UINT32  Operand
-  );
+GetPowerOfTwo32(IN UINT32 Operand);
 
 /**
   Returns the value of the highest bit set in a 64-bit value. Equivalent to
@@ -3570,9 +3149,7 @@ GetPowerOfTwo32 (
 **/
 UINT64
 EFIAPI
-GetPowerOfTwo64 (
-  IN      UINT64  Operand
-  );
+GetPowerOfTwo64(IN UINT64 Operand);
 
 /**
   Switches the endianness of a 16-bit integer.
@@ -3588,9 +3165,7 @@ GetPowerOfTwo64 (
 **/
 UINT16
 EFIAPI
-SwapBytes16 (
-  IN      UINT16  Value
-  );
+SwapBytes16(IN UINT16 Value);
 
 /**
   Switches the endianness of a 32-bit integer.
@@ -3606,9 +3181,7 @@ SwapBytes16 (
 **/
 UINT32
 EFIAPI
-SwapBytes32 (
-  IN      UINT32  Value
-  );
+SwapBytes32(IN UINT32 Value);
 
 /**
   Switches the endianness of a 64-bit integer.
@@ -3624,9 +3197,7 @@ SwapBytes32 (
 **/
 UINT64
 EFIAPI
-SwapBytes64 (
-  IN      UINT64  Value
-  );
+SwapBytes64(IN UINT64 Value);
 
 /**
   Multiples a 64-bit unsigned integer by a 32-bit unsigned integer and
@@ -3644,10 +3215,7 @@ SwapBytes64 (
 **/
 UINT64
 EFIAPI
-MultU64x32 (
-  IN      UINT64  Multiplicand,
-  IN      UINT32  Multiplier
-  );
+MultU64x32(IN UINT64 Multiplicand, IN UINT32 Multiplier);
 
 /**
   Multiples a 64-bit unsigned integer by a 64-bit unsigned integer and
@@ -3665,10 +3233,7 @@ MultU64x32 (
 **/
 UINT64
 EFIAPI
-MultU64x64 (
-  IN      UINT64  Multiplicand,
-  IN      UINT64  Multiplier
-  );
+MultU64x64(IN UINT64 Multiplicand, IN UINT64 Multiplier);
 
 /**
   Multiples a 64-bit signed integer by a 64-bit signed integer and generates a
@@ -3686,10 +3251,7 @@ MultU64x64 (
 **/
 INT64
 EFIAPI
-MultS64x64 (
-  IN      INT64  Multiplicand,
-  IN      INT64  Multiplier
-  );
+MultS64x64(IN INT64 Multiplicand, IN INT64 Multiplier);
 
 /**
   Divides a 64-bit unsigned integer by a 32-bit unsigned integer and generates
@@ -3709,10 +3271,7 @@ MultS64x64 (
 **/
 UINT64
 EFIAPI
-DivU64x32 (
-  IN      UINT64  Dividend,
-  IN      UINT32  Divisor
-  );
+DivU64x32(IN UINT64 Dividend, IN UINT32 Divisor);
 
 /**
   Divides a 64-bit unsigned integer by a 32-bit unsigned integer and generates
@@ -3732,10 +3291,7 @@ DivU64x32 (
 **/
 UINT32
 EFIAPI
-ModU64x32 (
-  IN      UINT64  Dividend,
-  IN      UINT32  Divisor
-  );
+ModU64x32(IN UINT64 Dividend, IN UINT32 Divisor);
 
 /**
   Divides a 64-bit unsigned integer by a 32-bit unsigned integer and generates
@@ -3758,11 +3314,7 @@ ModU64x32 (
 **/
 UINT64
 EFIAPI
-DivU64x32Remainder (
-  IN      UINT64  Dividend,
-  IN      UINT32  Divisor,
-  OUT     UINT32  *Remainder  OPTIONAL
-  );
+DivU64x32Remainder(IN UINT64 Dividend, IN UINT32 Divisor, OUT UINT32 *Remainder OPTIONAL);
 
 /**
   Divides a 64-bit unsigned integer by a 64-bit unsigned integer and generates
@@ -3785,11 +3337,7 @@ DivU64x32Remainder (
 **/
 UINT64
 EFIAPI
-DivU64x64Remainder (
-  IN      UINT64  Dividend,
-  IN      UINT64  Divisor,
-  OUT     UINT64  *Remainder  OPTIONAL
-  );
+DivU64x64Remainder(IN UINT64 Dividend, IN UINT64 Divisor, OUT UINT64 *Remainder OPTIONAL);
 
 /**
   Divides a 64-bit signed integer by a 64-bit signed integer and generates a
@@ -3816,11 +3364,7 @@ DivU64x64Remainder (
 **/
 INT64
 EFIAPI
-DivS64x64Remainder (
-  IN      INT64  Dividend,
-  IN      INT64  Divisor,
-  OUT     INT64  *Remainder  OPTIONAL
-  );
+DivS64x64Remainder(IN INT64 Dividend, IN INT64 Divisor, OUT INT64 *Remainder OPTIONAL);
 
 /**
   Reads a 16-bit value from memory that may be unaligned.
@@ -3837,9 +3381,7 @@ DivS64x64Remainder (
 **/
 UINT16
 EFIAPI
-ReadUnaligned16 (
-  IN CONST VOID  *Buffer
-  );
+ReadUnaligned16(IN CONST VOID *Buffer);
 
 /**
   Writes a 16-bit value to memory that may be unaligned.
@@ -3858,10 +3400,7 @@ ReadUnaligned16 (
 **/
 UINT16
 EFIAPI
-WriteUnaligned16 (
-  OUT VOID    *Buffer,
-  IN  UINT16  Value
-  );
+WriteUnaligned16(OUT VOID *Buffer, IN UINT16 Value);
 
 /**
   Reads a 24-bit value from memory that may be unaligned.
@@ -3878,9 +3417,7 @@ WriteUnaligned16 (
 **/
 UINT32
 EFIAPI
-ReadUnaligned24 (
-  IN CONST VOID  *Buffer
-  );
+ReadUnaligned24(IN CONST VOID *Buffer);
 
 /**
   Writes a 24-bit value to memory that may be unaligned.
@@ -3899,10 +3436,7 @@ ReadUnaligned24 (
 **/
 UINT32
 EFIAPI
-WriteUnaligned24 (
-  OUT VOID    *Buffer,
-  IN  UINT32  Value
-  );
+WriteUnaligned24(OUT VOID *Buffer, IN UINT32 Value);
 
 /**
   Reads a 32-bit value from memory that may be unaligned.
@@ -3919,9 +3453,7 @@ WriteUnaligned24 (
 **/
 UINT32
 EFIAPI
-ReadUnaligned32 (
-  IN CONST VOID  *Buffer
-  );
+ReadUnaligned32(IN CONST VOID *Buffer);
 
 /**
   Writes a 32-bit value to memory that may be unaligned.
@@ -3940,10 +3472,7 @@ ReadUnaligned32 (
 **/
 UINT32
 EFIAPI
-WriteUnaligned32 (
-  OUT VOID    *Buffer,
-  IN  UINT32  Value
-  );
+WriteUnaligned32(OUT VOID *Buffer, IN UINT32 Value);
 
 /**
   Reads a 64-bit value from memory that may be unaligned.
@@ -3960,9 +3489,7 @@ WriteUnaligned32 (
 **/
 UINT64
 EFIAPI
-ReadUnaligned64 (
-  IN CONST VOID  *Buffer
-  );
+ReadUnaligned64(IN CONST VOID *Buffer);
 
 /**
   Writes a 64-bit value to memory that may be unaligned.
@@ -3981,10 +3508,7 @@ ReadUnaligned64 (
 **/
 UINT64
 EFIAPI
-WriteUnaligned64 (
-  OUT VOID    *Buffer,
-  IN  UINT64  Value
-  );
+WriteUnaligned64(OUT VOID *Buffer, IN UINT64 Value);
 
 //
 // Bit Field Functions
@@ -4011,11 +3535,7 @@ WriteUnaligned64 (
 **/
 UINT8
 EFIAPI
-BitFieldRead8 (
-  IN      UINT8  Operand,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit
-  );
+BitFieldRead8(IN UINT8 Operand, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to an 8-bit value, and returns the result.
@@ -4042,12 +3562,7 @@ BitFieldRead8 (
 **/
 UINT8
 EFIAPI
-BitFieldWrite8 (
-  IN      UINT8  Operand,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit,
-  IN      UINT8  Value
-  );
+BitFieldWrite8(IN UINT8 Operand, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 Value);
 
 /**
   Reads a bit field from an 8-bit value, performs a bitwise OR, and returns the
@@ -4075,12 +3590,7 @@ BitFieldWrite8 (
 **/
 UINT8
 EFIAPI
-BitFieldOr8 (
-  IN      UINT8  Operand,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit,
-  IN      UINT8  OrData
-  );
+BitFieldOr8(IN UINT8 Operand, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 OrData);
 
 /**
   Reads a bit field from an 8-bit value, performs a bitwise AND, and returns
@@ -4108,12 +3618,7 @@ BitFieldOr8 (
 **/
 UINT8
 EFIAPI
-BitFieldAnd8 (
-  IN      UINT8  Operand,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit,
-  IN      UINT8  AndData
-  );
+BitFieldAnd8(IN UINT8 Operand, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 AndData);
 
 /**
   Reads a bit field from an 8-bit value, performs a bitwise AND followed by a
@@ -4144,13 +3649,7 @@ BitFieldAnd8 (
 **/
 UINT8
 EFIAPI
-BitFieldAndThenOr8 (
-  IN      UINT8  Operand,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit,
-  IN      UINT8  AndData,
-  IN      UINT8  OrData
-  );
+BitFieldAndThenOr8(IN UINT8 Operand, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 AndData, IN UINT8 OrData);
 
 /**
   Returns a bit field from a 16-bit value.
@@ -4173,11 +3672,7 @@ BitFieldAndThenOr8 (
 **/
 UINT16
 EFIAPI
-BitFieldRead16 (
-  IN      UINT16  Operand,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit
-  );
+BitFieldRead16(IN UINT16 Operand, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to a 16-bit value, and returns the result.
@@ -4204,12 +3699,7 @@ BitFieldRead16 (
 **/
 UINT16
 EFIAPI
-BitFieldWrite16 (
-  IN      UINT16  Operand,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT16  Value
-  );
+BitFieldWrite16(IN UINT16 Operand, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 Value);
 
 /**
   Reads a bit field from a 16-bit value, performs a bitwise OR, and returns the
@@ -4237,12 +3727,7 @@ BitFieldWrite16 (
 **/
 UINT16
 EFIAPI
-BitFieldOr16 (
-  IN      UINT16  Operand,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT16  OrData
-  );
+BitFieldOr16(IN UINT16 Operand, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 OrData);
 
 /**
   Reads a bit field from a 16-bit value, performs a bitwise AND, and returns
@@ -4270,12 +3755,7 @@ BitFieldOr16 (
 **/
 UINT16
 EFIAPI
-BitFieldAnd16 (
-  IN      UINT16  Operand,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT16  AndData
-  );
+BitFieldAnd16(IN UINT16 Operand, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 AndData);
 
 /**
   Reads a bit field from a 16-bit value, performs a bitwise AND followed by a
@@ -4306,13 +3786,7 @@ BitFieldAnd16 (
 **/
 UINT16
 EFIAPI
-BitFieldAndThenOr16 (
-  IN      UINT16  Operand,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT16  AndData,
-  IN      UINT16  OrData
-  );
+BitFieldAndThenOr16(IN UINT16 Operand, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 AndData, IN UINT16 OrData);
 
 /**
   Returns a bit field from a 32-bit value.
@@ -4335,11 +3809,7 @@ BitFieldAndThenOr16 (
 **/
 UINT32
 EFIAPI
-BitFieldRead32 (
-  IN      UINT32  Operand,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit
-  );
+BitFieldRead32(IN UINT32 Operand, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to a 32-bit value, and returns the result.
@@ -4366,12 +3836,7 @@ BitFieldRead32 (
 **/
 UINT32
 EFIAPI
-BitFieldWrite32 (
-  IN      UINT32  Operand,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  Value
-  );
+BitFieldWrite32(IN UINT32 Operand, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 Value);
 
 /**
   Reads a bit field from a 32-bit value, performs a bitwise OR, and returns the
@@ -4399,12 +3864,7 @@ BitFieldWrite32 (
 **/
 UINT32
 EFIAPI
-BitFieldOr32 (
-  IN      UINT32  Operand,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  OrData
-  );
+BitFieldOr32(IN UINT32 Operand, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 OrData);
 
 /**
   Reads a bit field from a 32-bit value, performs a bitwise AND, and returns
@@ -4432,12 +3892,7 @@ BitFieldOr32 (
 **/
 UINT32
 EFIAPI
-BitFieldAnd32 (
-  IN      UINT32  Operand,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  AndData
-  );
+BitFieldAnd32(IN UINT32 Operand, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 AndData);
 
 /**
   Reads a bit field from a 32-bit value, performs a bitwise AND followed by a
@@ -4468,13 +3923,7 @@ BitFieldAnd32 (
 **/
 UINT32
 EFIAPI
-BitFieldAndThenOr32 (
-  IN      UINT32  Operand,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  AndData,
-  IN      UINT32  OrData
-  );
+BitFieldAndThenOr32(IN UINT32 Operand, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 AndData, IN UINT32 OrData);
 
 /**
   Returns a bit field from a 64-bit value.
@@ -4497,11 +3946,7 @@ BitFieldAndThenOr32 (
 **/
 UINT64
 EFIAPI
-BitFieldRead64 (
-  IN      UINT64  Operand,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit
-  );
+BitFieldRead64(IN UINT64 Operand, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to a 64-bit value, and returns the result.
@@ -4528,12 +3973,7 @@ BitFieldRead64 (
 **/
 UINT64
 EFIAPI
-BitFieldWrite64 (
-  IN      UINT64  Operand,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT64  Value
-  );
+BitFieldWrite64(IN UINT64 Operand, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 Value);
 
 /**
   Reads a bit field from a 64-bit value, performs a bitwise OR, and returns the
@@ -4561,12 +4001,7 @@ BitFieldWrite64 (
 **/
 UINT64
 EFIAPI
-BitFieldOr64 (
-  IN      UINT64  Operand,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT64  OrData
-  );
+BitFieldOr64(IN UINT64 Operand, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 OrData);
 
 /**
   Reads a bit field from a 64-bit value, performs a bitwise AND, and returns
@@ -4594,12 +4029,7 @@ BitFieldOr64 (
 **/
 UINT64
 EFIAPI
-BitFieldAnd64 (
-  IN      UINT64  Operand,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT64  AndData
-  );
+BitFieldAnd64(IN UINT64 Operand, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 AndData);
 
 /**
   Reads a bit field from a 64-bit value, performs a bitwise AND followed by a
@@ -4630,13 +4060,7 @@ BitFieldAnd64 (
 **/
 UINT64
 EFIAPI
-BitFieldAndThenOr64 (
-  IN      UINT64  Operand,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT64  AndData,
-  IN      UINT64  OrData
-  );
+BitFieldAndThenOr64(IN UINT64 Operand, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 AndData, IN UINT64 OrData);
 
 /**
   Reads a bit field from a 32-bit value, counts and returns
@@ -4660,11 +4084,7 @@ BitFieldAndThenOr64 (
 **/
 UINT8
 EFIAPI
-BitFieldCountOnes32 (
-  IN       UINT32  Operand,
-  IN       UINTN   StartBit,
-  IN       UINTN   EndBit
-  );
+BitFieldCountOnes32(IN UINT32 Operand, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
    Reads a bit field from a 64-bit value, counts and returns
@@ -4688,11 +4108,7 @@ BitFieldCountOnes32 (
 **/
 UINT8
 EFIAPI
-BitFieldCountOnes64 (
-  IN       UINT64  Operand,
-  IN       UINTN   StartBit,
-  IN       UINTN   EndBit
-  );
+BitFieldCountOnes64(IN UINT64 Operand, IN UINTN StartBit, IN UINTN EndBit);
 
 /*******************************************************************************
 
@@ -4764,12 +4180,7 @@ BitFieldCountOnes64 (
   @param [out] ToUuid   Pointer to a GUID structure that will hold the converted
                         UUID in RFC4122 format.
 **/
-VOID
-EFIAPI
-ConvertGuidToUuid (
-  IN   GUID  *FromGuid,
-  OUT  GUID  *ToUuid
-  );
+VOID EFIAPI ConvertGuidToUuid(IN GUID *FromGuid, OUT GUID *ToUuid);
 
 /**
   This function converts a UUID in RFC4122 format to a GUID in UEFI format.
@@ -4782,12 +4193,7 @@ ConvertGuidToUuid (
   @param [out] ToGuid   Pointer to a GUID structure that will hold the converted
                         GUID in UEFI format.
 **/
-VOID
-EFIAPI
-ConvertUuidToGuid (
-  IN   GUID  *FromUuid,
-  OUT  GUID  *ToGuid
-  );
+VOID EFIAPI ConvertUuidToGuid(IN GUID *FromUuid, OUT GUID *ToGuid);
 
 //
 // Base Library Checksum Functions
@@ -4813,10 +4219,7 @@ ConvertUuidToGuid (
 **/
 UINT8
 EFIAPI
-CalculateSum8 (
-  IN      CONST UINT8  *Buffer,
-  IN      UINTN        Length
-  );
+CalculateSum8(IN CONST UINT8 *Buffer, IN UINTN Length);
 
 /**
   Returns the two's complement checksum of all elements in a buffer
@@ -4838,10 +4241,7 @@ CalculateSum8 (
 **/
 UINT8
 EFIAPI
-CalculateCheckSum8 (
-  IN      CONST UINT8  *Buffer,
-  IN      UINTN        Length
-  );
+CalculateCheckSum8(IN CONST UINT8 *Buffer, IN UINTN Length);
 
 /**
   Returns the sum of all elements in a buffer of 16-bit values.  During
@@ -4864,10 +4264,7 @@ CalculateCheckSum8 (
 **/
 UINT16
 EFIAPI
-CalculateSum16 (
-  IN      CONST UINT16  *Buffer,
-  IN      UINTN         Length
-  );
+CalculateSum16(IN CONST UINT16 *Buffer, IN UINTN Length);
 
 /**
   Returns the two's complement checksum of all elements in a buffer of
@@ -4891,10 +4288,7 @@ CalculateSum16 (
 **/
 UINT16
 EFIAPI
-CalculateCheckSum16 (
-  IN      CONST UINT16  *Buffer,
-  IN      UINTN         Length
-  );
+CalculateCheckSum16(IN CONST UINT16 *Buffer, IN UINTN Length);
 
 /**
   Returns the sum of all elements in a buffer of 32-bit values. During
@@ -4917,10 +4311,7 @@ CalculateCheckSum16 (
 **/
 UINT32
 EFIAPI
-CalculateSum32 (
-  IN      CONST UINT32  *Buffer,
-  IN      UINTN         Length
-  );
+CalculateSum32(IN CONST UINT32 *Buffer, IN UINTN Length);
 
 /**
   Returns the two's complement checksum of all elements in a buffer of
@@ -4944,10 +4335,7 @@ CalculateSum32 (
 **/
 UINT32
 EFIAPI
-CalculateCheckSum32 (
-  IN      CONST UINT32  *Buffer,
-  IN      UINTN         Length
-  );
+CalculateCheckSum32(IN CONST UINT32 *Buffer, IN UINTN Length);
 
 /**
   Returns the sum of all elements in a buffer of 64-bit values.  During
@@ -4970,10 +4358,7 @@ CalculateCheckSum32 (
 **/
 UINT64
 EFIAPI
-CalculateSum64 (
-  IN      CONST UINT64  *Buffer,
-  IN      UINTN         Length
-  );
+CalculateSum64(IN CONST UINT64 *Buffer, IN UINTN Length);
 
 /**
   Returns the two's complement checksum of all elements in a buffer of
@@ -4997,10 +4382,7 @@ CalculateSum64 (
 **/
 UINT64
 EFIAPI
-CalculateCheckSum64 (
-  IN      CONST UINT64  *Buffer,
-  IN      UINTN         Length
-  );
+CalculateCheckSum64(IN CONST UINT64 *Buffer, IN UINTN Length);
 
 /**
   Computes and returns a 32-bit CRC for a data buffer.
@@ -5017,10 +4399,7 @@ CalculateCheckSum64 (
 **/
 UINT32
 EFIAPI
-CalculateCrc32 (
-  IN  VOID   *Buffer,
-  IN  UINTN  Length
-  );
+CalculateCrc32(IN VOID *Buffer, IN UINTN Length);
 
 /**
    Calculates the CRC16-ANSI checksum of the given buffer.
@@ -5033,16 +4412,12 @@ CalculateCrc32 (
 **/
 UINT16
 EFIAPI
-CalculateCrc16Ansi (
-  IN  CONST VOID  *Buffer,
-  IN  UINTN       Length,
-  IN  UINT16      InitialValue
-  );
+CalculateCrc16Ansi(IN CONST VOID *Buffer, IN UINTN Length, IN UINT16 InitialValue);
 
 //
 // Initial value for the CRC16-ANSI algorithm, when no prior checksum has been calculated.
 //
-#define CRC16ANSI_INIT  0xffff
+#define CRC16ANSI_INIT 0xffff
 
 /**
    Calculates the CRC32c checksum of the given buffer.
@@ -5055,11 +4430,7 @@ CalculateCrc16Ansi (
 **/
 UINT32
 EFIAPI
-CalculateCrc32c (
-  IN CONST VOID  *Buffer,
-  IN UINTN       Length,
-  IN UINT32      InitialValue
-  );
+CalculateCrc32c(IN CONST VOID *Buffer, IN UINTN Length, IN UINT32 InitialValue);
 
 /**
   Calculates the CRC16-CCITT-FALSE checksum of the given buffer.
@@ -5072,11 +4443,7 @@ CalculateCrc32c (
 **/
 UINT16
 EFIAPI
-CalculateCrc16CcittF (
-  IN CONST VOID  *Buffer,
-  IN UINTN       Length,
-  IN UINT16      InitialValue
-  );
+CalculateCrc16CcittF(IN CONST VOID *Buffer, IN UINTN Length, IN UINT16 InitialValue);
 
 //
 // Base Library CPU Functions
@@ -5088,12 +4455,7 @@ CalculateCrc16CcittF (
   @param  Context1        Context1 parameter passed into SwitchStack().
   @param  Context2        Context2 parameter passed into SwitchStack().
 **/
-typedef
-VOID
-(EFIAPI *SWITCH_STACK_ENTRY_POINT)(
-  IN      VOID                      *Context1   OPTIONAL,
-  IN      VOID                      *Context2   OPTIONAL
-  );
+typedef VOID(EFIAPI *SWITCH_STACK_ENTRY_POINT)(IN VOID *Context1 OPTIONAL, IN VOID *Context2 OPTIONAL);
 
 /**
   Used to serialize load and store operations.
@@ -5102,11 +4464,7 @@ VOID
   globally visible when this function returns.
 
 **/
-VOID
-EFIAPI
-MemoryFence (
-  VOID
-  );
+VOID EFIAPI MemoryFence(VOID);
 
 /**
   Saves the current CPU context that can be restored with a call to LongJump()
@@ -5132,9 +4490,7 @@ MemoryFence (
 RETURNS_TWICE
 UINTN
 EFIAPI
-SetJump (
-  OUT     BASE_LIBRARY_JUMP_BUFFER  *JumpBuffer
-  );
+SetJump(OUT BASE_LIBRARY_JUMP_BUFFER *JumpBuffer);
 
 /**
   Restores the CPU context that was saved with SetJump().
@@ -5152,32 +4508,19 @@ SetJump (
                       restored and must be non-zero.
 
 **/
-VOID
-EFIAPI
-LongJump (
-  IN      BASE_LIBRARY_JUMP_BUFFER  *JumpBuffer,
-  IN      UINTN                     Value
-  );
+VOID EFIAPI LongJump(IN BASE_LIBRARY_JUMP_BUFFER *JumpBuffer, IN UINTN Value);
 
 /**
   Enables CPU interrupts.
 
 **/
-VOID
-EFIAPI
-EnableInterrupts (
-  VOID
-  );
+VOID EFIAPI EnableInterrupts(VOID);
 
 /**
   Disables CPU interrupts.
 
 **/
-VOID
-EFIAPI
-DisableInterrupts (
-  VOID
-  );
+VOID EFIAPI DisableInterrupts(VOID);
 
 /**
   Disables CPU interrupts and returns the interrupt state prior to the disable
@@ -5189,20 +4532,14 @@ DisableInterrupts (
 **/
 BOOLEAN
 EFIAPI
-SaveAndDisableInterrupts (
-  VOID
-  );
+SaveAndDisableInterrupts(VOID);
 
 /**
   Enables CPU interrupts for the smallest window required to capture any
   pending interrupts.
 
 **/
-VOID
-EFIAPI
-EnableDisableInterrupts (
-  VOID
-  );
+VOID EFIAPI EnableDisableInterrupts(VOID);
 
 /**
   Retrieves the current CPU interrupt state.
@@ -5216,9 +4553,7 @@ EnableDisableInterrupts (
 **/
 BOOLEAN
 EFIAPI
-GetInterruptState (
-  VOID
-  );
+GetInterruptState(VOID);
 
 /**
   Set the current CPU interrupt state.
@@ -5236,9 +4571,7 @@ GetInterruptState (
 **/
 BOOLEAN
 EFIAPI
-SetInterruptState (
-  IN      BOOLEAN  InterruptState
-  );
+SetInterruptState(IN BOOLEAN InterruptState);
 
 /**
   Requests CPU to pause for a short period of time.
@@ -5247,11 +4580,7 @@ SetInterruptState (
   systems to prevent memory starvation while waiting for a spin lock.
 
 **/
-VOID
-EFIAPI
-CpuPause (
-  VOID
-  );
+VOID EFIAPI CpuPause(VOID);
 
 /**
   Transfers control to a function starting with a new stack.
@@ -5282,15 +4611,7 @@ CpuPause (
 
 
 **/
-VOID
-EFIAPI
-SwitchStack (
-  IN      SWITCH_STACK_ENTRY_POINT  EntryPoint,
-  IN      VOID                      *Context1   OPTIONAL,
-  IN      VOID                      *Context2   OPTIONAL,
-  IN      VOID                      *NewStack,
-  ...
-  );
+VOID EFIAPI SwitchStack(IN SWITCH_STACK_ENTRY_POINT EntryPoint, IN VOID *Context1 OPTIONAL, IN VOID *Context2 OPTIONAL, IN VOID *NewStack, ...);
 
 /**
   Generates a breakpoint on the CPU.
@@ -5299,11 +4620,7 @@ SwitchStack (
   that code can resume normal execution after the breakpoint.
 
 **/
-VOID
-EFIAPI
-CpuBreakpoint (
-  VOID
-  );
+VOID EFIAPI CpuBreakpoint(VOID);
 
 /**
   Executes an infinite loop.
@@ -5314,11 +4631,7 @@ CpuBreakpoint (
   optimized away.
 
 **/
-VOID
-EFIAPI
-CpuDeadLoop (
-  VOID
-  );
+VOID EFIAPI CpuDeadLoop(VOID);
 
 /**
   Uses as a barrier to stop speculative execution.
@@ -5327,11 +4640,7 @@ CpuDeadLoop (
   instructions have completed.
 
 **/
-VOID
-EFIAPI
-SpeculationBarrier (
-  VOID
-  );
+VOID EFIAPI SpeculationBarrier(VOID);
 
 /**
   The TDCALL instruction causes a VM exit to the Intel TDX module.  It is
@@ -5349,13 +4658,7 @@ SpeculationBarrier (
 **/
 UINTN
 EFIAPI
-TdCall (
-  IN UINT64    Leaf,
-  IN UINT64    Arg1,
-  IN UINT64    Arg2,
-  IN UINT64    Arg3,
-  IN OUT VOID  *Results
-  );
+TdCall(IN UINT64 Leaf, IN UINT64 Arg1, IN UINT64 Arg2, IN UINT64 Arg3, IN OUT VOID *Results);
 
 /**
   TDVMALL is a leaf function 0 for TDCALL. It helps invoke services from the
@@ -5374,14 +4677,7 @@ TdCall (
 **/
 UINTN
 EFIAPI
-TdVmCall (
-  IN UINT64    Leaf,
-  IN UINT64    Arg1,
-  IN UINT64    Arg2,
-  IN UINT64    Arg3,
-  IN UINT64    Arg4,
-  IN OUT VOID  *Results
-  );
+TdVmCall(IN UINT64 Leaf, IN UINT64 Arg1, IN UINT64 Arg2, IN UINT64 Arg3, IN UINT64 Arg4, IN OUT VOID *Results);
 
 /**
   Probe if TD is enabled.
@@ -5391,9 +4687,7 @@ TdVmCall (
 **/
 BOOLEAN
 EFIAPI
-TdIsEnabled (
-  VOID
-  );
+TdIsEnabled(VOID);
 
 /**
   Probe if running as some kind of SEV guest.
@@ -5403,30 +4697,29 @@ TdIsEnabled (
 **/
 BOOLEAN
 EFIAPI
-SevGuestIsEnabled (
-  VOID
-  );
+SevGuestIsEnabled(VOID);
 
-#if defined (MDE_CPU_X64)
+#if defined(MDE_CPU_X64)
 //
 // The page size for the PVALIDATE instruction
 //
-typedef enum {
-  PvalidatePageSize4K = 0,
-  PvalidatePageSize2MB,
+typedef enum
+{
+    PvalidatePageSize4K = 0,
+    PvalidatePageSize2MB,
 } PVALIDATE_PAGE_SIZE;
 
 //
 // PVALIDATE Return Code.
 //
-#define PVALIDATE_RET_SUCCESS        0
-#define PVALIDATE_RET_FAIL_INPUT     1
-#define PVALIDATE_RET_SIZE_MISMATCH  6
+#define PVALIDATE_RET_SUCCESS       0
+#define PVALIDATE_RET_FAIL_INPUT    1
+#define PVALIDATE_RET_SIZE_MISMATCH 6
 
 //
 // The PVALIDATE instruction did not make any changes to the RMP entry.
 //
-#define PVALIDATE_RET_NO_RMPUPDATE  255
+#define PVALIDATE_RET_NO_RMPUPDATE 255
 
 /**
  Execute a PVALIDATE instruction to validate or to rescinds validation of a guest
@@ -5450,21 +4743,17 @@ typedef enum {
 **/
 UINT32
 EFIAPI
-AsmPvalidate (
-  IN   PVALIDATE_PAGE_SIZE  PageSize,
-  IN   BOOLEAN              Validate,
-  IN   PHYSICAL_ADDRESS     Address
-  );
+AsmPvalidate(IN PVALIDATE_PAGE_SIZE PageSize, IN BOOLEAN Validate, IN PHYSICAL_ADDRESS Address);
 
 //
 // RDX settings for RMPADJUST
 //
-#define RMPADJUST_VMPL_MAX               3
-#define RMPADJUST_VMPL_MASK              0xFF
-#define RMPADJUST_VMPL_SHIFT             0
-#define RMPADJUST_PERMISSION_MASK_MASK   0xFF
-#define RMPADJUST_PERMISSION_MASK_SHIFT  8
-#define RMPADJUST_VMSA_PAGE_BIT          BIT16
+#define RMPADJUST_VMPL_MAX              3
+#define RMPADJUST_VMPL_MASK             0xFF
+#define RMPADJUST_VMPL_SHIFT            0
+#define RMPADJUST_PERMISSION_MASK_MASK  0xFF
+#define RMPADJUST_PERMISSION_MASK_SHIFT 8
+#define RMPADJUST_VMSA_PAGE_BIT         BIT16
 
 /**
   Adjusts the permissions of an SEV-SNP guest page.
@@ -5485,11 +4774,7 @@ AsmPvalidate (
 **/
 UINT32
 EFIAPI
-AsmRmpAdjust (
-  IN      UINT64  Rax,
-  IN      UINT64  Rcx,
-  IN      UINT64  Rdx
-  );
+AsmRmpAdjust(IN UINT64 Rax, IN UINT64 Rcx, IN UINT64 Rdx);
 
 /**
   Reads the current value of the FS segment base address.
@@ -5504,9 +4789,7 @@ AsmRmpAdjust (
 **/
 UINT64
 EFIAPI
-AsmReadFsBase (
-  VOID
-  );
+AsmReadFsBase(VOID);
 
 /**
   Writes a value to the FS segment base address.
@@ -5523,36 +4806,36 @@ AsmReadFsBase (
 **/
 UINT64
 EFIAPI
-AsmWriteFsBase (
-  IN      UINT64  FsBase
-  );
+AsmWriteFsBase(IN UINT64 FsBase);
 
 #endif
 
-#if defined (MDE_CPU_IA32) || defined (MDE_CPU_X64)
+#if defined(MDE_CPU_IA32) || defined(MDE_CPU_X64)
 ///
 /// IA32 and x64 Specific Functions.
 /// Byte packed structure for 16-bit Real Mode EFLAGS.
 ///
-typedef union {
-  struct {
-    UINT32    CF         : 1; ///< Carry Flag.
-    UINT32    Reserved_0 : 1; ///< Reserved.
-    UINT32    PF         : 1; ///< Parity Flag.
-    UINT32    Reserved_1 : 1; ///< Reserved.
-    UINT32    AF         : 1; ///< Auxiliary Carry Flag.
-    UINT32    Reserved_2 : 1; ///< Reserved.
-    UINT32    ZF         : 1; ///< Zero Flag.
-    UINT32    SF         : 1; ///< Sign Flag.
-    UINT32    TF         : 1; ///< Trap Flag.
-    UINT32    IF         : 1; ///< Interrupt Enable Flag.
-    UINT32    DF         : 1; ///< Direction Flag.
-    UINT32    OF         : 1; ///< Overflow Flag.
-    UINT32    IOPL       : 2; ///< I/O Privilege Level.
-    UINT32    NT         : 1; ///< Nested Task.
-    UINT32    Reserved_3 : 1; ///< Reserved.
-  } Bits;
-  UINT16    Uint16;
+typedef union
+{
+    struct
+    {
+        UINT32 CF : 1;         ///< Carry Flag.
+        UINT32 Reserved_0 : 1; ///< Reserved.
+        UINT32 PF : 1;         ///< Parity Flag.
+        UINT32 Reserved_1 : 1; ///< Reserved.
+        UINT32 AF : 1;         ///< Auxiliary Carry Flag.
+        UINT32 Reserved_2 : 1; ///< Reserved.
+        UINT32 ZF : 1;         ///< Zero Flag.
+        UINT32 SF : 1;         ///< Sign Flag.
+        UINT32 TF : 1;         ///< Trap Flag.
+        UINT32 IF : 1;         ///< Interrupt Enable Flag.
+        UINT32 DF : 1;         ///< Direction Flag.
+        UINT32 OF : 1;         ///< Overflow Flag.
+        UINT32 IOPL : 2;       ///< I/O Privilege Level.
+        UINT32 NT : 1;         ///< Nested Task.
+        UINT32 Reserved_3 : 1; ///< Reserved.
+    } Bits;
+    UINT16 Uint16;
 } IA32_FLAGS16;
 
 ///
@@ -5560,32 +4843,34 @@ typedef union {
 /// 32-bits on IA-32.
 /// 64-bits on x64.  The upper 32-bits on x64 are reserved.
 ///
-typedef union {
-  struct {
-    UINT32    CF         : 1;  ///< Carry Flag.
-    UINT32    Reserved_0 : 1;  ///< Reserved.
-    UINT32    PF         : 1;  ///< Parity Flag.
-    UINT32    Reserved_1 : 1;  ///< Reserved.
-    UINT32    AF         : 1;  ///< Auxiliary Carry Flag.
-    UINT32    Reserved_2 : 1;  ///< Reserved.
-    UINT32    ZF         : 1;  ///< Zero Flag.
-    UINT32    SF         : 1;  ///< Sign Flag.
-    UINT32    TF         : 1;  ///< Trap Flag.
-    UINT32    IF         : 1;  ///< Interrupt Enable Flag.
-    UINT32    DF         : 1;  ///< Direction Flag.
-    UINT32    OF         : 1;  ///< Overflow Flag.
-    UINT32    IOPL       : 2;  ///< I/O Privilege Level.
-    UINT32    NT         : 1;  ///< Nested Task.
-    UINT32    Reserved_3 : 1;  ///< Reserved.
-    UINT32    RF         : 1;  ///< Resume Flag.
-    UINT32    VM         : 1;  ///< Virtual 8086 Mode.
-    UINT32    AC         : 1;  ///< Alignment Check.
-    UINT32    VIF        : 1;  ///< Virtual Interrupt Flag.
-    UINT32    VIP        : 1;  ///< Virtual Interrupt Pending.
-    UINT32    ID         : 1;  ///< ID Flag.
-    UINT32    Reserved_4 : 10; ///< Reserved.
-  } Bits;
-  UINTN    UintN;
+typedef union
+{
+    struct
+    {
+        UINT32 CF : 1;          ///< Carry Flag.
+        UINT32 Reserved_0 : 1;  ///< Reserved.
+        UINT32 PF : 1;          ///< Parity Flag.
+        UINT32 Reserved_1 : 1;  ///< Reserved.
+        UINT32 AF : 1;          ///< Auxiliary Carry Flag.
+        UINT32 Reserved_2 : 1;  ///< Reserved.
+        UINT32 ZF : 1;          ///< Zero Flag.
+        UINT32 SF : 1;          ///< Sign Flag.
+        UINT32 TF : 1;          ///< Trap Flag.
+        UINT32 IF : 1;          ///< Interrupt Enable Flag.
+        UINT32 DF : 1;          ///< Direction Flag.
+        UINT32 OF : 1;          ///< Overflow Flag.
+        UINT32 IOPL : 2;        ///< I/O Privilege Level.
+        UINT32 NT : 1;          ///< Nested Task.
+        UINT32 Reserved_3 : 1;  ///< Reserved.
+        UINT32 RF : 1;          ///< Resume Flag.
+        UINT32 VM : 1;          ///< Virtual 8086 Mode.
+        UINT32 AC : 1;          ///< Alignment Check.
+        UINT32 VIF : 1;         ///< Virtual Interrupt Flag.
+        UINT32 VIP : 1;         ///< Virtual Interrupt Pending.
+        UINT32 ID : 1;          ///< ID Flag.
+        UINT32 Reserved_4 : 10; ///< Reserved.
+    } Bits;
+    UINTN UintN;
 } IA32_EFLAGS32;
 
 ///
@@ -5593,24 +4878,26 @@ typedef union {
 /// 32-bits on IA-32.
 /// 64-bits on x64.  The upper 32-bits on x64 are reserved.
 ///
-typedef union {
-  struct {
-    UINT32    PE         : 1;  ///< Protection Enable.
-    UINT32    MP         : 1;  ///< Monitor Coprocessor.
-    UINT32    EM         : 1;  ///< Emulation.
-    UINT32    TS         : 1;  ///< Task Switched.
-    UINT32    ET         : 1;  ///< Extension Type.
-    UINT32    NE         : 1;  ///< Numeric Error.
-    UINT32    Reserved_0 : 10; ///< Reserved.
-    UINT32    WP         : 1;  ///< Write Protect.
-    UINT32    Reserved_1 : 1;  ///< Reserved.
-    UINT32    AM         : 1;  ///< Alignment Mask.
-    UINT32    Reserved_2 : 10; ///< Reserved.
-    UINT32    NW         : 1;  ///< Mot Write-through.
-    UINT32    CD         : 1;  ///< Cache Disable.
-    UINT32    PG         : 1;  ///< Paging.
-  } Bits;
-  UINTN    UintN;
+typedef union
+{
+    struct
+    {
+        UINT32 PE : 1;          ///< Protection Enable.
+        UINT32 MP : 1;          ///< Monitor Coprocessor.
+        UINT32 EM : 1;          ///< Emulation.
+        UINT32 TS : 1;          ///< Task Switched.
+        UINT32 ET : 1;          ///< Extension Type.
+        UINT32 NE : 1;          ///< Numeric Error.
+        UINT32 Reserved_0 : 10; ///< Reserved.
+        UINT32 WP : 1;          ///< Write Protect.
+        UINT32 Reserved_1 : 1;  ///< Reserved.
+        UINT32 AM : 1;          ///< Alignment Mask.
+        UINT32 Reserved_2 : 10; ///< Reserved.
+        UINT32 NW : 1;          ///< Mot Write-through.
+        UINT32 CD : 1;          ///< Cache Disable.
+        UINT32 PG : 1;          ///< Paging.
+    } Bits;
+    UINTN UintN;
 } IA32_CR0;
 
 ///
@@ -5618,310 +4905,333 @@ typedef union {
 /// 32-bits on IA-32.
 /// 64-bits on x64.  The upper 32-bits on x64 are reserved.
 ///
-typedef union {
-  struct {
-    UINT32    VME        : 1; ///< Virtual-8086 Mode Extensions.
-    UINT32    PVI        : 1; ///< Protected-Mode Virtual Interrupts.
-    UINT32    TSD        : 1; ///< Time Stamp Disable.
-    UINT32    DE         : 1; ///< Debugging Extensions.
-    UINT32    PSE        : 1; ///< Page Size Extensions.
-    UINT32    PAE        : 1; ///< Physical Address Extension.
-    UINT32    MCE        : 1; ///< Machine Check Enable.
-    UINT32    PGE        : 1; ///< Page Global Enable.
-    UINT32    PCE        : 1; ///< Performance Monitoring Counter
-                              ///< Enable.
-    UINT32    OSFXSR     : 1; ///< Operating System Support for
-                              ///< FXSAVE and FXRSTOR instructions
-    UINT32    OSXMMEXCPT : 1; ///< Operating System Support for
-                              ///< Unmasked SIMD Floating Point
-                              ///< Exceptions.
-    UINT32    UMIP       : 1; ///< User-Mode Instruction Prevention.
-    UINT32    LA57       : 1; ///< Linear Address 57bit.
-    UINT32    VMXE       : 1; ///< VMX Enable.
-    UINT32    SMXE       : 1; ///< SMX Enable.
-    UINT32    Reserved_3 : 1; ///< Reserved.
-    UINT32    FSGSBASE   : 1; ///< FSGSBASE Enable.
-    UINT32    PCIDE      : 1; ///< PCID Enable.
-    UINT32    OSXSAVE    : 1; ///< XSAVE and Processor Extended States Enable.
-    UINT32    Reserved_4 : 1; ///< Reserved.
-    UINT32    SMEP       : 1; ///< SMEP Enable.
-    UINT32    SMAP       : 1; ///< SMAP Enable.
-    UINT32    PKE        : 1; ///< Protection-Key Enable.
-    UINT32    Reserved_5 : 9; ///< Reserved.
-  } Bits;
-  UINTN    UintN;
+typedef union
+{
+    struct
+    {
+        UINT32 VME : 1;        ///< Virtual-8086 Mode Extensions.
+        UINT32 PVI : 1;        ///< Protected-Mode Virtual Interrupts.
+        UINT32 TSD : 1;        ///< Time Stamp Disable.
+        UINT32 DE : 1;         ///< Debugging Extensions.
+        UINT32 PSE : 1;        ///< Page Size Extensions.
+        UINT32 PAE : 1;        ///< Physical Address Extension.
+        UINT32 MCE : 1;        ///< Machine Check Enable.
+        UINT32 PGE : 1;        ///< Page Global Enable.
+        UINT32 PCE : 1;        ///< Performance Monitoring Counter
+                               ///< Enable.
+        UINT32 OSFXSR : 1;     ///< Operating System Support for
+                               ///< FXSAVE and FXRSTOR instructions
+        UINT32 OSXMMEXCPT : 1; ///< Operating System Support for
+                               ///< Unmasked SIMD Floating Point
+                               ///< Exceptions.
+        UINT32 UMIP : 1;       ///< User-Mode Instruction Prevention.
+        UINT32 LA57 : 1;       ///< Linear Address 57bit.
+        UINT32 VMXE : 1;       ///< VMX Enable.
+        UINT32 SMXE : 1;       ///< SMX Enable.
+        UINT32 Reserved_3 : 1; ///< Reserved.
+        UINT32 FSGSBASE : 1;   ///< FSGSBASE Enable.
+        UINT32 PCIDE : 1;      ///< PCID Enable.
+        UINT32 OSXSAVE : 1;    ///< XSAVE and Processor Extended States Enable.
+        UINT32 Reserved_4 : 1; ///< Reserved.
+        UINT32 SMEP : 1;       ///< SMEP Enable.
+        UINT32 SMAP : 1;       ///< SMAP Enable.
+        UINT32 PKE : 1;        ///< Protection-Key Enable.
+        UINT32 Reserved_5 : 9; ///< Reserved.
+    } Bits;
+    UINTN UintN;
 } IA32_CR4;
 
 ///
 /// Byte packed structure for a segment descriptor in a GDT/LDT.
 ///
-typedef union {
-  struct {
-    UINT32    LimitLow  : 16;
-    UINT32    BaseLow   : 16;
-    UINT32    BaseMid   : 8;
-    UINT32    Type      : 4;
-    UINT32    S         : 1;
-    UINT32    DPL       : 2;
-    UINT32    P         : 1;
-    UINT32    LimitHigh : 4;
-    UINT32    AVL       : 1;
-    UINT32    L         : 1;
-    UINT32    DB        : 1;
-    UINT32    G         : 1;
-    UINT32    BaseHigh  : 8;
-  } Bits;
-  UINT64    Uint64;
+typedef union
+{
+    struct
+    {
+        UINT32 LimitLow : 16;
+        UINT32 BaseLow : 16;
+        UINT32 BaseMid : 8;
+        UINT32 Type : 4;
+        UINT32 S : 1;
+        UINT32 DPL : 2;
+        UINT32 P : 1;
+        UINT32 LimitHigh : 4;
+        UINT32 AVL : 1;
+        UINT32 L : 1;
+        UINT32 DB : 1;
+        UINT32 G : 1;
+        UINT32 BaseHigh : 8;
+    } Bits;
+    UINT64 Uint64;
 } IA32_SEGMENT_DESCRIPTOR;
 
 ///
 /// Byte packed structure for an IDTR, GDTR, LDTR descriptor.
 ///
-  #pragma pack (1)
-typedef struct {
-  UINT16    Limit;
-  UINTN     Base;
+#pragma pack(1)
+typedef struct
+{
+    UINT16 Limit;
+    UINTN  Base;
 } IA32_DESCRIPTOR;
-  #pragma pack ()
+#pragma pack()
 
-#define IA32_IDT_GATE_TYPE_TASK          0x85
-#define IA32_IDT_GATE_TYPE_INTERRUPT_16  0x86
-#define IA32_IDT_GATE_TYPE_TRAP_16       0x87
-#define IA32_IDT_GATE_TYPE_INTERRUPT_32  0x8E
-#define IA32_IDT_GATE_TYPE_TRAP_32       0x8F
+#define IA32_IDT_GATE_TYPE_TASK         0x85
+#define IA32_IDT_GATE_TYPE_INTERRUPT_16 0x86
+#define IA32_IDT_GATE_TYPE_TRAP_16      0x87
+#define IA32_IDT_GATE_TYPE_INTERRUPT_32 0x8E
+#define IA32_IDT_GATE_TYPE_TRAP_32      0x8F
 
-#define IA32_GDT_TYPE_TSS   0x9
-#define IA32_GDT_ALIGNMENT  8
+#define IA32_GDT_TYPE_TSS  0x9
+#define IA32_GDT_ALIGNMENT 8
 
-  #if defined (MDE_CPU_IA32)
+#if defined(MDE_CPU_IA32)
 ///
 /// Byte packed structure for an IA-32 Interrupt Gate Descriptor.
 ///
-typedef union {
-  struct {
-    UINT32    OffsetLow  : 16; ///< Offset bits 15..0.
-    UINT32    Selector   : 16; ///< Selector.
-    UINT32    Reserved_0 : 8;  ///< Reserved.
-    UINT32    GateType   : 8;  ///< Gate Type.  See #defines above.
-    UINT32    OffsetHigh : 16; ///< Offset bits 31..16.
-  } Bits;
-  UINT64    Uint64;
+typedef union
+{
+    struct
+    {
+        UINT32 OffsetLow : 16;  ///< Offset bits 15..0.
+        UINT32 Selector : 16;   ///< Selector.
+        UINT32 Reserved_0 : 8;  ///< Reserved.
+        UINT32 GateType : 8;    ///< Gate Type.  See #defines above.
+        UINT32 OffsetHigh : 16; ///< Offset bits 31..16.
+    } Bits;
+    UINT64 Uint64;
 } IA32_IDT_GATE_DESCRIPTOR;
 
-    #pragma pack (1)
+#pragma pack(1)
 //
 // IA32 Task-State Segment Definition
 //
-typedef struct {
-  UINT16    PreviousTaskLink;
-  UINT16    Reserved_2;
-  UINT32    ESP0;
-  UINT16    SS0;
-  UINT16    Reserved_10;
-  UINT32    ESP1;
-  UINT16    SS1;
-  UINT16    Reserved_18;
-  UINT32    ESP2;
-  UINT16    SS2;
-  UINT16    Reserved_26;
-  UINT32    CR3;
-  UINT32    EIP;
-  UINT32    EFLAGS;
-  UINT32    EAX;
-  UINT32    ECX;
-  UINT32    EDX;
-  UINT32    EBX;
-  UINT32    ESP;
-  UINT32    EBP;
-  UINT32    ESI;
-  UINT32    EDI;
-  UINT16    ES;
-  UINT16    Reserved_74;
-  UINT16    CS;
-  UINT16    Reserved_78;
-  UINT16    SS;
-  UINT16    Reserved_82;
-  UINT16    DS;
-  UINT16    Reserved_86;
-  UINT16    FS;
-  UINT16    Reserved_90;
-  UINT16    GS;
-  UINT16    Reserved_94;
-  UINT16    LDTSegmentSelector;
-  UINT16    Reserved_98;
-  UINT16    T;
-  UINT16    IOMapBaseAddress;
+typedef struct
+{
+    UINT16 PreviousTaskLink;
+    UINT16 Reserved_2;
+    UINT32 ESP0;
+    UINT16 SS0;
+    UINT16 Reserved_10;
+    UINT32 ESP1;
+    UINT16 SS1;
+    UINT16 Reserved_18;
+    UINT32 ESP2;
+    UINT16 SS2;
+    UINT16 Reserved_26;
+    UINT32 CR3;
+    UINT32 EIP;
+    UINT32 EFLAGS;
+    UINT32 EAX;
+    UINT32 ECX;
+    UINT32 EDX;
+    UINT32 EBX;
+    UINT32 ESP;
+    UINT32 EBP;
+    UINT32 ESI;
+    UINT32 EDI;
+    UINT16 ES;
+    UINT16 Reserved_74;
+    UINT16 CS;
+    UINT16 Reserved_78;
+    UINT16 SS;
+    UINT16 Reserved_82;
+    UINT16 DS;
+    UINT16 Reserved_86;
+    UINT16 FS;
+    UINT16 Reserved_90;
+    UINT16 GS;
+    UINT16 Reserved_94;
+    UINT16 LDTSegmentSelector;
+    UINT16 Reserved_98;
+    UINT16 T;
+    UINT16 IOMapBaseAddress;
 } IA32_TASK_STATE_SEGMENT;
 
-typedef union {
-  struct {
-    UINT32    LimitLow    : 16; ///< Segment Limit 15..00
-    UINT32    BaseLow     : 16; ///< Base Address  15..00
-    UINT32    BaseMid     : 8;  ///< Base Address  23..16
-    UINT32    Type        : 4;  ///< Type (1 0 B 1)
-    UINT32    Reserved_43 : 1;  ///< 0
-    UINT32    DPL         : 2;  ///< Descriptor Privilege Level
-    UINT32    P           : 1;  ///< Segment Present
-    UINT32    LimitHigh   : 4;  ///< Segment Limit 19..16
-    UINT32    AVL         : 1;  ///< Available for use by system software
-    UINT32    Reserved_52 : 2;  ///< 0 0
-    UINT32    G           : 1;  ///< Granularity
-    UINT32    BaseHigh    : 8;  ///< Base Address 31..24
-  } Bits;
-  UINT64    Uint64;
+typedef union
+{
+    struct
+    {
+        UINT32 LimitLow : 16;   ///< Segment Limit 15..00
+        UINT32 BaseLow : 16;    ///< Base Address  15..00
+        UINT32 BaseMid : 8;     ///< Base Address  23..16
+        UINT32 Type : 4;        ///< Type (1 0 B 1)
+        UINT32 Reserved_43 : 1; ///< 0
+        UINT32 DPL : 2;         ///< Descriptor Privilege Level
+        UINT32 P : 1;           ///< Segment Present
+        UINT32 LimitHigh : 4;   ///< Segment Limit 19..16
+        UINT32 AVL : 1;         ///< Available for use by system software
+        UINT32 Reserved_52 : 2; ///< 0 0
+        UINT32 G : 1;           ///< Granularity
+        UINT32 BaseHigh : 8;    ///< Base Address 31..24
+    } Bits;
+    UINT64 Uint64;
 } IA32_TSS_DESCRIPTOR;
-    #pragma pack ()
+#pragma pack()
 
-  #endif // defined (MDE_CPU_IA32)
+#endif // defined (MDE_CPU_IA32)
 
-  #if defined (MDE_CPU_X64)
+#if defined(MDE_CPU_X64)
 ///
 /// Byte packed structure for an x64 Interrupt Gate Descriptor.
 ///
-typedef union {
-  struct {
-    UINT32    OffsetLow   : 16; ///< Offset bits 15..0.
-    UINT32    Selector    : 16; ///< Selector.
-    UINT32    Reserved_0  : 8;  ///< Reserved.
-    UINT32    GateType    : 8;  ///< Gate Type.  See #defines above.
-    UINT32    OffsetHigh  : 16; ///< Offset bits 31..16.
-    UINT32    OffsetUpper : 32; ///< Offset bits 63..32.
-    UINT32    Reserved_1  : 32; ///< Reserved.
-  } Bits;
-  struct {
-    UINT64    Uint64;
-    UINT64    Uint64_1;
-  } Uint128;
+typedef union
+{
+    struct
+    {
+        UINT32 OffsetLow : 16;   ///< Offset bits 15..0.
+        UINT32 Selector : 16;    ///< Selector.
+        UINT32 Reserved_0 : 8;   ///< Reserved.
+        UINT32 GateType : 8;     ///< Gate Type.  See #defines above.
+        UINT32 OffsetHigh : 16;  ///< Offset bits 31..16.
+        UINT32 OffsetUpper : 32; ///< Offset bits 63..32.
+        UINT32 Reserved_1 : 32;  ///< Reserved.
+    } Bits;
+    struct
+    {
+        UINT64 Uint64;
+        UINT64 Uint64_1;
+    } Uint128;
 } IA32_IDT_GATE_DESCRIPTOR;
 
-    #pragma pack (1)
+#pragma pack(1)
 //
 // IA32 Task-State Segment Definition
 //
-typedef struct {
-  UINT32    Reserved_0;
-  UINT64    RSP0;
-  UINT64    RSP1;
-  UINT64    RSP2;
-  UINT64    Reserved_28;
-  UINT64    IST[7];
-  UINT64    Reserved_92;
-  UINT16    Reserved_100;
-  UINT16    IOMapBaseAddress;
+typedef struct
+{
+    UINT32 Reserved_0;
+    UINT64 RSP0;
+    UINT64 RSP1;
+    UINT64 RSP2;
+    UINT64 Reserved_28;
+    UINT64 IST[7];
+    UINT64 Reserved_92;
+    UINT16 Reserved_100;
+    UINT16 IOMapBaseAddress;
 } IA32_TASK_STATE_SEGMENT;
 
-typedef union {
-  struct {
-    UINT32    LimitLow    : 16; ///< Segment Limit 15..00
-    UINT32    BaseLow     : 16; ///< Base Address  15..00
-    UINT32    BaseMidl    : 8;  ///< Base Address  23..16
-    UINT32    Type        : 4;  ///< Type (1 0 B 1)
-    UINT32    Reserved_43 : 1;  ///< 0
-    UINT32    DPL         : 2;  ///< Descriptor Privilege Level
-    UINT32    P           : 1;  ///< Segment Present
-    UINT32    LimitHigh   : 4;  ///< Segment Limit 19..16
-    UINT32    AVL         : 1;  ///< Available for use by system software
-    UINT32    Reserved_52 : 2;  ///< 0 0
-    UINT32    G           : 1;  ///< Granularity
-    UINT32    BaseMidh    : 8;  ///< Base Address  31..24
-    UINT32    BaseHigh    : 32; ///< Base Address  63..32
-    UINT32    Reserved_96 : 32; ///< Reserved
-  } Bits;
-  struct {
-    UINT64    Uint64;
-    UINT64    Uint64_1;
-  } Uint128;
+typedef union
+{
+    struct
+    {
+        UINT32 LimitLow : 16;    ///< Segment Limit 15..00
+        UINT32 BaseLow : 16;     ///< Base Address  15..00
+        UINT32 BaseMidl : 8;     ///< Base Address  23..16
+        UINT32 Type : 4;         ///< Type (1 0 B 1)
+        UINT32 Reserved_43 : 1;  ///< 0
+        UINT32 DPL : 2;          ///< Descriptor Privilege Level
+        UINT32 P : 1;            ///< Segment Present
+        UINT32 LimitHigh : 4;    ///< Segment Limit 19..16
+        UINT32 AVL : 1;          ///< Available for use by system software
+        UINT32 Reserved_52 : 2;  ///< 0 0
+        UINT32 G : 1;            ///< Granularity
+        UINT32 BaseMidh : 8;     ///< Base Address  31..24
+        UINT32 BaseHigh : 32;    ///< Base Address  63..32
+        UINT32 Reserved_96 : 32; ///< Reserved
+    } Bits;
+    struct
+    {
+        UINT64 Uint64;
+        UINT64 Uint64_1;
+    } Uint128;
 } IA32_TSS_DESCRIPTOR;
-    #pragma pack ()
+#pragma pack()
 
-  #endif // defined (MDE_CPU_X64)
+#endif // defined (MDE_CPU_X64)
 
 ///
 /// Byte packed structure for an FP/SSE/SSE2 context.
 ///
-typedef struct {
-  UINT8    Buffer[512];
+typedef struct
+{
+    UINT8 Buffer[512];
 } IA32_FX_BUFFER;
 
 ///
 /// Structures for the 16-bit real mode thunks.
 ///
-typedef struct {
-  UINT32    Reserved1;
-  UINT32    Reserved2;
-  UINT32    Reserved3;
-  UINT32    Reserved4;
-  UINT8     BL;
-  UINT8     BH;
-  UINT16    Reserved5;
-  UINT8     DL;
-  UINT8     DH;
-  UINT16    Reserved6;
-  UINT8     CL;
-  UINT8     CH;
-  UINT16    Reserved7;
-  UINT8     AL;
-  UINT8     AH;
-  UINT16    Reserved8;
+typedef struct
+{
+    UINT32 Reserved1;
+    UINT32 Reserved2;
+    UINT32 Reserved3;
+    UINT32 Reserved4;
+    UINT8  BL;
+    UINT8  BH;
+    UINT16 Reserved5;
+    UINT8  DL;
+    UINT8  DH;
+    UINT16 Reserved6;
+    UINT8  CL;
+    UINT8  CH;
+    UINT16 Reserved7;
+    UINT8  AL;
+    UINT8  AH;
+    UINT16 Reserved8;
 } IA32_BYTE_REGS;
 
-typedef struct {
-  UINT16    DI;
-  UINT16    Reserved1;
-  UINT16    SI;
-  UINT16    Reserved2;
-  UINT16    BP;
-  UINT16    Reserved3;
-  UINT16    SP;
-  UINT16    Reserved4;
-  UINT16    BX;
-  UINT16    Reserved5;
-  UINT16    DX;
-  UINT16    Reserved6;
-  UINT16    CX;
-  UINT16    Reserved7;
-  UINT16    AX;
-  UINT16    Reserved8;
+typedef struct
+{
+    UINT16 DI;
+    UINT16 Reserved1;
+    UINT16 SI;
+    UINT16 Reserved2;
+    UINT16 BP;
+    UINT16 Reserved3;
+    UINT16 SP;
+    UINT16 Reserved4;
+    UINT16 BX;
+    UINT16 Reserved5;
+    UINT16 DX;
+    UINT16 Reserved6;
+    UINT16 CX;
+    UINT16 Reserved7;
+    UINT16 AX;
+    UINT16 Reserved8;
 } IA32_WORD_REGS;
 
-typedef struct {
-  UINT32           EDI;
-  UINT32           ESI;
-  UINT32           EBP;
-  UINT32           ESP;
-  UINT32           EBX;
-  UINT32           EDX;
-  UINT32           ECX;
-  UINT32           EAX;
-  UINT16           DS;
-  UINT16           ES;
-  UINT16           FS;
-  UINT16           GS;
-  IA32_EFLAGS32    EFLAGS;
-  UINT32           Eip;
-  UINT16           CS;
-  UINT16           SS;
+typedef struct
+{
+    UINT32        EDI;
+    UINT32        ESI;
+    UINT32        EBP;
+    UINT32        ESP;
+    UINT32        EBX;
+    UINT32        EDX;
+    UINT32        ECX;
+    UINT32        EAX;
+    UINT16        DS;
+    UINT16        ES;
+    UINT16        FS;
+    UINT16        GS;
+    IA32_EFLAGS32 EFLAGS;
+    UINT32        Eip;
+    UINT16        CS;
+    UINT16        SS;
 } IA32_DWORD_REGS;
 
-typedef union {
-  IA32_DWORD_REGS    E;
-  IA32_WORD_REGS     X;
-  IA32_BYTE_REGS     H;
+typedef union
+{
+    IA32_DWORD_REGS E;
+    IA32_WORD_REGS  X;
+    IA32_BYTE_REGS  H;
 } IA32_REGISTER_SET;
 
 ///
 /// Byte packed structure for an 16-bit real mode thunks.
 ///
-typedef struct {
-  IA32_REGISTER_SET    *RealModeState;
-  VOID                 *RealModeBuffer;
-  UINT32               RealModeBufferSize;
-  UINT32               ThunkAttributes;
+typedef struct
+{
+    IA32_REGISTER_SET *RealModeState;
+    VOID              *RealModeBuffer;
+    UINT32             RealModeBufferSize;
+    UINT32             ThunkAttributes;
 } THUNK_CONTEXT;
 
-#define THUNK_ATTRIBUTE_BIG_REAL_MODE              0x00000001
-#define THUNK_ATTRIBUTE_DISABLE_A20_MASK_INT_15    0x00000002
-#define THUNK_ATTRIBUTE_DISABLE_A20_MASK_KBD_CTRL  0x00000004
+#define THUNK_ATTRIBUTE_BIG_REAL_MODE             0x00000001
+#define THUNK_ATTRIBUTE_DISABLE_A20_MASK_INT_15   0x00000002
+#define THUNK_ATTRIBUTE_DISABLE_A20_MASK_KBD_CTRL 0x00000004
 
 ///
 /// Type definition for representing labels in NASM source code that allow for
@@ -5935,9 +5245,7 @@ typedef struct {
 /// edk2 coding style for function (or pointer-to-function) typedefs. The VOID
 /// return type and the VOID argument list are merely artifacts.
 ///
-typedef VOID (X86_ASSEMBLY_PATCH_LABEL) (
-  VOID
-  );
+typedef VOID(X86_ASSEMBLY_PATCH_LABEL)(VOID);
 
 /**
   Retrieves CPUID information.
@@ -5966,13 +5274,7 @@ typedef VOID (X86_ASSEMBLY_PATCH_LABEL) (
 **/
 UINT32
 EFIAPI
-AsmCpuid (
-  IN      UINT32  Index,
-  OUT     UINT32  *Eax   OPTIONAL,
-  OUT     UINT32  *Ebx   OPTIONAL,
-  OUT     UINT32  *Ecx   OPTIONAL,
-  OUT     UINT32  *Edx   OPTIONAL
-  );
+AsmCpuid(IN UINT32 Index, OUT UINT32 *Eax OPTIONAL, OUT UINT32 *Ebx OPTIONAL, OUT UINT32 *Ecx OPTIONAL, OUT UINT32 *Edx OPTIONAL);
 
 /**
   Retrieves CPUID information using an extended leaf identifier.
@@ -6008,14 +5310,7 @@ AsmCpuid (
 **/
 UINT32
 EFIAPI
-AsmCpuidEx (
-  IN      UINT32  Index,
-  IN      UINT32  SubIndex,
-  OUT     UINT32  *Eax   OPTIONAL,
-  OUT     UINT32  *Ebx   OPTIONAL,
-  OUT     UINT32  *Ecx   OPTIONAL,
-  OUT     UINT32  *Edx   OPTIONAL
-  );
+AsmCpuidEx(IN UINT32 Index, IN UINT32 SubIndex, OUT UINT32 *Eax OPTIONAL, OUT UINT32 *Ebx OPTIONAL, OUT UINT32 *Ecx OPTIONAL, OUT UINT32 *Edx OPTIONAL);
 
 /**
   Set CD bit and clear NW bit of CR0 followed by a WBINVD.
@@ -6024,11 +5319,7 @@ AsmCpuidEx (
   and executing a WBINVD instruction.  This function is only available on IA-32 and x64.
 
 **/
-VOID
-EFIAPI
-AsmDisableCache (
-  VOID
-  );
+VOID EFIAPI AsmDisableCache(VOID);
 
 /**
   Perform a WBINVD and clear both the CD and NW bits of CR0.
@@ -6037,11 +5328,7 @@ AsmDisableCache (
   bits of CR0 to 0.  This function is only available on IA-32 and x64.
 
 **/
-VOID
-EFIAPI
-AsmEnableCache (
-  VOID
-  );
+VOID EFIAPI AsmEnableCache(VOID);
 
 /**
   Returns the lower 32-bits of a Machine Specific Register(MSR).
@@ -6059,9 +5346,7 @@ AsmEnableCache (
 **/
 UINT32
 EFIAPI
-AsmReadMsr32 (
-  IN      UINT32  Index
-  );
+AsmReadMsr32(IN UINT32 Index);
 
 /**
   Writes a 32-bit value to a Machine Specific Register(MSR), and returns the value.
@@ -6082,10 +5367,7 @@ AsmReadMsr32 (
 **/
 UINT32
 EFIAPI
-AsmWriteMsr32 (
-  IN      UINT32  Index,
-  IN      UINT32  Value
-  );
+AsmWriteMsr32(IN UINT32 Index, IN UINT32 Value);
 
 /**
   Reads a 64-bit MSR, performs a bitwise OR on the lower 32-bits, and
@@ -6108,10 +5390,7 @@ AsmWriteMsr32 (
 **/
 UINT32
 EFIAPI
-AsmMsrOr32 (
-  IN      UINT32  Index,
-  IN      UINT32  OrData
-  );
+AsmMsrOr32(IN UINT32 Index, IN UINT32 OrData);
 
 /**
   Reads a 64-bit MSR, performs a bitwise AND on the lower 32-bits, and writes
@@ -6134,10 +5413,7 @@ AsmMsrOr32 (
 **/
 UINT32
 EFIAPI
-AsmMsrAnd32 (
-  IN      UINT32  Index,
-  IN      UINT32  AndData
-  );
+AsmMsrAnd32(IN UINT32 Index, IN UINT32 AndData);
 
 /**
   Reads a 64-bit MSR, performs a bitwise AND followed by a bitwise OR
@@ -6163,11 +5439,7 @@ AsmMsrAnd32 (
 **/
 UINT32
 EFIAPI
-AsmMsrAndThenOr32 (
-  IN      UINT32  Index,
-  IN      UINT32  AndData,
-  IN      UINT32  OrData
-  );
+AsmMsrAndThenOr32(IN UINT32 Index, IN UINT32 AndData, IN UINT32 OrData);
 
 /**
   Reads a bit field of an MSR.
@@ -6193,11 +5465,7 @@ AsmMsrAndThenOr32 (
 **/
 UINT32
 EFIAPI
-AsmMsrBitFieldRead32 (
-  IN      UINT32  Index,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit
-  );
+AsmMsrBitFieldRead32(IN UINT32 Index, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to an MSR.
@@ -6226,12 +5494,7 @@ AsmMsrBitFieldRead32 (
 **/
 UINT32
 EFIAPI
-AsmMsrBitFieldWrite32 (
-  IN      UINT32  Index,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  Value
-  );
+AsmMsrBitFieldWrite32(IN UINT32 Index, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 Value);
 
 /**
   Reads a bit field in a 64-bit MSR, performs a bitwise OR, and writes the
@@ -6262,12 +5525,7 @@ AsmMsrBitFieldWrite32 (
 **/
 UINT32
 EFIAPI
-AsmMsrBitFieldOr32 (
-  IN      UINT32  Index,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  OrData
-  );
+AsmMsrBitFieldOr32(IN UINT32 Index, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 OrData);
 
 /**
   Reads a bit field in a 64-bit MSR, performs a bitwise AND, and writes the
@@ -6298,12 +5556,7 @@ AsmMsrBitFieldOr32 (
 **/
 UINT32
 EFIAPI
-AsmMsrBitFieldAnd32 (
-  IN      UINT32  Index,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  AndData
-  );
+AsmMsrBitFieldAnd32(IN UINT32 Index, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 AndData);
 
 /**
   Reads a bit field in a 64-bit MSR, performs a bitwise AND followed by a
@@ -6338,13 +5591,7 @@ AsmMsrBitFieldAnd32 (
 **/
 UINT32
 EFIAPI
-AsmMsrBitFieldAndThenOr32 (
-  IN      UINT32  Index,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  AndData,
-  IN      UINT32  OrData
-  );
+AsmMsrBitFieldAndThenOr32(IN UINT32 Index, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 AndData, IN UINT32 OrData);
 
 /**
   Returns a 64-bit Machine Specific Register(MSR).
@@ -6362,9 +5609,7 @@ AsmMsrBitFieldAndThenOr32 (
 **/
 UINT64
 EFIAPI
-AsmReadMsr64 (
-  IN      UINT32  Index
-  );
+AsmReadMsr64(IN UINT32 Index);
 
 /**
   Writes a 64-bit value to a Machine Specific Register(MSR), and returns the
@@ -6385,10 +5630,7 @@ AsmReadMsr64 (
 **/
 UINT64
 EFIAPI
-AsmWriteMsr64 (
-  IN      UINT32  Index,
-  IN      UINT64  Value
-  );
+AsmWriteMsr64(IN UINT32 Index, IN UINT64 Value);
 
 /**
   Reads a 64-bit MSR, performs a bitwise OR, and writes the result
@@ -6410,10 +5652,7 @@ AsmWriteMsr64 (
 **/
 UINT64
 EFIAPI
-AsmMsrOr64 (
-  IN      UINT32  Index,
-  IN      UINT64  OrData
-  );
+AsmMsrOr64(IN UINT32 Index, IN UINT64 OrData);
 
 /**
   Reads a 64-bit MSR, performs a bitwise AND, and writes the result back to the
@@ -6435,10 +5674,7 @@ AsmMsrOr64 (
 **/
 UINT64
 EFIAPI
-AsmMsrAnd64 (
-  IN      UINT32  Index,
-  IN      UINT64  AndData
-  );
+AsmMsrAnd64(IN UINT32 Index, IN UINT64 AndData);
 
 /**
   Reads a 64-bit MSR, performs a bitwise AND followed by a bitwise
@@ -6463,11 +5699,7 @@ AsmMsrAnd64 (
 **/
 UINT64
 EFIAPI
-AsmMsrAndThenOr64 (
-  IN      UINT32  Index,
-  IN      UINT64  AndData,
-  IN      UINT64  OrData
-  );
+AsmMsrAndThenOr64(IN UINT32 Index, IN UINT64 AndData, IN UINT64 OrData);
 
 /**
   Reads a bit field of an MSR.
@@ -6493,11 +5725,7 @@ AsmMsrAndThenOr64 (
 **/
 UINT64
 EFIAPI
-AsmMsrBitFieldRead64 (
-  IN      UINT32  Index,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit
-  );
+AsmMsrBitFieldRead64(IN UINT32 Index, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to an MSR.
@@ -6525,12 +5753,7 @@ AsmMsrBitFieldRead64 (
 **/
 UINT64
 EFIAPI
-AsmMsrBitFieldWrite64 (
-  IN      UINT32  Index,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT64  Value
-  );
+AsmMsrBitFieldWrite64(IN UINT32 Index, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 Value);
 
 /**
   Reads a bit field in a 64-bit MSR, performs a bitwise OR, and
@@ -6561,12 +5784,7 @@ AsmMsrBitFieldWrite64 (
 **/
 UINT64
 EFIAPI
-AsmMsrBitFieldOr64 (
-  IN      UINT32  Index,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT64  OrData
-  );
+AsmMsrBitFieldOr64(IN UINT32 Index, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 OrData);
 
 /**
   Reads a bit field in a 64-bit MSR, performs a bitwise AND, and writes the
@@ -6597,12 +5815,7 @@ AsmMsrBitFieldOr64 (
 **/
 UINT64
 EFIAPI
-AsmMsrBitFieldAnd64 (
-  IN      UINT32  Index,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT64  AndData
-  );
+AsmMsrBitFieldAnd64(IN UINT32 Index, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 AndData);
 
 /**
   Reads a bit field in a 64-bit MSR, performs a bitwise AND followed by a
@@ -6636,13 +5849,7 @@ AsmMsrBitFieldAnd64 (
 **/
 UINT64
 EFIAPI
-AsmMsrBitFieldAndThenOr64 (
-  IN      UINT32  Index,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT64  AndData,
-  IN      UINT64  OrData
-  );
+AsmMsrBitFieldAndThenOr64(IN UINT32 Index, IN UINTN StartBit, IN UINTN EndBit, IN UINT64 AndData, IN UINT64 OrData);
 
 /**
   Reads the current value of the EFLAGS register.
@@ -6656,9 +5863,7 @@ AsmMsrBitFieldAndThenOr64 (
 **/
 UINTN
 EFIAPI
-AsmReadEflags (
-  VOID
-  );
+AsmReadEflags(VOID);
 
 /**
   Reads the current value of the Control Register 0 (CR0).
@@ -6672,9 +5877,7 @@ AsmReadEflags (
 **/
 UINTN
 EFIAPI
-AsmReadCr0 (
-  VOID
-  );
+AsmReadCr0(VOID);
 
 /**
   Reads the current value of the Control Register 2 (CR2).
@@ -6688,9 +5891,7 @@ AsmReadCr0 (
 **/
 UINTN
 EFIAPI
-AsmReadCr2 (
-  VOID
-  );
+AsmReadCr2(VOID);
 
 /**
   Reads the current value of the Control Register 3 (CR3).
@@ -6704,9 +5905,7 @@ AsmReadCr2 (
 **/
 UINTN
 EFIAPI
-AsmReadCr3 (
-  VOID
-  );
+AsmReadCr3(VOID);
 
 /**
   Reads the current value of the Control Register 4 (CR4).
@@ -6720,9 +5919,7 @@ AsmReadCr3 (
 **/
 UINTN
 EFIAPI
-AsmReadCr4 (
-  VOID
-  );
+AsmReadCr4(VOID);
 
 /**
   Writes a value to Control Register 0 (CR0).
@@ -6737,9 +5934,7 @@ AsmReadCr4 (
 **/
 UINTN
 EFIAPI
-AsmWriteCr0 (
-  UINTN  Cr0
-  );
+AsmWriteCr0(UINTN Cr0);
 
 /**
   Writes a value to Control Register 2 (CR2).
@@ -6754,9 +5949,7 @@ AsmWriteCr0 (
 **/
 UINTN
 EFIAPI
-AsmWriteCr2 (
-  UINTN  Cr2
-  );
+AsmWriteCr2(UINTN Cr2);
 
 /**
   Writes a value to Control Register 3 (CR3).
@@ -6771,9 +5964,7 @@ AsmWriteCr2 (
 **/
 UINTN
 EFIAPI
-AsmWriteCr3 (
-  UINTN  Cr3
-  );
+AsmWriteCr3(UINTN Cr3);
 
 /**
   Writes a value to Control Register 4 (CR4).
@@ -6788,9 +5979,7 @@ AsmWriteCr3 (
 **/
 UINTN
 EFIAPI
-AsmWriteCr4 (
-  UINTN  Cr4
-  );
+AsmWriteCr4(UINTN Cr4);
 
 /**
   Reads the current value of Debug Register 0 (DR0).
@@ -6804,9 +5993,7 @@ AsmWriteCr4 (
 **/
 UINTN
 EFIAPI
-AsmReadDr0 (
-  VOID
-  );
+AsmReadDr0(VOID);
 
 /**
   Reads the current value of Debug Register 1 (DR1).
@@ -6820,9 +6007,7 @@ AsmReadDr0 (
 **/
 UINTN
 EFIAPI
-AsmReadDr1 (
-  VOID
-  );
+AsmReadDr1(VOID);
 
 /**
   Reads the current value of Debug Register 2 (DR2).
@@ -6836,9 +6021,7 @@ AsmReadDr1 (
 **/
 UINTN
 EFIAPI
-AsmReadDr2 (
-  VOID
-  );
+AsmReadDr2(VOID);
 
 /**
   Reads the current value of Debug Register 3 (DR3).
@@ -6852,9 +6035,7 @@ AsmReadDr2 (
 **/
 UINTN
 EFIAPI
-AsmReadDr3 (
-  VOID
-  );
+AsmReadDr3(VOID);
 
 /**
   Reads the current value of Debug Register 4 (DR4).
@@ -6868,9 +6049,7 @@ AsmReadDr3 (
 **/
 UINTN
 EFIAPI
-AsmReadDr4 (
-  VOID
-  );
+AsmReadDr4(VOID);
 
 /**
   Reads the current value of Debug Register 5 (DR5).
@@ -6884,9 +6063,7 @@ AsmReadDr4 (
 **/
 UINTN
 EFIAPI
-AsmReadDr5 (
-  VOID
-  );
+AsmReadDr5(VOID);
 
 /**
   Reads the current value of Debug Register 6 (DR6).
@@ -6900,9 +6077,7 @@ AsmReadDr5 (
 **/
 UINTN
 EFIAPI
-AsmReadDr6 (
-  VOID
-  );
+AsmReadDr6(VOID);
 
 /**
   Reads the current value of Debug Register 7 (DR7).
@@ -6916,9 +6091,7 @@ AsmReadDr6 (
 **/
 UINTN
 EFIAPI
-AsmReadDr7 (
-  VOID
-  );
+AsmReadDr7(VOID);
 
 /**
   Writes a value to Debug Register 0 (DR0).
@@ -6933,9 +6106,7 @@ AsmReadDr7 (
 **/
 UINTN
 EFIAPI
-AsmWriteDr0 (
-  UINTN  Dr0
-  );
+AsmWriteDr0(UINTN Dr0);
 
 /**
   Writes a value to Debug Register 1 (DR1).
@@ -6950,9 +6121,7 @@ AsmWriteDr0 (
 **/
 UINTN
 EFIAPI
-AsmWriteDr1 (
-  UINTN  Dr1
-  );
+AsmWriteDr1(UINTN Dr1);
 
 /**
   Writes a value to Debug Register 2 (DR2).
@@ -6967,9 +6136,7 @@ AsmWriteDr1 (
 **/
 UINTN
 EFIAPI
-AsmWriteDr2 (
-  UINTN  Dr2
-  );
+AsmWriteDr2(UINTN Dr2);
 
 /**
   Writes a value to Debug Register 3 (DR3).
@@ -6984,9 +6151,7 @@ AsmWriteDr2 (
 **/
 UINTN
 EFIAPI
-AsmWriteDr3 (
-  UINTN  Dr3
-  );
+AsmWriteDr3(UINTN Dr3);
 
 /**
   Writes a value to Debug Register 4 (DR4).
@@ -7001,9 +6166,7 @@ AsmWriteDr3 (
 **/
 UINTN
 EFIAPI
-AsmWriteDr4 (
-  UINTN  Dr4
-  );
+AsmWriteDr4(UINTN Dr4);
 
 /**
   Writes a value to Debug Register 5 (DR5).
@@ -7018,9 +6181,7 @@ AsmWriteDr4 (
 **/
 UINTN
 EFIAPI
-AsmWriteDr5 (
-  UINTN  Dr5
-  );
+AsmWriteDr5(UINTN Dr5);
 
 /**
   Writes a value to Debug Register 6 (DR6).
@@ -7035,9 +6196,7 @@ AsmWriteDr5 (
 **/
 UINTN
 EFIAPI
-AsmWriteDr6 (
-  UINTN  Dr6
-  );
+AsmWriteDr6(UINTN Dr6);
 
 /**
   Writes a value to Debug Register 7 (DR7).
@@ -7052,9 +6211,7 @@ AsmWriteDr6 (
 **/
 UINTN
 EFIAPI
-AsmWriteDr7 (
-  UINTN  Dr7
-  );
+AsmWriteDr7(UINTN Dr7);
 
 /**
   Reads the current value of Code Segment Register (CS).
@@ -7067,9 +6224,7 @@ AsmWriteDr7 (
 **/
 UINT16
 EFIAPI
-AsmReadCs (
-  VOID
-  );
+AsmReadCs(VOID);
 
 /**
   Reads the current value of Data Segment Register (DS).
@@ -7082,9 +6237,7 @@ AsmReadCs (
 **/
 UINT16
 EFIAPI
-AsmReadDs (
-  VOID
-  );
+AsmReadDs(VOID);
 
 /**
   Reads the current value of Extra Segment Register (ES).
@@ -7097,9 +6250,7 @@ AsmReadDs (
 **/
 UINT16
 EFIAPI
-AsmReadEs (
-  VOID
-  );
+AsmReadEs(VOID);
 
 /**
   Reads the current value of FS Data Segment Register (FS).
@@ -7112,9 +6263,7 @@ AsmReadEs (
 **/
 UINT16
 EFIAPI
-AsmReadFs (
-  VOID
-  );
+AsmReadFs(VOID);
 
 /**
   Reads the current value of GS Data Segment Register (GS).
@@ -7127,9 +6276,7 @@ AsmReadFs (
 **/
 UINT16
 EFIAPI
-AsmReadGs (
-  VOID
-  );
+AsmReadGs(VOID);
 
 /**
   Reads the current value of Stack Segment Register (SS).
@@ -7142,9 +6289,7 @@ AsmReadGs (
 **/
 UINT16
 EFIAPI
-AsmReadSs (
-  VOID
-  );
+AsmReadSs(VOID);
 
 /**
   Reads the current value of Task Register (TR).
@@ -7157,9 +6302,7 @@ AsmReadSs (
 **/
 UINT16
 EFIAPI
-AsmReadTr (
-  VOID
-  );
+AsmReadTr(VOID);
 
 /**
   Reads the current Global Descriptor Table Register(GDTR) descriptor.
@@ -7172,11 +6315,7 @@ AsmReadTr (
   @param  Gdtr  The pointer to a GDTR descriptor.
 
 **/
-VOID
-EFIAPI
-AsmReadGdtr (
-  OUT     IA32_DESCRIPTOR  *Gdtr
-  );
+VOID EFIAPI AsmReadGdtr(OUT IA32_DESCRIPTOR *Gdtr);
 
 /**
   Writes the current Global Descriptor Table Register (GDTR) descriptor.
@@ -7189,11 +6328,7 @@ AsmReadGdtr (
   @param  Gdtr  The pointer to a GDTR descriptor.
 
 **/
-VOID
-EFIAPI
-AsmWriteGdtr (
-  IN      CONST IA32_DESCRIPTOR  *Gdtr
-  );
+VOID EFIAPI AsmWriteGdtr(IN CONST IA32_DESCRIPTOR *Gdtr);
 
 /**
   Reads the current Interrupt Descriptor Table Register(IDTR) descriptor.
@@ -7206,11 +6341,7 @@ AsmWriteGdtr (
   @param  Idtr  The pointer to a IDTR descriptor.
 
 **/
-VOID
-EFIAPI
-AsmReadIdtr (
-  OUT     IA32_DESCRIPTOR  *Idtr
-  );
+VOID EFIAPI AsmReadIdtr(OUT IA32_DESCRIPTOR *Idtr);
 
 /**
   Writes the current Interrupt Descriptor Table Register(IDTR) descriptor.
@@ -7223,11 +6354,7 @@ AsmReadIdtr (
   @param  Idtr  The pointer to a IDTR descriptor.
 
 **/
-VOID
-EFIAPI
-AsmWriteIdtr (
-  IN      CONST IA32_DESCRIPTOR  *Idtr
-  );
+VOID EFIAPI AsmWriteIdtr(IN CONST IA32_DESCRIPTOR *Idtr);
 
 /**
   Reads the current Local Descriptor Table Register(LDTR) selector.
@@ -7240,9 +6367,7 @@ AsmWriteIdtr (
 **/
 UINT16
 EFIAPI
-AsmReadLdtr (
-  VOID
-  );
+AsmReadLdtr(VOID);
 
 /**
   Writes the current Local Descriptor Table Register (LDTR) selector.
@@ -7253,11 +6378,7 @@ AsmReadLdtr (
   @param  Ldtr  16-bit LDTR selector value.
 
 **/
-VOID
-EFIAPI
-AsmWriteLdtr (
-  IN      UINT16  Ldtr
-  );
+VOID EFIAPI AsmWriteLdtr(IN UINT16 Ldtr);
 
 /**
   Save the current floating point/SSE/SSE2 context to a buffer.
@@ -7272,11 +6393,7 @@ AsmWriteLdtr (
   @param  Buffer  The pointer to a buffer to save the floating point/SSE/SSE2 context.
 
 **/
-VOID
-EFIAPI
-AsmFxSave (
-  OUT     IA32_FX_BUFFER  *Buffer
-  );
+VOID EFIAPI AsmFxSave(OUT IA32_FX_BUFFER *Buffer);
 
 /**
   Restores the current floating point/SSE/SSE2 context from a buffer.
@@ -7292,11 +6409,7 @@ AsmFxSave (
   @param  Buffer  The pointer to a buffer to save the floating point/SSE/SSE2 context.
 
 **/
-VOID
-EFIAPI
-AsmFxRestore (
-  IN      CONST IA32_FX_BUFFER  *Buffer
-  );
+VOID EFIAPI AsmFxRestore(IN CONST IA32_FX_BUFFER *Buffer);
 
 /**
   Reads the current value of 64-bit MMX Register #0 (MM0).
@@ -7309,9 +6422,7 @@ AsmFxRestore (
 **/
 UINT64
 EFIAPI
-AsmReadMm0 (
-  VOID
-  );
+AsmReadMm0(VOID);
 
 /**
   Reads the current value of 64-bit MMX Register #1 (MM1).
@@ -7324,9 +6435,7 @@ AsmReadMm0 (
 **/
 UINT64
 EFIAPI
-AsmReadMm1 (
-  VOID
-  );
+AsmReadMm1(VOID);
 
 /**
   Reads the current value of 64-bit MMX Register #2 (MM2).
@@ -7339,9 +6448,7 @@ AsmReadMm1 (
 **/
 UINT64
 EFIAPI
-AsmReadMm2 (
-  VOID
-  );
+AsmReadMm2(VOID);
 
 /**
   Reads the current value of 64-bit MMX Register #3 (MM3).
@@ -7354,9 +6461,7 @@ AsmReadMm2 (
 **/
 UINT64
 EFIAPI
-AsmReadMm3 (
-  VOID
-  );
+AsmReadMm3(VOID);
 
 /**
   Reads the current value of 64-bit MMX Register #4 (MM4).
@@ -7369,9 +6474,7 @@ AsmReadMm3 (
 **/
 UINT64
 EFIAPI
-AsmReadMm4 (
-  VOID
-  );
+AsmReadMm4(VOID);
 
 /**
   Reads the current value of 64-bit MMX Register #5 (MM5).
@@ -7384,9 +6487,7 @@ AsmReadMm4 (
 **/
 UINT64
 EFIAPI
-AsmReadMm5 (
-  VOID
-  );
+AsmReadMm5(VOID);
 
 /**
   Reads the current value of 64-bit MMX Register #6 (MM6).
@@ -7399,9 +6500,7 @@ AsmReadMm5 (
 **/
 UINT64
 EFIAPI
-AsmReadMm6 (
-  VOID
-  );
+AsmReadMm6(VOID);
 
 /**
   Reads the current value of 64-bit MMX Register #7 (MM7).
@@ -7414,9 +6513,7 @@ AsmReadMm6 (
 **/
 UINT64
 EFIAPI
-AsmReadMm7 (
-  VOID
-  );
+AsmReadMm7(VOID);
 
 /**
   Writes the current value of 64-bit MMX Register #0 (MM0).
@@ -7427,11 +6524,7 @@ AsmReadMm7 (
   @param  Value The 64-bit value to write to MM0.
 
 **/
-VOID
-EFIAPI
-AsmWriteMm0 (
-  IN      UINT64  Value
-  );
+VOID EFIAPI AsmWriteMm0(IN UINT64 Value);
 
 /**
   Writes the current value of 64-bit MMX Register #1 (MM1).
@@ -7442,11 +6535,7 @@ AsmWriteMm0 (
   @param  Value The 64-bit value to write to MM1.
 
 **/
-VOID
-EFIAPI
-AsmWriteMm1 (
-  IN      UINT64  Value
-  );
+VOID EFIAPI AsmWriteMm1(IN UINT64 Value);
 
 /**
   Writes the current value of 64-bit MMX Register #2 (MM2).
@@ -7457,11 +6546,7 @@ AsmWriteMm1 (
   @param  Value The 64-bit value to write to MM2.
 
 **/
-VOID
-EFIAPI
-AsmWriteMm2 (
-  IN      UINT64  Value
-  );
+VOID EFIAPI AsmWriteMm2(IN UINT64 Value);
 
 /**
   Writes the current value of 64-bit MMX Register #3 (MM3).
@@ -7472,11 +6557,7 @@ AsmWriteMm2 (
   @param  Value The 64-bit value to write to MM3.
 
 **/
-VOID
-EFIAPI
-AsmWriteMm3 (
-  IN      UINT64  Value
-  );
+VOID EFIAPI AsmWriteMm3(IN UINT64 Value);
 
 /**
   Writes the current value of 64-bit MMX Register #4 (MM4).
@@ -7487,11 +6568,7 @@ AsmWriteMm3 (
   @param  Value The 64-bit value to write to MM4.
 
 **/
-VOID
-EFIAPI
-AsmWriteMm4 (
-  IN      UINT64  Value
-  );
+VOID EFIAPI AsmWriteMm4(IN UINT64 Value);
 
 /**
   Writes the current value of 64-bit MMX Register #5 (MM5).
@@ -7502,11 +6579,7 @@ AsmWriteMm4 (
   @param  Value The 64-bit value to write to MM5.
 
 **/
-VOID
-EFIAPI
-AsmWriteMm5 (
-  IN      UINT64  Value
-  );
+VOID EFIAPI AsmWriteMm5(IN UINT64 Value);
 
 /**
   Writes the current value of 64-bit MMX Register #6 (MM6).
@@ -7517,11 +6590,7 @@ AsmWriteMm5 (
   @param  Value The 64-bit value to write to MM6.
 
 **/
-VOID
-EFIAPI
-AsmWriteMm6 (
-  IN      UINT64  Value
-  );
+VOID EFIAPI AsmWriteMm6(IN UINT64 Value);
 
 /**
   Writes the current value of 64-bit MMX Register #7 (MM7).
@@ -7532,11 +6601,7 @@ AsmWriteMm6 (
   @param  Value The 64-bit value to write to MM7.
 
 **/
-VOID
-EFIAPI
-AsmWriteMm7 (
-  IN      UINT64  Value
-  );
+VOID EFIAPI AsmWriteMm7(IN UINT64 Value);
 
 /**
   Reads the current value of Time Stamp Counter (TSC).
@@ -7549,9 +6614,7 @@ AsmWriteMm7 (
 **/
 UINT64
 EFIAPI
-AsmReadTsc (
-  VOID
-  );
+AsmReadTsc(VOID);
 
 /**
   Reads the current value of a Performance Counter (PMC).
@@ -7566,9 +6629,7 @@ AsmReadTsc (
 **/
 UINT64
 EFIAPI
-AsmReadPmc (
-  IN      UINT32  Index
-  );
+AsmReadPmc(IN UINT32 Index);
 
 /**
   Sets up a monitor buffer that is used by AsmMwait().
@@ -7588,11 +6649,7 @@ AsmReadPmc (
 **/
 UINTN
 EFIAPI
-AsmMonitor (
-  IN      UINTN  Eax,
-  IN      UINTN  Ecx,
-  IN      UINTN  Edx
-  );
+AsmMonitor(IN UINTN Eax, IN UINTN Ecx, IN UINTN Edx);
 
 /**
   Executes an MWAIT instruction.
@@ -7610,10 +6667,7 @@ AsmMonitor (
 **/
 UINTN
 EFIAPI
-AsmMwait (
-  IN      UINTN  Eax,
-  IN      UINTN  Ecx
-  );
+AsmMwait(IN UINTN Eax, IN UINTN Ecx);
 
 /**
   Executes a WBINVD instruction.
@@ -7622,11 +6676,7 @@ AsmMwait (
   x64.
 
 **/
-VOID
-EFIAPI
-AsmWbinvd (
-  VOID
-  );
+VOID EFIAPI AsmWbinvd(VOID);
 
 /**
   Executes a INVD instruction.
@@ -7635,11 +6685,7 @@ AsmWbinvd (
   x64.
 
 **/
-VOID
-EFIAPI
-AsmInvd (
-  VOID
-  );
+VOID EFIAPI AsmInvd(VOID);
 
 /**
   Flushes a cache line from all the instruction and data caches within the
@@ -7656,11 +6702,7 @@ AsmInvd (
 
   @return LinearAddress.
 **/
-VOID *
-EFIAPI
-AsmFlushCacheLine (
-  IN      VOID  *LinearAddress
-  );
+VOID *EFIAPI AsmFlushCacheLine(IN VOID *LinearAddress);
 
 /**
   Enables the 32-bit paging mode on the CPU.
@@ -7699,14 +6741,7 @@ AsmFlushCacheLine (
                       function after paging is enabled.
 
 **/
-VOID
-EFIAPI
-AsmEnablePaging32 (
-  IN      SWITCH_STACK_ENTRY_POINT  EntryPoint,
-  IN      VOID                      *Context1   OPTIONAL,
-  IN      VOID                      *Context2   OPTIONAL,
-  IN      VOID                      *NewStack
-  );
+VOID EFIAPI AsmEnablePaging32(IN SWITCH_STACK_ENTRY_POINT EntryPoint, IN VOID *Context1 OPTIONAL, IN VOID *Context2 OPTIONAL, IN VOID *NewStack);
 
 /**
   Disables the 32-bit paging mode on the CPU.
@@ -7742,14 +6777,7 @@ AsmEnablePaging32 (
                       function after paging is disabled.
 
 **/
-VOID
-EFIAPI
-AsmDisablePaging32 (
-  IN      SWITCH_STACK_ENTRY_POINT  EntryPoint,
-  IN      VOID                      *Context1   OPTIONAL,
-  IN      VOID                      *Context2   OPTIONAL,
-  IN      VOID                      *NewStack
-  );
+VOID EFIAPI AsmDisablePaging32(IN SWITCH_STACK_ENTRY_POINT EntryPoint, IN VOID *Context1 OPTIONAL, IN VOID *Context2 OPTIONAL, IN VOID *NewStack);
 
 /**
   Enables the 64-bit paging mode on the CPU.
@@ -7783,15 +6811,7 @@ AsmDisablePaging32 (
                       the EntryPoint function after paging is enabled.
 
 **/
-VOID
-EFIAPI
-AsmEnablePaging64 (
-  IN      UINT16  Cs,
-  IN      UINT64  EntryPoint,
-  IN      UINT64  Context1   OPTIONAL,
-  IN      UINT64  Context2   OPTIONAL,
-  IN      UINT64  NewStack
-  );
+VOID EFIAPI AsmEnablePaging64(IN UINT16 Cs, IN UINT64 EntryPoint, IN UINT64 Context1 OPTIONAL, IN UINT64 Context2 OPTIONAL, IN UINT64 NewStack);
 
 /**
   Disables the 64-bit paging mode on the CPU.
@@ -7823,15 +6843,7 @@ AsmEnablePaging64 (
                       the EntryPoint function after paging is disabled.
 
 **/
-VOID
-EFIAPI
-AsmDisablePaging64 (
-  IN      UINT16  Cs,
-  IN      UINT32  EntryPoint,
-  IN      UINT32  Context1   OPTIONAL,
-  IN      UINT32  Context2   OPTIONAL,
-  IN      UINT32  NewStack
-  );
+VOID EFIAPI AsmDisablePaging64(IN UINT16 Cs, IN UINT32 EntryPoint, IN UINT32 Context1 OPTIONAL, IN UINT32 Context2 OPTIONAL, IN UINT32 NewStack);
 
 //
 // 16-bit thunking services
@@ -7858,12 +6870,7 @@ AsmDisablePaging64 (
                               16-bit real mode.
 
 **/
-VOID
-EFIAPI
-AsmGetThunk16Properties (
-  OUT     UINT32  *RealModeBufferSize,
-  OUT     UINT32  *ExtraStackSize
-  );
+VOID EFIAPI AsmGetThunk16Properties(OUT UINT32 *RealModeBufferSize, OUT UINT32 *ExtraStackSize);
 
 /**
   Prepares all structures a code required to use AsmThunk16().
@@ -7879,11 +6886,7 @@ AsmGetThunk16Properties (
                         16-bit real mode code to call.
 
 **/
-VOID
-EFIAPI
-AsmPrepareThunk16 (
-  IN OUT  THUNK_CONTEXT  *ThunkContext
-  );
+VOID EFIAPI AsmPrepareThunk16(IN OUT THUNK_CONTEXT *ThunkContext);
 
 /**
   Transfers control to a 16-bit real mode entry point and returns the results.
@@ -7938,11 +6941,7 @@ AsmPrepareThunk16 (
                         16-bit real mode code to call.
 
 **/
-VOID
-EFIAPI
-AsmThunk16 (
-  IN OUT  THUNK_CONTEXT  *ThunkContext
-  );
+VOID EFIAPI AsmThunk16(IN OUT THUNK_CONTEXT *ThunkContext);
 
 /**
   Prepares all structures and code for a 16-bit real mode thunk, transfers
@@ -7964,11 +6963,7 @@ AsmThunk16 (
                         16-bit real mode code to call.
 
 **/
-VOID
-EFIAPI
-AsmPrepareAndThunk16 (
-  IN OUT  THUNK_CONTEXT  *ThunkContext
-  );
+VOID EFIAPI AsmPrepareAndThunk16(IN OUT THUNK_CONTEXT *ThunkContext);
 
 /**
   Generates a 16-bit random number through RDRAND instruction.
@@ -7983,9 +6978,7 @@ AsmPrepareAndThunk16 (
  **/
 BOOLEAN
 EFIAPI
-AsmRdRand16 (
-  OUT     UINT16  *Rand
-  );
+AsmRdRand16(OUT UINT16 *Rand);
 
 /**
   Generates a 32-bit random number through RDRAND instruction.
@@ -8000,9 +6993,7 @@ AsmRdRand16 (
 **/
 BOOLEAN
 EFIAPI
-AsmRdRand32 (
-  OUT     UINT32  *Rand
-  );
+AsmRdRand32(OUT UINT32 *Rand);
 
 /**
   Generates a 64-bit random number through RDRAND instruction.
@@ -8017,20 +7008,14 @@ AsmRdRand32 (
 **/
 BOOLEAN
 EFIAPI
-AsmRdRand64  (
-  OUT     UINT64  *Rand
-  );
+AsmRdRand64(OUT UINT64 *Rand);
 
 /**
   Load given selector into TR register.
 
   @param[in] Selector     Task segment selector
 **/
-VOID
-EFIAPI
-AsmWriteTr (
-  IN UINT16  Selector
-  );
+VOID EFIAPI AsmWriteTr(IN UINT16 Selector);
 
 /**
   Performs a serializing operation on all load-from-memory instructions that
@@ -8039,11 +7024,7 @@ AsmWriteTr (
   Executes a LFENCE instruction. This function is only available on IA-32 and x64.
 
 **/
-VOID
-EFIAPI
-AsmLfence (
-  VOID
-  );
+VOID EFIAPI AsmLfence(VOID);
 
 /**
   Executes a XGETBV instruction
@@ -8057,9 +7038,7 @@ AsmLfence (
 **/
 UINT64
 EFIAPI
-AsmXGetBv (
-  IN UINT32  Index
-  );
+AsmXGetBv(IN UINT32 Index);
 
 /**
   Executes a XSETBV instruction to write a 64-bit value to a Extended Control
@@ -8080,10 +7059,7 @@ AsmXGetBv (
 **/
 UINT64
 EFIAPI
-AsmXSetBv (
-  IN UINT32  Index,
-  IN UINT64  Value
-  );
+AsmXSetBv(IN UINT32 Index, IN UINT64 Value);
 
 /**
   Executes a VMGEXIT instruction (VMMCALL with a REP prefix)
@@ -8092,28 +7068,25 @@ AsmXSetBv (
   x64.
 
 **/
-VOID
-EFIAPI
-AsmVmgExit (
-  VOID
-  );
+VOID EFIAPI AsmVmgExit(VOID);
 
 ///
 /// The structure used to supply and return data to and from the SVSM.
 ///
-typedef struct {
-  VOID      *Caa;
-  UINT64    RaxIn;
-  UINT64    RcxIn;
-  UINT64    RdxIn;
-  UINT64    R8In;
-  UINT64    R9In;
-  UINT64    RaxOut;
-  UINT64    RcxOut;
-  UINT64    RdxOut;
-  UINT64    R8Out;
-  UINT64    R9Out;
-  UINT8     *CallPending;
+typedef struct
+{
+    VOID  *Caa;
+    UINT64 RaxIn;
+    UINT64 RcxIn;
+    UINT64 RdxIn;
+    UINT64 R8In;
+    UINT64 R9In;
+    UINT64 RaxOut;
+    UINT64 RcxOut;
+    UINT64 RdxOut;
+    UINT64 R8Out;
+    UINT64 R9Out;
+    UINT8 *CallPending;
 } SVSM_CALL_DATA;
 
 /**
@@ -8133,9 +7106,7 @@ typedef struct {
 **/
 UINT32
 EFIAPI
-AsmVmgExitSvsm (
-  IN OUT SVSM_CALL_DATA  *SvsmCallData
-  );
+AsmVmgExitSvsm(IN OUT SVSM_CALL_DATA *SvsmCallData);
 
 /**
   Patch the immediate operand of an IA32 or X64 instruction such that the byte,
@@ -8171,12 +7142,6 @@ AsmVmgExitSvsm (
   @param[in] ValueSize        The size of the operand in bytes; must be 1, 2,
                               4, or 8. ASSERT() otherwise.
 **/
-VOID
-EFIAPI
-PatchInstructionX86 (
-  OUT X86_ASSEMBLY_PATCH_LABEL  *InstructionEnd,
-  IN  UINT64                    PatchValue,
-  IN  UINTN                     ValueSize
-  );
+VOID EFIAPI PatchInstructionX86(OUT X86_ASSEMBLY_PATCH_LABEL *InstructionEnd, IN UINT64 PatchValue, IN UINTN ValueSize);
 
 #endif // defined (MDE_CPU_IA32) || defined (MDE_CPU_X64)

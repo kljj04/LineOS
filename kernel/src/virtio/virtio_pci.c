@@ -155,9 +155,9 @@ STATIC BOOLEAN ScanCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
 STATIC BOOLEAN MapCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
 {
     VirtIODevice->CommonConfig = (VIRTIO_PCI_COMMON_CONFIG *) GetBARAddress(VirtIODevice, VirtIODevice->CommonConfigBAR, VirtIODevice->CommonConfigOffset);
-    VirtIODevice->NotifyBase = (volatile UINT16 *) GetBARAddress(VirtIODevice, VirtIODevice->NotifyBAR, VirtIODevice->NotifyOffset);
-    VirtIODevice->ISRStatus = (volatile UINT8 *) GetBARAddress(VirtIODevice, VirtIODevice->ISRStatusBAR, VirtIODevice->ISRStatusOffset);
-    VirtIODevice->DeviceConfig = (volatile UINT8 *) GetBARAddress(VirtIODevice, VirtIODevice->DeviceConfigBAR, VirtIODevice->DeviceConfigOffset);
+    VirtIODevice->NotifyBase = (VOLATILE UINT16 *) GetBARAddress(VirtIODevice, VirtIODevice->NotifyBAR, VirtIODevice->NotifyOffset);
+    VirtIODevice->ISRStatus = (VOLATILE UINT8 *) GetBARAddress(VirtIODevice, VirtIODevice->ISRStatusBAR, VirtIODevice->ISRStatusOffset);
+    VirtIODevice->DeviceConfig = (VOLATILE UINT8 *) GetBARAddress(VirtIODevice, VirtIODevice->DeviceConfigBAR, VirtIODevice->DeviceConfigOffset);
 
     if (VirtIODevice->CommonConfig == NULL || VirtIODevice->NotifyBase == NULL || VirtIODevice->ISRStatus == NULL || VirtIODevice->DeviceConfig == NULL)
     {
@@ -240,7 +240,7 @@ BOOLEAN VirtIOPCIStartDevice(VIRTIO_PCI_DEVICE *VirtIODevice)
 VOID VirtIOPCINotifyQueue(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 QueueIndex)
 {
     VIRTIO_PCI_COMMON_CONFIG *CommonConfig;
-    volatile UINT16          *NotifyAddress;
+    VOLATILE UINT16          *NotifyAddress;
 
     if (VirtIODevice == NULL || VirtIODevice->CommonConfig == NULL || VirtIODevice->NotifyBase == NULL)
     {
@@ -249,7 +249,7 @@ VOID VirtIOPCINotifyQueue(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 QueueIndex)
 
     CommonConfig = VirtIODevice->CommonConfig;
     CommonConfig->QueueSelect = QueueIndex;
-    NotifyAddress = (volatile UINT16 *) ((UINT8 *) VirtIODevice->NotifyBase + (CommonConfig->QueueNotifyOff * VirtIODevice->NotifyMultiplier));
+    NotifyAddress = (VOLATILE UINT16 *) ((UINT8 *) VirtIODevice->NotifyBase + (CommonConfig->QueueNotifyOff * VirtIODevice->NotifyMultiplier));
     *NotifyAddress = QueueIndex;
 }
 

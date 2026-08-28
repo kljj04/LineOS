@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include <Uefi.h>
+#include <lineos/typeinfo.h>
 #include <lineos/bootinfo.h>
 
 BOOLEAN MemoryInit(VOID);
 BOOLEAN ExitBootServices(VOID);
-VOID MemorySetImageHandle(EFI_HANDLE Handle);
+VOID    MemorySetImageHandle(EFI_HANDLE Handle);
 
-extern LINEOS_MEMORY_MAP MemoryMap;
+EXTERN LINEOS_MEMORY_MAP MemoryMap;

@@ -46,9 +46,9 @@ typedef struct
 
 BOOLEAN          VirtIOGPUInit(VOID);
 BOOLEAN          VirtIOGPUCreateFrameBuffer(UINT32 Width, UINT32 Height);
-VOID             VirtIOGPUFill(UINT32 Color);
-VOID             VirtIOGPUFillRect(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 Color);
-UINT32           VirtIOGPUReadPixel(UINT32 X, UINT32 Y);
+VOID             FillScreen(UINT32 Color);
+VOID             FillRect(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 Color);
+UINT32           ReadPixel(UINT32 X, UINT32 Y);
 BOOLEAN          VirtIOGPUFlush(VOID);
 VIRTIO_GPU_INFO *VirtIOGPUGetInfo(VOID);
 CONST CHAR16    *VirtIOGPUGetLastError(VOID);

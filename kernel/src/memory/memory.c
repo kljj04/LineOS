@@ -5,8 +5,8 @@
 #include <lineos/bootinfo.h>
 #include <memory/memory.h>
 
-#define PAGE_SIZE 4096ULL
-#define BITS_PER_BYTE 8ULL
+#define PAGE_SIZE                 4096ULL
+#define BITS_PER_BYTE             8ULL
 #define LOW_MEMORY_RESERVED_PAGES 256ULL
 
 STATIC UINT8 *PageBitmap = NULL;
@@ -57,14 +57,14 @@ STATIC BOOLEAN BitmapTest(UINT64 PageIndex)
 STATIC UINT64 FindHighestConventionalMemoryAddress(LINEOS_MEMORY_MAP *MemoryMap)
 {
     UINT64 HighestAddress = 0;
-    UINTN EntryCount = GetMemoryDescriptorCount(MemoryMap);
+    UINTN  EntryCount = GetMemoryDescriptorCount(MemoryMap);
 
     for (UINTN Index = 0; Index < EntryCount; Index++)
     {
         EFI_MEMORY_DESCRIPTOR *Descriptor = GetMemoryDescriptor(MemoryMap, Index);
-        UINT64 End = Descriptor->PhysicalStart + (Descriptor->NumberOfPages * PAGE_SIZE);
+        UINT64                 End = Descriptor->PhysicalStart + (Descriptor->NumberOfPages * PAGE_SIZE);
 
-        if (Descriptor->Type != EfiConventionalMemory)
+        if (Descriptor->Type != EFI_CONVENTIONAL_MEMORY)
         {
             continue;
         }
@@ -81,15 +81,15 @@ STATIC UINT64 FindHighestConventionalMemoryAddress(LINEOS_MEMORY_MAP *MemoryMap)
 STATIC EFI_MEMORY_DESCRIPTOR *FindBitmapStorageDescriptor(LINEOS_MEMORY_MAP *MemoryMap, UINT64 BitmapBytes)
 {
     EFI_MEMORY_DESCRIPTOR *BestDescriptor = NULL;
-    UINT64 BestPages = 0;
-    UINTN EntryCount = GetMemoryDescriptorCount(MemoryMap);
-    UINT64 NeededPages = AlignUp(BitmapBytes, PAGE_SIZE) / PAGE_SIZE;
+    UINT64                 BestPages = 0;
+    UINTN                  EntryCount = GetMemoryDescriptorCount(MemoryMap);
+    UINT64                 NeededPages = AlignUp(BitmapBytes, PAGE_SIZE) / PAGE_SIZE;
 
     for (UINTN Index = 0; Index < EntryCount; Index++)
     {
         EFI_MEMORY_DESCRIPTOR *Descriptor = GetMemoryDescriptor(MemoryMap, Index);
 
-        if (Descriptor->Type != EfiConventionalMemory || Descriptor->NumberOfPages < NeededPages)
+        if (Descriptor->Type != EFI_CONVENTIONAL_MEMORY || Descriptor->NumberOfPages < NeededPages)
         {
             continue;
         }
@@ -128,7 +128,7 @@ STATIC VOID MarkConventionalMemoryFree(LINEOS_MEMORY_MAP *MemoryMap)
     {
         EFI_MEMORY_DESCRIPTOR *Descriptor = GetMemoryDescriptor(MemoryMap, Index);
 
-        if (Descriptor->Type != EfiConventionalMemory)
+        if (Descriptor->Type != EFI_CONVENTIONAL_MEMORY)
         {
             continue;
         }
@@ -178,13 +178,12 @@ STATIC UINT64 FindFreePageRange(UINTN PageCount)
 
 BOOLEAN KMemoryInit(LINEOS_BOOT_INFO *BootInfo)
 {
-    LINEOS_MEMORY_MAP *MemoryMap;
+    LINEOS_MEMORY_MAP     *MemoryMap;
     EFI_MEMORY_DESCRIPTOR *BitmapStorage;
-    UINT64 HighestAddress;
-    UINT64 BitmapPages;
+    UINT64                 HighestAddress;
+    UINT64                 BitmapPages;
 
-    if (BootInfo == NULL || BootInfo->MemoryMap == NULL || BootInfo->MemoryMap->MemoryMap == NULL ||
-        BootInfo->MemoryMap->MemoryMapDescriptorSize == 0)
+    if (BootInfo == NULL || BootInfo->MemoryMap == NULL || BootInfo->MemoryMap->MemoryMap == NULL || BootInfo->MemoryMap->MemoryMapDescriptorSize == 0)
     {
         return FALSE;
     }
@@ -240,7 +239,7 @@ UINT8 KGetPageBitmapByte(UINT64 ByteIndex)
 
 VOID *KMemMove(VOID *destination, CONST VOID *source, UINTN size)
 {
-    UINT8 *dst = (UINT8 *) destination;
+    UINT8       *dst = (UINT8 *) destination;
     CONST UINT8 *src = (CONST UINT8 *) source;
 
     if (dst == src || size == 0)
@@ -268,7 +267,7 @@ VOID *KMemMove(VOID *destination, CONST VOID *source, UINTN size)
 
 VOID *KMemCpy(VOID *destination, CONST VOID *source, UINTN size)
 {
-    UINT8 *dst = (UINT8 *) destination;
+    UINT8       *dst = (UINT8 *) destination;
     CONST UINT8 *src = (CONST UINT8 *) source;
 
     for (UINTN Index = 0; Index < size; Index++)

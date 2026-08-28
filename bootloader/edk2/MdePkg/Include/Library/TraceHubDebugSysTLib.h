@@ -9,16 +9,17 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #pragma once
 
-typedef enum {
-  SeverityNone    = 0,
-  SeverityFatal   = 1,
-  SeverityError   = 2,
-  SeverityWarning = 3,
-  SeverityNormal  = 4,
-  SeverityUser1   = 5,
-  SeverityUser2   = 6,
-  SeverityUser3   = 7,
-  SeverityMax
+typedef enum
+{
+    SeverityNone = 0,
+    SeverityFatal = 1,
+    SeverityError = 2,
+    SeverityWarning = 3,
+    SeverityNormal = 4,
+    SeverityUser1 = 5,
+    SeverityUser2 = 6,
+    SeverityUser3 = 7,
+    SeverityMax
 } TRACE_HUB_SEVERITY_TYPE;
 
 /**
@@ -33,11 +34,7 @@ typedef enum {
 **/
 RETURN_STATUS
 EFIAPI
-TraceHubSysTDebugWrite (
-  IN TRACE_HUB_SEVERITY_TYPE  SeverityType,
-  IN UINT8                    *Buffer,
-  IN UINTN                    NumberOfBytes
-  );
+TraceHubSysTDebugWrite(IN TRACE_HUB_SEVERITY_TYPE SeverityType, IN UINT8 *Buffer, IN UINTN NumberOfBytes);
 
 /**
   Write catalog status code message to specified Trace Hub MMIO address.
@@ -51,11 +48,7 @@ TraceHubSysTDebugWrite (
 **/
 RETURN_STATUS
 EFIAPI
-TraceHubSysTWriteCataLog64StatusCode (
-  IN TRACE_HUB_SEVERITY_TYPE  SeverityType,
-  IN UINT64                   Id,
-  IN GUID                     *Guid
-  );
+TraceHubSysTWriteCataLog64StatusCode(IN TRACE_HUB_SEVERITY_TYPE SeverityType, IN UINT64 Id, IN GUID *Guid);
 
 /**
   Write catalog message to specified Trace Hub MMIO address.
@@ -70,9 +63,4 @@ TraceHubSysTWriteCataLog64StatusCode (
 **/
 RETURN_STATUS
 EFIAPI
-TraceHubSysTWriteCataLog64 (
-  IN TRACE_HUB_SEVERITY_TYPE  SeverityType,
-  IN UINT64                   Id,
-  IN UINTN                    NumberOfParams,
-  ...
-  );
+TraceHubSysTWriteCataLog64(IN TRACE_HUB_SEVERITY_TYPE SeverityType, IN UINT64 Id, IN UINTN NumberOfParams, ...);

@@ -7,11 +7,11 @@
 #include <render/gop/framebuffer.h>
 
 STATIC UINT32 *FrameBufferBase = 0;
-STATIC UINT32 FrameBufferWidth = 0;
-STATIC UINT32 FrameBufferHeight = 0;
-STATIC UINT32 PixelsPerScanLine = 0;
+STATIC UINT32  FrameBufferWidth = 0;
+STATIC UINT32  FrameBufferHeight = 0;
+STATIC UINT32  PixelsPerScanLine = 0;
 
-VOID FrameBufferInit(LINEOS_BOOT_INFO *BootInfo)
+VOID GOPFrameBufferInit(LINEOS_BOOT_INFO *BootInfo)
 {
     FrameBufferBase = (UINT32 *) BootInfo->GOP->FrameBufferBase;
     FrameBufferWidth = BootInfo->GOP->ScreenWidth;
@@ -60,7 +60,7 @@ STATIC VOID FillRow(UINT32 *destination, UINT32 width, UINT32 color)
     }
 }
 
-VOID DrawPixel(UINT32 x, UINT32 y, UINT32 color)
+VOID GOPDrawPixel(UINT32 x, UINT32 y, UINT32 color)
 {
     if (FrameBufferBase == 0 || x >= FrameBufferWidth || y >= FrameBufferHeight)
     {
@@ -70,7 +70,7 @@ VOID DrawPixel(UINT32 x, UINT32 y, UINT32 color)
     FrameBufferBase[FrameBufferOffset(x, y)] = color;
 }
 
-UINT32 ReadPixel(UINT32 x, UINT32 y)
+UINT32 GOPReadPixel(UINT32 x, UINT32 y)
 {
     if (FrameBufferBase == 0 || x >= FrameBufferWidth || y >= FrameBufferHeight)
     {
@@ -80,7 +80,7 @@ UINT32 ReadPixel(UINT32 x, UINT32 y)
     return FrameBufferBase[FrameBufferOffset(x, y)];
 }
 
-VOID FillScreen(UINT32 color)
+VOID GOPFillScreen(UINT32 color)
 {
     if (FrameBufferBase == NULL)
     {
@@ -99,7 +99,7 @@ VOID FillScreen(UINT32 color)
     }
 }
 
-VOID FillRect(UINT32 x, UINT32 y, UINT32 width, UINT32 height, UINT32 color)
+VOID GOPFillRect(UINT32 x, UINT32 y, UINT32 width, UINT32 height, UINT32 color)
 {
     UINT32 MaxX;
     UINT32 MaxY;
@@ -130,20 +130,20 @@ VOID FillRect(UINT32 x, UINT32 y, UINT32 width, UINT32 height, UINT32 color)
     }
 }
 
-VOID DrawRect(UINT32 x, UINT32 y, UINT32 width, UINT32 height, UINT32 color)
+VOID GOPDrawRect(UINT32 x, UINT32 y, UINT32 width, UINT32 height, UINT32 color)
 {
     if (width == 0 || height == 0)
     {
         return;
     }
 
-    FillRect(x, y, width, 1, color);
-    FillRect(x, y + height - 1, width, 1, color);
-    FillRect(x, y, 1, height, color);
-    FillRect(x + width - 1, y, 1, height, color);
+    GOPFillRect(x, y, width, 1, color);
+    GOPFillRect(x, y + height - 1, width, 1, color);
+    GOPFillRect(x, y, 1, height, color);
+    GOPFillRect(x + width - 1, y, 1, height, color);
 }
 
-VOID DrawLine(INT32 x1, INT32 y1, INT32 x2, INT32 y2, UINT32 color)
+VOID GOPDrawLine(INT32 x1, INT32 y1, INT32 x2, INT32 y2, UINT32 color)
 {
     INT32 DeltaX = Abs(x2 - x1);
     INT32 DeltaY = -Abs(y2 - y1);
@@ -155,7 +155,7 @@ VOID DrawLine(INT32 x1, INT32 y1, INT32 x2, INT32 y2, UINT32 color)
     {
         if (x1 >= 0 && y1 >= 0)
         {
-            DrawPixel((UINT32) x1, (UINT32) y1, color);
+            GOPDrawPixel((UINT32) x1, (UINT32) y1, color);
         }
 
         if (x1 == x2 && y1 == y2)
@@ -179,7 +179,7 @@ VOID DrawLine(INT32 x1, INT32 y1, INT32 x2, INT32 y2, UINT32 color)
     }
 }
 
-VOID BlendPixel(UINT32 x, UINT32 y, UINT32 color, UINT8 alpha)
+VOID GOPBlendPixel(UINT32 x, UINT32 y, UINT32 color, UINT8 alpha)
 {
     UINT32 background;
     UINT32 InverseAlpha;
@@ -189,7 +189,7 @@ VOID BlendPixel(UINT32 x, UINT32 y, UINT32 color, UINT8 alpha)
 
     if (alpha == 255)
     {
-        DrawPixel(x, y, color);
+        GOPDrawPixel(x, y, color);
         return;
     }
 
@@ -198,17 +198,17 @@ VOID BlendPixel(UINT32 x, UINT32 y, UINT32 color, UINT8 alpha)
         return;
     }
 
-    background = ReadPixel(x, y);
+    background = GOPReadPixel(x, y);
     InverseAlpha = 255 - alpha;
 
     red = ((((color >> 16) & 0xFF) * alpha) + (((background >> 16) & 0xFF) * InverseAlpha)) / 255;
     green = ((((color >> 8) & 0xFF) * alpha) + (((background >> 8) & 0xFF) * InverseAlpha)) / 255;
     blue = (((color & 0xFF) * alpha) + ((background & 0xFF) * InverseAlpha)) / 255;
 
-    DrawPixel(x, y, (red << 16) | (green << 8) | blue);
+    GOPDrawPixel(x, y, (red << 16) | (green << 8) | blue);
 }
 
-VOID CopyRect(UINT32 SourceX, UINT32 SourceY, UINT32 width, UINT32 height, UINT32 TargetX, UINT32 TargetY)
+VOID GOPCopyRect(UINT32 SourceX, UINT32 SourceY, UINT32 width, UINT32 height, UINT32 TargetX, UINT32 TargetY)
 {
     UINTN CopySize;
 
@@ -217,8 +217,7 @@ VOID CopyRect(UINT32 SourceX, UINT32 SourceY, UINT32 width, UINT32 height, UINT3
         return;
     }
 
-    if (SourceX >= FrameBufferWidth || SourceY >= FrameBufferHeight || TargetX >= FrameBufferWidth ||
-        TargetY >= FrameBufferHeight)
+    if (SourceX >= FrameBufferWidth || SourceY >= FrameBufferHeight || TargetX >= FrameBufferWidth || TargetY >= FrameBufferHeight)
     {
         return;
     }
@@ -254,7 +253,7 @@ VOID CopyRect(UINT32 SourceX, UINT32 SourceY, UINT32 width, UINT32 height, UINT3
     {
         for (UINT32 RowIndex = height; RowIndex > 0; RowIndex--)
         {
-            UINT32 CopyY = RowIndex - 1;
+            UINT32  CopyY = RowIndex - 1;
             UINT32 *destination = &FrameBufferBase[FrameBufferOffset(TargetX, TargetY + CopyY)];
             UINT32 *source = &FrameBufferBase[FrameBufferOffset(SourceX, SourceY + CopyY)];
 
@@ -278,21 +277,21 @@ VOID CopyRect(UINT32 SourceX, UINT32 SourceY, UINT32 width, UINT32 height, UINT3
     }
 }
 
-UINT32 FrameBufferGetWidth(VOID)
+UINT32 GOPFrameBufferGetWidth(VOID)
 {
     return FrameBufferWidth;
 }
 
-UINT32 FrameBufferGetHeight(VOID)
+UINT32 GOPFrameBufferGetHeight(VOID)
 {
     return FrameBufferHeight;
 }
 
-VOID FrameBufferCopyToLinear(UINT32 *Destination, UINT32 Width, UINT32 Height)
+VOID GOPFrameBufferCopyToLinear(UINT32 *Destination, UINT32 Width, UINT32 Height)
 {
     UINT32 CopyWidth;
     UINT32 CopyHeight;
-    UINTN CopySize;
+    UINTN  CopySize;
 
     if (FrameBufferBase == NULL || Destination == NULL || Width == 0 || Height == 0)
     {

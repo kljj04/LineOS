@@ -11,150 +11,155 @@
 
 #include <Guid/FileInfo.h>
 
-#define EFI_SHELL_PROTOCOL_GUID \
-  { \
-  0x6302d008, 0x7f9b, 0x4f30, { 0x87, 0xac, 0x60, 0xc9, 0xfe, 0xf5, 0xda, 0x4e } \
-  }
+#define EFI_SHELL_PROTOCOL_GUID                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
+    {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
+        0x6302d008, 0x7f9b, 0x4f30,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            \
+        {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      \
+            0x87, 0xac, 0x60, 0xc9, 0xfe, 0xf5, 0xda, 0x4e                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     \
+        }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      \
+    }
 typedef VOID *SHELL_FILE_HANDLE;
 
-typedef enum {
-  ///
-  /// The operation completed successfully.
-  ///
-  SHELL_SUCCESS = 0,
+typedef enum
+{
+    ///
+    /// The operation completed successfully.
+    ///
+    SHELL_SUCCESS = 0,
 
-  ///
-  /// The image failed to load.
-  ///
-  SHELL_LOAD_ERROR = 1,
+    ///
+    /// The image failed to load.
+    ///
+    SHELL_LOAD_ERROR = 1,
 
-  ///
-  /// The parameter was incorrect.
-  ///
-  SHELL_INVALID_PARAMETER = 2,
+    ///
+    /// The parameter was incorrect.
+    ///
+    SHELL_INVALID_PARAMETER = 2,
 
-  ///
-  /// The operation is not supported.
-  ///
-  SHELL_UNSUPPORTED = 3,
+    ///
+    /// The operation is not supported.
+    ///
+    SHELL_UNSUPPORTED = 3,
 
-  ///
-  /// The buffer was not the proper size for the request.
-  ///
-  SHELL_BAD_BUFFER_SIZE = 4,
+    ///
+    /// The buffer was not the proper size for the request.
+    ///
+    SHELL_BAD_BUFFER_SIZE = 4,
 
-  ///
-  /// The buffer was not large enough to hold the requested data.
-  /// The required buffer size is returned in the appropriate
-  /// parameter when this error occurs.
-  ///
-  SHELL_BUFFER_TOO_SMALL = 5,
+    ///
+    /// The buffer was not large enough to hold the requested data.
+    /// The required buffer size is returned in the appropriate
+    /// parameter when this error occurs.
+    ///
+    SHELL_BUFFER_TOO_SMALL = 5,
 
-  ///
-  /// There is no data pending upon return.
-  ///
-  SHELL_NOT_READY = 6,
+    ///
+    /// There is no data pending upon return.
+    ///
+    SHELL_NOT_READY = 6,
 
-  ///
-  /// The physical device reported an error while attempting the
-  /// operation.
-  ///
-  SHELL_DEVICE_ERROR = 7,
+    ///
+    /// The physical device reported an error while attempting the
+    /// operation.
+    ///
+    SHELL_DEVICE_ERROR = 7,
 
-  ///
-  /// The device cannot be written to.
-  ///
-  SHELL_WRITE_PROTECTED = 8,
+    ///
+    /// The device cannot be written to.
+    ///
+    SHELL_WRITE_PROTECTED = 8,
 
-  ///
-  /// The resource has run out.
-  ///
-  SHELL_OUT_OF_RESOURCES = 9,
+    ///
+    /// The resource has run out.
+    ///
+    SHELL_OUT_OF_RESOURCES = 9,
 
-  ///
-  /// An inconsistency was detected on the file system causing the
-  /// operation to fail.
-  ///
-  SHELL_VOLUME_CORRUPTED = 10,
+    ///
+    /// An inconsistency was detected on the file system causing the
+    /// operation to fail.
+    ///
+    SHELL_VOLUME_CORRUPTED = 10,
 
-  ///
-  /// There is no more space on the file system.
-  ///
-  SHELL_VOLUME_FULL = 11,
+    ///
+    /// There is no more space on the file system.
+    ///
+    SHELL_VOLUME_FULL = 11,
 
-  ///
-  /// The device does not contain any medium to perform the
-  /// operation.
-  ///
-  SHELL_NO_MEDIA = 12,
+    ///
+    /// The device does not contain any medium to perform the
+    /// operation.
+    ///
+    SHELL_NO_MEDIA = 12,
 
-  ///
-  /// The medium in the device has changed since the last
-  /// access.
-  ///
-  SHELL_MEDIA_CHANGED = 13,
+    ///
+    /// The medium in the device has changed since the last
+    /// access.
+    ///
+    SHELL_MEDIA_CHANGED = 13,
 
-  ///
-  /// The item was not found.
-  ///
-  SHELL_NOT_FOUND = 14,
+    ///
+    /// The item was not found.
+    ///
+    SHELL_NOT_FOUND = 14,
 
-  ///
-  /// Access was denied.
-  ///
-  SHELL_ACCESS_DENIED = 15,
+    ///
+    /// Access was denied.
+    ///
+    SHELL_ACCESS_DENIED = 15,
 
-  // note the skipping of 16 and 17
+    // note the skipping of 16 and 17
 
-  ///
-  /// A timeout time expired.
-  ///
-  SHELL_TIMEOUT = 18,
+    ///
+    /// A timeout time expired.
+    ///
+    SHELL_TIMEOUT = 18,
 
-  ///
-  /// The protocol has not been started.
-  ///
-  SHELL_NOT_STARTED = 19,
+    ///
+    /// The protocol has not been started.
+    ///
+    SHELL_NOT_STARTED = 19,
 
-  ///
-  /// The protocol has already been started.
-  ///
-  SHELL_ALREADY_STARTED = 20,
+    ///
+    /// The protocol has already been started.
+    ///
+    SHELL_ALREADY_STARTED = 20,
 
-  ///
-  /// The operation was aborted.
-  ///
-  SHELL_ABORTED = 21,
+    ///
+    /// The operation was aborted.
+    ///
+    SHELL_ABORTED = 21,
 
-  // note the skipping of 22, 23, and 24
+    // note the skipping of 22, 23, and 24
 
-  ///
-  /// A function encountered an internal version that was
-  /// incompatible with a version requested by the caller.
-  ///
-  SHELL_INCOMPATIBLE_VERSION = 25,
+    ///
+    /// A function encountered an internal version that was
+    /// incompatible with a version requested by the caller.
+    ///
+    SHELL_INCOMPATIBLE_VERSION = 25,
 
-  ///
-  /// The function was not performed due to a security violation.
-  ///
-  SHELL_SECURITY_VIOLATION = 26,
+    ///
+    /// The function was not performed due to a security violation.
+    ///
+    SHELL_SECURITY_VIOLATION = 26,
 
-  ///
-  /// The function was performed and resulted in an unequal
-  /// comparison..
-  ///
-  SHELL_NOT_EQUAL = 27
+    ///
+    /// The function was performed and resulted in an unequal
+    /// comparison..
+    ///
+    SHELL_NOT_EQUAL = 27
 } SHELL_STATUS;
 
 // replaced EFI_LIST_ENTRY with LIST_ENTRY for simplicity.
 // they are identical outside of the name.
-typedef struct {
-  LIST_ENTRY           Link;      ///< Linked list members.
-  EFI_STATUS           Status;    ///< Status of opening the file.  Valid only if Handle != NULL.
-  CONST CHAR16         *FullName; ///< Fully qualified filename.
-  CONST CHAR16         *FileName; ///< name of this file.
-  SHELL_FILE_HANDLE    Handle;    ///< Handle for interacting with the opened file or NULL if closed.
-  EFI_FILE_INFO        *Info;     ///< Pointer to the FileInfo struct for this file or NULL.
+typedef struct
+{
+    LIST_ENTRY        Link;     ///< Linked list members.
+    EFI_STATUS        Status;   ///< Status of opening the file.  Valid only if Handle != NULL.
+    CONST CHAR16     *FullName; ///< Fully qualified filename.
+    CONST CHAR16     *FileName; ///< name of this file.
+    SHELL_FILE_HANDLE Handle;   ///< Handle for interacting with the opened file or NULL if closed.
+    EFI_FILE_INFO    *Info;     ///< Pointer to the FileInfo struct for this file or NULL.
 } EFI_SHELL_FILE_INFO;
 
 /**
@@ -164,11 +169,7 @@ typedef struct {
   @retval FALSE                No script files are active now.
 
 **/
-typedef
-BOOLEAN
-(EFIAPI *EFI_SHELL_BATCH_IS_ACTIVE)(
-  VOID
-  );
+typedef BOOLEAN(EFIAPI *EFI_SHELL_BATCH_IS_ACTIVE)(VOID);
 
 /**
   Closes the file handle.
@@ -181,11 +182,7 @@ BOOLEAN
 
   @retval EFI_SUCCESS           The file closed successfully.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_CLOSE_FILE)(
-  IN SHELL_FILE_HANDLE FileHandle
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_CLOSE_FILE)(IN SHELL_FILE_HANDLE FileHandle);
 
 /**
   Creates a file or directory by name.
@@ -223,13 +220,7 @@ EFI_STATUS
   @retval EFI_OUT_OF_RESOURCES  Not enough resources were available to open the file.
   @retval EFI_VOLUME_FULL       The volume is full.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_CREATE_FILE)(
-  IN CONST CHAR16               *FileName,
-  IN UINT64                     FileAttribs,
-  OUT SHELL_FILE_HANDLE         *FileHandle
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_CREATE_FILE)(IN CONST CHAR16 *FileName, IN UINT64 FileAttribs, OUT SHELL_FILE_HANDLE *FileHandle);
 
 /**
   Deletes the file specified by the file handle.
@@ -243,11 +234,7 @@ EFI_STATUS
   @retval EFI_SUCCESS             The file was closed and deleted and the handle was closed.
   @retval EFI_WARN_DELETE_FAILURE The handle was closed but the file was not deleted.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_DELETE_FILE)(
-  IN SHELL_FILE_HANDLE FileHandle
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_DELETE_FILE)(IN SHELL_FILE_HANDLE FileHandle);
 
 /**
   Deletes the file specified by the file name.
@@ -259,29 +246,17 @@ EFI_STATUS
   @retval EFI_SUCCESS             The file was deleted.
   @retval EFI_WARN_DELETE_FAILURE The handle was closed but the file was not deleted.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_DELETE_FILE_BY_NAME)(
-  IN CONST CHAR16 *FileName
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_DELETE_FILE_BY_NAME)(IN CONST CHAR16 *FileName);
 
 /**
   Disables the page break output mode.
 **/
-typedef
-VOID
-(EFIAPI *EFI_SHELL_DISABLE_PAGE_BREAK)(
-  VOID
-  );
+typedef VOID(EFIAPI *EFI_SHELL_DISABLE_PAGE_BREAK)(VOID);
 
 /**
   Enables the page break output mode.
 **/
-typedef
-VOID
-(EFIAPI *EFI_SHELL_ENABLE_PAGE_BREAK)(
-  VOID
-  );
+typedef VOID(EFIAPI *EFI_SHELL_ENABLE_PAGE_BREAK)(VOID);
 
 /**
   Execute the command line.
@@ -314,14 +289,7 @@ VOID
   @retval EFI_OUT_OF_RESOURCES  Out of resources.
   @retval EFI_UNSUPPORTED       Nested shell invocations are not allowed.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_EXECUTE)(
-  IN EFI_HANDLE                 *ParentImageHandle,
-  IN CHAR16                     *CommandLine OPTIONAL,
-  IN CHAR16                     **Environment OPTIONAL,
-  OUT EFI_STATUS                *StatusCode OPTIONAL
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_EXECUTE)(IN EFI_HANDLE *ParentImageHandle, IN CHAR16 *CommandLine OPTIONAL, IN CHAR16 **Environment OPTIONAL, OUT EFI_STATUS *StatusCode OPTIONAL);
 
 /**
   Find files that match a specified pattern.
@@ -344,12 +312,7 @@ EFI_STATUS
   @retval EFI_DEVICE_ERROR      The device reported an error.
   @retval EFI_VOLUME_CORRUPTED  The file system structures are corrupted.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_FIND_FILES)(
-  IN CONST CHAR16               *FilePattern,
-  OUT EFI_SHELL_FILE_INFO       **FileList
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_FIND_FILES)(IN CONST CHAR16 *FilePattern, OUT EFI_SHELL_FILE_INFO **FileList);
 
 /**
   Find all files in a specified directory.
@@ -363,12 +326,7 @@ EFI_STATUS
   @retval EFI_DEVICE_ERROR      The device reported an error.
   @retval EFI_NO_MEDIA          The device media is not present.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_FIND_FILES_IN_DIR)(
-  IN SHELL_FILE_HANDLE            FileDirHandle,
-  OUT EFI_SHELL_FILE_INFO         **FileList
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_FIND_FILES_IN_DIR)(IN SHELL_FILE_HANDLE FileDirHandle, OUT EFI_SHELL_FILE_INFO **FileList);
 
 /**
   Flushes data back to a device.
@@ -385,11 +343,7 @@ EFI_STATUS
   @retval EFI_ACCESS_DENIED     The file was opened read-only.
   @retval EFI_VOLUME_FULL       The volume is full.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_FLUSH_FILE)(
-  IN SHELL_FILE_HANDLE FileHandle
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_FLUSH_FILE)(IN SHELL_FILE_HANDLE FileHandle);
 
 /**
   Frees the file list.
@@ -402,11 +356,7 @@ EFI_STATUS
 
   @retval EFI_SUCCESS           Free the file list successfully.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_FREE_FILE_LIST)(
-  IN EFI_SHELL_FILE_INFO **FileList
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_FREE_FILE_LIST)(IN EFI_SHELL_FILE_INFO **FileList);
 
 /**
   Returns the current directory on the specified device.
@@ -424,15 +374,11 @@ EFI_STATUS
   @retval !=NULL                The current directory.
   @retval NULL                  Current directory does not exist.
 **/
-typedef
-CONST CHAR16 *
-(EFIAPI *EFI_SHELL_GET_CUR_DIR)(
-  IN CONST CHAR16 *FileSystemMapping OPTIONAL
-  );
+typedef CONST CHAR16 *(EFIAPI *EFI_SHELL_GET_CUR_DIR)(IN CONST CHAR16 *FileSystemMapping OPTIONAL);
 
 typedef UINT32 EFI_SHELL_DEVICE_NAME_FLAGS;
-#define EFI_DEVICE_NAME_USE_COMPONENT_NAME  0x00000001
-#define EFI_DEVICE_NAME_USE_DEVICE_PATH     0x00000002
+#define EFI_DEVICE_NAME_USE_COMPONENT_NAME 0x00000001
+#define EFI_DEVICE_NAME_USE_DEVICE_PATH    0x00000002
 
 /**
   Gets the name of the device specified by the device handle.
@@ -464,14 +410,7 @@ typedef UINT32 EFI_SHELL_DEVICE_NAME_FLAGS;
   @retval EFI_SUCCESS           Get the name successfully.
   @retval EFI_NOT_FOUND         Fail to get the device name.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_GET_DEVICE_NAME)(
-  IN EFI_HANDLE                   DeviceHandle,
-  IN EFI_SHELL_DEVICE_NAME_FLAGS  Flags,
-  IN CHAR8                        *Language,
-  OUT CHAR16                      **BestDeviceName
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_GET_DEVICE_NAME)(IN EFI_HANDLE DeviceHandle, IN EFI_SHELL_DEVICE_NAME_FLAGS Flags, IN CHAR8 *Language, OUT CHAR16 **BestDeviceName);
 
 /**
   Gets the device path from the mapping.
@@ -486,11 +425,7 @@ EFI_STATUS
   @retval NULL                  There is no device path associated with the
                                 specified mapping.
 **/
-typedef
-CONST EFI_DEVICE_PATH_PROTOCOL *
-(EFIAPI *EFI_SHELL_GET_DEVICE_PATH_FROM_MAP)(
-  IN CONST CHAR16 *Mapping
-  );
+typedef CONST EFI_DEVICE_PATH_PROTOCOL *(EFIAPI *EFI_SHELL_GET_DEVICE_PATH_FROM_MAP)(IN CONST CHAR16 *Mapping);
 
 /**
   Converts a file system style name to a device path.
@@ -503,11 +438,7 @@ CONST EFI_DEVICE_PATH_PROTOCOL *
   @return                       The pointer of the file path. The file path is callee
                                 allocated and should be freed by the caller.
 **/
-typedef
-EFI_DEVICE_PATH_PROTOCOL *
-(EFIAPI *EFI_SHELL_GET_DEVICE_PATH_FROM_FILE_PATH)(
-  IN CONST CHAR16 *Path
-  );
+typedef EFI_DEVICE_PATH_PROTOCOL *(EFIAPI *EFI_SHELL_GET_DEVICE_PATH_FROM_FILE_PATH)(IN CONST CHAR16 *Path);
 
 /**
   Gets either a single or list of environment variables.
@@ -532,11 +463,7 @@ EFI_DEVICE_PATH_PROTOCOL *
   @retval NULL                  The environment variable doesn't exist or there are
                                 no environment variables.
 **/
-typedef
-CONST CHAR16 *
-(EFIAPI *EFI_SHELL_GET_ENV)(
-  IN CONST CHAR16 *Name OPTIONAL
-  );
+typedef CONST CHAR16 *(EFIAPI *EFI_SHELL_GET_ENV)(IN CONST CHAR16 *Name OPTIONAL);
 
 /**
   Gets the environment variable and Attributes, or list of environment variables.  Can be
@@ -560,12 +487,7 @@ CONST CHAR16 *
   @return                       The environment variable's value. The returned pointer does not
                                 need to be freed by the caller.
 **/
-typedef
-CONST CHAR16 *
-(EFIAPI *EFI_SHELL_GET_ENV_EX)(
-  IN  CONST CHAR16 *Name,
-  OUT       UINT32 *Attributes OPTIONAL
-  );
+typedef CONST CHAR16 *(EFIAPI *EFI_SHELL_GET_ENV_EX)(IN CONST CHAR16 *Name, OUT UINT32 *Attributes OPTIONAL);
 
 /**
   Gets the file information from an open file handle.
@@ -578,11 +500,7 @@ CONST CHAR16 *
   @retval NULL                  Cannot get the file info.
   @return                       A pointer to a buffer with file information.
 **/
-typedef
-EFI_FILE_INFO *
-(EFIAPI *EFI_SHELL_GET_FILE_INFO)(
-  IN SHELL_FILE_HANDLE FileHandle
-  );
+typedef EFI_FILE_INFO *(EFIAPI *EFI_SHELL_GET_FILE_INFO)(IN SHELL_FILE_HANDLE FileHandle);
 
 /**
   Converts a device path to a file system-style path.
@@ -596,11 +514,7 @@ EFI_FILE_INFO *
   @return                       The pointer of the NULL-terminated file path. The path
                                 is callee-allocated and should be freed by the caller.
 **/
-typedef
-CHAR16 *
-(EFIAPI *EFI_SHELL_GET_FILE_PATH_FROM_DEVICE_PATH)(
-  IN CONST EFI_DEVICE_PATH_PROTOCOL *Path
-  );
+typedef CHAR16 *(EFIAPI *EFI_SHELL_GET_FILE_PATH_FROM_DEVICE_PATH)(IN CONST EFI_DEVICE_PATH_PROTOCOL *Path);
 
 /**
   Gets a file's current position.
@@ -615,12 +529,7 @@ CHAR16 *
   @retval EFI_SUCCESS           Data was accessed.
   @retval EFI_UNSUPPORTED       The request is not valid on open directories.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_GET_FILE_POSITION)(
-  IN SHELL_FILE_HANDLE FileHandle,
-  OUT UINT64 *Position
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_GET_FILE_POSITION)(IN SHELL_FILE_HANDLE FileHandle, OUT UINT64 *Position);
 
 /**
   Gets the size of a file.
@@ -633,12 +542,7 @@ EFI_STATUS
   @retval EFI_SUCCESS           Get the file's size.
   @retval EFI_DEVICE_ERROR      Can't access the file.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_GET_FILE_SIZE)(
-  IN SHELL_FILE_HANDLE FileHandle,
-  OUT UINT64 *Size
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_GET_FILE_SIZE)(IN SHELL_FILE_HANDLE FileHandle, OUT UINT64 *Size);
 
 /**
   Get the GUID value from a human readable name.
@@ -657,12 +561,7 @@ EFI_STATUS
   @retval EFI_INVALID_PARAMETER   GuidName was NULL.
   @retval EFI_NOT_FOUND           GuidName is not a known GUID Name.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_GET_GUID_FROM_NAME)(
-  IN  CONST CHAR16   *GuidName,
-  OUT       EFI_GUID *Guid
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_GET_GUID_FROM_NAME)(IN CONST CHAR16 *GuidName, OUT EFI_GUID *Guid);
 
 /**
   Get the human readable name for a GUID from the value.
@@ -681,12 +580,7 @@ EFI_STATUS
   @retval EFI_INVALID_PARAMETER   GuidName was NULL.
   @retval EFI_NOT_FOUND           Guid is not assigned a name.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_GET_GUID_NAME)(
-  IN  CONST EFI_GUID *Guid,
-  OUT CONST CHAR16   **GuidName
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_GET_GUID_NAME)(IN CONST EFI_GUID *Guid, OUT CONST CHAR16 **GuidName);
 
 /**
   Return help information about a specific command.
@@ -713,13 +607,7 @@ EFI_STATUS
   @retval EFI_INVALID_PARAMETER HelpText is NULL.
   @retval EFI_NOT_FOUND         There is no help text available for Command.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_GET_HELP_TEXT)(
-  IN CONST CHAR16 *Command,
-  IN CONST CHAR16 *Sections OPTIONAL,
-  OUT CHAR16 **HelpText
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_GET_HELP_TEXT)(IN CONST CHAR16 *Command, IN CONST CHAR16 *Sections OPTIONAL, OUT CHAR16 **HelpText);
 
 /**
   Gets the mapping(s) that most closely matches the device path.
@@ -741,11 +629,7 @@ EFI_STATUS
   @retval !=NULL                Pointer to NULL-terminated mapping. The buffer
                                 is callee allocated and should be freed by the caller.
 **/
-typedef
-CONST CHAR16 *
-(EFIAPI *EFI_SHELL_GET_MAP_FROM_DEVICE_PATH)(
-  IN OUT EFI_DEVICE_PATH_PROTOCOL **DevicePath
-  );
+typedef CONST CHAR16 *(EFIAPI *EFI_SHELL_GET_MAP_FROM_DEVICE_PATH)(IN OUT EFI_DEVICE_PATH_PROTOCOL **DevicePath);
 
 /**
   Gets the enable status of the page break output mode.
@@ -755,11 +639,7 @@ CONST CHAR16 *
   @retval TRUE                  The page break output mode is enabled.
   @retval FALSE                 The page break output mode is disabled.
 **/
-typedef
-BOOLEAN
-(EFIAPI *EFI_SHELL_GET_PAGE_BREAK)(
-  VOID
-  );
+typedef BOOLEAN(EFIAPI *EFI_SHELL_GET_PAGE_BREAK)(VOID);
 
 /**
   Judges whether the active shell is the root shell.
@@ -769,11 +649,7 @@ BOOLEAN
   @retval TRUE                  The active Shell is the root Shell.
   @retval FALSE                 The active Shell is NOT the root Shell.
 **/
-typedef
-BOOLEAN
-(EFIAPI *EFI_SHELL_IS_ROOT_SHELL)(
-  VOID
-  );
+typedef BOOLEAN(EFIAPI *EFI_SHELL_IS_ROOT_SHELL)(VOID);
 
 /**
   Opens a file or a directory by file name.
@@ -827,13 +703,7 @@ BOOLEAN
                                 is NULL.
   @retval EFI_VOLUME_FULL       The volume is full. FileHandle is NULL.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_OPEN_FILE_BY_NAME)(
-  IN CONST CHAR16 *FileName,
-  OUT SHELL_FILE_HANDLE *FileHandle,
-  IN UINT64 OpenMode
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_OPEN_FILE_BY_NAME)(IN CONST CHAR16 *FileName, OUT SHELL_FILE_HANDLE *FileHandle, IN UINT64 OpenMode);
 
 /**
   Opens the files that match the path specified.
@@ -850,13 +720,7 @@ EFI_STATUS
   @retval EFI_SUCCESS           Create the file list successfully.
   @return                       Can't create the file list.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_OPEN_FILE_LIST)(
-  IN CHAR16 *Path,
-  IN UINT64 OpenMode,
-  IN OUT EFI_SHELL_FILE_INFO **FileList
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_OPEN_FILE_LIST)(IN CHAR16 *Path, IN UINT64 OpenMode, IN OUT EFI_SHELL_FILE_INFO **FileList);
 
 /**
   Opens the root directory of a device.
@@ -874,12 +738,7 @@ EFI_STATUS
   @retval EFI_VOLUME_CORRUPTED  The data structures in the volume were corrupted.
   @retval EFI_DEVICE_ERROR      The device had an error.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_OPEN_ROOT)(
-  IN EFI_DEVICE_PATH_PROTOCOL *DevicePath,
-  OUT SHELL_FILE_HANDLE *FileHandle
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_OPEN_ROOT)(IN EFI_DEVICE_PATH_PROTOCOL *DevicePath, OUT SHELL_FILE_HANDLE *FileHandle);
 
 /**
   Opens the root directory of a device on a handle.
@@ -896,12 +755,7 @@ EFI_STATUS
   @retval EFI_VOLUME_CORRUPTED  The data structures in the volume were corrupted.
   @retval EFI_DEVICE_ERROR      The device had an error.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_OPEN_ROOT_BY_HANDLE)(
-  IN EFI_HANDLE DeviceHandle,
-  OUT SHELL_FILE_HANDLE *FileHandle
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_OPEN_ROOT_BY_HANDLE)(IN EFI_HANDLE DeviceHandle, OUT SHELL_FILE_HANDLE *FileHandle);
 
 /**
   Reads data from the file.
@@ -922,13 +776,7 @@ EFI_STATUS
   @retval EFI_VOLUME_CORRUPTED  The file system structures are corrupted.
   @retval EFI_BUFFER_TO_SMALL   Buffer is too small. ReadSize contains required size.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_READ_FILE)(
-  IN SHELL_FILE_HANDLE FileHandle,
-  IN OUT UINTN *ReadSize,
-  IN OUT VOID *Buffer
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_READ_FILE)(IN SHELL_FILE_HANDLE FileHandle, IN OUT UINTN *ReadSize, IN OUT VOID *Buffer);
 
 /**
   Register a GUID and a localized human readable name for it.
@@ -947,12 +795,7 @@ EFI_STATUS
   @retval EFI_INVALID_PARAMETER   GuidName was NULL.
   @retval EFI_ACCESS_DENIED       Guid already is assigned a name.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_REGISTER_GUID_NAME)(
-  IN CONST EFI_GUID *Guid,
-  IN CONST CHAR16   *GuidName
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_REGISTER_GUID_NAME)(IN CONST EFI_GUID *Guid, IN CONST CHAR16 *GuidName);
 
 /**
   Deletes the duplicate file names files in the given file list.
@@ -961,11 +804,7 @@ EFI_STATUS
 
   @retval EFI_SUCCESS           Always success.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_REMOVE_DUP_IN_FILE_LIST)(
-  IN EFI_SHELL_FILE_INFO **FileList
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_REMOVE_DUP_IN_FILE_LIST)(IN EFI_SHELL_FILE_INFO **FileList);
 
 /**
   Changes a shell command alias.
@@ -985,14 +824,7 @@ EFI_STATUS
   @retval EFI_ACCESS_DENIED     The alias is a built-in alias or already existed and Replace was set to
                                 FALSE.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_SET_ALIAS)(
-  IN CONST CHAR16 *Command,
-  IN CONST CHAR16 *Alias,
-  IN BOOLEAN Replace,
-  IN BOOLEAN Volatile
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_SET_ALIAS)(IN CONST CHAR16 *Command, IN CONST CHAR16 *Alias, IN BOOLEAN Replace, IN BOOLEAN Volatile);
 
 /**
   This function returns the command associated with a alias or a list of all
@@ -1011,12 +843,7 @@ EFI_STATUS
   @retval NULL                  An error ocurred.
   @retval NULL                  Alias was not a valid Alias.
 **/
-typedef
-CONST CHAR16 *
-(EFIAPI *EFI_SHELL_GET_ALIAS)(
-  IN  CONST CHAR16 *Alias,
-  OUT BOOLEAN      *Volatile OPTIONAL
-  );
+typedef CONST CHAR16 *(EFIAPI *EFI_SHELL_GET_ALIAS)(IN CONST CHAR16 *Alias, OUT BOOLEAN *Volatile OPTIONAL);
 
 /**
   Changes the current directory on the specified device.
@@ -1042,12 +869,7 @@ CONST CHAR16 *
   @retval NULL                  Current directory does not exist.
   @return                       The current directory.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_SET_CUR_DIR)(
-  IN CONST CHAR16 *FileSystem OPTIONAL,
-  IN CONST CHAR16 *Dir
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_SET_CUR_DIR)(IN CONST CHAR16 *FileSystem OPTIONAL, IN CONST CHAR16 *Dir);
 
 /**
   Sets the environment variable.
@@ -1070,13 +892,7 @@ EFI_STATUS
 
   @retval EFI_SUCCESS           The environment variable was successfully updated.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_SET_ENV)(
-  IN CONST CHAR16 *Name,
-  IN CONST CHAR16 *Value,
-  IN BOOLEAN Volatile
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_SET_ENV)(IN CONST CHAR16 *Name, IN CONST CHAR16 *Value, IN BOOLEAN Volatile);
 
 /**
   Sets the file information to an opened file handle.
@@ -1096,12 +912,7 @@ EFI_STATUS
   @retval EFI_VOLUME_FULL       The volume is full.
   @retval EFI_BAD_BUFFER_SIZE   BufferSize is smaller than the size of EFI_FILE_INFO.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_SET_FILE_INFO)(
-  IN SHELL_FILE_HANDLE FileHandle,
-  IN CONST EFI_FILE_INFO *FileInfo
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_SET_FILE_INFO)(IN SHELL_FILE_HANDLE FileHandle, IN CONST EFI_FILE_INFO *FileInfo);
 
 /**
   Sets a file's current position.
@@ -1118,12 +929,7 @@ EFI_STATUS
   @retval EFI_SUCCESS           Data was written.
   @retval EFI_UNSUPPORTED       The seek request for nonzero is not valid on open directories.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_SET_FILE_POSITION)(
-  IN SHELL_FILE_HANDLE FileHandle,
-  IN UINT64 Position
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_SET_FILE_POSITION)(IN SHELL_FILE_HANDLE FileHandle, IN UINT64 Position);
 
 /**
   This function creates a mapping for a device path.
@@ -1137,12 +943,7 @@ EFI_STATUS
                                 boot service function LocateDevicePath().
   @retval EFI_ACCESS_DENIED     The mapping is a built-in alias.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_SET_MAP)(
-  IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePath,
-  IN CONST CHAR16 *Mapping
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_SET_MAP)(IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePath, IN CONST CHAR16 *Mapping);
 
 /**
   Writes data to the file.
@@ -1168,13 +969,7 @@ EFI_STATUS
   @retval EFI_ACCESS_DENIED         The file was open for read only.
   @retval EFI_VOLUME_FULL           The volume is full.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SHELL_WRITE_FILE)(
-  IN SHELL_FILE_HANDLE          FileHandle,
-  IN OUT UINTN                  *BufferSize,
-  IN VOID                       *Buffer
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SHELL_WRITE_FILE)(IN SHELL_FILE_HANDLE FileHandle, IN OUT UINTN *BufferSize, IN VOID *Buffer);
 
 //
 // EFI_SHELL_PROTOCOL has been updated since UEFI Shell Spec 2.0
@@ -1200,59 +995,61 @@ EFI_STATUS
 //   //
 // }
 //
-typedef struct _EFI_SHELL_PROTOCOL {
-  EFI_SHELL_EXECUTE                           Execute;
-  EFI_SHELL_GET_ENV                           GetEnv;
-  EFI_SHELL_SET_ENV                           SetEnv;
-  EFI_SHELL_GET_ALIAS                         GetAlias;
-  EFI_SHELL_SET_ALIAS                         SetAlias;
-  EFI_SHELL_GET_HELP_TEXT                     GetHelpText;
-  EFI_SHELL_GET_DEVICE_PATH_FROM_MAP          GetDevicePathFromMap;
-  EFI_SHELL_GET_MAP_FROM_DEVICE_PATH          GetMapFromDevicePath;
-  EFI_SHELL_GET_DEVICE_PATH_FROM_FILE_PATH    GetDevicePathFromFilePath;
-  EFI_SHELL_GET_FILE_PATH_FROM_DEVICE_PATH    GetFilePathFromDevicePath;
-  EFI_SHELL_SET_MAP                           SetMap;
-  EFI_SHELL_GET_CUR_DIR                       GetCurDir;
-  EFI_SHELL_SET_CUR_DIR                       SetCurDir;
-  EFI_SHELL_OPEN_FILE_LIST                    OpenFileList;
-  EFI_SHELL_FREE_FILE_LIST                    FreeFileList;
-  EFI_SHELL_REMOVE_DUP_IN_FILE_LIST           RemoveDupInFileList;
-  EFI_SHELL_BATCH_IS_ACTIVE                   BatchIsActive;
-  EFI_SHELL_IS_ROOT_SHELL                     IsRootShell;
-  EFI_SHELL_ENABLE_PAGE_BREAK                 EnablePageBreak;
-  EFI_SHELL_DISABLE_PAGE_BREAK                DisablePageBreak;
-  EFI_SHELL_GET_PAGE_BREAK                    GetPageBreak;
-  EFI_SHELL_GET_DEVICE_NAME                   GetDeviceName;
-  EFI_SHELL_GET_FILE_INFO                     GetFileInfo;
-  EFI_SHELL_SET_FILE_INFO                     SetFileInfo;
-  EFI_SHELL_OPEN_FILE_BY_NAME                 OpenFileByName;
-  EFI_SHELL_CLOSE_FILE                        CloseFile;
-  EFI_SHELL_CREATE_FILE                       CreateFile;
-  EFI_SHELL_READ_FILE                         ReadFile;
-  EFI_SHELL_WRITE_FILE                        WriteFile;
-  EFI_SHELL_DELETE_FILE                       DeleteFile;
-  EFI_SHELL_DELETE_FILE_BY_NAME               DeleteFileByName;
-  EFI_SHELL_GET_FILE_POSITION                 GetFilePosition;
-  EFI_SHELL_SET_FILE_POSITION                 SetFilePosition;
-  EFI_SHELL_FLUSH_FILE                        FlushFile;
-  EFI_SHELL_FIND_FILES                        FindFiles;
-  EFI_SHELL_FIND_FILES_IN_DIR                 FindFilesInDir;
-  EFI_SHELL_GET_FILE_SIZE                     GetFileSize;
-  EFI_SHELL_OPEN_ROOT                         OpenRoot;
-  EFI_SHELL_OPEN_ROOT_BY_HANDLE               OpenRootByHandle;
-  EFI_EVENT                                   ExecutionBreak;
-  UINT32                                      MajorVersion;
-  UINT32                                      MinorVersion;
-  // Added for Shell 2.1
-  EFI_SHELL_REGISTER_GUID_NAME                RegisterGuidName;
-  EFI_SHELL_GET_GUID_NAME                     GetGuidName;
-  EFI_SHELL_GET_GUID_FROM_NAME                GetGuidFromName;
-  EFI_SHELL_GET_ENV_EX                        GetEnvEx;
+typedef struct _EFI_SHELL_PROTOCOL
+{
+    EFI_SHELL_EXECUTE                        Execute;
+    EFI_SHELL_GET_ENV                        GetEnv;
+    EFI_SHELL_SET_ENV                        SetEnv;
+    EFI_SHELL_GET_ALIAS                      GetAlias;
+    EFI_SHELL_SET_ALIAS                      SetAlias;
+    EFI_SHELL_GET_HELP_TEXT                  GetHelpText;
+    EFI_SHELL_GET_DEVICE_PATH_FROM_MAP       GetDevicePathFromMap;
+    EFI_SHELL_GET_MAP_FROM_DEVICE_PATH       GetMapFromDevicePath;
+    EFI_SHELL_GET_DEVICE_PATH_FROM_FILE_PATH GetDevicePathFromFilePath;
+    EFI_SHELL_GET_FILE_PATH_FROM_DEVICE_PATH GetFilePathFromDevicePath;
+    EFI_SHELL_SET_MAP                        SetMap;
+    EFI_SHELL_GET_CUR_DIR                    GetCurDir;
+    EFI_SHELL_SET_CUR_DIR                    SetCurDir;
+    EFI_SHELL_OPEN_FILE_LIST                 OpenFileList;
+    EFI_SHELL_FREE_FILE_LIST                 FreeFileList;
+    EFI_SHELL_REMOVE_DUP_IN_FILE_LIST        RemoveDupInFileList;
+    EFI_SHELL_BATCH_IS_ACTIVE                BatchIsActive;
+    EFI_SHELL_IS_ROOT_SHELL                  IsRootShell;
+    EFI_SHELL_ENABLE_PAGE_BREAK              EnablePageBreak;
+    EFI_SHELL_DISABLE_PAGE_BREAK             DisablePageBreak;
+    EFI_SHELL_GET_PAGE_BREAK                 GetPageBreak;
+    EFI_SHELL_GET_DEVICE_NAME                GetDeviceName;
+    EFI_SHELL_GET_FILE_INFO                  GetFileInfo;
+    EFI_SHELL_SET_FILE_INFO                  SetFileInfo;
+    EFI_SHELL_OPEN_FILE_BY_NAME              OpenFileByName;
+    EFI_SHELL_CLOSE_FILE                     CloseFile;
+    EFI_SHELL_CREATE_FILE                    CreateFile;
+    EFI_SHELL_READ_FILE                      ReadFile;
+    EFI_SHELL_WRITE_FILE                     WriteFile;
+    EFI_SHELL_DELETE_FILE                    DeleteFile;
+    EFI_SHELL_DELETE_FILE_BY_NAME            DeleteFileByName;
+    EFI_SHELL_GET_FILE_POSITION              GetFilePosition;
+    EFI_SHELL_SET_FILE_POSITION              SetFilePosition;
+    EFI_SHELL_FLUSH_FILE                     FlushFile;
+    EFI_SHELL_FIND_FILES                     FindFiles;
+    EFI_SHELL_FIND_FILES_IN_DIR              FindFilesInDir;
+    EFI_SHELL_GET_FILE_SIZE                  GetFileSize;
+    EFI_SHELL_OPEN_ROOT                      OpenRoot;
+    EFI_SHELL_OPEN_ROOT_BY_HANDLE            OpenRootByHandle;
+    EFI_EVENT                                ExecutionBreak;
+    UINT32                                   MajorVersion;
+    UINT32                                   MinorVersion;
+    // Added for Shell 2.1
+    EFI_SHELL_REGISTER_GUID_NAME RegisterGuidName;
+    EFI_SHELL_GET_GUID_NAME      GetGuidName;
+    EFI_SHELL_GET_GUID_FROM_NAME GetGuidFromName;
+    EFI_SHELL_GET_ENV_EX         GetEnvEx;
 } EFI_SHELL_PROTOCOL;
 
-extern EFI_GUID  gEfiShellProtocolGuid;
+extern EFI_GUID gEfiShellProtocolGuid;
 
-enum ShellVersion {
-  SHELL_MAJOR_VERSION = 2,
-  SHELL_MINOR_VERSION = 2
+enum ShellVersion
+{
+    SHELL_MAJOR_VERSION = 2,
+    SHELL_MINOR_VERSION = 2
 };

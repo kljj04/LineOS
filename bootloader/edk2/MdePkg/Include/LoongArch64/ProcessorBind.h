@@ -20,24 +20,24 @@
 // Make sure we are using the correct packing rules per EFI specification
 //
 #ifndef __GNUC__
-  #pragma pack()
+#pragma pack()
 #endif
 
 //
 // Assume standard LoongArch 64-bit alignment.
 // Need to check portability of long long
 //
-typedef unsigned long long  UINT64;
-typedef long long           INT64;
-typedef unsigned int        UINT32;
-typedef int                 INT32;
-typedef unsigned short      UINT16;
-typedef unsigned short      CHAR16;
-typedef short               INT16;
-typedef unsigned char       BOOLEAN;
-typedef unsigned char       UINT8;
-typedef char                CHAR8;
-typedef char                INT8;
+typedef unsigned long long UINT64;
+typedef long long          INT64;
+typedef unsigned int       UINT32;
+typedef int                INT32;
+typedef unsigned short     UINT16;
+typedef unsigned short     CHAR16;
+typedef short              INT16;
+typedef unsigned char      BOOLEAN;
+typedef unsigned char      UINT8;
+typedef char               CHAR8;
+typedef char               INT8;
 
 //
 // Unsigned value of native width.  (4 bytes on supported 32-bit processor instructions,
@@ -59,46 +59,46 @@ typedef INT64 INTN;
 //
 // A value of native width with the highest bit set.
 //
-#define MAX_BIT  0x8000000000000000ULL
+#define MAX_BIT 0x8000000000000000ULL
 //
 // A value of native width with the two highest bits set.
 //
-#define MAX_2_BITS  0xC000000000000000ULL
+#define MAX_2_BITS 0xC000000000000000ULL
 
 //
 // Maximum legal LoongArch 64-bit address
 //
-#define MAX_ADDRESS  0xFFFFFFFFFFFFFFFFULL
+#define MAX_ADDRESS 0xFFFFFFFFFFFFFFFFULL
 
 //
 // Maximum usable address at boot time (48 bits using 4KB pages)
 //
-#define MAX_ALLOC_ADDRESS  0xFFFFFFFFFFFFULL
+#define MAX_ALLOC_ADDRESS 0xFFFFFFFFFFFFULL
 
 //
 // Maximum legal LoongArch  64-bit INTN and UINTN values.
 //
-#define MAX_INTN   ((INTN)0x7FFFFFFFFFFFFFFFULL)
-#define MAX_UINTN  ((UINTN)0xFFFFFFFFFFFFFFFFULL)
+#define MAX_INTN  ((INTN) 0x7FFFFFFFFFFFFFFFULL)
+#define MAX_UINTN ((UINTN) 0xFFFFFFFFFFFFFFFFULL)
 
 //
 // Page allocation granularity for LoongArch
 //
-#define DEFAULT_PAGE_ALLOCATION_GRANULARITY  (0x1000)
-#define RUNTIME_PAGE_ALLOCATION_GRANULARITY  (0x10000)
+#define DEFAULT_PAGE_ALLOCATION_GRANULARITY (0x1000)
+#define RUNTIME_PAGE_ALLOCATION_GRANULARITY (0x10000)
 
-#if defined (__GNUC__)
+#if defined(__GNUC__)
 //
 // For GNU assembly code, .global or .globl can declare global symbols.
 // Define this macro to unify the usage.
 //
-#define ASM_GLOBAL  .globl
+#define ASM_GLOBAL .globl
 #endif
 
 //
 // The stack alignment required for LoongArch
 //
-#define CPU_STACK_ALIGNMENT  16
+#define CPU_STACK_ALIGNMENT 16
 
 /**
   Return the pointer to the first instruction of a function given a function pointer.
@@ -110,7 +110,7 @@ typedef INT64 INTN;
   @return The pointer to the first instruction of a function given a function pointer.
 
 **/
-#define FUNCTION_ENTRY_POINT(FunctionPointer)  (VOID *)(UINTN)(FunctionPointer)
+#define FUNCTION_ENTRY_POINT(FunctionPointer) (VOID *) (UINTN) (FunctionPointer)
 
 #ifndef __USER_LABEL_PREFIX__
 #define __USER_LABEL_PREFIX__

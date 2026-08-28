@@ -23,15 +23,16 @@
 
 #include <IndustryStandard/Acpi.h>
 
-#define EFI_ACPI_WINDOWS_SMM_SECURITY_MITIGATION_TABLE_SIGNATURE  SIGNATURE_32('W', 'S', 'M', 'T')
+#define EFI_ACPI_WINDOWS_SMM_SECURITY_MITIGATION_TABLE_SIGNATURE SIGNATURE_32('W', 'S', 'M', 'T')
 
 #pragma pack(1)
 
-#define EFI_WSMT_TABLE_REVISION  1
+#define EFI_WSMT_TABLE_REVISION 1
 
-typedef struct {
-  EFI_ACPI_DESCRIPTION_HEADER    Header;
-  UINT32                         ProtectionFlags;
+typedef struct
+{
+    EFI_ACPI_DESCRIPTION_HEADER Header;
+    UINT32                      ProtectionFlags;
 } EFI_ACPI_WSMT_TABLE;
 
 // FIXED_COMM_BUFFERS
@@ -44,7 +45,7 @@ typedef struct {
 // non-SMM, including but not limited to EFI_SMM_COMMUNICATION_PROTOCOL,
 // ACPINVS in ASL code, general purpose registers as buffer pointers,
 // etc.
-#define EFI_WSMT_PROTECTION_FLAGS_FIXED_COMM_BUFFERS  0x1
+#define EFI_WSMT_PROTECTION_FLAGS_FIXED_COMM_BUFFERS 0x1
 
 // COMM_BUFFER_NESTED_PTR_PROTECTION
 // If set, expresses that for all synchronous SMM entries, SMM will
@@ -52,7 +53,7 @@ typedef struct {
 // communication buffer only refer to address ranges that lie entirely
 // within the expected fixed memory regions.
 // Firmware setting this bit must also set the FIXED_COMM_BUFFERS bit.
-#define EFI_WSMT_PROTECTION_FLAGS_COMM_BUFFER_NESTED_PTR_PROTECTION  0x2
+#define EFI_WSMT_PROTECTION_FLAGS_COMM_BUFFER_NESTED_PTR_PROTECTION 0x2
 
 // SYSTEM_RESOURCE_PROTECTION
 // Firmware setting this bit is an indication that it will not allow
@@ -68,6 +69,6 @@ typedef struct {
 // software configures a PCI Express BAR to overlay RAM, accesses by
 // the CPU to the affected system physical addresses must decode to
 // RAM.
-#define EFI_WSMT_PROTECTION_FLAGS_SYSTEM_RESOURCE_PROTECTION  0x4
+#define EFI_WSMT_PROTECTION_FLAGS_SYSTEM_RESOURCE_PROTECTION 0x4
 
 #pragma pack()

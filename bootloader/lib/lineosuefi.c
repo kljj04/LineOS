@@ -5,10 +5,10 @@
 #include <Uefi.h>
 #include <lineosuefi.h>
 
-EFI_SYSTEM_TABLE *UEFISystemTable = NULL;
+EFI_SYSTEM_TABLE  *UEFISystemTable = NULL;
 EFI_BOOT_SERVICES *UEFIBootServices = NULL;
-EFI_HANDLE UEFIImageHandle = NULL;
-EFI_STATUS LineOSLastWatchdogStatus = EFI_SUCCESS;
+EFI_HANDLE         UEFIImageHandle = NULL;
+EFI_STATUS         LineOSLastWatchdogStatus = EFI_SUCCESS;
 
 STATIC CHAR16 HexDigit(UINTN Value)
 {
@@ -65,6 +65,6 @@ VOID LineOSHaltWithMessage(CONST CHAR16 *Message, EFI_STATUS Status)
 
     while (1)
     {
-        __asm__ volatile("hlt");
+        ASM("hlt");
     }
 }

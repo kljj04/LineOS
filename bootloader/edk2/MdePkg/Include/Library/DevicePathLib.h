@@ -11,7 +11,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #pragma once
 
-#define END_DEVICE_PATH_LENGTH  (sizeof (EFI_DEVICE_PATH_PROTOCOL))
+#define END_DEVICE_PATH_LENGTH (sizeof(EFI_DEVICE_PATH_PROTOCOL))
 
 /**
   Determine whether a given device path is valid.
@@ -31,10 +31,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 BOOLEAN
 EFIAPI
-IsDevicePathValid (
-  IN CONST EFI_DEVICE_PATH_PROTOCOL  *DevicePath,
-  IN       UINTN                     MaxSize
-  );
+IsDevicePathValid(IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePath, IN UINTN MaxSize);
 
 /**
   Returns the Type field of a device path node.
@@ -50,9 +47,7 @@ IsDevicePathValid (
 **/
 UINT8
 EFIAPI
-DevicePathType (
-  IN CONST VOID  *Node
-  );
+DevicePathType(IN CONST VOID *Node);
 
 /**
   Returns the SubType field of a device path node.
@@ -68,9 +63,7 @@ DevicePathType (
 **/
 UINT8
 EFIAPI
-DevicePathSubType (
-  IN CONST VOID  *Node
-  );
+DevicePathSubType(IN CONST VOID *Node);
 
 /**
   Returns the 16-bit Length field of a device path node.
@@ -89,9 +82,7 @@ DevicePathSubType (
 **/
 UINTN
 EFIAPI
-DevicePathNodeLength (
-  IN CONST VOID  *Node
-  );
+DevicePathNodeLength(IN CONST VOID *Node);
 
 /**
   Returns a pointer to the next node in a device path.
@@ -105,11 +96,7 @@ DevicePathNodeLength (
   @return a pointer to the device path node that follows the device path node specified by Node.
 
 **/
-EFI_DEVICE_PATH_PROTOCOL *
-EFIAPI
-NextDevicePathNode (
-  IN CONST VOID  *Node
-  );
+EFI_DEVICE_PATH_PROTOCOL *EFIAPI NextDevicePathNode(IN CONST VOID *Node);
 
 /**
   Determines if a device path node is an end node of a device path.
@@ -131,9 +118,7 @@ NextDevicePathNode (
 **/
 BOOLEAN
 EFIAPI
-IsDevicePathEndType (
-  IN CONST VOID  *Node
-  );
+IsDevicePathEndType(IN CONST VOID *Node);
 
 /**
   Determines if a device path node is an end node of an entire device path.
@@ -152,9 +137,7 @@ IsDevicePathEndType (
 **/
 BOOLEAN
 EFIAPI
-IsDevicePathEnd (
-  IN CONST VOID  *Node
-  );
+IsDevicePathEnd(IN CONST VOID *Node);
 
 /**
   Determines if a device path node is an end node of a device path instance.
@@ -173,9 +156,7 @@ IsDevicePathEnd (
 **/
 BOOLEAN
 EFIAPI
-IsDevicePathEndInstance (
-  IN CONST VOID  *Node
-  );
+IsDevicePathEndInstance(IN CONST VOID *Node);
 
 /**
   Sets the length, in bytes, of a device path node.
@@ -197,10 +178,7 @@ IsDevicePathEndInstance (
 **/
 UINT16
 EFIAPI
-SetDevicePathNodeLength (
-  IN OUT VOID  *Node,
-  IN UINTN     Length
-  );
+SetDevicePathNodeLength(IN OUT VOID *Node, IN UINTN Length);
 
 /**
   Fills in all the fields of a device path node that is the end of an entire device path.
@@ -218,11 +196,7 @@ SetDevicePathNodeLength (
   @param  Node      A pointer to a device path node data structure.
 
 **/
-VOID
-EFIAPI
-SetDevicePathEndNode (
-  OUT VOID  *Node
-  );
+VOID EFIAPI SetDevicePathEndNode(OUT VOID *Node);
 
 /**
   Returns the size of a device path in bytes.
@@ -239,9 +213,7 @@ SetDevicePathEndNode (
 **/
 UINTN
 EFIAPI
-GetDevicePathSize (
-  IN CONST EFI_DEVICE_PATH_PROTOCOL  *DevicePath
-  );
+GetDevicePathSize(IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePath);
 
 /**
   Creates a new copy of an existing device path.
@@ -259,11 +231,7 @@ GetDevicePathSize (
   @retval Others  A pointer to the duplicated device path.
 
 **/
-EFI_DEVICE_PATH_PROTOCOL *
-EFIAPI
-DuplicateDevicePath (
-  IN CONST EFI_DEVICE_PATH_PROTOCOL  *DevicePath
-  );
+EFI_DEVICE_PATH_PROTOCOL *EFIAPI DuplicateDevicePath(IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePath);
 
 /**
   Creates a new device path by appending a second device path to a first device path.
@@ -288,12 +256,7 @@ DuplicateDevicePath (
                     Or a copy an end-of-device-path if both FirstDevicePath and SecondDevicePath are NULL.
 
 **/
-EFI_DEVICE_PATH_PROTOCOL *
-EFIAPI
-AppendDevicePath (
-  IN CONST EFI_DEVICE_PATH_PROTOCOL  *FirstDevicePath   OPTIONAL,
-  IN CONST EFI_DEVICE_PATH_PROTOCOL  *SecondDevicePath  OPTIONAL
-  );
+EFI_DEVICE_PATH_PROTOCOL *EFIAPI AppendDevicePath(IN CONST EFI_DEVICE_PATH_PROTOCOL *FirstDevicePath OPTIONAL, IN CONST EFI_DEVICE_PATH_PROTOCOL *SecondDevicePath OPTIONAL);
 
 /**
   Creates a new path by appending the device node to the device path.
@@ -320,12 +283,7 @@ AppendDevicePath (
                     A copy of an end-of-device-path node if both FirstDevicePath and SecondDevicePath are NULL.
 
 **/
-EFI_DEVICE_PATH_PROTOCOL *
-EFIAPI
-AppendDevicePathNode (
-  IN CONST EFI_DEVICE_PATH_PROTOCOL  *DevicePath      OPTIONAL,
-  IN CONST EFI_DEVICE_PATH_PROTOCOL  *DevicePathNode  OPTIONAL
-  );
+EFI_DEVICE_PATH_PROTOCOL *EFIAPI AppendDevicePathNode(IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePath OPTIONAL, IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePathNode OPTIONAL);
 
 /**
   Creates a new device path by appending the specified device path instance to the specified device
@@ -348,12 +306,7 @@ AppendDevicePathNode (
   @return A pointer to the new device path.
 
 **/
-EFI_DEVICE_PATH_PROTOCOL *
-EFIAPI
-AppendDevicePathInstance (
-  IN CONST EFI_DEVICE_PATH_PROTOCOL  *DevicePath         OPTIONAL,
-  IN CONST EFI_DEVICE_PATH_PROTOCOL  *DevicePathInstance OPTIONAL
-  );
+EFI_DEVICE_PATH_PROTOCOL *EFIAPI AppendDevicePathInstance(IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePath OPTIONAL, IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePathInstance OPTIONAL);
 
 /**
   Creates a copy of the current device path instance and returns a pointer to the next device path
@@ -380,12 +333,7 @@ AppendDevicePathInstance (
   @return A pointer to the current device path instance.
 
 **/
-EFI_DEVICE_PATH_PROTOCOL *
-EFIAPI
-GetNextDevicePathInstance (
-  IN OUT EFI_DEVICE_PATH_PROTOCOL  **DevicePath,
-  OUT UINTN                        *Size
-  );
+EFI_DEVICE_PATH_PROTOCOL *EFIAPI GetNextDevicePathInstance(IN OUT EFI_DEVICE_PATH_PROTOCOL **DevicePath, OUT UINTN *Size);
 
 /**
   Creates a device node.
@@ -405,13 +353,7 @@ GetNextDevicePathInstance (
   @return The new device path.
 
 **/
-EFI_DEVICE_PATH_PROTOCOL *
-EFIAPI
-CreateDeviceNode (
-  IN UINT8   NodeType,
-  IN UINT8   NodeSubType,
-  IN UINT16  NodeLength
-  );
+EFI_DEVICE_PATH_PROTOCOL *EFIAPI CreateDeviceNode(IN UINT8 NodeType, IN UINT8 NodeSubType, IN UINT16 NodeLength);
 
 /**
   Determines if a device path is single or multi-instance.
@@ -428,9 +370,7 @@ CreateDeviceNode (
 **/
 BOOLEAN
 EFIAPI
-IsDevicePathMultiInstance (
-  IN CONST EFI_DEVICE_PATH_PROTOCOL  *DevicePath
-  );
+IsDevicePathMultiInstance(IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePath);
 
 /**
   Retrieves the device path protocol from a handle.
@@ -443,11 +383,7 @@ IsDevicePathMultiInstance (
   @return The device path protocol from the handle specified by Handle.
 
 **/
-EFI_DEVICE_PATH_PROTOCOL *
-EFIAPI
-DevicePathFromHandle (
-  IN EFI_HANDLE  Handle
-  );
+EFI_DEVICE_PATH_PROTOCOL *EFIAPI DevicePathFromHandle(IN EFI_HANDLE Handle);
 
 /**
   Allocates a device path for a file and appends it to an existing device path.
@@ -470,12 +406,7 @@ DevicePathFromHandle (
   @return The allocated device path.
 
 **/
-EFI_DEVICE_PATH_PROTOCOL *
-EFIAPI
-FileDevicePath (
-  IN EFI_HANDLE    Device      OPTIONAL,
-  IN CONST CHAR16  *FileName
-  );
+EFI_DEVICE_PATH_PROTOCOL *EFIAPI FileDevicePath(IN EFI_HANDLE Device OPTIONAL, IN CONST CHAR16 *FileName);
 
 /**
   Converts a device path to its text representation.
@@ -492,13 +423,7 @@ FileDevicePath (
           NULL if DeviceNode is NULL or there was insufficient memory.
 
 **/
-CHAR16 *
-EFIAPI
-ConvertDevicePathToText (
-  IN CONST EFI_DEVICE_PATH_PROTOCOL  *DevicePath,
-  IN BOOLEAN                         DisplayOnly,
-  IN BOOLEAN                         AllowShortcuts
-  );
+CHAR16 *EFIAPI ConvertDevicePathToText(IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePath, IN BOOLEAN DisplayOnly, IN BOOLEAN AllowShortcuts);
 
 /**
   Converts a device node to its string representation.
@@ -515,13 +440,7 @@ ConvertDevicePathToText (
           is NULL or there was insufficient memory.
 
 **/
-CHAR16 *
-EFIAPI
-ConvertDeviceNodeToText (
-  IN CONST EFI_DEVICE_PATH_PROTOCOL  *DeviceNode,
-  IN BOOLEAN                         DisplayOnly,
-  IN BOOLEAN                         AllowShortcuts
-  );
+CHAR16 *EFIAPI ConvertDeviceNodeToText(IN CONST EFI_DEVICE_PATH_PROTOCOL *DeviceNode, IN BOOLEAN DisplayOnly, IN BOOLEAN AllowShortcuts);
 
 /**
   Convert text to the binary representation of a device node.
@@ -534,11 +453,7 @@ ConvertDeviceNodeToText (
           insufficient memory or text unsupported.
 
 **/
-EFI_DEVICE_PATH_PROTOCOL *
-EFIAPI
-ConvertTextToDeviceNode (
-  IN CONST CHAR16  *TextDeviceNode
-  );
+EFI_DEVICE_PATH_PROTOCOL *EFIAPI ConvertTextToDeviceNode(IN CONST CHAR16 *TextDeviceNode);
 
 /**
   Convert text to the binary representation of a device path.
@@ -551,8 +466,4 @@ ConvertTextToDeviceNode (
           there was insufficient memory.
 
 **/
-EFI_DEVICE_PATH_PROTOCOL *
-EFIAPI
-ConvertTextToDevicePath (
-  IN CONST CHAR16  *TextDevicePath
-  );
+EFI_DEVICE_PATH_PROTOCOL *EFIAPI ConvertTextToDevicePath(IN CONST CHAR16 *TextDevicePath);

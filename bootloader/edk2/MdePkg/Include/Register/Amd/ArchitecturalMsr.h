@@ -21,7 +21,7 @@
   Reset value: 0000_0000_0003_0000h
 
 */
-#define AMD_64_SMM_BASE  0xC0010111
+#define AMD_64_SMM_BASE 0xC0010111
 
 /*
   See Appendix A.8, "System Management Mode MSR Cross-Reference".
@@ -35,7 +35,7 @@
   Reset value: 0000_0000_0000_0000h
 
 */
-#define AMD_64_SMM_ADDR  0xC0010112
+#define AMD_64_SMM_ADDR 0xC0010112
 
 /*
   See Appendix A.8, "System Management Mode MSR Cross-Reference".
@@ -49,4 +49,4 @@
   Reset value: 0000_0000_0000_0000h
 
 */
-#define AMD_64_SMM_MASK  0xC0010113
+#define AMD_64_SMM_MASK 0xC0010113

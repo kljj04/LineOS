@@ -17,10 +17,10 @@ typedef struct _EFI_MM_SYSTEM_TABLE EFI_MM_SYSTEM_TABLE;
 ///
 /// The Management Mode System Table (MMST) signature
 ///
-#define MM_MMST_SIGNATURE                SIGNATURE_32 ('S', 'M', 'S', 'T')
-#define MM_SPECIFICATION_MAJOR_REVISION  PI_SPECIFICATION_MAJOR_REVISION
-#define MM_SPECIFICATION_MINOR_REVISION  PI_SPECIFICATION_MINOR_REVISION
-#define EFI_MM_SYSTEM_TABLE_REVISION     ((MM_SPECIFICATION_MAJOR_REVISION<<16) | (MM_SPECIFICATION_MINOR_REVISION))
+#define MM_MMST_SIGNATURE               SIGNATURE_32('S', 'M', 'S', 'T')
+#define MM_SPECIFICATION_MAJOR_REVISION PI_SPECIFICATION_MAJOR_REVISION
+#define MM_SPECIFICATION_MINOR_REVISION PI_SPECIFICATION_MINOR_REVISION
+#define EFI_MM_SYSTEM_TABLE_REVISION    ((MM_SPECIFICATION_MAJOR_REVISION << 16) | (MM_SPECIFICATION_MINOR_REVISION))
 
 /**
   Adds, updates, or removes a configuration table entry from the Management Mode System Table.
@@ -40,14 +40,7 @@ typedef struct _EFI_MM_SYSTEM_TABLE EFI_MM_SYSTEM_TABLE;
   @retval EFI_NOT_FOUND          An attempt was made to delete a non-existent entry.
   @retval EFI_OUT_OF_RESOURCES   There is not enough memory available to complete the operation.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_MM_INSTALL_CONFIGURATION_TABLE)(
-  IN CONST EFI_MM_SYSTEM_TABLE    *SystemTable,
-  IN CONST EFI_GUID               *Guid,
-  IN VOID                         *Table,
-  IN UINTN                        TableSize
-  );
+typedef EFI_STATUS(EFIAPI *EFI_MM_INSTALL_CONFIGURATION_TABLE)(IN CONST EFI_MM_SYSTEM_TABLE *SystemTable, IN CONST EFI_GUID *Guid, IN VOID *Table, IN UINTN TableSize);
 
 /**
   This service lets the caller to get one distinct application processor (AP) to execute
@@ -65,13 +58,7 @@ EFI_STATUS
   @retval EFI_INVALID_PARAMETER  The CPU requested is not available on this SMI invocation.
   @retval EFI_INVALID_PARAMETER  The CPU cannot support an additional service invocation.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_MM_STARTUP_THIS_AP)(
-  IN EFI_AP_PROCEDURE  Procedure,
-  IN UINTN             CpuNumber,
-  IN OUT VOID          *ProcArguments OPTIONAL
-  );
+typedef EFI_STATUS(EFIAPI *EFI_MM_STARTUP_THIS_AP)(IN EFI_AP_PROCEDURE Procedure, IN UINTN CpuNumber, IN OUT VOID *ProcArguments OPTIONAL);
 
 /**
   Function prototype for protocol install notification.
@@ -82,13 +69,7 @@ EFI_STATUS
 
   @return Status Code
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_MM_NOTIFY_FN)(
-  IN CONST EFI_GUID  *Protocol,
-  IN VOID            *Interface,
-  IN EFI_HANDLE      Handle
-  );
+typedef EFI_STATUS(EFIAPI *EFI_MM_NOTIFY_FN)(IN CONST EFI_GUID *Protocol, IN VOID *Interface, IN EFI_HANDLE Handle);
 
 /**
   Register a callback function be called when a particular protocol interface is installed.
@@ -108,13 +89,7 @@ EFI_STATUS
   @retval EFI_OUT_OF_RESOURCES  Not enough memory resource to finish the request.
   @retval EFI_NOT_FOUND         If the registration is not found when Function == NULL.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_MM_REGISTER_PROTOCOL_NOTIFY)(
-  IN  CONST EFI_GUID     *Protocol,
-  IN  EFI_MM_NOTIFY_FN   Function,
-  OUT VOID               **Registration
-  );
+typedef EFI_STATUS(EFIAPI *EFI_MM_REGISTER_PROTOCOL_NOTIFY)(IN CONST EFI_GUID *Protocol, IN EFI_MM_NOTIFY_FN Function, OUT VOID **Registration);
 
 /**
   Manage MMI of a particular type.
@@ -129,14 +104,7 @@ EFI_STATUS
   @retval EFI_NOT_FOUND                      Interrupt source was not handled or quiesced.
   @retval EFI_SUCCESS                        Interrupt source was handled and quiesced.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_MM_INTERRUPT_MANAGE)(
-  IN CONST EFI_GUID  *HandlerType,
-  IN CONST VOID      *Context         OPTIONAL,
-  IN OUT VOID        *CommBuffer      OPTIONAL,
-  IN OUT UINTN       *CommBufferSize  OPTIONAL
-  );
+typedef EFI_STATUS(EFIAPI *EFI_MM_INTERRUPT_MANAGE)(IN CONST EFI_GUID *HandlerType, IN CONST VOID *Context OPTIONAL, IN OUT VOID *CommBuffer OPTIONAL, IN OUT UINTN *CommBufferSize OPTIONAL);
 
 /**
   Main entry point for an MM handler dispatch or communicate-based callback.
@@ -156,14 +124,7 @@ EFI_STATUS
                                               be called.
   @retval EFI_INTERRUPT_PENDING               The interrupt could not be quiesced.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_MM_HANDLER_ENTRY_POINT)(
-  IN EFI_HANDLE  DispatchHandle,
-  IN CONST VOID  *Context         OPTIONAL,
-  IN OUT VOID    *CommBuffer      OPTIONAL,
-  IN OUT UINTN   *CommBufferSize  OPTIONAL
-  );
+typedef EFI_STATUS(EFIAPI *EFI_MM_HANDLER_ENTRY_POINT)(IN EFI_HANDLE DispatchHandle, IN CONST VOID *Context OPTIONAL, IN OUT VOID *CommBuffer OPTIONAL, IN OUT UINTN *CommBufferSize OPTIONAL);
 
 /**
   Registers a handler to execute within MM.
@@ -176,13 +137,7 @@ EFI_STATUS
   @retval EFI_SUCCESS            MMI handler added successfully.
   @retval EFI_INVALID_PARAMETER  Handler is NULL or DispatchHandle is NULL.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_MM_INTERRUPT_REGISTER)(
-  IN  EFI_MM_HANDLER_ENTRY_POINT    Handler,
-  IN  CONST EFI_GUID                *HandlerType OPTIONAL,
-  OUT EFI_HANDLE                    *DispatchHandle
-  );
+typedef EFI_STATUS(EFIAPI *EFI_MM_INTERRUPT_REGISTER)(IN EFI_MM_HANDLER_ENTRY_POINT Handler, IN CONST EFI_GUID *HandlerType OPTIONAL, OUT EFI_HANDLE *DispatchHandle);
 
 /**
   Unregister a handler in MM.
@@ -192,39 +147,36 @@ EFI_STATUS
   @retval EFI_SUCCESS            Handler function was successfully unregistered.
   @retval EFI_INVALID_PARAMETER  DispatchHandle does not refer to a valid handle.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_MM_INTERRUPT_UNREGISTER)(
-  IN EFI_HANDLE  DispatchHandle
-  );
+typedef EFI_STATUS(EFIAPI *EFI_MM_INTERRUPT_UNREGISTER)(IN EFI_HANDLE DispatchHandle);
 
 ///
 /// Processor information and functionality needed by MM Foundation.
 ///
-typedef struct _EFI_MM_ENTRY_CONTEXT {
-  EFI_MM_STARTUP_THIS_AP    MmStartupThisAp;
-  ///
-  /// A number between zero and the NumberOfCpus field. This field designates which
-  /// processor is executing the MM Foundation.
-  ///
-  UINTN                     CurrentlyExecutingCpu;
-  ///
-  /// The number of possible processors in the platform.  This is a 1 based
-  /// counter.  This does not indicate the number of processors that entered MM.
-  ///
-  UINTN                     NumberOfCpus;
-  ///
-  /// Points to an array, where each element describes the number of bytes in the
-  /// corresponding save state specified by CpuSaveState. There are always
-  /// NumberOfCpus entries in the array.
-  ///
-  UINTN                     *CpuSaveStateSize;
-  ///
-  /// Points to an array, where each element is a pointer to a CPU save state. The
-  /// corresponding element in CpuSaveStateSize specifies the number of bytes in the
-  /// save state area. There are always NumberOfCpus entries in the array.
-  ///
-  VOID                      **CpuSaveState;
+typedef struct _EFI_MM_ENTRY_CONTEXT
+{
+    EFI_MM_STARTUP_THIS_AP MmStartupThisAp;
+    ///
+    /// A number between zero and the NumberOfCpus field. This field designates which
+    /// processor is executing the MM Foundation.
+    ///
+    UINTN CurrentlyExecutingCpu;
+    ///
+    /// The number of possible processors in the platform.  This is a 1 based
+    /// counter.  This does not indicate the number of processors that entered MM.
+    ///
+    UINTN NumberOfCpus;
+    ///
+    /// Points to an array, where each element describes the number of bytes in the
+    /// corresponding save state specified by CpuSaveState. There are always
+    /// NumberOfCpus entries in the array.
+    ///
+    UINTN *CpuSaveStateSize;
+    ///
+    /// Points to an array, where each element is a pointer to a CPU save state. The
+    /// corresponding element in CpuSaveStateSize specifies the number of bytes in the
+    /// save state area. There are always NumberOfCpus entries in the array.
+    ///
+    VOID **CpuSaveState;
 } EFI_MM_ENTRY_CONTEXT;
 
 /**
@@ -232,11 +184,7 @@ typedef struct _EFI_MM_ENTRY_CONTEXT {
 
   @param[in] MmEntryContext  Processor information and functionality needed by MM Foundation.
 **/
-typedef
-VOID
-(EFIAPI *EFI_MM_ENTRY_POINT)(
-  IN CONST EFI_MM_ENTRY_CONTEXT  *MmEntryContext
-  );
+typedef VOID(EFIAPI *EFI_MM_ENTRY_POINT)(IN CONST EFI_MM_ENTRY_CONTEXT *MmEntryContext);
 
 ///
 /// Management Mode System Table (MMST)
@@ -245,95 +193,96 @@ VOID
 /// services for managing MMRAM allocation and providing basic I/O services. These services are
 /// intended for both preboot and runtime usage.
 ///
-struct _EFI_MM_SYSTEM_TABLE {
-  ///
-  /// The table header for the SMST.
-  ///
-  EFI_TABLE_HEADER                      Hdr;
-  ///
-  /// A pointer to a NULL-terminated Unicode string containing the vendor name.
-  /// It is permissible for this pointer to be NULL.
-  ///
-  CHAR16                                *MmFirmwareVendor;
-  ///
-  /// The particular revision of the firmware.
-  ///
-  UINT32                                MmFirmwareRevision;
+struct _EFI_MM_SYSTEM_TABLE
+{
+    ///
+    /// The table header for the SMST.
+    ///
+    EFI_TABLE_HEADER Hdr;
+    ///
+    /// A pointer to a NULL-terminated Unicode string containing the vendor name.
+    /// It is permissible for this pointer to be NULL.
+    ///
+    CHAR16 *MmFirmwareVendor;
+    ///
+    /// The particular revision of the firmware.
+    ///
+    UINT32 MmFirmwareRevision;
 
-  EFI_MM_INSTALL_CONFIGURATION_TABLE    MmInstallConfigurationTable;
+    EFI_MM_INSTALL_CONFIGURATION_TABLE MmInstallConfigurationTable;
 
-  ///
-  /// I/O Service
-  ///
-  EFI_MM_CPU_IO_PROTOCOL                MmIo;
+    ///
+    /// I/O Service
+    ///
+    EFI_MM_CPU_IO_PROTOCOL MmIo;
 
-  ///
-  /// Runtime memory services
-  ///
-  EFI_ALLOCATE_POOL                     MmAllocatePool;
-  EFI_FREE_POOL                         MmFreePool;
-  EFI_ALLOCATE_PAGES                    MmAllocatePages;
-  EFI_FREE_PAGES                        MmFreePages;
+    ///
+    /// Runtime memory services
+    ///
+    EFI_ALLOCATE_POOL  MmAllocatePool;
+    EFI_FREE_POOL      MmFreePool;
+    EFI_ALLOCATE_PAGES MmAllocatePages;
+    EFI_FREE_PAGES     MmFreePages;
 
-  ///
-  /// MP service
-  ///
-  EFI_MM_STARTUP_THIS_AP                MmStartupThisAp;
+    ///
+    /// MP service
+    ///
+    EFI_MM_STARTUP_THIS_AP MmStartupThisAp;
 
-  ///
-  /// CPU information records
-  ///
+    ///
+    /// CPU information records
+    ///
 
-  ///
-  /// A number between zero and and the NumberOfCpus field. This field designates
-  /// which processor is executing the MM infrastructure.
-  ///
-  UINTN    CurrentlyExecutingCpu;
-  ///
-  /// The number of possible processors in the platform.  This is a 1 based counter.
-  ///
-  UINTN    NumberOfCpus;
-  ///
-  /// Points to an array, where each element describes the number of bytes in the
-  /// corresponding save state specified by CpuSaveState. There are always
-  /// NumberOfCpus entries in the array.
-  ///
-  UINTN    *CpuSaveStateSize;
-  ///
-  /// Points to an array, where each element is a pointer to a CPU save state. The
-  /// corresponding element in CpuSaveStateSize specifies the number of bytes in the
-  /// save state area. There are always NumberOfCpus entries in the array.
-  ///
-  VOID     **CpuSaveState;
+    ///
+    /// A number between zero and and the NumberOfCpus field. This field designates
+    /// which processor is executing the MM infrastructure.
+    ///
+    UINTN CurrentlyExecutingCpu;
+    ///
+    /// The number of possible processors in the platform.  This is a 1 based counter.
+    ///
+    UINTN NumberOfCpus;
+    ///
+    /// Points to an array, where each element describes the number of bytes in the
+    /// corresponding save state specified by CpuSaveState. There are always
+    /// NumberOfCpus entries in the array.
+    ///
+    UINTN *CpuSaveStateSize;
+    ///
+    /// Points to an array, where each element is a pointer to a CPU save state. The
+    /// corresponding element in CpuSaveStateSize specifies the number of bytes in the
+    /// save state area. There are always NumberOfCpus entries in the array.
+    ///
+    VOID **CpuSaveState;
 
-  ///
-  /// Extensibility table
-  ///
+    ///
+    /// Extensibility table
+    ///
 
-  ///
-  /// The number of UEFI Configuration Tables in the buffer MmConfigurationTable.
-  ///
-  UINTN                               NumberOfTableEntries;
-  ///
-  /// A pointer to the UEFI Configuration Tables. The number of entries in the table is
-  /// NumberOfTableEntries.
-  ///
-  EFI_CONFIGURATION_TABLE             *MmConfigurationTable;
+    ///
+    /// The number of UEFI Configuration Tables in the buffer MmConfigurationTable.
+    ///
+    UINTN NumberOfTableEntries;
+    ///
+    /// A pointer to the UEFI Configuration Tables. The number of entries in the table is
+    /// NumberOfTableEntries.
+    ///
+    EFI_CONFIGURATION_TABLE *MmConfigurationTable;
 
-  ///
-  /// Protocol services
-  ///
-  EFI_INSTALL_PROTOCOL_INTERFACE      MmInstallProtocolInterface;
-  EFI_UNINSTALL_PROTOCOL_INTERFACE    MmUninstallProtocolInterface;
-  EFI_HANDLE_PROTOCOL                 MmHandleProtocol;
-  EFI_MM_REGISTER_PROTOCOL_NOTIFY     MmRegisterProtocolNotify;
-  EFI_LOCATE_HANDLE                   MmLocateHandle;
-  EFI_LOCATE_PROTOCOL                 MmLocateProtocol;
+    ///
+    /// Protocol services
+    ///
+    EFI_INSTALL_PROTOCOL_INTERFACE   MmInstallProtocolInterface;
+    EFI_UNINSTALL_PROTOCOL_INTERFACE MmUninstallProtocolInterface;
+    EFI_HANDLE_PROTOCOL              MmHandleProtocol;
+    EFI_MM_REGISTER_PROTOCOL_NOTIFY  MmRegisterProtocolNotify;
+    EFI_LOCATE_HANDLE                MmLocateHandle;
+    EFI_LOCATE_PROTOCOL              MmLocateProtocol;
 
-  ///
-  /// MMI Management functions
-  ///
-  EFI_MM_INTERRUPT_MANAGE             MmiManage;
-  EFI_MM_INTERRUPT_REGISTER           MmiHandlerRegister;
-  EFI_MM_INTERRUPT_UNREGISTER         MmiHandlerUnRegister;
+    ///
+    /// MMI Management functions
+    ///
+    EFI_MM_INTERRUPT_MANAGE     MmiManage;
+    EFI_MM_INTERRUPT_REGISTER   MmiHandlerRegister;
+    EFI_MM_INTERRUPT_UNREGISTER MmiHandlerUnRegister;
 };

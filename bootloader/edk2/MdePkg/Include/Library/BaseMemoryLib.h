@@ -29,13 +29,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
   @return DestinationBuffer.
 
 **/
-VOID *
-EFIAPI
-CopyMem (
-  OUT VOID       *DestinationBuffer,
-  IN CONST VOID  *SourceBuffer,
-  IN UINTN       Length
-  );
+VOID *EFIAPI CopyMem(OUT VOID *DestinationBuffer, IN CONST VOID *SourceBuffer, IN UINTN Length);
 
 /**
   Fills a target buffer with a byte value, and returns the target buffer.
@@ -51,13 +45,7 @@ CopyMem (
   @return Buffer.
 
 **/
-VOID *
-EFIAPI
-SetMem (
-  OUT VOID  *Buffer,
-  IN UINTN  Length,
-  IN UINT8  Value
-  );
+VOID *EFIAPI SetMem(OUT VOID *Buffer, IN UINTN Length, IN UINT8 Value);
 
 /**
   Fills a target buffer with a 16-bit value, and returns the target buffer.
@@ -78,13 +66,7 @@ SetMem (
   @return Buffer.
 
 **/
-VOID *
-EFIAPI
-SetMem16 (
-  OUT VOID   *Buffer,
-  IN UINTN   Length,
-  IN UINT16  Value
-  );
+VOID *EFIAPI SetMem16(OUT VOID *Buffer, IN UINTN Length, IN UINT16 Value);
 
 /**
   Fills a target buffer with a 32-bit value, and returns the target buffer.
@@ -105,13 +87,7 @@ SetMem16 (
   @return Buffer.
 
 **/
-VOID *
-EFIAPI
-SetMem32 (
-  OUT VOID   *Buffer,
-  IN UINTN   Length,
-  IN UINT32  Value
-  );
+VOID *EFIAPI SetMem32(OUT VOID *Buffer, IN UINTN Length, IN UINT32 Value);
 
 /**
   Fills a target buffer with a 64-bit value, and returns the target buffer.
@@ -132,13 +108,7 @@ SetMem32 (
   @return Buffer.
 
 **/
-VOID *
-EFIAPI
-SetMem64 (
-  OUT VOID   *Buffer,
-  IN UINTN   Length,
-  IN UINT64  Value
-  );
+VOID *EFIAPI SetMem64(OUT VOID *Buffer, IN UINTN Length, IN UINT64 Value);
 
 /**
   Fills a target buffer with a value that is size UINTN, and returns the target buffer.
@@ -159,13 +129,7 @@ SetMem64 (
   @return Buffer.
 
 **/
-VOID *
-EFIAPI
-SetMemN (
-  OUT VOID  *Buffer,
-  IN UINTN  Length,
-  IN UINTN  Value
-  );
+VOID *EFIAPI SetMemN(OUT VOID *Buffer, IN UINTN Length, IN UINTN Value);
 
 /**
   Fills a target buffer with zeros, and returns the target buffer.
@@ -181,12 +145,7 @@ SetMemN (
   @return Buffer.
 
 **/
-VOID *
-EFIAPI
-ZeroMem (
-  OUT VOID  *Buffer,
-  IN UINTN  Length
-  );
+VOID *EFIAPI ZeroMem(OUT VOID *Buffer, IN UINTN Length);
 
 /**
   Compares the contents of two buffers.
@@ -210,13 +169,7 @@ ZeroMem (
                             mismatched byte in DestinationBuffer.
 
 **/
-INTN
-EFIAPI
-CompareMem (
-  IN CONST VOID  *DestinationBuffer,
-  IN CONST VOID  *SourceBuffer,
-  IN UINTN       Length
-  );
+INTN EFIAPI CompareMem(IN CONST VOID *DestinationBuffer, IN CONST VOID *SourceBuffer, IN UINTN Length);
 
 /**
   Scans a target buffer for an 8-bit value, and returns a pointer to the matching 8-bit value
@@ -237,13 +190,7 @@ CompareMem (
   @return A pointer to the matching byte in the target buffer, otherwise NULL.
 
 **/
-VOID *
-EFIAPI
-ScanMem8 (
-  IN CONST VOID  *Buffer,
-  IN UINTN       Length,
-  IN UINT8       Value
-  );
+VOID *EFIAPI ScanMem8(IN CONST VOID *Buffer, IN UINTN Length, IN UINT8 Value);
 
 /**
   Scans a target buffer for a 16-bit value, and returns a pointer to the matching 16-bit value
@@ -266,13 +213,7 @@ ScanMem8 (
   @return A pointer to the matching byte in the target buffer, otherwise NULL.
 
 **/
-VOID *
-EFIAPI
-ScanMem16 (
-  IN CONST VOID  *Buffer,
-  IN UINTN       Length,
-  IN UINT16      Value
-  );
+VOID *EFIAPI ScanMem16(IN CONST VOID *Buffer, IN UINTN Length, IN UINT16 Value);
 
 /**
   Scans a target buffer for a 32-bit value, and returns a pointer to the matching 32-bit value
@@ -295,13 +236,7 @@ ScanMem16 (
   @return A pointer to the matching byte in the target buffer, otherwise NULL.
 
 **/
-VOID *
-EFIAPI
-ScanMem32 (
-  IN CONST VOID  *Buffer,
-  IN UINTN       Length,
-  IN UINT32      Value
-  );
+VOID *EFIAPI ScanMem32(IN CONST VOID *Buffer, IN UINTN Length, IN UINT32 Value);
 
 /**
   Scans a target buffer for a 64-bit value, and returns a pointer to the matching 64-bit value
@@ -324,13 +259,7 @@ ScanMem32 (
   @return A pointer to the matching byte in the target buffer, otherwise NULL.
 
 **/
-VOID *
-EFIAPI
-ScanMem64 (
-  IN CONST VOID  *Buffer,
-  IN UINTN       Length,
-  IN UINT64      Value
-  );
+VOID *EFIAPI ScanMem64(IN CONST VOID *Buffer, IN UINTN Length, IN UINT64 Value);
 
 /**
   Scans a target buffer for a UINTN sized value, and returns a pointer to the matching
@@ -353,13 +282,7 @@ ScanMem64 (
   @return A pointer to the matching byte in the target buffer, otherwise NULL.
 
 **/
-VOID *
-EFIAPI
-ScanMemN (
-  IN CONST VOID  *Buffer,
-  IN UINTN       Length,
-  IN UINTN       Value
-  );
+VOID *EFIAPI ScanMemN(IN CONST VOID *Buffer, IN UINTN Length, IN UINTN Value);
 
 /**
   Copies a source GUID to a destination GUID.
@@ -376,12 +299,7 @@ ScanMemN (
   @return DestinationGuid.
 
 **/
-GUID *
-EFIAPI
-CopyGuid (
-  OUT GUID       *DestinationGuid,
-  IN CONST GUID  *SourceGuid
-  );
+GUID *EFIAPI CopyGuid(OUT GUID *DestinationGuid, IN CONST GUID *SourceGuid);
 
 /**
   Compares two GUIDs.
@@ -401,10 +319,7 @@ CopyGuid (
 **/
 BOOLEAN
 EFIAPI
-CompareGuid (
-  IN CONST GUID  *Guid1,
-  IN CONST GUID  *Guid2
-  );
+CompareGuid(IN CONST GUID *Guid1, IN CONST GUID *Guid2);
 
 /**
   Scans a target buffer for a GUID, and returns a pointer to the matching GUID
@@ -428,13 +343,7 @@ CompareGuid (
   @return A pointer to the matching Guid in the target buffer, otherwise NULL.
 
 **/
-VOID *
-EFIAPI
-ScanGuid (
-  IN CONST VOID  *Buffer,
-  IN UINTN       Length,
-  IN CONST GUID  *Guid
-  );
+VOID *EFIAPI ScanGuid(IN CONST VOID *Buffer, IN UINTN Length, IN CONST GUID *Guid);
 
 /**
   Checks if the given GUID is a zero GUID.
@@ -452,9 +361,7 @@ ScanGuid (
 **/
 BOOLEAN
 EFIAPI
-IsZeroGuid (
-  IN CONST GUID  *Guid
-  );
+IsZeroGuid(IN CONST GUID *Guid);
 
 /**
   Checks if the contents of a buffer are all zeros.
@@ -474,7 +381,4 @@ IsZeroGuid (
 **/
 BOOLEAN
 EFIAPI
-IsZeroBuffer (
-  IN CONST VOID  *Buffer,
-  IN UINTN       Length
-  );
+IsZeroBuffer(IN CONST VOID *Buffer, IN UINTN Length);

@@ -3,7 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <memory/memory.h>
-#include <render/truetype_runtime.h>
+#include <render/truetype/truetype_runtime.h>
 
 #define PAGE_SIZE 4096ULL
 #define PI        3.14159265358979323846
@@ -233,7 +233,7 @@ VOID KAssert(BOOLEAN Condition)
 
     while (1)
     {
-        __asm__ volatile("hlt");
+        ASM("hlt");
     }
 }
 

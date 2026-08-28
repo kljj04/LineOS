@@ -30,13 +30,7 @@
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaMemLibDonate (
-  IN UINT32   TotalLength,
-  IN UINT32   FragmentLength,
-  IN VOID     *BufferAddr,
-  IN UINT32   PageCount,
-  OUT UINT64  *Handle
-  );
+ArmFfaMemLibDonate(IN UINT32 TotalLength, IN UINT32 FragmentLength, IN VOID *BufferAddr, IN UINT32 PageCount, OUT UINT64 *Handle);
 
 /**
   @brief      Starts a transaction to transfer of ownership of a memory region
@@ -53,11 +47,7 @@ ArmFfaMemLibDonate (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaMemLibDonateRxTx (
-  IN   UINT32  TotalLength,
-  IN   UINT32  FragmentLength,
-  OUT  UINT64  *Handle
-  );
+ArmFfaMemLibDonateRxTx(IN UINT32 TotalLength, IN UINT32 FragmentLength, OUT UINT64 *Handle);
 
 /**
   @brief      Starts a transaction to transfer an Owner's access to a memory
@@ -79,13 +69,7 @@ ArmFfaMemLibDonateRxTx (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaMemLibLend (
-  IN UINT32   TotalLength,
-  IN UINT32   FragmentLength,
-  IN VOID     *BufferAddr,
-  IN UINT32   PageCount,
-  OUT UINT64  *Handle
-  );
+ArmFfaMemLibLend(IN UINT32 TotalLength, IN UINT32 FragmentLength, IN VOID *BufferAddr, IN UINT32 PageCount, OUT UINT64 *Handle);
 
 /**
   @brief      Starts a transaction to transfer an Owner's access to a memory
@@ -103,11 +87,7 @@ ArmFfaMemLibLend (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaMemLibLendRxTx (
-  IN UINT32   TotalLength,
-  IN UINT32   FragmentLength,
-  OUT UINT64  *Handle
-  );
+ArmFfaMemLibLendRxTx(IN UINT32 TotalLength, IN UINT32 FragmentLength, OUT UINT64 *Handle);
 
 /**
   @brief      Starts a transaction to grant access to a memory region to one or
@@ -128,13 +108,7 @@ ArmFfaMemLibLendRxTx (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaMemLibShare (
-  IN UINT32   TotalLength,
-  IN UINT32   FragmentLength,
-  IN VOID     *BufferAddr,
-  IN UINT32   PageCount,
-  OUT UINT64  *Handle
-  );
+ArmFfaMemLibShare(IN UINT32 TotalLength, IN UINT32 FragmentLength, IN VOID *BufferAddr, IN UINT32 PageCount, OUT UINT64 *Handle);
 
 /**
   @brief      Starts a transaction to grant access to a memory region to one or
@@ -151,11 +125,7 @@ ArmFfaMemLibShare (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaMemLibShareRxTx (
-  IN UINT32   TotalLength,
-  IN UINT32   FragmentLength,
-  OUT UINT64  *Handle
-  );
+ArmFfaMemLibShareRxTx(IN UINT32 TotalLength, IN UINT32 FragmentLength, OUT UINT64 *Handle);
 
 /**
   @brief      Requests completion of a donate, lend or share memory management
@@ -178,14 +148,7 @@ ArmFfaMemLibShareRxTx (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaMemLibRetrieveReq (
-  IN UINT32   TotalLength,
-  IN UINT32   FragmentLength,
-  IN VOID     *BufferAddr,
-  IN UINT32   PageCount,
-  OUT UINT32  *RespTotalLength,
-  OUT UINT32  *RespFragmentLength
-  );
+ArmFfaMemLibRetrieveReq(IN UINT32 TotalLength, IN UINT32 FragmentLength, IN VOID *BufferAddr, IN UINT32 PageCount, OUT UINT32 *RespTotalLength, OUT UINT32 *RespFragmentLength);
 
 /**
   @brief      Requests completion of a donate, lend or share memory management
@@ -204,12 +167,7 @@ ArmFfaMemLibRetrieveReq (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaMemLibRetrieveReqRxTx (
-  IN UINT32   TotalLength,
-  IN UINT32   FragmentLength,
-  OUT UINT32  *RespTotalLength,
-  OUT UINT32  *RespFragmentLength
-  );
+ArmFfaMemLibRetrieveReqRxTx(IN UINT32 TotalLength, IN UINT32 FragmentLength, OUT UINT32 *RespTotalLength, OUT UINT32 *RespFragmentLength);
 
 /**
   @brief      Starts a transaction to transfer access to a shared or lent
@@ -219,9 +177,7 @@ ArmFfaMemLibRetrieveReqRxTx (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaMemLibRelinquish (
-  VOID
-  );
+ArmFfaMemLibRelinquish(VOID);
 
 /**
   @brief      Restores exclusive access to a memory region back to its Owner.
@@ -233,10 +189,7 @@ ArmFfaMemLibRelinquish (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaMemLibReclaim (
-  IN UINT64  Handle,
-  IN UINT32  Flags
-  );
+ArmFfaMemLibReclaim(IN UINT64 Handle, IN UINT32 Flags);
 
 /**
   @brief       Queries the memory attributes of a memory region. This function
@@ -255,11 +208,7 @@ ArmFfaMemLibReclaim (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaMemLibPermGet (
-  IN CONST VOID  *BaseAddr,
-  IN UINT32      PageCount,
-  OUT UINT32     *MemoryPerm
-  );
+ArmFfaMemLibPermGet(IN CONST VOID *BaseAddr, IN UINT32 PageCount, OUT UINT32 *MemoryPerm);
 
 /**
   @brief       Sets the memory attributes of a memory regions. This function
@@ -279,8 +228,4 @@ ArmFfaMemLibPermGet (
 **/
 EFI_STATUS
 EFIAPI
-ArmFfaMemLibPermSet (
-  IN CONST VOID  *BaseAddr,
-  IN UINT32      PageCount,
-  IN UINT32      MemoryPerm
-  );
+ArmFfaMemLibPermSet(IN CONST VOID *BaseAddr, IN UINT32 PageCount, IN UINT32 MemoryPerm);

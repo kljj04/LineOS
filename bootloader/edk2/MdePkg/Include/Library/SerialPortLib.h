@@ -25,9 +25,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 RETURN_STATUS
 EFIAPI
-SerialPortInitialize (
-  VOID
-  );
+SerialPortInitialize(VOID);
 
 /**
   Write data from buffer to serial device.
@@ -48,10 +46,7 @@ SerialPortInitialize (
 **/
 UINTN
 EFIAPI
-SerialPortWrite (
-  IN UINT8  *Buffer,
-  IN UINTN  NumberOfBytes
-  );
+SerialPortWrite(IN UINT8 *Buffer, IN UINTN NumberOfBytes);
 
 /**
   Read data from serial device and save the data in buffer.
@@ -71,10 +66,7 @@ SerialPortWrite (
 **/
 UINTN
 EFIAPI
-SerialPortRead (
-  OUT UINT8  *Buffer,
-  IN  UINTN  NumberOfBytes
-  );
+SerialPortRead(OUT UINT8 *Buffer, IN UINTN NumberOfBytes);
 
 /**
   Polls a serial device to see if there is any data waiting to be read.
@@ -89,9 +81,7 @@ SerialPortRead (
 **/
 BOOLEAN
 EFIAPI
-SerialPortPoll (
-  VOID
-  );
+SerialPortPoll(VOID);
 
 /**
   Sets the control bits on a serial device.
@@ -105,9 +95,7 @@ SerialPortPoll (
 **/
 RETURN_STATUS
 EFIAPI
-SerialPortSetControl (
-  IN UINT32  Control
-  );
+SerialPortSetControl(IN UINT32 Control);
 
 /**
   Retrieve the status of the control bits on a serial device.
@@ -121,9 +109,7 @@ SerialPortSetControl (
 **/
 RETURN_STATUS
 EFIAPI
-SerialPortGetControl (
-  OUT UINT32  *Control
-  );
+SerialPortGetControl(OUT UINT32 *Control);
 
 /**
   Sets the baud rate, receive FIFO depth, transmit/receive time out, parity,
@@ -160,11 +146,4 @@ SerialPortGetControl (
 **/
 RETURN_STATUS
 EFIAPI
-SerialPortSetAttributes (
-  IN OUT UINT64              *BaudRate,
-  IN OUT UINT32              *ReceiveFifoDepth,
-  IN OUT UINT32              *Timeout,
-  IN OUT EFI_PARITY_TYPE     *Parity,
-  IN OUT UINT8               *DataBits,
-  IN OUT EFI_STOP_BITS_TYPE  *StopBits
-  );
+SerialPortSetAttributes(IN OUT UINT64 *BaudRate, IN OUT UINT32 *ReceiveFifoDepth, IN OUT UINT32 *Timeout, IN OUT EFI_PARITY_TYPE *Parity, IN OUT UINT8 *DataBits, IN OUT EFI_STOP_BITS_TYPE *StopBits);

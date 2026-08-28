@@ -12,11 +12,11 @@ typedef struct
     UINT16 Width;
     UINT16 Height;
     UINT16 Advance;
-    INT16 OffsetX;
-    INT16 OffsetY;
+    INT16  OffsetX;
+    INT16  OffsetY;
 } LINEOS_GLYPH;
 
-extern const UINT32 GlyphCount;
-extern const UINT8 GlyphBitmap[];
-extern const LINEOS_GLYPH GlyphDsc[];
-extern const UINT16 GlyphUnicode[];
+EXTERN CONST UINT32       GlyphCount;
+EXTERN CONST UINT8        GlyphBitmap[];
+EXTERN CONST LINEOS_GLYPH GlyphDsc[];
+EXTERN CONST UINT16       GlyphUnicode[];

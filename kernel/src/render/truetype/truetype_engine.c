@@ -2,19 +2,19 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <render/font_assets.h>
+#include <render/truetype/font_assets.h>
 #include <debug/debug.h>
 #include <render/gpu/virtio_gpu.h>
-#include <render/truetype.h>
-#include <render/truetype_engine.h>
-#include <render/truetype_runtime.h>
+#include <render/truetype/truetype.h>
+#include <render/truetype/truetype_engine.h>
+#include <render/truetype/truetype_runtime.h>
 
 #define TRUE_TYPE_TAB_WIDTH 4
 
-STATIC FONT_INFO PretendardFont;
-STATIC FONT_INFO JetBrainsMonoFont;
+STATIC FONT_INFO  PretendardFont;
+STATIC FONT_INFO  JetBrainsMonoFont;
 STATIC FONT_INFO *CurrentFont = NULL;
-STATIC UINT32 DebugGlyphCount = 0;
+STATIC UINT32     DebugGlyphCount = 0;
 
 STATIC VOID DebugWriteSigned(INT32 Value)
 {
@@ -41,8 +41,7 @@ STATIC VOID DebugWriteTrueTypeFont(CONST char *Name, BOOLEAN OK, CONST UINT8 *St
     DebugWrite("\n");
 }
 
-STATIC VOID DebugWriteGlyph(UINT32 Codepoint, INT32 GlyphIndex, INT32 Width, INT32 Height, INT32 XOff, INT32 YOff,
-                            UINT32 AlphaSum)
+STATIC VOID DebugWriteGlyph(UINT32 Codepoint, INT32 GlyphIndex, INT32 Width, INT32 Height, INT32 XOff, INT32 YOff, UINT32 AlphaSum)
 {
     if (DebugGlyphCount >= 32)
     {
@@ -113,10 +112,9 @@ STATIC UINT32 BlendColor(UINT32 Background, UINT32 Foreground, UINT8 Alpha)
 STATIC VOID BlendPixel(VIRTIO_GPU_INFO *GPU, INT32 x, INT32 y, UINT32 Color, UINT8 Alpha)
 {
     UINT32 *Pixel;
-    UINT32 Background;
+    UINT32  Background;
 
-    if (Alpha == 0 || GPU == NULL || GPU->FrameBuffer == NULL || x < 0 || y < 0 ||
-        (UINT32) x >= GPU->FrameBufferWidth || (UINT32) y >= GPU->FrameBufferHeight)
+    if (Alpha == 0 || GPU == NULL || GPU->FrameBuffer == NULL || x < 0 || y < 0 || (UINT32) x >= GPU->FrameBufferWidth || (UINT32) y >= GPU->FrameBufferHeight)
     {
         return;
     }
@@ -183,15 +181,15 @@ BOOLEAN TrueTypeInit(VOID)
     return CurrentFont != NULL;
 }
 
-BOOLEAN TrueTypeSelectFont(TRUE_TYPE_FONT Font)
+BOOLEAN SelectFont(TRUE_TYPE_FONT Font)
 {
     switch (Font)
     {
-    case TRUE_TYPE_FONT_PRETENDARD:
+    case PRETENDARD:
         CurrentFont = &PretendardFont;
         return TRUE;
 
-    case TRUE_TYPE_FONT_JETBRAINS_MONO:
+    case JETBRAINS_MONO:
         CurrentFont = &JetBrainsMonoFont;
         return TRUE;
     }
@@ -202,18 +200,18 @@ BOOLEAN TrueTypeSelectFont(TRUE_TYPE_FONT Font)
 UINT32 DrawTrueTypeCodepoint(UINT32 Codepoint, UINT32 x, UINT32 Baseline, UINT32 Color, UINT32 PixelHeight)
 {
     VIRTIO_GPU_INFO *GPU = VirtIOGPUGetInfo();
-    FLOAT32 Scale;
-    INT32 GlyphIndex;
-    INT32 Width;
-    INT32 Height;
-    INT32 XOff;
-    INT32 YOff;
-    INT32 BoxX0;
-    INT32 BoxY0;
-    INT32 BoxX1;
-    INT32 BoxY1;
-    UINT8 *Bitmap;
-    UINT32 AlphaSum = 0;
+    FLOAT32          Scale;
+    INT32            GlyphIndex;
+    INT32            Width;
+    INT32            Height;
+    INT32            XOff;
+    INT32            YOff;
+    INT32            BoxX0;
+    INT32            BoxY0;
+    INT32            BoxX1;
+    INT32            BoxY1;
+    UINT8           *Bitmap;
+    UINT32           AlphaSum = 0;
 
     if (CurrentFont == NULL || GPU == NULL || GPU->FrameBuffer == NULL || Codepoint == 0)
     {

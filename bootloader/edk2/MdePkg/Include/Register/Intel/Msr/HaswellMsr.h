@@ -28,14 +28,7 @@
   @retval  TRUE   Yes, it is.
   @retval  FALSE  No, it isn't.
 **/
-#define IS_HASWELL_PROCESSOR(DisplayFamily, DisplayModel) \
-  (DisplayFamily == 0x06 && \
-   (                        \
-    DisplayModel == 0x3C || \
-    DisplayModel == 0x45 || \
-    DisplayModel == 0x46    \
-    )                       \
-   )
+#define IS_HASWELL_PROCESSOR(DisplayFamily, DisplayModel) (DisplayFamily == 0x06 && (DisplayModel == 0x3C || DisplayModel == 0x45 || DisplayModel == 0x46))
 
 /**
   Package.
@@ -55,69 +48,71 @@
   @endcode
   @note MSR_HASWELL_PLATFORM_INFO is defined as MSR_PLATFORM_INFO in SDM.
 **/
-#define MSR_HASWELL_PLATFORM_INFO  0x000000CE
+#define MSR_HASWELL_PLATFORM_INFO 0x000000CE
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_PLATFORM_INFO
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
-    UINT32    Reserved1              : 8;
+typedef union
+{
     ///
-    /// [Bits 15:8] Package. Maximum Non-Turbo Ratio (R/O)  The is the ratio
-    /// of the frequency that invariant TSC runs at. Frequency = ratio * 100
-    /// MHz.
+    /// Individual bit fields
     ///
-    UINT32    MaximumNonTurboRatio   : 8;
-    UINT32    Reserved2              : 12;
+    struct
+    {
+        UINT32 Reserved1 : 8;
+        ///
+        /// [Bits 15:8] Package. Maximum Non-Turbo Ratio (R/O)  The is the ratio
+        /// of the frequency that invariant TSC runs at. Frequency = ratio * 100
+        /// MHz.
+        ///
+        UINT32 MaximumNonTurboRatio : 8;
+        UINT32 Reserved2 : 12;
+        ///
+        /// [Bit 28] Package. Programmable Ratio Limit for Turbo Mode (R/O)  When
+        /// set to 1, indicates that Programmable Ratio Limits for Turbo mode is
+        /// enabled, and when set to 0, indicates Programmable Ratio Limits for
+        /// Turbo mode is disabled.
+        ///
+        UINT32 RatioLimit : 1;
+        ///
+        /// [Bit 29] Package. Programmable TDP Limit for Turbo Mode (R/O)  When
+        /// set to 1, indicates that TDP Limits for Turbo mode are programmable,
+        /// and when set to 0, indicates TDP Limit for Turbo mode is not
+        /// programmable.
+        ///
+        UINT32 TDPLimit : 1;
+        UINT32 Reserved3 : 2;
+        ///
+        /// [Bit 32] Package. Low Power Mode Support (LPM) (R/O)  When set to 1,
+        /// indicates that LPM is supported, and when set to 0, indicates LPM is
+        /// not supported.
+        ///
+        UINT32 LowPowerModeSupport : 1;
+        ///
+        /// [Bits 34:33] Package. Number of ConfigTDP Levels (R/O) 00: Only Base
+        /// TDP level available. 01: One additional TDP level available. 02: Two
+        /// additional TDP level available. 11: Reserved.
+        ///
+        UINT32 ConfigTDPLevels : 2;
+        UINT32 Reserved4 : 5;
+        ///
+        /// [Bits 47:40] Package. Maximum Efficiency Ratio (R/O)  The is the
+        /// minimum ratio (maximum efficiency) that the processor can operates, in
+        /// units of 100MHz.
+        ///
+        UINT32 MaximumEfficiencyRatio : 8;
+        ///
+        /// [Bits 55:48] Package. Minimum Operating Ratio (R/O) Contains the
+        /// minimum supported operating ratio in units of 100 MHz.
+        ///
+        UINT32 MinimumOperatingRatio : 8;
+        UINT32 Reserved5 : 8;
+    } Bits;
     ///
-    /// [Bit 28] Package. Programmable Ratio Limit for Turbo Mode (R/O)  When
-    /// set to 1, indicates that Programmable Ratio Limits for Turbo mode is
-    /// enabled, and when set to 0, indicates Programmable Ratio Limits for
-    /// Turbo mode is disabled.
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    RatioLimit             : 1;
-    ///
-    /// [Bit 29] Package. Programmable TDP Limit for Turbo Mode (R/O)  When
-    /// set to 1, indicates that TDP Limits for Turbo mode are programmable,
-    /// and when set to 0, indicates TDP Limit for Turbo mode is not
-    /// programmable.
-    ///
-    UINT32    TDPLimit               : 1;
-    UINT32    Reserved3              : 2;
-    ///
-    /// [Bit 32] Package. Low Power Mode Support (LPM) (R/O)  When set to 1,
-    /// indicates that LPM is supported, and when set to 0, indicates LPM is
-    /// not supported.
-    ///
-    UINT32    LowPowerModeSupport    : 1;
-    ///
-    /// [Bits 34:33] Package. Number of ConfigTDP Levels (R/O) 00: Only Base
-    /// TDP level available. 01: One additional TDP level available. 02: Two
-    /// additional TDP level available. 11: Reserved.
-    ///
-    UINT32    ConfigTDPLevels        : 2;
-    UINT32    Reserved4              : 5;
-    ///
-    /// [Bits 47:40] Package. Maximum Efficiency Ratio (R/O)  The is the
-    /// minimum ratio (maximum efficiency) that the processor can operates, in
-    /// units of 100MHz.
-    ///
-    UINT32    MaximumEfficiencyRatio : 8;
-    ///
-    /// [Bits 55:48] Package. Minimum Operating Ratio (R/O) Contains the
-    /// minimum supported operating ratio in units of 100 MHz.
-    ///
-    UINT32    MinimumOperatingRatio  : 8;
-    UINT32    Reserved5              : 8;
-  } Bits;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_PLATFORM_INFO_REGISTER;
 
 /**
@@ -142,84 +137,86 @@ typedef union {
         MSR_HASWELL_IA32_PERFEVTSEL3 is defined as IA32_PERFEVTSEL3 in SDM.
   @{
 **/
-#define MSR_HASWELL_IA32_PERFEVTSEL0  0x00000186
-#define MSR_HASWELL_IA32_PERFEVTSEL1  0x00000187
-#define MSR_HASWELL_IA32_PERFEVTSEL3  0x00000189
+#define MSR_HASWELL_IA32_PERFEVTSEL0 0x00000186
+#define MSR_HASWELL_IA32_PERFEVTSEL1 0x00000187
+#define MSR_HASWELL_IA32_PERFEVTSEL3 0x00000189
 /// @}
 
 /**
   MSR information returned for MSR indexes #MSR_HASWELL_IA32_PERFEVTSEL0,
   #MSR_HASWELL_IA32_PERFEVTSEL1, and #MSR_HASWELL_IA32_PERFEVTSEL3.
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 7:0] Event Select: Selects a performance event logic unit.
+    /// Individual bit fields
     ///
-    UINT32    EventSelect : 8;
+    struct
+    {
+        ///
+        /// [Bits 7:0] Event Select: Selects a performance event logic unit.
+        ///
+        UINT32 EventSelect : 8;
+        ///
+        /// [Bits 15:8] UMask: Qualifies the microarchitectural condition to
+        /// detect on the selected event logic.
+        ///
+        UINT32 UMASK : 8;
+        ///
+        /// [Bit 16] USR: Counts while in privilege level is not ring 0.
+        ///
+        UINT32 USR : 1;
+        ///
+        /// [Bit 17] OS: Counts while in privilege level is ring 0.
+        ///
+        UINT32 OS : 1;
+        ///
+        /// [Bit 18] Edge: Enables edge detection if set.
+        ///
+        UINT32 E : 1;
+        ///
+        /// [Bit 19] PC: enables pin control.
+        ///
+        UINT32 PC : 1;
+        ///
+        /// [Bit 20] INT: enables interrupt on counter overflow.
+        ///
+        UINT32 INT : 1;
+        ///
+        /// [Bit 21] AnyThread: When set to 1, it enables counting the associated
+        /// event conditions occurring across all logical processors sharing a
+        /// processor core. When set to 0, the counter only increments the
+        /// associated event conditions occurring in the logical processor which
+        /// programmed the MSR.
+        ///
+        UINT32 ANY : 1;
+        ///
+        /// [Bit 22] EN: enables the corresponding performance counter to commence
+        /// counting when this bit is set.
+        ///
+        UINT32 EN : 1;
+        ///
+        /// [Bit 23] INV: invert the CMASK.
+        ///
+        UINT32 INV : 1;
+        ///
+        /// [Bits 31:24] CMASK: When CMASK is not zero, the corresponding
+        /// performance counter increments each cycle if the event count is
+        /// greater than or equal to the CMASK.
+        ///
+        UINT32 CMASK : 8;
+        UINT32 Reserved : 32;
+        ///
+        /// [Bit 32] IN_TX: see Section 18.3.6.5.1 When IN_TX (bit 32) is set,
+        /// AnyThread (bit 21) should be cleared to prevent incorrect results.
+        ///
+        UINT32 IN_TX : 1;
+        UINT32 Reserved2 : 31;
+    } Bits;
     ///
-    /// [Bits 15:8] UMask: Qualifies the microarchitectural condition to
-    /// detect on the selected event logic.
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    UMASK       : 8;
-    ///
-    /// [Bit 16] USR: Counts while in privilege level is not ring 0.
-    ///
-    UINT32    USR         : 1;
-    ///
-    /// [Bit 17] OS: Counts while in privilege level is ring 0.
-    ///
-    UINT32    OS          : 1;
-    ///
-    /// [Bit 18] Edge: Enables edge detection if set.
-    ///
-    UINT32    E           : 1;
-    ///
-    /// [Bit 19] PC: enables pin control.
-    ///
-    UINT32    PC          : 1;
-    ///
-    /// [Bit 20] INT: enables interrupt on counter overflow.
-    ///
-    UINT32    INT         : 1;
-    ///
-    /// [Bit 21] AnyThread: When set to 1, it enables counting the associated
-    /// event conditions occurring across all logical processors sharing a
-    /// processor core. When set to 0, the counter only increments the
-    /// associated event conditions occurring in the logical processor which
-    /// programmed the MSR.
-    ///
-    UINT32    ANY         : 1;
-    ///
-    /// [Bit 22] EN: enables the corresponding performance counter to commence
-    /// counting when this bit is set.
-    ///
-    UINT32    EN          : 1;
-    ///
-    /// [Bit 23] INV: invert the CMASK.
-    ///
-    UINT32    INV         : 1;
-    ///
-    /// [Bits 31:24] CMASK: When CMASK is not zero, the corresponding
-    /// performance counter increments each cycle if the event count is
-    /// greater than or equal to the CMASK.
-    ///
-    UINT32    CMASK       : 8;
-    UINT32    Reserved    : 32;
-    ///
-    /// [Bit 32] IN_TX: see Section 18.3.6.5.1 When IN_TX (bit 32) is set,
-    /// AnyThread (bit 21) should be cleared to prevent incorrect results.
-    ///
-    UINT32    IN_TX       : 1;
-    UINT32    Reserved2   : 31;
-  } Bits;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_IA32_PERFEVTSEL_REGISTER;
 
 /**
@@ -241,90 +238,92 @@ typedef union {
   @endcode
   @note MSR_HASWELL_IA32_PERFEVTSEL2 is defined as IA32_PERFEVTSEL2 in SDM.
 **/
-#define MSR_HASWELL_IA32_PERFEVTSEL2  0x00000188
+#define MSR_HASWELL_IA32_PERFEVTSEL2 0x00000188
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_IA32_PERFEVTSEL2
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 7:0] Event Select: Selects a performance event logic unit.
+    /// Individual bit fields
     ///
-    UINT32    EventSelect : 8;
+    struct
+    {
+        ///
+        /// [Bits 7:0] Event Select: Selects a performance event logic unit.
+        ///
+        UINT32 EventSelect : 8;
+        ///
+        /// [Bits 15:8] UMask: Qualifies the microarchitectural condition to
+        /// detect on the selected event logic.
+        ///
+        UINT32 UMASK : 8;
+        ///
+        /// [Bit 16] USR: Counts while in privilege level is not ring 0.
+        ///
+        UINT32 USR : 1;
+        ///
+        /// [Bit 17] OS: Counts while in privilege level is ring 0.
+        ///
+        UINT32 OS : 1;
+        ///
+        /// [Bit 18] Edge: Enables edge detection if set.
+        ///
+        UINT32 E : 1;
+        ///
+        /// [Bit 19] PC: enables pin control.
+        ///
+        UINT32 PC : 1;
+        ///
+        /// [Bit 20] INT: enables interrupt on counter overflow.
+        ///
+        UINT32 INT : 1;
+        ///
+        /// [Bit 21] AnyThread: When set to 1, it enables counting the associated
+        /// event conditions occurring across all logical processors sharing a
+        /// processor core. When set to 0, the counter only increments the
+        /// associated event conditions occurring in the logical processor which
+        /// programmed the MSR.
+        ///
+        UINT32 ANY : 1;
+        ///
+        /// [Bit 22] EN: enables the corresponding performance counter to commence
+        /// counting when this bit is set.
+        ///
+        UINT32 EN : 1;
+        ///
+        /// [Bit 23] INV: invert the CMASK.
+        ///
+        UINT32 INV : 1;
+        ///
+        /// [Bits 31:24] CMASK: When CMASK is not zero, the corresponding
+        /// performance counter increments each cycle if the event count is
+        /// greater than or equal to the CMASK.
+        ///
+        UINT32 CMASK : 8;
+        UINT32 Reserved : 32;
+        ///
+        /// [Bit 32] IN_TX: see Section 18.3.6.5.1 When IN_TX (bit 32) is set,
+        /// AnyThread (bit 21) should be cleared to prevent incorrect results.
+        ///
+        UINT32 IN_TX : 1;
+        ///
+        /// [Bit 33] IN_TXCP: see Section 18.3.6.5.1 When IN_TXCP=1 & IN_TX=1 and
+        /// in sampling, spurious PMI may occur and transactions may continuously
+        /// abort near overflow conditions. Software should favor using IN_TXCP
+        /// for counting over sampling. If sampling, software should use large
+        /// "sample-after" value after clearing the counter configured to use
+        /// IN_TXCP and also always reset the counter even when no overflow
+        /// condition was reported.
+        ///
+        UINT32 IN_TXCP : 1;
+        UINT32 Reserved2 : 30;
+    } Bits;
     ///
-    /// [Bits 15:8] UMask: Qualifies the microarchitectural condition to
-    /// detect on the selected event logic.
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    UMASK       : 8;
-    ///
-    /// [Bit 16] USR: Counts while in privilege level is not ring 0.
-    ///
-    UINT32    USR         : 1;
-    ///
-    /// [Bit 17] OS: Counts while in privilege level is ring 0.
-    ///
-    UINT32    OS          : 1;
-    ///
-    /// [Bit 18] Edge: Enables edge detection if set.
-    ///
-    UINT32    E           : 1;
-    ///
-    /// [Bit 19] PC: enables pin control.
-    ///
-    UINT32    PC          : 1;
-    ///
-    /// [Bit 20] INT: enables interrupt on counter overflow.
-    ///
-    UINT32    INT         : 1;
-    ///
-    /// [Bit 21] AnyThread: When set to 1, it enables counting the associated
-    /// event conditions occurring across all logical processors sharing a
-    /// processor core. When set to 0, the counter only increments the
-    /// associated event conditions occurring in the logical processor which
-    /// programmed the MSR.
-    ///
-    UINT32    ANY         : 1;
-    ///
-    /// [Bit 22] EN: enables the corresponding performance counter to commence
-    /// counting when this bit is set.
-    ///
-    UINT32    EN          : 1;
-    ///
-    /// [Bit 23] INV: invert the CMASK.
-    ///
-    UINT32    INV         : 1;
-    ///
-    /// [Bits 31:24] CMASK: When CMASK is not zero, the corresponding
-    /// performance counter increments each cycle if the event count is
-    /// greater than or equal to the CMASK.
-    ///
-    UINT32    CMASK       : 8;
-    UINT32    Reserved    : 32;
-    ///
-    /// [Bit 32] IN_TX: see Section 18.3.6.5.1 When IN_TX (bit 32) is set,
-    /// AnyThread (bit 21) should be cleared to prevent incorrect results.
-    ///
-    UINT32    IN_TX       : 1;
-    ///
-    /// [Bit 33] IN_TXCP: see Section 18.3.6.5.1 When IN_TXCP=1 & IN_TX=1 and
-    /// in sampling, spurious PMI may occur and transactions may continuously
-    /// abort near overflow conditions. Software should favor using IN_TXCP
-    /// for counting over sampling. If sampling, software should use large
-    /// "sample-after" value after clearing the counter configured to use
-    /// IN_TXCP and also always reset the counter even when no overflow
-    /// condition was reported.
-    ///
-    UINT32    IN_TXCP   : 1;
-    UINT32    Reserved2 : 30;
-  } Bits;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_IA32_PERFEVTSEL2_REGISTER;
 
 /**
@@ -345,67 +344,69 @@ typedef union {
   @endcode
   @note MSR_HASWELL_LBR_SELECT is defined as MSR_LBR_SELECT in SDM.
 **/
-#define MSR_HASWELL_LBR_SELECT  0x000001C8
+#define MSR_HASWELL_LBR_SELECT 0x000001C8
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_LBR_SELECT
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bit 0] CPL_EQ_0.
+    /// Individual bit fields
     ///
-    UINT32    CPL_EQ_0      : 1;
+    struct
+    {
+        ///
+        /// [Bit 0] CPL_EQ_0.
+        ///
+        UINT32 CPL_EQ_0 : 1;
+        ///
+        /// [Bit 1] CPL_NEQ_0.
+        ///
+        UINT32 CPL_NEQ_0 : 1;
+        ///
+        /// [Bit 2] JCC.
+        ///
+        UINT32 JCC : 1;
+        ///
+        /// [Bit 3] NEAR_REL_CALL.
+        ///
+        UINT32 NEAR_REL_CALL : 1;
+        ///
+        /// [Bit 4] NEAR_IND_CALL.
+        ///
+        UINT32 NEAR_IND_CALL : 1;
+        ///
+        /// [Bit 5] NEAR_RET.
+        ///
+        UINT32 NEAR_RET : 1;
+        ///
+        /// [Bit 6] NEAR_IND_JMP.
+        ///
+        UINT32 NEAR_IND_JMP : 1;
+        ///
+        /// [Bit 7] NEAR_REL_JMP.
+        ///
+        UINT32 NEAR_REL_JMP : 1;
+        ///
+        /// [Bit 8] FAR_BRANCH.
+        ///
+        UINT32 FAR_BRANCH : 1;
+        ///
+        /// [Bit 9] EN_CALL_STACK.
+        ///
+        UINT32 EN_CALL_STACK : 1;
+        UINT32 Reserved1 : 22;
+        UINT32 Reserved2 : 32;
+    } Bits;
     ///
-    /// [Bit 1] CPL_NEQ_0.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    CPL_NEQ_0     : 1;
+    UINT32 Uint32;
     ///
-    /// [Bit 2] JCC.
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    JCC           : 1;
-    ///
-    /// [Bit 3] NEAR_REL_CALL.
-    ///
-    UINT32    NEAR_REL_CALL : 1;
-    ///
-    /// [Bit 4] NEAR_IND_CALL.
-    ///
-    UINT32    NEAR_IND_CALL : 1;
-    ///
-    /// [Bit 5] NEAR_RET.
-    ///
-    UINT32    NEAR_RET      : 1;
-    ///
-    /// [Bit 6] NEAR_IND_JMP.
-    ///
-    UINT32    NEAR_IND_JMP  : 1;
-    ///
-    /// [Bit 7] NEAR_REL_JMP.
-    ///
-    UINT32    NEAR_REL_JMP  : 1;
-    ///
-    /// [Bit 8] FAR_BRANCH.
-    ///
-    UINT32    FAR_BRANCH    : 1;
-    ///
-    /// [Bit 9] EN_CALL_STACK.
-    ///
-    UINT32    EN_CALL_STACK : 1;
-    UINT32    Reserved1     : 22;
-    UINT32    Reserved2     : 32;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_LBR_SELECT_REGISTER;
 
 /**
@@ -431,45 +432,47 @@ typedef union {
   @endcode
   @note MSR_HASWELL_PKGC_IRTL1 is defined as MSR_PKGC_IRTL1 in SDM.
 **/
-#define MSR_HASWELL_PKGC_IRTL1  0x0000060B
+#define MSR_HASWELL_PKGC_IRTL1 0x0000060B
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_PKGC_IRTL1
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 9:0] Interrupt response time limit (R/W)  Specifies the limit
-    /// that should be used to decide if the package should be put into a
-    /// package C6 or C7 state.
+    /// Individual bit fields
     ///
-    UINT32    InterruptResponseTimeLimit : 10;
+    struct
+    {
+        ///
+        /// [Bits 9:0] Interrupt response time limit (R/W)  Specifies the limit
+        /// that should be used to decide if the package should be put into a
+        /// package C6 or C7 state.
+        ///
+        UINT32 InterruptResponseTimeLimit : 10;
+        ///
+        /// [Bits 12:10] Time Unit (R/W) Specifies the encoding value of time unit
+        /// of the interrupt response time limit. See Table 2-19 for supported
+        /// time unit encodings.
+        ///
+        UINT32 TimeUnit : 3;
+        UINT32 Reserved1 : 2;
+        ///
+        /// [Bit 15] Valid (R/W)  Indicates whether the values in bits 12:0 are
+        /// valid and can be used by the processor for package C-sate management.
+        ///
+        UINT32 Valid : 1;
+        UINT32 Reserved2 : 16;
+        UINT32 Reserved3 : 32;
+    } Bits;
     ///
-    /// [Bits 12:10] Time Unit (R/W) Specifies the encoding value of time unit
-    /// of the interrupt response time limit. See Table 2-19 for supported
-    /// time unit encodings.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    TimeUnit                   : 3;
-    UINT32    Reserved1                  : 2;
+    UINT32 Uint32;
     ///
-    /// [Bit 15] Valid (R/W)  Indicates whether the values in bits 12:0 are
-    /// valid and can be used by the processor for package C-sate management.
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    Valid                      : 1;
-    UINT32    Reserved2                  : 16;
-    UINT32    Reserved3                  : 32;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_PKGC_IRTL1_REGISTER;
 
 /**
@@ -495,45 +498,47 @@ typedef union {
   @endcode
   @note MSR_HASWELL_PKGC_IRTL2 is defined as MSR_PKGC_IRTL2 in SDM.
 **/
-#define MSR_HASWELL_PKGC_IRTL2  0x0000060C
+#define MSR_HASWELL_PKGC_IRTL2 0x0000060C
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_PKGC_IRTL2
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 9:0] Interrupt response time limit (R/W) Specifies the limit
-    /// that should be used to decide if the package should be put into a
-    /// package C6 or C7 state.
+    /// Individual bit fields
     ///
-    UINT32    InterruptResponseTimeLimit : 10;
+    struct
+    {
+        ///
+        /// [Bits 9:0] Interrupt response time limit (R/W) Specifies the limit
+        /// that should be used to decide if the package should be put into a
+        /// package C6 or C7 state.
+        ///
+        UINT32 InterruptResponseTimeLimit : 10;
+        ///
+        /// [Bits 12:10] Time Unit (R/W) Specifies the encoding value of time unit
+        /// of the interrupt response time limit. See Table 2-19 for supported
+        /// time unit encodings.
+        ///
+        UINT32 TimeUnit : 3;
+        UINT32 Reserved1 : 2;
+        ///
+        /// [Bit 15] Valid (R/W)  Indicates whether the values in bits 12:0 are
+        /// valid and can be used by the processor for package C-sate management.
+        ///
+        UINT32 Valid : 1;
+        UINT32 Reserved2 : 16;
+        UINT32 Reserved3 : 32;
+    } Bits;
     ///
-    /// [Bits 12:10] Time Unit (R/W) Specifies the encoding value of time unit
-    /// of the interrupt response time limit. See Table 2-19 for supported
-    /// time unit encodings.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    TimeUnit                   : 3;
-    UINT32    Reserved1                  : 2;
+    UINT32 Uint32;
     ///
-    /// [Bit 15] Valid (R/W)  Indicates whether the values in bits 12:0 are
-    /// valid and can be used by the processor for package C-sate management.
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    Valid                      : 1;
-    UINT32    Reserved2                  : 16;
-    UINT32    Reserved3                  : 32;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_PKGC_IRTL2_REGISTER;
 
 /**
@@ -551,7 +556,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_PKG_PERF_STATUS is defined as MSR_PKG_PERF_STATUS in SDM.
 **/
-#define MSR_HASWELL_PKG_PERF_STATUS  0x00000613
+#define MSR_HASWELL_PKG_PERF_STATUS 0x00000613
 
 /**
   Package. DRAM Energy Status (R/O)  See Section 14.9.5, "DRAM RAPL Domain.".
@@ -568,7 +573,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_DRAM_ENERGY_STATUS is defined as MSR_DRAM_ENERGY_STATUS in SDM.
 **/
-#define MSR_HASWELL_DRAM_ENERGY_STATUS  0x00000619
+#define MSR_HASWELL_DRAM_ENERGY_STATUS 0x00000619
 
 /**
   Package. DRAM Performance Throttling Status (R/O) See Section 14.9.5, "DRAM
@@ -586,7 +591,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_DRAM_PERF_STATUS is defined as MSR_DRAM_PERF_STATUS in SDM.
 **/
-#define MSR_HASWELL_DRAM_PERF_STATUS  0x0000061B
+#define MSR_HASWELL_DRAM_PERF_STATUS 0x0000061B
 
 /**
   Package. Base TDP Ratio (R/O).
@@ -605,32 +610,34 @@ typedef union {
   @endcode
   @note MSR_HASWELL_CONFIG_TDP_NOMINAL is defined as MSR_CONFIG_TDP_NOMINAL in SDM.
 **/
-#define MSR_HASWELL_CONFIG_TDP_NOMINAL  0x00000648
+#define MSR_HASWELL_CONFIG_TDP_NOMINAL 0x00000648
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_CONFIG_TDP_NOMINAL
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 7:0] Config_TDP_Base Base TDP level ratio to be used for this
-    /// specific processor (in units of 100 MHz).
+    /// Individual bit fields
     ///
-    UINT32    Config_TDP_Base : 8;
-    UINT32    Reserved1       : 24;
-    UINT32    Reserved2       : 32;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    struct
+    {
+        ///
+        /// [Bits 7:0] Config_TDP_Base Base TDP level ratio to be used for this
+        /// specific processor (in units of 100 MHz).
+        ///
+        UINT32 Config_TDP_Base : 8;
+        UINT32 Reserved1 : 24;
+        UINT32 Reserved2 : 32;
+    } Bits;
+    ///
+    /// All bit fields as a 32-bit value
+    ///
+    UINT32 Uint32;
+    ///
+    /// All bit fields as a 64-bit value
+    ///
+    UINT64 Uint64;
 } MSR_HASWELL_CONFIG_TDP_NOMINAL_REGISTER;
 
 /**
@@ -650,43 +657,45 @@ typedef union {
   @endcode
   @note MSR_HASWELL_CONFIG_TDP_LEVEL1 is defined as MSR_CONFIG_TDP_LEVEL1 in SDM.
 **/
-#define MSR_HASWELL_CONFIG_TDP_LEVEL1  0x00000649
+#define MSR_HASWELL_CONFIG_TDP_LEVEL1 0x00000649
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_CONFIG_TDP_LEVEL1
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 14:0] PKG_TDP_LVL1. Power setting for ConfigTDP Level 1.
+    /// Individual bit fields
     ///
-    UINT32    PKG_TDP_LVL1          : 15;
-    UINT32    Reserved1             : 1;
+    struct
+    {
+        ///
+        /// [Bits 14:0] PKG_TDP_LVL1. Power setting for ConfigTDP Level 1.
+        ///
+        UINT32 PKG_TDP_LVL1 : 15;
+        UINT32 Reserved1 : 1;
+        ///
+        /// [Bits 23:16] Config_TDP_LVL1_Ratio. ConfigTDP level 1 ratio to be used
+        /// for this specific processor.
+        ///
+        UINT32 Config_TDP_LVL1_Ratio : 8;
+        UINT32 Reserved2 : 8;
+        ///
+        /// [Bits 46:32] PKG_MAX_PWR_LVL1. Max Power setting allowed for ConfigTDP
+        /// Level 1.
+        ///
+        UINT32 PKG_MAX_PWR_LVL1 : 15;
+        ///
+        /// [Bits 62:47] PKG_MIN_PWR_LVL1. MIN Power setting allowed for ConfigTDP
+        /// Level 1.
+        ///
+        UINT32 PKG_MIN_PWR_LVL1 : 16;
+        UINT32 Reserved3 : 1;
+    } Bits;
     ///
-    /// [Bits 23:16] Config_TDP_LVL1_Ratio. ConfigTDP level 1 ratio to be used
-    /// for this specific processor.
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    Config_TDP_LVL1_Ratio : 8;
-    UINT32    Reserved2             : 8;
-    ///
-    /// [Bits 46:32] PKG_MAX_PWR_LVL1. Max Power setting allowed for ConfigTDP
-    /// Level 1.
-    ///
-    UINT32    PKG_MAX_PWR_LVL1      : 15;
-    ///
-    /// [Bits 62:47] PKG_MIN_PWR_LVL1. MIN Power setting allowed for ConfigTDP
-    /// Level 1.
-    ///
-    UINT32    PKG_MIN_PWR_LVL1      : 16;
-    UINT32    Reserved3             : 1;
-  } Bits;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_CONFIG_TDP_LEVEL1_REGISTER;
 
 /**
@@ -706,43 +715,45 @@ typedef union {
   @endcode
   @note MSR_HASWELL_CONFIG_TDP_LEVEL2 is defined as MSR_CONFIG_TDP_LEVEL2 in SDM.
 **/
-#define MSR_HASWELL_CONFIG_TDP_LEVEL2  0x0000064A
+#define MSR_HASWELL_CONFIG_TDP_LEVEL2 0x0000064A
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_CONFIG_TDP_LEVEL2
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 14:0] PKG_TDP_LVL2. Power setting for ConfigTDP Level 2.
+    /// Individual bit fields
     ///
-    UINT32    PKG_TDP_LVL2          : 15;
-    UINT32    Reserved1             : 1;
+    struct
+    {
+        ///
+        /// [Bits 14:0] PKG_TDP_LVL2. Power setting for ConfigTDP Level 2.
+        ///
+        UINT32 PKG_TDP_LVL2 : 15;
+        UINT32 Reserved1 : 1;
+        ///
+        /// [Bits 23:16] Config_TDP_LVL2_Ratio. ConfigTDP level 2 ratio to be used
+        /// for this specific processor.
+        ///
+        UINT32 Config_TDP_LVL2_Ratio : 8;
+        UINT32 Reserved2 : 8;
+        ///
+        /// [Bits 46:32] PKG_MAX_PWR_LVL2. Max Power setting allowed for ConfigTDP
+        /// Level 2.
+        ///
+        UINT32 PKG_MAX_PWR_LVL2 : 15;
+        ///
+        /// [Bits 62:47] PKG_MIN_PWR_LVL2. MIN Power setting allowed for ConfigTDP
+        /// Level 2.
+        ///
+        UINT32 PKG_MIN_PWR_LVL2 : 16;
+        UINT32 Reserved3 : 1;
+    } Bits;
     ///
-    /// [Bits 23:16] Config_TDP_LVL2_Ratio. ConfigTDP level 2 ratio to be used
-    /// for this specific processor.
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    Config_TDP_LVL2_Ratio : 8;
-    UINT32    Reserved2             : 8;
-    ///
-    /// [Bits 46:32] PKG_MAX_PWR_LVL2. Max Power setting allowed for ConfigTDP
-    /// Level 2.
-    ///
-    UINT32    PKG_MAX_PWR_LVL2      : 15;
-    ///
-    /// [Bits 62:47] PKG_MIN_PWR_LVL2. MIN Power setting allowed for ConfigTDP
-    /// Level 2.
-    ///
-    UINT32    PKG_MIN_PWR_LVL2      : 16;
-    UINT32    Reserved3             : 1;
-  } Bits;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_CONFIG_TDP_LEVEL2_REGISTER;
 
 /**
@@ -763,36 +774,38 @@ typedef union {
   @endcode
   @note MSR_HASWELL_CONFIG_TDP_CONTROL is defined as MSR_CONFIG_TDP_CONTROL in SDM.
 **/
-#define MSR_HASWELL_CONFIG_TDP_CONTROL  0x0000064B
+#define MSR_HASWELL_CONFIG_TDP_CONTROL 0x0000064B
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_CONFIG_TDP_CONTROL
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 1:0] TDP_LEVEL (RW/L) System BIOS can program this field.
+    /// Individual bit fields
     ///
-    UINT32    TDP_LEVEL       : 2;
-    UINT32    Reserved1       : 29;
+    struct
+    {
+        ///
+        /// [Bits 1:0] TDP_LEVEL (RW/L) System BIOS can program this field.
+        ///
+        UINT32 TDP_LEVEL : 2;
+        UINT32 Reserved1 : 29;
+        ///
+        /// [Bit 31] Config_TDP_Lock (RW/L) When this bit is set, the content of
+        /// this register is locked until a reset.
+        ///
+        UINT32 Config_TDP_Lock : 1;
+        UINT32 Reserved2 : 32;
+    } Bits;
     ///
-    /// [Bit 31] Config_TDP_Lock (RW/L) When this bit is set, the content of
-    /// this register is locked until a reset.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    Config_TDP_Lock : 1;
-    UINT32    Reserved2       : 32;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT32 Uint32;
+    ///
+    /// All bit fields as a 64-bit value
+    ///
+    UINT64 Uint64;
 } MSR_HASWELL_CONFIG_TDP_CONTROL_REGISTER;
 
 /**
@@ -813,37 +826,39 @@ typedef union {
   @endcode
   @note MSR_HASWELL_TURBO_ACTIVATION_RATIO is defined as MSR_TURBO_ACTIVATION_RATIO in SDM.
 **/
-#define MSR_HASWELL_TURBO_ACTIVATION_RATIO  0x0000064C
+#define MSR_HASWELL_TURBO_ACTIVATION_RATIO 0x0000064C
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_TURBO_ACTIVATION_RATIO
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 7:0] MAX_NON_TURBO_RATIO (RW/L) System BIOS can program this
-    /// field.
+    /// Individual bit fields
     ///
-    UINT32    MAX_NON_TURBO_RATIO         : 8;
-    UINT32    Reserved1                   : 23;
+    struct
+    {
+        ///
+        /// [Bits 7:0] MAX_NON_TURBO_RATIO (RW/L) System BIOS can program this
+        /// field.
+        ///
+        UINT32 MAX_NON_TURBO_RATIO : 8;
+        UINT32 Reserved1 : 23;
+        ///
+        /// [Bit 31] TURBO_ACTIVATION_RATIO_Lock (RW/L) When this bit is set, the
+        /// content of this register is locked until a reset.
+        ///
+        UINT32 TURBO_ACTIVATION_RATIO_Lock : 1;
+        UINT32 Reserved2 : 32;
+    } Bits;
     ///
-    /// [Bit 31] TURBO_ACTIVATION_RATIO_Lock (RW/L) When this bit is set, the
-    /// content of this register is locked until a reset.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    TURBO_ACTIVATION_RATIO_Lock : 1;
-    UINT32    Reserved2                   : 32;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT32 Uint32;
+    ///
+    /// All bit fields as a 64-bit value
+    ///
+    UINT64 Uint64;
 } MSR_HASWELL_TURBO_ACTIVATION_RATIO_REGISTER;
 
 /**
@@ -866,64 +881,66 @@ typedef union {
   @endcode
   @note MSR_HASWELL_PKG_CST_CONFIG_CONTROL is defined as MSR_PKG_CST_CONFIG_CONTROL in SDM.
 **/
-#define MSR_HASWELL_PKG_CST_CONFIG_CONTROL  0x000000E2
+#define MSR_HASWELL_PKG_CST_CONFIG_CONTROL 0x000000E2
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_PKG_CST_CONFIG_CONTROL
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 3:0] Package C-State Limit (R/W) Specifies the lowest
-    /// processor-specific C-state code name (consuming the least power) for
-    /// the package. The default is set as factory-configured package C-state
-    /// limit. The following C-state code name encodings are supported: 0000b:
-    /// C0/C1 (no package C-state support) 0001b: C2 0010b: C3 0011b: C6
-    /// 0100b: C7 0101b: C7s Package C states C7 are not available to
-    /// processor with signature 06_3CH.
+    /// Individual bit fields
     ///
-    UINT32    Limit          : 4;
-    UINT32    Reserved1      : 6;
+    struct
+    {
+        ///
+        /// [Bits 3:0] Package C-State Limit (R/W) Specifies the lowest
+        /// processor-specific C-state code name (consuming the least power) for
+        /// the package. The default is set as factory-configured package C-state
+        /// limit. The following C-state code name encodings are supported: 0000b:
+        /// C0/C1 (no package C-state support) 0001b: C2 0010b: C3 0011b: C6
+        /// 0100b: C7 0101b: C7s Package C states C7 are not available to
+        /// processor with signature 06_3CH.
+        ///
+        UINT32 Limit : 4;
+        UINT32 Reserved1 : 6;
+        ///
+        /// [Bit 10] I/O MWAIT Redirection Enable (R/W).
+        ///
+        UINT32 IO_MWAIT : 1;
+        UINT32 Reserved2 : 4;
+        ///
+        /// [Bit 15] CFG Lock (R/WO).
+        ///
+        UINT32 CFGLock : 1;
+        UINT32 Reserved3 : 9;
+        ///
+        /// [Bit 25] C3 State Auto Demotion Enable (R/W).
+        ///
+        UINT32 C3AutoDemotion : 1;
+        ///
+        /// [Bit 26] C1 State Auto Demotion Enable (R/W).
+        ///
+        UINT32 C1AutoDemotion : 1;
+        ///
+        /// [Bit 27] Enable C3 Undemotion (R/W).
+        ///
+        UINT32 C3Undemotion : 1;
+        ///
+        /// [Bit 28] Enable C1 Undemotion (R/W).
+        ///
+        UINT32 C1Undemotion : 1;
+        UINT32 Reserved4 : 3;
+        UINT32 Reserved5 : 32;
+    } Bits;
     ///
-    /// [Bit 10] I/O MWAIT Redirection Enable (R/W).
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    IO_MWAIT       : 1;
-    UINT32    Reserved2      : 4;
+    UINT32 Uint32;
     ///
-    /// [Bit 15] CFG Lock (R/WO).
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    CFGLock        : 1;
-    UINT32    Reserved3      : 9;
-    ///
-    /// [Bit 25] C3 State Auto Demotion Enable (R/W).
-    ///
-    UINT32    C3AutoDemotion : 1;
-    ///
-    /// [Bit 26] C1 State Auto Demotion Enable (R/W).
-    ///
-    UINT32    C1AutoDemotion : 1;
-    ///
-    /// [Bit 27] Enable C3 Undemotion (R/W).
-    ///
-    UINT32    C3Undemotion   : 1;
-    ///
-    /// [Bit 28] Enable C1 Undemotion (R/W).
-    ///
-    UINT32    C1Undemotion   : 1;
-    UINT32    Reserved4      : 3;
-    UINT32    Reserved5      : 32;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_PKG_CST_CONFIG_CONTROL_REGISTER;
 
 /**
@@ -945,36 +962,38 @@ typedef union {
   @endcode
   @note MSR_HASWELL_SMM_MCA_CAP is defined as MSR_SMM_MCA_CAP in SDM.
 **/
-#define MSR_HASWELL_SMM_MCA_CAP  0x0000017D
+#define MSR_HASWELL_SMM_MCA_CAP 0x0000017D
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_SMM_MCA_CAP
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
-    UINT32    Reserved1            : 32;
-    UINT32    Reserved2            : 26;
+typedef union
+{
     ///
-    /// [Bit 58] SMM_Code_Access_Chk (SMM-RO) If set to 1 indicates that the
-    /// SMM code access restriction is supported and the
-    /// MSR_SMM_FEATURE_CONTROL is supported.
+    /// Individual bit fields
     ///
-    UINT32    SMM_Code_Access_Chk  : 1;
+    struct
+    {
+        UINT32 Reserved1 : 32;
+        UINT32 Reserved2 : 26;
+        ///
+        /// [Bit 58] SMM_Code_Access_Chk (SMM-RO) If set to 1 indicates that the
+        /// SMM code access restriction is supported and the
+        /// MSR_SMM_FEATURE_CONTROL is supported.
+        ///
+        UINT32 SMM_Code_Access_Chk : 1;
+        ///
+        /// [Bit 59] Long_Flow_Indication (SMM-RO) If set to 1 indicates that the
+        /// SMM long flow indicator is supported and the MSR_SMM_DELAYED is
+        /// supported.
+        ///
+        UINT32 Long_Flow_Indication : 1;
+        UINT32 Reserved3 : 4;
+    } Bits;
     ///
-    /// [Bit 59] Long_Flow_Indication (SMM-RO) If set to 1 indicates that the
-    /// SMM long flow indicator is supported and the MSR_SMM_DELAYED is
-    /// supported.
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    Long_Flow_Indication : 1;
-    UINT32    Reserved3            : 4;
-  } Bits;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_SMM_MCA_CAP_REGISTER;
 
 /**
@@ -995,46 +1014,48 @@ typedef union {
   @endcode
   @note MSR_HASWELL_TURBO_RATIO_LIMIT is defined as MSR_TURBO_RATIO_LIMIT in SDM.
 **/
-#define MSR_HASWELL_TURBO_RATIO_LIMIT  0x000001AD
+#define MSR_HASWELL_TURBO_RATIO_LIMIT 0x000001AD
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_TURBO_RATIO_LIMIT
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 7:0] Package. Maximum Ratio Limit for 1C Maximum turbo ratio
-    /// limit of 1 core active.
+    /// Individual bit fields
     ///
-    UINT32    Maximum1C : 8;
+    struct
+    {
+        ///
+        /// [Bits 7:0] Package. Maximum Ratio Limit for 1C Maximum turbo ratio
+        /// limit of 1 core active.
+        ///
+        UINT32 Maximum1C : 8;
+        ///
+        /// [Bits 15:8] Package. Maximum Ratio Limit for 2C Maximum turbo ratio
+        /// limit of 2 core active.
+        ///
+        UINT32 Maximum2C : 8;
+        ///
+        /// [Bits 23:16] Package. Maximum Ratio Limit for 3C Maximum turbo ratio
+        /// limit of 3 core active.
+        ///
+        UINT32 Maximum3C : 8;
+        ///
+        /// [Bits 31:24] Package. Maximum Ratio Limit for 4C Maximum turbo ratio
+        /// limit of 4 core active.
+        ///
+        UINT32 Maximum4C : 8;
+        UINT32 Reserved : 32;
+    } Bits;
     ///
-    /// [Bits 15:8] Package. Maximum Ratio Limit for 2C Maximum turbo ratio
-    /// limit of 2 core active.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    Maximum2C : 8;
+    UINT32 Uint32;
     ///
-    /// [Bits 23:16] Package. Maximum Ratio Limit for 3C Maximum turbo ratio
-    /// limit of 3 core active.
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    Maximum3C : 8;
-    ///
-    /// [Bits 31:24] Package. Maximum Ratio Limit for 4C Maximum turbo ratio
-    /// limit of 4 core active.
-    ///
-    UINT32    Maximum4C : 8;
-    UINT32    Reserved  : 32;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_TURBO_RATIO_LIMIT_REGISTER;
 
 /**
@@ -1055,56 +1076,58 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_PERF_GLOBAL_CTRL is defined as MSR_UNC_PERF_GLOBAL_CTRL in SDM.
 **/
-#define MSR_HASWELL_UNC_PERF_GLOBAL_CTRL  0x00000391
+#define MSR_HASWELL_UNC_PERF_GLOBAL_CTRL 0x00000391
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_UNC_PERF_GLOBAL_CTRL
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bit 0] Core 0 select.
+    /// Individual bit fields
     ///
-    UINT32    PMI_Sel_Core0 : 1;
+    struct
+    {
+        ///
+        /// [Bit 0] Core 0 select.
+        ///
+        UINT32 PMI_Sel_Core0 : 1;
+        ///
+        /// [Bit 1] Core 1 select.
+        ///
+        UINT32 PMI_Sel_Core1 : 1;
+        ///
+        /// [Bit 2] Core 2 select.
+        ///
+        UINT32 PMI_Sel_Core2 : 1;
+        ///
+        /// [Bit 3] Core 3 select.
+        ///
+        UINT32 PMI_Sel_Core3 : 1;
+        UINT32 Reserved1 : 15;
+        UINT32 Reserved2 : 10;
+        ///
+        /// [Bit 29] Enable all uncore counters.
+        ///
+        UINT32 EN : 1;
+        ///
+        /// [Bit 30] Enable wake on PMI.
+        ///
+        UINT32 WakePMI : 1;
+        ///
+        /// [Bit 31] Enable Freezing counter when overflow.
+        ///
+        UINT32 FREEZE : 1;
+        UINT32 Reserved3 : 32;
+    } Bits;
     ///
-    /// [Bit 1] Core 1 select.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    PMI_Sel_Core1 : 1;
+    UINT32 Uint32;
     ///
-    /// [Bit 2] Core 2 select.
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    PMI_Sel_Core2 : 1;
-    ///
-    /// [Bit 3] Core 3 select.
-    ///
-    UINT32    PMI_Sel_Core3 : 1;
-    UINT32    Reserved1     : 15;
-    UINT32    Reserved2     : 10;
-    ///
-    /// [Bit 29] Enable all uncore counters.
-    ///
-    UINT32    EN            : 1;
-    ///
-    /// [Bit 30] Enable wake on PMI.
-    ///
-    UINT32    WakePMI       : 1;
-    ///
-    /// [Bit 31] Enable Freezing counter when overflow.
-    ///
-    UINT32    FREEZE        : 1;
-    UINT32    Reserved3     : 32;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_UNC_PERF_GLOBAL_CTRL_REGISTER;
 
 /**
@@ -1125,40 +1148,42 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_PERF_GLOBAL_STATUS is defined as MSR_UNC_PERF_GLOBAL_STATUS in SDM.
 **/
-#define MSR_HASWELL_UNC_PERF_GLOBAL_STATUS  0x00000392
+#define MSR_HASWELL_UNC_PERF_GLOBAL_STATUS 0x00000392
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_UNC_PERF_GLOBAL_STATUS
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bit 0] Fixed counter overflowed.
+    /// Individual bit fields
     ///
-    UINT32    Fixed     : 1;
+    struct
+    {
+        ///
+        /// [Bit 0] Fixed counter overflowed.
+        ///
+        UINT32 Fixed : 1;
+        ///
+        /// [Bit 1] An ARB counter overflowed.
+        ///
+        UINT32 ARB : 1;
+        UINT32 Reserved1 : 1;
+        ///
+        /// [Bit 3] A CBox counter overflowed (on any slice).
+        ///
+        UINT32 CBox : 1;
+        UINT32 Reserved2 : 28;
+        UINT32 Reserved3 : 32;
+    } Bits;
     ///
-    /// [Bit 1] An ARB counter overflowed.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    ARB       : 1;
-    UINT32    Reserved1 : 1;
+    UINT32 Uint32;
     ///
-    /// [Bit 3] A CBox counter overflowed (on any slice).
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    CBox      : 1;
-    UINT32    Reserved2 : 28;
-    UINT32    Reserved3 : 32;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_UNC_PERF_GLOBAL_STATUS_REGISTER;
 
 /**
@@ -1179,37 +1204,39 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_PERF_FIXED_CTRL is defined as MSR_UNC_PERF_FIXED_CTRL in SDM.
 **/
-#define MSR_HASWELL_UNC_PERF_FIXED_CTRL  0x00000394
+#define MSR_HASWELL_UNC_PERF_FIXED_CTRL 0x00000394
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_UNC_PERF_FIXED_CTRL
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
-    UINT32    Reserved1      : 20;
+typedef union
+{
     ///
-    /// [Bit 20] Enable overflow propagation.
+    /// Individual bit fields
     ///
-    UINT32    EnableOverflow : 1;
-    UINT32    Reserved2      : 1;
+    struct
+    {
+        UINT32 Reserved1 : 20;
+        ///
+        /// [Bit 20] Enable overflow propagation.
+        ///
+        UINT32 EnableOverflow : 1;
+        UINT32 Reserved2 : 1;
+        ///
+        /// [Bit 22] Enable counting.
+        ///
+        UINT32 EnableCounting : 1;
+        UINT32 Reserved3 : 9;
+        UINT32 Reserved4 : 32;
+    } Bits;
     ///
-    /// [Bit 22] Enable counting.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    EnableCounting : 1;
-    UINT32    Reserved3      : 9;
-    UINT32    Reserved4      : 32;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT32 Uint32;
+    ///
+    /// All bit fields as a 64-bit value
+    ///
+    UINT64 Uint64;
 } MSR_HASWELL_UNC_PERF_FIXED_CTRL_REGISTER;
 
 /**
@@ -1230,30 +1257,32 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_PERF_FIXED_CTR is defined as MSR_UNC_PERF_FIXED_CTR in SDM.
 **/
-#define MSR_HASWELL_UNC_PERF_FIXED_CTR  0x00000395
+#define MSR_HASWELL_UNC_PERF_FIXED_CTR 0x00000395
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_UNC_PERF_FIXED_CTR
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 31:0] Current count.
+    /// Individual bit fields
     ///
-    UINT32    CurrentCount   : 32;
+    struct
+    {
+        ///
+        /// [Bits 31:0] Current count.
+        ///
+        UINT32 CurrentCount : 32;
+        ///
+        /// [Bits 47:32] Current count.
+        ///
+        UINT32 CurrentCountHi : 16;
+        UINT32 Reserved : 16;
+    } Bits;
     ///
-    /// [Bits 47:32] Current count.
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    CurrentCountHi : 16;
-    UINT32    Reserved       : 16;
-  } Bits;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_UNC_PERF_FIXED_CTR_REGISTER;
 
 /**
@@ -1273,31 +1302,33 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_CBO_CONFIG is defined as MSR_UNC_CBO_CONFIG in SDM.
 **/
-#define MSR_HASWELL_UNC_CBO_CONFIG  0x00000396
+#define MSR_HASWELL_UNC_CBO_CONFIG 0x00000396
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_UNC_CBO_CONFIG
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 3:0] Encoded number of C-Box, derive value by "-1".
+    /// Individual bit fields
     ///
-    UINT32    CBox      : 4;
-    UINT32    Reserved1 : 28;
-    UINT32    Reserved2 : 32;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    struct
+    {
+        ///
+        /// [Bits 3:0] Encoded number of C-Box, derive value by "-1".
+        ///
+        UINT32 CBox : 4;
+        UINT32 Reserved1 : 28;
+        UINT32 Reserved2 : 32;
+    } Bits;
+    ///
+    /// All bit fields as a 32-bit value
+    ///
+    UINT32 Uint32;
+    ///
+    /// All bit fields as a 64-bit value
+    ///
+    UINT64 Uint64;
 } MSR_HASWELL_UNC_CBO_CONFIG_REGISTER;
 
 /**
@@ -1316,7 +1347,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_ARB_PERFCTR0 is defined as MSR_UNC_ARB_PERFCTR0 in SDM.
 **/
-#define MSR_HASWELL_UNC_ARB_PERFCTR0  0x000003B0
+#define MSR_HASWELL_UNC_ARB_PERFCTR0 0x000003B0
 
 /**
   Package. Uncore Arb unit, performance counter 1.
@@ -1334,7 +1365,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_ARB_PERFCTR1 is defined as MSR_UNC_ARB_PERFCTR1 in SDM.
 **/
-#define MSR_HASWELL_UNC_ARB_PERFCTR1  0x000003B1
+#define MSR_HASWELL_UNC_ARB_PERFCTR1 0x000003B1
 
 /**
   Package. Uncore Arb unit, counter 0 event select MSR.
@@ -1352,7 +1383,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_ARB_PERFEVTSEL0 is defined as MSR_UNC_ARB_PERFEVTSEL0 in SDM.
 **/
-#define MSR_HASWELL_UNC_ARB_PERFEVTSEL0  0x000003B2
+#define MSR_HASWELL_UNC_ARB_PERFEVTSEL0 0x000003B2
 
 /**
   Package. Uncore Arb unit, counter 1 event select MSR.
@@ -1370,7 +1401,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_ARB_PERFEVTSEL1 is defined as MSR_UNC_ARB_PERFEVTSEL1 in SDM.
 **/
-#define MSR_HASWELL_UNC_ARB_PERFEVTSEL1  0x000003B3
+#define MSR_HASWELL_UNC_ARB_PERFEVTSEL1 0x000003B3
 
 /**
   Package. Enhanced SMM Feature Control (SMM-RW) Reports SMM capability
@@ -1391,42 +1422,44 @@ typedef union {
   @endcode
   @note MSR_HASWELL_SMM_FEATURE_CONTROL is defined as MSR_SMM_FEATURE_CONTROL in SDM.
 **/
-#define MSR_HASWELL_SMM_FEATURE_CONTROL  0x000004E0
+#define MSR_HASWELL_SMM_FEATURE_CONTROL 0x000004E0
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_SMM_FEATURE_CONTROL
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bit 0] Lock (SMM-RWO) When set to '1' locks this register from
-    /// further changes.
+    /// Individual bit fields
     ///
-    UINT32    Lock      : 1;
-    UINT32    Reserved1 : 1;
+    struct
+    {
+        ///
+        /// [Bit 0] Lock (SMM-RWO) When set to '1' locks this register from
+        /// further changes.
+        ///
+        UINT32 Lock : 1;
+        UINT32 Reserved1 : 1;
+        ///
+        /// [Bit 2] SMM_Code_Chk_En (SMM-RW) This control bit is available only if
+        /// MSR_SMM_MCA_CAP[58] == 1. When set to '0' (default) none of the
+        /// logical processors are prevented from executing SMM code outside the
+        /// ranges defined by the SMRR. When set to '1' any logical processor in
+        /// the package that attempts to execute SMM code not within the ranges
+        /// defined by the SMRR will assert an unrecoverable MCE.
+        ///
+        UINT32 SMM_Code_Chk_En : 1;
+        UINT32 Reserved2 : 29;
+        UINT32 Reserved3 : 32;
+    } Bits;
     ///
-    /// [Bit 2] SMM_Code_Chk_En (SMM-RW) This control bit is available only if
-    /// MSR_SMM_MCA_CAP[58] == 1. When set to '0' (default) none of the
-    /// logical processors are prevented from executing SMM code outside the
-    /// ranges defined by the SMRR. When set to '1' any logical processor in
-    /// the package that attempts to execute SMM code not within the ranges
-    /// defined by the SMRR will assert an unrecoverable MCE.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    SMM_Code_Chk_En : 1;
-    UINT32    Reserved2       : 29;
-    UINT32    Reserved3       : 32;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT32 Uint32;
+    ///
+    /// All bit fields as a 64-bit value
+    ///
+    UINT64 Uint64;
 } MSR_HASWELL_SMM_FEATURE_CONTROL_REGISTER;
 
 /**
@@ -1464,7 +1497,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_SMM_DELAYED is defined as MSR_SMM_DELAYED in SDM.
 **/
-#define MSR_HASWELL_SMM_DELAYED  0x000004E2
+#define MSR_HASWELL_SMM_DELAYED 0x000004E2
 
 /**
   Package. SMM Blocked (SMM-RO) Reports the blocked state of all logical
@@ -1497,7 +1530,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_SMM_BLOCKED is defined as MSR_SMM_BLOCKED in SDM.
 **/
-#define MSR_HASWELL_SMM_BLOCKED  0x000004E3
+#define MSR_HASWELL_SMM_BLOCKED 0x000004E3
 
 /**
   Package. Unit Multipliers used in RAPL Interfaces (R/O).
@@ -1516,45 +1549,47 @@ typedef union {
   @endcode
   @note MSR_HASWELL_RAPL_POWER_UNIT is defined as MSR_RAPL_POWER_UNIT in SDM.
 **/
-#define MSR_HASWELL_RAPL_POWER_UNIT  0x00000606
+#define MSR_HASWELL_RAPL_POWER_UNIT 0x00000606
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_RAPL_POWER_UNIT
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 3:0] Package. Power Units See Section 14.9.1, "RAPL Interfaces.".
+    /// Individual bit fields
     ///
-    UINT32    PowerUnits        : 4;
-    UINT32    Reserved1         : 4;
+    struct
+    {
+        ///
+        /// [Bits 3:0] Package. Power Units See Section 14.9.1, "RAPL Interfaces.".
+        ///
+        UINT32 PowerUnits : 4;
+        UINT32 Reserved1 : 4;
+        ///
+        /// [Bits 12:8] Package. Energy Status Units Energy related information
+        /// (in Joules) is based on the multiplier, 1/2^ESU; where ESU is an
+        /// unsigned integer represented by bits 12:8. Default value is 0EH (or 61
+        /// micro-joules).
+        ///
+        UINT32 EnergyStatusUnits : 5;
+        UINT32 Reserved2 : 3;
+        ///
+        /// [Bits 19:16] Package. Time Units See Section 14.9.1, "RAPL
+        /// Interfaces.".
+        ///
+        UINT32 TimeUnits : 4;
+        UINT32 Reserved3 : 12;
+        UINT32 Reserved4 : 32;
+    } Bits;
     ///
-    /// [Bits 12:8] Package. Energy Status Units Energy related information
-    /// (in Joules) is based on the multiplier, 1/2^ESU; where ESU is an
-    /// unsigned integer represented by bits 12:8. Default value is 0EH (or 61
-    /// micro-joules).
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    EnergyStatusUnits : 5;
-    UINT32    Reserved2         : 3;
+    UINT32 Uint32;
     ///
-    /// [Bits 19:16] Package. Time Units See Section 14.9.1, "RAPL
-    /// Interfaces.".
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    TimeUnits         : 4;
-    UINT32    Reserved3         : 12;
-    UINT32    Reserved4         : 32;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_RAPL_POWER_UNIT_REGISTER;
 
 /**
@@ -1573,7 +1608,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_PP0_ENERGY_STATUS is defined as MSR_PP0_ENERGY_STATUS in SDM.
 **/
-#define MSR_HASWELL_PP0_ENERGY_STATUS  0x00000639
+#define MSR_HASWELL_PP0_ENERGY_STATUS 0x00000639
 
 /**
   Package. PP1 RAPL Power Limit Control (R/W) See Section 14.9.4, "PP0/PP1
@@ -1592,7 +1627,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_PP1_POWER_LIMIT is defined as MSR_PP1_POWER_LIMIT in SDM.
 **/
-#define MSR_HASWELL_PP1_POWER_LIMIT  0x00000640
+#define MSR_HASWELL_PP1_POWER_LIMIT 0x00000640
 
 /**
   Package. PP1 Energy Status (R/O)  See Section 14.9.4, "PP0/PP1 RAPL
@@ -1610,7 +1645,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_PP1_ENERGY_STATUS is defined as MSR_PP1_ENERGY_STATUS in SDM.
 **/
-#define MSR_HASWELL_PP1_ENERGY_STATUS  0x00000641
+#define MSR_HASWELL_PP1_ENERGY_STATUS 0x00000641
 
 /**
   Package. PP1 Balance Policy (R/W) See Section 14.9.4, "PP0/PP1 RAPL
@@ -1629,7 +1664,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_PP1_POLICY is defined as MSR_PP1_POLICY in SDM.
 **/
-#define MSR_HASWELL_PP1_POLICY  0x00000642
+#define MSR_HASWELL_PP1_POLICY 0x00000642
 
 /**
   Package. Indicator of Frequency Clipping in Processor Cores (R/W) (frequency
@@ -1650,167 +1685,169 @@ typedef union {
   @endcode
   @note MSR_HASWELL_CORE_PERF_LIMIT_REASONS is defined as MSR_CORE_PERF_LIMIT_REASONS in SDM.
 **/
-#define MSR_HASWELL_CORE_PERF_LIMIT_REASONS  0x00000690
+#define MSR_HASWELL_CORE_PERF_LIMIT_REASONS 0x00000690
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_CORE_PERF_LIMIT_REASONS
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bit 0] PROCHOT Status (R0) When set, processor core frequency is
-    /// reduced below the operating system request due to assertion of
-    /// external PROCHOT.
+    /// Individual bit fields
     ///
-    UINT32    PROCHOT_Status                                   : 1;
+    struct
+    {
+        ///
+        /// [Bit 0] PROCHOT Status (R0) When set, processor core frequency is
+        /// reduced below the operating system request due to assertion of
+        /// external PROCHOT.
+        ///
+        UINT32 PROCHOT_Status : 1;
+        ///
+        /// [Bit 1] Thermal Status (R0) When set, frequency is reduced below the
+        /// operating system request due to a thermal event.
+        ///
+        UINT32 ThermalStatus : 1;
+        UINT32 Reserved1 : 2;
+        ///
+        /// [Bit 4] Graphics Driver Status (R0) When set, frequency is reduced
+        /// below the operating system request due to Processor Graphics driver
+        /// override.
+        ///
+        UINT32 GraphicsDriverStatus : 1;
+        ///
+        /// [Bit 5] Autonomous Utilization-Based Frequency Control Status (R0)
+        /// When set, frequency is reduced below the operating system request
+        /// because the processor has detected that utilization is low.
+        ///
+        UINT32 AutonomousUtilizationBasedFrequencyControlStatus : 1;
+        ///
+        /// [Bit 6] VR Therm Alert Status (R0) When set, frequency is reduced
+        /// below the operating system request due to a thermal alert from the
+        /// Voltage Regulator.
+        ///
+        UINT32 VRThermAlertStatus : 1;
+        UINT32 Reserved2 : 1;
+        ///
+        /// [Bit 8] Electrical Design Point Status (R0) When set, frequency is
+        /// reduced below the operating system request due to electrical design
+        /// point constraints (e.g. maximum electrical current consumption).
+        ///
+        UINT32 ElectricalDesignPointStatus : 1;
+        ///
+        /// [Bit 9] Core Power Limiting Status (R0) When set, frequency is reduced
+        /// below the operating system request due to domain-level power limiting.
+        ///
+        UINT32 PLStatus : 1;
+        ///
+        /// [Bit 10] Package-Level Power Limiting PL1 Status (R0) When set,
+        /// frequency is reduced below the operating system request due to
+        /// package-level power limiting PL1.
+        ///
+        UINT32 PL1Status : 1;
+        ///
+        /// [Bit 11] Package-Level PL2 Power Limiting Status (R0) When set,
+        /// frequency is reduced below the operating system request due to
+        /// package-level power limiting PL2.
+        ///
+        UINT32 PL2Status : 1;
+        ///
+        /// [Bit 12] Max Turbo Limit Status (R0) When set, frequency is reduced
+        /// below the operating system request due to multi-core turbo limits.
+        ///
+        UINT32 MaxTurboLimitStatus : 1;
+        ///
+        /// [Bit 13] Turbo Transition Attenuation Status (R0) When set, frequency
+        /// is reduced below the operating system request due to Turbo transition
+        /// attenuation. This prevents performance degradation due to frequent
+        /// operating ratio changes.
+        ///
+        UINT32 TurboTransitionAttenuationStatus : 1;
+        UINT32 Reserved3 : 2;
+        ///
+        /// [Bit 16] PROCHOT Log  When set, indicates that the PROCHOT Status bit
+        /// has asserted since the log bit was last cleared. This log bit will
+        /// remain set until cleared by software writing 0.
+        ///
+        UINT32 PROCHOT_Log : 1;
+        ///
+        /// [Bit 17] Thermal Log  When set, indicates that the Thermal Status bit
+        /// has asserted since the log bit was last cleared. This log bit will
+        /// remain set until cleared by software writing 0.
+        ///
+        UINT32 ThermalLog : 1;
+        UINT32 Reserved4 : 2;
+        ///
+        /// [Bit 20] Graphics Driver Log  When set, indicates that the Graphics
+        /// Driver Status bit has asserted since the log bit was last cleared.
+        /// This log bit will remain set until cleared by software writing 0.
+        ///
+        UINT32 GraphicsDriverLog : 1;
+        ///
+        /// [Bit 21] Autonomous Utilization-Based Frequency Control Log  When set,
+        /// indicates that the Autonomous Utilization-Based Frequency Control
+        /// Status bit has asserted since the log bit was last cleared. This log
+        /// bit will remain set until cleared by software writing 0.
+        ///
+        UINT32 AutonomousUtilizationBasedFrequencyControlLog : 1;
+        ///
+        /// [Bit 22] VR Therm Alert Log  When set, indicates that the VR Therm
+        /// Alert Status bit has asserted since the log bit was last cleared. This
+        /// log bit will remain set until cleared by software writing 0.
+        ///
+        UINT32 VRThermAlertLog : 1;
+        UINT32 Reserved5 : 1;
+        ///
+        /// [Bit 24] Electrical Design Point Log  When set, indicates that the EDP
+        /// Status bit has asserted since the log bit was last cleared. This log
+        /// bit will remain set until cleared by software writing 0.
+        ///
+        UINT32 ElectricalDesignPointLog : 1;
+        ///
+        /// [Bit 25] Core Power Limiting Log  When set, indicates that the Core
+        /// Power Limiting Status bit has asserted since the log bit was last
+        /// cleared. This log bit will remain set until cleared by software
+        /// writing 0.
+        ///
+        UINT32 PLLog : 1;
+        ///
+        /// [Bit 26] Package-Level PL1 Power Limiting Log  When set, indicates
+        /// that the Package Level PL1 Power Limiting Status bit has asserted
+        /// since the log bit was last cleared. This log bit will remain set until
+        /// cleared by software writing 0.
+        ///
+        UINT32 PL1Log : 1;
+        ///
+        /// [Bit 27] Package-Level PL2 Power Limiting Log When set, indicates that
+        /// the Package Level PL2 Power Limiting Status bit has asserted since the
+        /// log bit was last cleared. This log bit will remain set until cleared
+        /// by software writing 0.
+        ///
+        UINT32 PL2Log : 1;
+        ///
+        /// [Bit 28] Max Turbo Limit Log When set, indicates that the Max Turbo
+        /// Limit Status bit has asserted since the log bit was last cleared. This
+        /// log bit will remain set until cleared by software writing 0.
+        ///
+        UINT32 MaxTurboLimitLog : 1;
+        ///
+        /// [Bit 29] Turbo Transition Attenuation Log When set, indicates that the
+        /// Turbo Transition Attenuation Status bit has asserted since the log bit
+        /// was last cleared. This log bit will remain set until cleared by
+        /// software writing 0.
+        ///
+        UINT32 TurboTransitionAttenuationLog : 1;
+        UINT32 Reserved6 : 2;
+        UINT32 Reserved7 : 32;
+    } Bits;
     ///
-    /// [Bit 1] Thermal Status (R0) When set, frequency is reduced below the
-    /// operating system request due to a thermal event.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    ThermalStatus                                    : 1;
-    UINT32    Reserved1                                        : 2;
+    UINT32 Uint32;
     ///
-    /// [Bit 4] Graphics Driver Status (R0) When set, frequency is reduced
-    /// below the operating system request due to Processor Graphics driver
-    /// override.
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    GraphicsDriverStatus                             : 1;
-    ///
-    /// [Bit 5] Autonomous Utilization-Based Frequency Control Status (R0)
-    /// When set, frequency is reduced below the operating system request
-    /// because the processor has detected that utilization is low.
-    ///
-    UINT32    AutonomousUtilizationBasedFrequencyControlStatus : 1;
-    ///
-    /// [Bit 6] VR Therm Alert Status (R0) When set, frequency is reduced
-    /// below the operating system request due to a thermal alert from the
-    /// Voltage Regulator.
-    ///
-    UINT32    VRThermAlertStatus                               : 1;
-    UINT32    Reserved2                                        : 1;
-    ///
-    /// [Bit 8] Electrical Design Point Status (R0) When set, frequency is
-    /// reduced below the operating system request due to electrical design
-    /// point constraints (e.g. maximum electrical current consumption).
-    ///
-    UINT32    ElectricalDesignPointStatus                      : 1;
-    ///
-    /// [Bit 9] Core Power Limiting Status (R0) When set, frequency is reduced
-    /// below the operating system request due to domain-level power limiting.
-    ///
-    UINT32    PLStatus                                         : 1;
-    ///
-    /// [Bit 10] Package-Level Power Limiting PL1 Status (R0) When set,
-    /// frequency is reduced below the operating system request due to
-    /// package-level power limiting PL1.
-    ///
-    UINT32    PL1Status                                        : 1;
-    ///
-    /// [Bit 11] Package-Level PL2 Power Limiting Status (R0) When set,
-    /// frequency is reduced below the operating system request due to
-    /// package-level power limiting PL2.
-    ///
-    UINT32    PL2Status                                        : 1;
-    ///
-    /// [Bit 12] Max Turbo Limit Status (R0) When set, frequency is reduced
-    /// below the operating system request due to multi-core turbo limits.
-    ///
-    UINT32    MaxTurboLimitStatus                              : 1;
-    ///
-    /// [Bit 13] Turbo Transition Attenuation Status (R0) When set, frequency
-    /// is reduced below the operating system request due to Turbo transition
-    /// attenuation. This prevents performance degradation due to frequent
-    /// operating ratio changes.
-    ///
-    UINT32    TurboTransitionAttenuationStatus                 : 1;
-    UINT32    Reserved3                                        : 2;
-    ///
-    /// [Bit 16] PROCHOT Log  When set, indicates that the PROCHOT Status bit
-    /// has asserted since the log bit was last cleared. This log bit will
-    /// remain set until cleared by software writing 0.
-    ///
-    UINT32    PROCHOT_Log                                      : 1;
-    ///
-    /// [Bit 17] Thermal Log  When set, indicates that the Thermal Status bit
-    /// has asserted since the log bit was last cleared. This log bit will
-    /// remain set until cleared by software writing 0.
-    ///
-    UINT32    ThermalLog                                       : 1;
-    UINT32    Reserved4                                        : 2;
-    ///
-    /// [Bit 20] Graphics Driver Log  When set, indicates that the Graphics
-    /// Driver Status bit has asserted since the log bit was last cleared.
-    /// This log bit will remain set until cleared by software writing 0.
-    ///
-    UINT32    GraphicsDriverLog                                : 1;
-    ///
-    /// [Bit 21] Autonomous Utilization-Based Frequency Control Log  When set,
-    /// indicates that the Autonomous Utilization-Based Frequency Control
-    /// Status bit has asserted since the log bit was last cleared. This log
-    /// bit will remain set until cleared by software writing 0.
-    ///
-    UINT32    AutonomousUtilizationBasedFrequencyControlLog    : 1;
-    ///
-    /// [Bit 22] VR Therm Alert Log  When set, indicates that the VR Therm
-    /// Alert Status bit has asserted since the log bit was last cleared. This
-    /// log bit will remain set until cleared by software writing 0.
-    ///
-    UINT32    VRThermAlertLog                                  : 1;
-    UINT32    Reserved5                                        : 1;
-    ///
-    /// [Bit 24] Electrical Design Point Log  When set, indicates that the EDP
-    /// Status bit has asserted since the log bit was last cleared. This log
-    /// bit will remain set until cleared by software writing 0.
-    ///
-    UINT32    ElectricalDesignPointLog                         : 1;
-    ///
-    /// [Bit 25] Core Power Limiting Log  When set, indicates that the Core
-    /// Power Limiting Status bit has asserted since the log bit was last
-    /// cleared. This log bit will remain set until cleared by software
-    /// writing 0.
-    ///
-    UINT32    PLLog                                            : 1;
-    ///
-    /// [Bit 26] Package-Level PL1 Power Limiting Log  When set, indicates
-    /// that the Package Level PL1 Power Limiting Status bit has asserted
-    /// since the log bit was last cleared. This log bit will remain set until
-    /// cleared by software writing 0.
-    ///
-    UINT32    PL1Log                                           : 1;
-    ///
-    /// [Bit 27] Package-Level PL2 Power Limiting Log When set, indicates that
-    /// the Package Level PL2 Power Limiting Status bit has asserted since the
-    /// log bit was last cleared. This log bit will remain set until cleared
-    /// by software writing 0.
-    ///
-    UINT32    PL2Log                                           : 1;
-    ///
-    /// [Bit 28] Max Turbo Limit Log When set, indicates that the Max Turbo
-    /// Limit Status bit has asserted since the log bit was last cleared. This
-    /// log bit will remain set until cleared by software writing 0.
-    ///
-    UINT32    MaxTurboLimitLog                                 : 1;
-    ///
-    /// [Bit 29] Turbo Transition Attenuation Log When set, indicates that the
-    /// Turbo Transition Attenuation Status bit has asserted since the log bit
-    /// was last cleared. This log bit will remain set until cleared by
-    /// software writing 0.
-    ///
-    UINT32    TurboTransitionAttenuationLog                    : 1;
-    UINT32    Reserved6                                        : 2;
-    UINT32    Reserved7                                        : 32;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_CORE_PERF_LIMIT_REASONS_REGISTER;
 
 /**
@@ -1832,156 +1869,158 @@ typedef union {
   @endcode
   @note MSR_HASWELL_GRAPHICS_PERF_LIMIT_REASONS is defined as MSR_GRAPHICS_PERF_LIMIT_REASONS in SDM.
 **/
-#define MSR_HASWELL_GRAPHICS_PERF_LIMIT_REASONS  0x000006B0
+#define MSR_HASWELL_GRAPHICS_PERF_LIMIT_REASONS 0x000006B0
 
 /**
   MSR information returned for MSR index
   #MSR_HASWELL_GRAPHICS_PERF_LIMIT_REASONS
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bit 0] PROCHOT Status (R0) When set, frequency is reduced below the
-    /// operating system request due to assertion of external PROCHOT.
+    /// Individual bit fields
     ///
-    UINT32    PROCHOT_Status                                   : 1;
+    struct
+    {
+        ///
+        /// [Bit 0] PROCHOT Status (R0) When set, frequency is reduced below the
+        /// operating system request due to assertion of external PROCHOT.
+        ///
+        UINT32 PROCHOT_Status : 1;
+        ///
+        /// [Bit 1] Thermal Status (R0) When set, frequency is reduced below the
+        /// operating system request due to a thermal event.
+        ///
+        UINT32 ThermalStatus : 1;
+        UINT32 Reserved1 : 2;
+        ///
+        /// [Bit 4] Graphics Driver Status (R0) When set, frequency is reduced
+        /// below the operating system request due to Processor Graphics driver
+        /// override.
+        ///
+        UINT32 GraphicsDriverStatus : 1;
+        ///
+        /// [Bit 5] Autonomous Utilization-Based Frequency Control Status (R0)
+        /// When set, frequency is reduced below the operating system request
+        /// because the processor has detected that utilization is low.
+        ///
+        UINT32 AutonomousUtilizationBasedFrequencyControlStatus : 1;
+        ///
+        /// [Bit 6] VR Therm Alert Status (R0) When set, frequency is reduced
+        /// below the operating system request due to a thermal alert from the
+        /// Voltage Regulator.
+        ///
+        UINT32 VRThermAlertStatus : 1;
+        UINT32 Reserved2 : 1;
+        ///
+        /// [Bit 8] Electrical Design Point Status (R0) When set, frequency is
+        /// reduced below the operating system request due to electrical design
+        /// point constraints (e.g. maximum electrical current consumption).
+        ///
+        UINT32 ElectricalDesignPointStatus : 1;
+        ///
+        /// [Bit 9] Graphics Power Limiting Status (R0) When set, frequency is
+        /// reduced below the operating system request due to domain-level power
+        /// limiting.
+        ///
+        UINT32 GraphicsPowerLimitingStatus : 1;
+        ///
+        /// [Bit 10] Package-Level Power Limiting PL1 Status (R0) When set,
+        /// frequency is reduced below the operating system request due to
+        /// package-level power limiting PL1.
+        ///
+        UINT32 PL1STatus : 1;
+        ///
+        /// [Bit 11] Package-Level PL2 Power Limiting Status (R0) When set,
+        /// frequency is reduced below the operating system request due to
+        /// package-level power limiting PL2.
+        ///
+        UINT32 PL2Status : 1;
+        UINT32 Reserved3 : 4;
+        ///
+        /// [Bit 16] PROCHOT Log  When set, indicates that the PROCHOT Status bit
+        /// has asserted since the log bit was last cleared. This log bit will
+        /// remain set until cleared by software writing 0.
+        ///
+        UINT32 PROCHOT_Log : 1;
+        ///
+        /// [Bit 17] Thermal Log  When set, indicates that the Thermal Status bit
+        /// has asserted since the log bit was last cleared. This log bit will
+        /// remain set until cleared by software writing 0.
+        ///
+        UINT32 ThermalLog : 1;
+        UINT32 Reserved4 : 2;
+        ///
+        /// [Bit 20] Graphics Driver Log  When set, indicates that the Graphics
+        /// Driver Status bit has asserted since the log bit was last cleared.
+        /// This log bit will remain set until cleared by software writing 0.
+        ///
+        UINT32 GraphicsDriverLog : 1;
+        ///
+        /// [Bit 21] Autonomous Utilization-Based Frequency Control Log  When set,
+        /// indicates that the Autonomous Utilization-Based Frequency Control
+        /// Status bit has asserted since the log bit was last cleared. This log
+        /// bit will remain set until cleared by software writing 0.
+        ///
+        UINT32 AutonomousUtilizationBasedFrequencyControlLog : 1;
+        ///
+        /// [Bit 22] VR Therm Alert Log  When set, indicates that the VR Therm
+        /// Alert Status bit has asserted since the log bit was last cleared. This
+        /// log bit will remain set until cleared by software writing 0.
+        ///
+        UINT32 VRThermAlertLog : 1;
+        UINT32 Reserved5 : 1;
+        ///
+        /// [Bit 24] Electrical Design Point Log  When set, indicates that the EDP
+        /// Status bit has asserted since the log bit was last cleared. This log
+        /// bit will remain set until cleared by software writing 0.
+        ///
+        UINT32 ElectricalDesignPointLog : 1;
+        ///
+        /// [Bit 25] Core Power Limiting Log  When set, indicates that the Core
+        /// Power Limiting Status bit has asserted since the log bit was last
+        /// cleared. This log bit will remain set until cleared by software
+        /// writing 0.
+        ///
+        UINT32 CorePowerLimitingLog : 1;
+        ///
+        /// [Bit 26] Package-Level PL1 Power Limiting Log  When set, indicates
+        /// that the Package Level PL1 Power Limiting Status bit has asserted
+        /// since the log bit was last cleared. This log bit will remain set until
+        /// cleared by software writing 0.
+        ///
+        UINT32 PL1Log : 1;
+        ///
+        /// [Bit 27] Package-Level PL2 Power Limiting Log When set, indicates that
+        /// the Package Level PL2 Power Limiting Status bit has asserted since the
+        /// log bit was last cleared. This log bit will remain set until cleared
+        /// by software writing 0.
+        ///
+        UINT32 PL2Log : 1;
+        ///
+        /// [Bit 28] Max Turbo Limit Log When set, indicates that the Max Turbo
+        /// Limit Status bit has asserted since the log bit was last cleared. This
+        /// log bit will remain set until cleared by software writing 0.
+        ///
+        UINT32 MaxTurboLimitLog : 1;
+        ///
+        /// [Bit 29] Turbo Transition Attenuation Log When set, indicates that the
+        /// Turbo Transition Attenuation Status bit has asserted since the log bit
+        /// was last cleared. This log bit will remain set until cleared by
+        /// software writing 0.
+        ///
+        UINT32 TurboTransitionAttenuationLog : 1;
+        UINT32 Reserved6 : 2;
+        UINT32 Reserved7 : 32;
+    } Bits;
     ///
-    /// [Bit 1] Thermal Status (R0) When set, frequency is reduced below the
-    /// operating system request due to a thermal event.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    ThermalStatus                                    : 1;
-    UINT32    Reserved1                                        : 2;
+    UINT32 Uint32;
     ///
-    /// [Bit 4] Graphics Driver Status (R0) When set, frequency is reduced
-    /// below the operating system request due to Processor Graphics driver
-    /// override.
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    GraphicsDriverStatus                             : 1;
-    ///
-    /// [Bit 5] Autonomous Utilization-Based Frequency Control Status (R0)
-    /// When set, frequency is reduced below the operating system request
-    /// because the processor has detected that utilization is low.
-    ///
-    UINT32    AutonomousUtilizationBasedFrequencyControlStatus : 1;
-    ///
-    /// [Bit 6] VR Therm Alert Status (R0) When set, frequency is reduced
-    /// below the operating system request due to a thermal alert from the
-    /// Voltage Regulator.
-    ///
-    UINT32    VRThermAlertStatus                               : 1;
-    UINT32    Reserved2                                        : 1;
-    ///
-    /// [Bit 8] Electrical Design Point Status (R0) When set, frequency is
-    /// reduced below the operating system request due to electrical design
-    /// point constraints (e.g. maximum electrical current consumption).
-    ///
-    UINT32    ElectricalDesignPointStatus                      : 1;
-    ///
-    /// [Bit 9] Graphics Power Limiting Status (R0) When set, frequency is
-    /// reduced below the operating system request due to domain-level power
-    /// limiting.
-    ///
-    UINT32    GraphicsPowerLimitingStatus                      : 1;
-    ///
-    /// [Bit 10] Package-Level Power Limiting PL1 Status (R0) When set,
-    /// frequency is reduced below the operating system request due to
-    /// package-level power limiting PL1.
-    ///
-    UINT32    PL1STatus                                        : 1;
-    ///
-    /// [Bit 11] Package-Level PL2 Power Limiting Status (R0) When set,
-    /// frequency is reduced below the operating system request due to
-    /// package-level power limiting PL2.
-    ///
-    UINT32    PL2Status                                        : 1;
-    UINT32    Reserved3                                        : 4;
-    ///
-    /// [Bit 16] PROCHOT Log  When set, indicates that the PROCHOT Status bit
-    /// has asserted since the log bit was last cleared. This log bit will
-    /// remain set until cleared by software writing 0.
-    ///
-    UINT32    PROCHOT_Log                                      : 1;
-    ///
-    /// [Bit 17] Thermal Log  When set, indicates that the Thermal Status bit
-    /// has asserted since the log bit was last cleared. This log bit will
-    /// remain set until cleared by software writing 0.
-    ///
-    UINT32    ThermalLog                                       : 1;
-    UINT32    Reserved4                                        : 2;
-    ///
-    /// [Bit 20] Graphics Driver Log  When set, indicates that the Graphics
-    /// Driver Status bit has asserted since the log bit was last cleared.
-    /// This log bit will remain set until cleared by software writing 0.
-    ///
-    UINT32    GraphicsDriverLog                                : 1;
-    ///
-    /// [Bit 21] Autonomous Utilization-Based Frequency Control Log  When set,
-    /// indicates that the Autonomous Utilization-Based Frequency Control
-    /// Status bit has asserted since the log bit was last cleared. This log
-    /// bit will remain set until cleared by software writing 0.
-    ///
-    UINT32    AutonomousUtilizationBasedFrequencyControlLog    : 1;
-    ///
-    /// [Bit 22] VR Therm Alert Log  When set, indicates that the VR Therm
-    /// Alert Status bit has asserted since the log bit was last cleared. This
-    /// log bit will remain set until cleared by software writing 0.
-    ///
-    UINT32    VRThermAlertLog                                  : 1;
-    UINT32    Reserved5                                        : 1;
-    ///
-    /// [Bit 24] Electrical Design Point Log  When set, indicates that the EDP
-    /// Status bit has asserted since the log bit was last cleared. This log
-    /// bit will remain set until cleared by software writing 0.
-    ///
-    UINT32    ElectricalDesignPointLog                         : 1;
-    ///
-    /// [Bit 25] Core Power Limiting Log  When set, indicates that the Core
-    /// Power Limiting Status bit has asserted since the log bit was last
-    /// cleared. This log bit will remain set until cleared by software
-    /// writing 0.
-    ///
-    UINT32    CorePowerLimitingLog                             : 1;
-    ///
-    /// [Bit 26] Package-Level PL1 Power Limiting Log  When set, indicates
-    /// that the Package Level PL1 Power Limiting Status bit has asserted
-    /// since the log bit was last cleared. This log bit will remain set until
-    /// cleared by software writing 0.
-    ///
-    UINT32    PL1Log                                           : 1;
-    ///
-    /// [Bit 27] Package-Level PL2 Power Limiting Log When set, indicates that
-    /// the Package Level PL2 Power Limiting Status bit has asserted since the
-    /// log bit was last cleared. This log bit will remain set until cleared
-    /// by software writing 0.
-    ///
-    UINT32    PL2Log                                           : 1;
-    ///
-    /// [Bit 28] Max Turbo Limit Log When set, indicates that the Max Turbo
-    /// Limit Status bit has asserted since the log bit was last cleared. This
-    /// log bit will remain set until cleared by software writing 0.
-    ///
-    UINT32    MaxTurboLimitLog                                 : 1;
-    ///
-    /// [Bit 29] Turbo Transition Attenuation Log When set, indicates that the
-    /// Turbo Transition Attenuation Status bit has asserted since the log bit
-    /// was last cleared. This log bit will remain set until cleared by
-    /// software writing 0.
-    ///
-    UINT32    TurboTransitionAttenuationLog                    : 1;
-    UINT32    Reserved6                                        : 2;
-    UINT32    Reserved7                                        : 32;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_GRAPHICS_PERF_LIMIT_REASONS_REGISTER;
 
 /**
@@ -2003,138 +2042,140 @@ typedef union {
   @endcode
   @note MSR_HASWELL_RING_PERF_LIMIT_REASONS is defined as MSR_RING_PERF_LIMIT_REASONS in SDM.
 **/
-#define MSR_HASWELL_RING_PERF_LIMIT_REASONS  0x000006B1
+#define MSR_HASWELL_RING_PERF_LIMIT_REASONS 0x000006B1
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_RING_PERF_LIMIT_REASONS
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bit 0] PROCHOT Status (R0) When set, frequency is reduced below the
-    /// operating system request due to assertion of external PROCHOT.
+    /// Individual bit fields
     ///
-    UINT32    PROCHOT_Status                                : 1;
+    struct
+    {
+        ///
+        /// [Bit 0] PROCHOT Status (R0) When set, frequency is reduced below the
+        /// operating system request due to assertion of external PROCHOT.
+        ///
+        UINT32 PROCHOT_Status : 1;
+        ///
+        /// [Bit 1] Thermal Status (R0) When set, frequency is reduced below the
+        /// operating system request due to a thermal event.
+        ///
+        UINT32 ThermalStatus : 1;
+        UINT32 Reserved1 : 4;
+        ///
+        /// [Bit 6] VR Therm Alert Status (R0) When set, frequency is reduced
+        /// below the operating system request due to a thermal alert from the
+        /// Voltage Regulator.
+        ///
+        UINT32 VRThermAlertStatus : 1;
+        UINT32 Reserved2 : 1;
+        ///
+        /// [Bit 8] Electrical Design Point Status (R0) When set, frequency is
+        /// reduced below the operating system request due to electrical design
+        /// point constraints (e.g. maximum electrical current consumption).
+        ///
+        UINT32 ElectricalDesignPointStatus : 1;
+        UINT32 Reserved3 : 1;
+        ///
+        /// [Bit 10] Package-Level Power Limiting PL1 Status (R0) When set,
+        /// frequency is reduced below the operating system request due to
+        /// package-level power limiting PL1.
+        ///
+        UINT32 PL1STatus : 1;
+        ///
+        /// [Bit 11] Package-Level PL2 Power Limiting Status (R0) When set,
+        /// frequency is reduced below the operating system request due to
+        /// package-level power limiting PL2.
+        ///
+        UINT32 PL2Status : 1;
+        UINT32 Reserved4 : 4;
+        ///
+        /// [Bit 16] PROCHOT Log  When set, indicates that the PROCHOT Status bit
+        /// has asserted since the log bit was last cleared. This log bit will
+        /// remain set until cleared by software writing 0.
+        ///
+        UINT32 PROCHOT_Log : 1;
+        ///
+        /// [Bit 17] Thermal Log  When set, indicates that the Thermal Status bit
+        /// has asserted since the log bit was last cleared. This log bit will
+        /// remain set until cleared by software writing 0.
+        ///
+        UINT32 ThermalLog : 1;
+        UINT32 Reserved5 : 2;
+        ///
+        /// [Bit 20] Graphics Driver Log  When set, indicates that the Graphics
+        /// Driver Status bit has asserted since the log bit was last cleared.
+        /// This log bit will remain set until cleared by software writing 0.
+        ///
+        UINT32 GraphicsDriverLog : 1;
+        ///
+        /// [Bit 21] Autonomous Utilization-Based Frequency Control Log  When set,
+        /// indicates that the Autonomous Utilization-Based Frequency Control
+        /// Status bit has asserted since the log bit was last cleared. This log
+        /// bit will remain set until cleared by software writing 0.
+        ///
+        UINT32 AutonomousUtilizationBasedFrequencyControlLog : 1;
+        ///
+        /// [Bit 22] VR Therm Alert Log  When set, indicates that the VR Therm
+        /// Alert Status bit has asserted since the log bit was last cleared. This
+        /// log bit will remain set until cleared by software writing 0.
+        ///
+        UINT32 VRThermAlertLog : 1;
+        UINT32 Reserved6 : 1;
+        ///
+        /// [Bit 24] Electrical Design Point Log  When set, indicates that the EDP
+        /// Status bit has asserted since the log bit was last cleared. This log
+        /// bit will remain set until cleared by software writing 0.
+        ///
+        UINT32 ElectricalDesignPointLog : 1;
+        ///
+        /// [Bit 25] Core Power Limiting Log  When set, indicates that the Core
+        /// Power Limiting Status bit has asserted since the log bit was last
+        /// cleared. This log bit will remain set until cleared by software
+        /// writing 0.
+        ///
+        UINT32 CorePowerLimitingLog : 1;
+        ///
+        /// [Bit 26] Package-Level PL1 Power Limiting Log  When set, indicates
+        /// that the Package Level PL1 Power Limiting Status bit has asserted
+        /// since the log bit was last cleared. This log bit will remain set until
+        /// cleared by software writing 0.
+        ///
+        UINT32 PL1Log : 1;
+        ///
+        /// [Bit 27] Package-Level PL2 Power Limiting Log When set, indicates that
+        /// the Package Level PL2 Power Limiting Status bit has asserted since the
+        /// log bit was last cleared. This log bit will remain set until cleared
+        /// by software writing 0.
+        ///
+        UINT32 PL2Log : 1;
+        ///
+        /// [Bit 28] Max Turbo Limit Log When set, indicates that the Max Turbo
+        /// Limit Status bit has asserted since the log bit was last cleared. This
+        /// log bit will remain set until cleared by software writing 0.
+        ///
+        UINT32 MaxTurboLimitLog : 1;
+        ///
+        /// [Bit 29] Turbo Transition Attenuation Log When set, indicates that the
+        /// Turbo Transition Attenuation Status bit has asserted since the log bit
+        /// was last cleared. This log bit will remain set until cleared by
+        /// software writing 0.
+        ///
+        UINT32 TurboTransitionAttenuationLog : 1;
+        UINT32 Reserved7 : 2;
+        UINT32 Reserved8 : 32;
+    } Bits;
     ///
-    /// [Bit 1] Thermal Status (R0) When set, frequency is reduced below the
-    /// operating system request due to a thermal event.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    ThermalStatus                                 : 1;
-    UINT32    Reserved1                                     : 4;
+    UINT32 Uint32;
     ///
-    /// [Bit 6] VR Therm Alert Status (R0) When set, frequency is reduced
-    /// below the operating system request due to a thermal alert from the
-    /// Voltage Regulator.
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    VRThermAlertStatus                            : 1;
-    UINT32    Reserved2                                     : 1;
-    ///
-    /// [Bit 8] Electrical Design Point Status (R0) When set, frequency is
-    /// reduced below the operating system request due to electrical design
-    /// point constraints (e.g. maximum electrical current consumption).
-    ///
-    UINT32    ElectricalDesignPointStatus                   : 1;
-    UINT32    Reserved3                                     : 1;
-    ///
-    /// [Bit 10] Package-Level Power Limiting PL1 Status (R0) When set,
-    /// frequency is reduced below the operating system request due to
-    /// package-level power limiting PL1.
-    ///
-    UINT32    PL1STatus                                     : 1;
-    ///
-    /// [Bit 11] Package-Level PL2 Power Limiting Status (R0) When set,
-    /// frequency is reduced below the operating system request due to
-    /// package-level power limiting PL2.
-    ///
-    UINT32    PL2Status                                     : 1;
-    UINT32    Reserved4                                     : 4;
-    ///
-    /// [Bit 16] PROCHOT Log  When set, indicates that the PROCHOT Status bit
-    /// has asserted since the log bit was last cleared. This log bit will
-    /// remain set until cleared by software writing 0.
-    ///
-    UINT32    PROCHOT_Log                                   : 1;
-    ///
-    /// [Bit 17] Thermal Log  When set, indicates that the Thermal Status bit
-    /// has asserted since the log bit was last cleared. This log bit will
-    /// remain set until cleared by software writing 0.
-    ///
-    UINT32    ThermalLog                                    : 1;
-    UINT32    Reserved5                                     : 2;
-    ///
-    /// [Bit 20] Graphics Driver Log  When set, indicates that the Graphics
-    /// Driver Status bit has asserted since the log bit was last cleared.
-    /// This log bit will remain set until cleared by software writing 0.
-    ///
-    UINT32    GraphicsDriverLog                             : 1;
-    ///
-    /// [Bit 21] Autonomous Utilization-Based Frequency Control Log  When set,
-    /// indicates that the Autonomous Utilization-Based Frequency Control
-    /// Status bit has asserted since the log bit was last cleared. This log
-    /// bit will remain set until cleared by software writing 0.
-    ///
-    UINT32    AutonomousUtilizationBasedFrequencyControlLog : 1;
-    ///
-    /// [Bit 22] VR Therm Alert Log  When set, indicates that the VR Therm
-    /// Alert Status bit has asserted since the log bit was last cleared. This
-    /// log bit will remain set until cleared by software writing 0.
-    ///
-    UINT32    VRThermAlertLog                               : 1;
-    UINT32    Reserved6                                     : 1;
-    ///
-    /// [Bit 24] Electrical Design Point Log  When set, indicates that the EDP
-    /// Status bit has asserted since the log bit was last cleared. This log
-    /// bit will remain set until cleared by software writing 0.
-    ///
-    UINT32    ElectricalDesignPointLog                      : 1;
-    ///
-    /// [Bit 25] Core Power Limiting Log  When set, indicates that the Core
-    /// Power Limiting Status bit has asserted since the log bit was last
-    /// cleared. This log bit will remain set until cleared by software
-    /// writing 0.
-    ///
-    UINT32    CorePowerLimitingLog                          : 1;
-    ///
-    /// [Bit 26] Package-Level PL1 Power Limiting Log  When set, indicates
-    /// that the Package Level PL1 Power Limiting Status bit has asserted
-    /// since the log bit was last cleared. This log bit will remain set until
-    /// cleared by software writing 0.
-    ///
-    UINT32    PL1Log                                        : 1;
-    ///
-    /// [Bit 27] Package-Level PL2 Power Limiting Log When set, indicates that
-    /// the Package Level PL2 Power Limiting Status bit has asserted since the
-    /// log bit was last cleared. This log bit will remain set until cleared
-    /// by software writing 0.
-    ///
-    UINT32    PL2Log                                        : 1;
-    ///
-    /// [Bit 28] Max Turbo Limit Log When set, indicates that the Max Turbo
-    /// Limit Status bit has asserted since the log bit was last cleared. This
-    /// log bit will remain set until cleared by software writing 0.
-    ///
-    UINT32    MaxTurboLimitLog                              : 1;
-    ///
-    /// [Bit 29] Turbo Transition Attenuation Log When set, indicates that the
-    /// Turbo Transition Attenuation Status bit has asserted since the log bit
-    /// was last cleared. This log bit will remain set until cleared by
-    /// software writing 0.
-    ///
-    UINT32    TurboTransitionAttenuationLog                 : 1;
-    UINT32    Reserved7                                     : 2;
-    UINT32    Reserved8                                     : 32;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_RING_PERF_LIMIT_REASONS_REGISTER;
 
 /**
@@ -2153,7 +2194,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_CBO_0_PERFEVTSEL0 is defined as MSR_UNC_CBO_0_PERFEVTSEL0 in SDM.
 **/
-#define MSR_HASWELL_UNC_CBO_0_PERFEVTSEL0  0x00000700
+#define MSR_HASWELL_UNC_CBO_0_PERFEVTSEL0 0x00000700
 
 /**
   Package. Uncore C-Box 0, counter 1 event select MSR.
@@ -2171,7 +2212,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_CBO_0_PERFEVTSEL1 is defined as MSR_UNC_CBO_0_PERFEVTSEL1 in SDM.
 **/
-#define MSR_HASWELL_UNC_CBO_0_PERFEVTSEL1  0x00000701
+#define MSR_HASWELL_UNC_CBO_0_PERFEVTSEL1 0x00000701
 
 /**
   Package. Uncore C-Box 0, performance counter 0.
@@ -2189,7 +2230,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_CBO_0_PERFCTR0 is defined as MSR_UNC_CBO_0_PERFCTR0 in SDM.
 **/
-#define MSR_HASWELL_UNC_CBO_0_PERFCTR0  0x00000706
+#define MSR_HASWELL_UNC_CBO_0_PERFCTR0 0x00000706
 
 /**
   Package. Uncore C-Box 0, performance counter 1.
@@ -2207,7 +2248,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_CBO_0_PERFCTR1 is defined as MSR_UNC_CBO_0_PERFCTR1 in SDM.
 **/
-#define MSR_HASWELL_UNC_CBO_0_PERFCTR1  0x00000707
+#define MSR_HASWELL_UNC_CBO_0_PERFCTR1 0x00000707
 
 /**
   Package. Uncore C-Box 1, counter 0 event select MSR.
@@ -2225,7 +2266,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_CBO_1_PERFEVTSEL0 is defined as MSR_UNC_CBO_1_PERFEVTSEL0 in SDM.
 **/
-#define MSR_HASWELL_UNC_CBO_1_PERFEVTSEL0  0x00000710
+#define MSR_HASWELL_UNC_CBO_1_PERFEVTSEL0 0x00000710
 
 /**
   Package. Uncore C-Box 1, counter 1 event select MSR.
@@ -2243,7 +2284,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_CBO_1_PERFEVTSEL1 is defined as MSR_UNC_CBO_1_PERFEVTSEL1 in SDM.
 **/
-#define MSR_HASWELL_UNC_CBO_1_PERFEVTSEL1  0x00000711
+#define MSR_HASWELL_UNC_CBO_1_PERFEVTSEL1 0x00000711
 
 /**
   Package. Uncore C-Box 1, performance counter 0.
@@ -2261,7 +2302,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_CBO_1_PERFCTR0 is defined as MSR_UNC_CBO_1_PERFCTR0 in SDM.
 **/
-#define MSR_HASWELL_UNC_CBO_1_PERFCTR0  0x00000716
+#define MSR_HASWELL_UNC_CBO_1_PERFCTR0 0x00000716
 
 /**
   Package. Uncore C-Box 1, performance counter 1.
@@ -2279,7 +2320,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_CBO_1_PERFCTR1 is defined as MSR_UNC_CBO_1_PERFCTR1 in SDM.
 **/
-#define MSR_HASWELL_UNC_CBO_1_PERFCTR1  0x00000717
+#define MSR_HASWELL_UNC_CBO_1_PERFCTR1 0x00000717
 
 /**
   Package. Uncore C-Box 2, counter 0 event select MSR.
@@ -2297,7 +2338,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_CBO_2_PERFEVTSEL0 is defined as MSR_UNC_CBO_2_PERFEVTSEL0 in SDM.
 **/
-#define MSR_HASWELL_UNC_CBO_2_PERFEVTSEL0  0x00000720
+#define MSR_HASWELL_UNC_CBO_2_PERFEVTSEL0 0x00000720
 
 /**
   Package. Uncore C-Box 2, counter 1 event select MSR.
@@ -2315,7 +2356,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_CBO_2_PERFEVTSEL1 is defined as MSR_UNC_CBO_2_PERFEVTSEL1 in SDM.
 **/
-#define MSR_HASWELL_UNC_CBO_2_PERFEVTSEL1  0x00000721
+#define MSR_HASWELL_UNC_CBO_2_PERFEVTSEL1 0x00000721
 
 /**
   Package. Uncore C-Box 2, performance counter 0.
@@ -2333,7 +2374,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_CBO_2_PERFCTR0 is defined as MSR_UNC_CBO_2_PERFCTR0 in SDM.
 **/
-#define MSR_HASWELL_UNC_CBO_2_PERFCTR0  0x00000726
+#define MSR_HASWELL_UNC_CBO_2_PERFCTR0 0x00000726
 
 /**
   Package. Uncore C-Box 2, performance counter 1.
@@ -2351,7 +2392,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_CBO_2_PERFCTR1 is defined as MSR_UNC_CBO_2_PERFCTR1 in SDM.
 **/
-#define MSR_HASWELL_UNC_CBO_2_PERFCTR1  0x00000727
+#define MSR_HASWELL_UNC_CBO_2_PERFCTR1 0x00000727
 
 /**
   Package. Uncore C-Box 3, counter 0 event select MSR.
@@ -2369,7 +2410,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_CBO_3_PERFEVTSEL0 is defined as MSR_UNC_CBO_3_PERFEVTSEL0 in SDM.
 **/
-#define MSR_HASWELL_UNC_CBO_3_PERFEVTSEL0  0x00000730
+#define MSR_HASWELL_UNC_CBO_3_PERFEVTSEL0 0x00000730
 
 /**
   Package. Uncore C-Box 3, counter 1 event select MSR.
@@ -2387,7 +2428,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_CBO_3_PERFEVTSEL1 is defined as MSR_UNC_CBO_3_PERFEVTSEL1 in SDM.
 **/
-#define MSR_HASWELL_UNC_CBO_3_PERFEVTSEL1  0x00000731
+#define MSR_HASWELL_UNC_CBO_3_PERFEVTSEL1 0x00000731
 
 /**
   Package. Uncore C-Box 3, performance counter 0.
@@ -2405,7 +2446,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_CBO_3_PERFCTR0 is defined as MSR_UNC_CBO_3_PERFCTR0 in SDM.
 **/
-#define MSR_HASWELL_UNC_CBO_3_PERFCTR0  0x00000736
+#define MSR_HASWELL_UNC_CBO_3_PERFCTR0 0x00000736
 
 /**
   Package. Uncore C-Box 3, performance counter 1.
@@ -2423,7 +2464,7 @@ typedef union {
   @endcode
   @note MSR_HASWELL_UNC_CBO_3_PERFCTR1 is defined as MSR_UNC_CBO_3_PERFCTR1 in SDM.
 **/
-#define MSR_HASWELL_UNC_CBO_3_PERFCTR1  0x00000737
+#define MSR_HASWELL_UNC_CBO_3_PERFCTR1 0x00000737
 
 /**
   Package. Note: C-state values are processor specific C-state code names,
@@ -2444,34 +2485,36 @@ typedef union {
   @endcode
   @note MSR_HASWELL_PKG_C8_RESIDENCY is defined as MSR_PKG_C8_RESIDENCY in SDM.
 **/
-#define MSR_HASWELL_PKG_C8_RESIDENCY  0x00000630
+#define MSR_HASWELL_PKG_C8_RESIDENCY 0x00000630
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_PKG_C8_RESIDENCY
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 31:0] Package C8 Residency Counter. (R/O) Value since last reset
-    /// that this package is in processor-specific C8 states. Count at the
-    /// same frequency as the TSC.
+    /// Individual bit fields
     ///
-    UINT32    C8ResidencyCounter   : 32;
+    struct
+    {
+        ///
+        /// [Bits 31:0] Package C8 Residency Counter. (R/O) Value since last reset
+        /// that this package is in processor-specific C8 states. Count at the
+        /// same frequency as the TSC.
+        ///
+        UINT32 C8ResidencyCounter : 32;
+        ///
+        /// [Bits 59:32] Package C8 Residency Counter. (R/O) Value since last
+        /// reset that this package is in processor-specific C8 states. Count at
+        /// the same frequency as the TSC.
+        ///
+        UINT32 C8ResidencyCounterHi : 28;
+        UINT32 Reserved : 4;
+    } Bits;
     ///
-    /// [Bits 59:32] Package C8 Residency Counter. (R/O) Value since last
-    /// reset that this package is in processor-specific C8 states. Count at
-    /// the same frequency as the TSC.
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    C8ResidencyCounterHi : 28;
-    UINT32    Reserved             : 4;
-  } Bits;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_PKG_C8_RESIDENCY_REGISTER;
 
 /**
@@ -2493,34 +2536,36 @@ typedef union {
   @endcode
   @note MSR_HASWELL_PKG_C9_RESIDENCY is defined as MSR_PKG_C9_RESIDENCY in SDM.
 **/
-#define MSR_HASWELL_PKG_C9_RESIDENCY  0x00000631
+#define MSR_HASWELL_PKG_C9_RESIDENCY 0x00000631
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_PKG_C9_RESIDENCY
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 31:0] Package C9 Residency Counter. (R/O) Value since last reset
-    /// that this package is in processor-specific C9 states. Count at the
-    /// same frequency as the TSC.
+    /// Individual bit fields
     ///
-    UINT32    C9ResidencyCounter   : 32;
+    struct
+    {
+        ///
+        /// [Bits 31:0] Package C9 Residency Counter. (R/O) Value since last reset
+        /// that this package is in processor-specific C9 states. Count at the
+        /// same frequency as the TSC.
+        ///
+        UINT32 C9ResidencyCounter : 32;
+        ///
+        /// [Bits 59:32] Package C9 Residency Counter. (R/O) Value since last
+        /// reset that this package is in processor-specific C9 states. Count at
+        /// the same frequency as the TSC.
+        ///
+        UINT32 C9ResidencyCounterHi : 28;
+        UINT32 Reserved : 4;
+    } Bits;
     ///
-    /// [Bits 59:32] Package C9 Residency Counter. (R/O) Value since last
-    /// reset that this package is in processor-specific C9 states. Count at
-    /// the same frequency as the TSC.
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    C9ResidencyCounterHi : 28;
-    UINT32    Reserved             : 4;
-  } Bits;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_PKG_C9_RESIDENCY_REGISTER;
 
 /**
@@ -2542,32 +2587,34 @@ typedef union {
   @endcode
   @note MSR_HASWELL_PKG_C10_RESIDENCY is defined as MSR_PKG_C10_RESIDENCY in SDM.
 **/
-#define MSR_HASWELL_PKG_C10_RESIDENCY  0x00000632
+#define MSR_HASWELL_PKG_C10_RESIDENCY 0x00000632
 
 /**
   MSR information returned for MSR index #MSR_HASWELL_PKG_C10_RESIDENCY
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 31:0] Package C10 Residency Counter. (R/O) Value since last
-    /// reset that this package is in processor-specific C10 states. Count at
-    /// the same frequency as the TSC.
+    /// Individual bit fields
     ///
-    UINT32    C10ResidencyCounter   : 32;
+    struct
+    {
+        ///
+        /// [Bits 31:0] Package C10 Residency Counter. (R/O) Value since last
+        /// reset that this package is in processor-specific C10 states. Count at
+        /// the same frequency as the TSC.
+        ///
+        UINT32 C10ResidencyCounter : 32;
+        ///
+        /// [Bits 59:32] Package C10 Residency Counter. (R/O) Value since last
+        /// reset that this package is in processor-specific C10 states. Count at
+        /// the same frequency as the TSC.
+        ///
+        UINT32 C10ResidencyCounterHi : 28;
+        UINT32 Reserved : 4;
+    } Bits;
     ///
-    /// [Bits 59:32] Package C10 Residency Counter. (R/O) Value since last
-    /// reset that this package is in processor-specific C10 states. Count at
-    /// the same frequency as the TSC.
+    /// All bit fields as a 64-bit value
     ///
-    UINT32    C10ResidencyCounterHi : 28;
-    UINT32    Reserved              : 4;
-  } Bits;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64    Uint64;
+    UINT64 Uint64;
 } MSR_HASWELL_PKG_C10_RESIDENCY_REGISTER;

@@ -10,9 +10,9 @@
 LINEOS_MEMORY_MAP MemoryMap;
 
 STATIC EFI_MEMORY_DESCRIPTOR *buffer = NULL;
-STATIC UINTN BufferSize = 0;
-STATIC UINTN MapKey = 0;
-STATIC EFI_HANDLE LineOSImageHandle = NULL;
+STATIC UINTN                  BufferSize = 0;
+STATIC UINTN                  MapKey = 0;
+STATIC EFI_HANDLE             LineOSImageHandle = NULL;
 
 VOID MemorySetImageHandle(EFI_HANDLE Handle)
 {
@@ -22,8 +22,8 @@ VOID MemorySetImageHandle(EFI_HANDLE Handle)
 BOOLEAN MemoryInit(VOID)
 {
     EFI_STATUS status;
-    UINTN DescriptorSize;
-    UINT32 DescriptorVersion;
+    UINTN      DescriptorSize;
+    UINT32     DescriptorVersion;
 
     BufferSize = 0;
 
@@ -61,8 +61,8 @@ BOOLEAN MemoryInit(VOID)
 BOOLEAN ExitBootServices(VOID)
 {
     EFI_STATUS status;
-    UINTN DescriptorSize;
-    UINT32 DescriptorVersion;
+    UINTN      DescriptorSize;
+    UINT32     DescriptorVersion;
 
     while (TRUE)
     {

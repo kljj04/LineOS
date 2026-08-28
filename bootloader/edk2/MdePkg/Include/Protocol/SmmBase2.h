@@ -14,7 +14,7 @@
 #include <Pi/PiSmmCis.h>
 #include <Protocol/MmBase.h>
 
-#define EFI_SMM_BASE2_PROTOCOL_GUID  EFI_MM_BASE_PROTOCOL_GUID
+#define EFI_SMM_BASE2_PROTOCOL_GUID EFI_MM_BASE_PROTOCOL_GUID
 
 typedef struct _EFI_SMM_BASE2_PROTOCOL EFI_SMM_BASE2_PROTOCOL;
 
@@ -33,13 +33,7 @@ typedef struct _EFI_SMM_BASE2_PROTOCOL EFI_SMM_BASE2_PROTOCOL;
   @retval EFI_SUCCESS            The call returned successfully.
   @retval EFI_INVALID_PARAMETER  InSmram was NULL.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SMM_INSIDE_OUT2)(
-  IN CONST EFI_SMM_BASE2_PROTOCOL  *This,
-  OUT BOOLEAN                      *InSmram
-  )
-;
+typedef EFI_STATUS(EFIAPI *EFI_SMM_INSIDE_OUT2)(IN CONST EFI_SMM_BASE2_PROTOCOL *This, OUT BOOLEAN *InSmram);
 
 /**
   Returns the location of the System Management Service Table (SMST).
@@ -55,21 +49,16 @@ EFI_STATUS
   @retval EFI_INVALID_PARAMETER  Smst was invalid.
   @retval EFI_UNSUPPORTED        Not in SMM.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SMM_GET_SMST_LOCATION2)(
-  IN CONST EFI_SMM_BASE2_PROTOCOL  *This,
-  IN OUT EFI_SMM_SYSTEM_TABLE2     **Smst
-  )
-;
+typedef EFI_STATUS(EFIAPI *EFI_SMM_GET_SMST_LOCATION2)(IN CONST EFI_SMM_BASE2_PROTOCOL *This, IN OUT EFI_SMM_SYSTEM_TABLE2 **Smst);
 
 ///
 /// EFI SMM Base2 Protocol is utilized by all SMM drivers to locate the SMM infrastructure
 /// services and determine whether the driver is being invoked inside SMRAM or outside of SMRAM.
 ///
-struct _EFI_SMM_BASE2_PROTOCOL {
-  EFI_SMM_INSIDE_OUT2           InSmm;
-  EFI_SMM_GET_SMST_LOCATION2    GetSmstLocation;
+struct _EFI_SMM_BASE2_PROTOCOL
+{
+    EFI_SMM_INSIDE_OUT2        InSmm;
+    EFI_SMM_GET_SMST_LOCATION2 GetSmstLocation;
 };
 
-extern EFI_GUID  gEfiSmmBase2ProtocolGuid;
+extern EFI_GUID gEfiSmmBase2ProtocolGuid;

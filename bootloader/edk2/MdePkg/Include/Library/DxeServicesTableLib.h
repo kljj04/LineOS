@@ -21,4 +21,4 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 ///
 /// Cache copy of the DXE Services Table
 ///
-extern EFI_DXE_SERVICES  *gDS;
+extern EFI_DXE_SERVICES *gDS;

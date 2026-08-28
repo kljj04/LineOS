@@ -21,33 +21,34 @@ typedef struct _EFI_SPI_IO_PROTOCOL EFI_SPI_IO_PROTOCOL;
 /// Note: The UEFI PI 1.6 specification does not specify values for the
 ///       members below. The order matches the specification.
 ///
-typedef enum {
-  ///
-  /// Data flowing in both direction between the host and
-  /// SPI peripheral.ReadBytes must equal WriteBytes and both ReadBuffer and
-  /// WriteBuffer must be provided.
-  ///
-  SPI_TRANSACTION_FULL_DUPLEX,
+typedef enum
+{
+    ///
+    /// Data flowing in both direction between the host and
+    /// SPI peripheral.ReadBytes must equal WriteBytes and both ReadBuffer and
+    /// WriteBuffer must be provided.
+    ///
+    SPI_TRANSACTION_FULL_DUPLEX,
 
-  ///
-  /// Data flowing from the host to the SPI peripheral.ReadBytes must be
-  /// zero.WriteBytes must be non - zero and WriteBuffer must be provided.
-  ///
-  SPI_TRANSACTION_WRITE_ONLY,
+    ///
+    /// Data flowing from the host to the SPI peripheral.ReadBytes must be
+    /// zero.WriteBytes must be non - zero and WriteBuffer must be provided.
+    ///
+    SPI_TRANSACTION_WRITE_ONLY,
 
-  ///
-  /// Data flowing from the SPI peripheral to the host.WriteBytes must be
-  /// zero.ReadBytes must be non - zero and ReadBuffer must be provided.
-  ///
-  SPI_TRANSACTION_READ_ONLY,
+    ///
+    /// Data flowing from the SPI peripheral to the host.WriteBytes must be
+    /// zero.ReadBytes must be non - zero and ReadBuffer must be provided.
+    ///
+    SPI_TRANSACTION_READ_ONLY,
 
-  ///
-  /// Data first flowing from the host to the SPI peripheral and then data
-  /// flows from the SPI peripheral to the host.These types of operations get
-  /// used for SPI flash devices when control data (opcode, address) must be
-  /// passed to the SPI peripheral to specify the data to be read.
-  ///
-  SPI_TRANSACTION_WRITE_THEN_READ
+    ///
+    /// Data first flowing from the host to the SPI peripheral and then data
+    /// flows from the SPI peripheral to the host.These types of operations get
+    /// used for SPI flash devices when control data (opcode, address) must be
+    /// passed to the SPI peripheral to specify the data to be read.
+    ///
+    SPI_TRANSACTION_WRITE_THEN_READ
 } EFI_SPI_TRANSACTION_TYPE;
 
 /**
@@ -123,20 +124,7 @@ typedef enum {
   @retval EFI_UNSUPPORTED        The SPI controller was not able to support
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SPI_IO_PROTOCOL_TRANSACTION)(
-  IN  CONST EFI_SPI_IO_PROTOCOL  *This,
-  IN  EFI_SPI_TRANSACTION_TYPE   TransactionType,
-  IN  BOOLEAN                    DebugTransaction,
-  IN  UINT32                     ClockHz OPTIONAL,
-  IN  UINT32                     BusWidth,
-  IN  UINT32                     FrameSize,
-  IN  UINT32                     WriteBytes,
-  IN  UINT8                      *WriteBuffer,
-  IN  UINT32                     ReadBytes,
-  OUT UINT8                      *ReadBuffer
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SPI_IO_PROTOCOL_TRANSACTION)(IN CONST EFI_SPI_IO_PROTOCOL *This, IN EFI_SPI_TRANSACTION_TYPE TransactionType, IN BOOLEAN DebugTransaction, IN UINT32 ClockHz OPTIONAL, IN UINT32 BusWidth, IN UINT32 FrameSize, IN UINT32 WriteBytes, IN UINT8 *WriteBuffer, IN UINT32 ReadBytes, OUT UINT8 *ReadBuffer);
 
 /**
   Update the SPI peripheral associated with this SPI 10 instance.
@@ -157,137 +145,135 @@ EFI_STATUS
                                  or the SpiPeripheral->SpiPart is NULL
 
 **/
-typedef EFI_STATUS
-(EFIAPI *EFI_SPI_IO_PROTOCOL_UPDATE_SPI_PERIPHERAL)(
-  IN CONST EFI_SPI_IO_PROTOCOL  *This,
-  IN CONST EFI_SPI_PERIPHERAL   *SpiPeripheral
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SPI_IO_PROTOCOL_UPDATE_SPI_PERIPHERAL)(IN CONST EFI_SPI_IO_PROTOCOL *This, IN CONST EFI_SPI_PERIPHERAL *SpiPeripheral);
 
 ///
 /// The EFI_SPI_BUS_ TRANSACTION data structure contains the description of the
 /// SPI transaction to perform on the host controller.
 ///
-typedef struct _EFI_SPI_BUS_TRANSACTION {
-  ///
-  /// Pointer to the SPI peripheral being manipulated.
-  ///
-  CONST EFI_SPI_PERIPHERAL    *SpiPeripheral;
+typedef struct _EFI_SPI_BUS_TRANSACTION
+{
+    ///
+    /// Pointer to the SPI peripheral being manipulated.
+    ///
+    CONST EFI_SPI_PERIPHERAL *SpiPeripheral;
 
-  ///
-  /// Type of transaction specified by one of the EFI_SPI_TRANSACTION_TYPE
-  /// values.
-  ///
-  EFI_SPI_TRANSACTION_TYPE    TransactionType;
+    ///
+    /// Type of transaction specified by one of the EFI_SPI_TRANSACTION_TYPE
+    /// values.
+    ///
+    EFI_SPI_TRANSACTION_TYPE TransactionType;
 
-  ///
-  /// TRUE if the transaction is being debugged. Debugging may be turned on for
-  /// a single SPI transaction. Only this transaction will display debugging
-  /// messages. All other transactions with this value set to FALSE will not
-  /// display any debugging messages.
-  ///
-  BOOLEAN                     DebugTransaction;
+    ///
+    /// TRUE if the transaction is being debugged. Debugging may be turned on for
+    /// a single SPI transaction. Only this transaction will display debugging
+    /// messages. All other transactions with this value set to FALSE will not
+    /// display any debugging messages.
+    ///
+    BOOLEAN DebugTransaction;
 
-  ///
-  /// SPI bus width in bits: 1, 2, 4
-  ///
-  UINT32                      BusWidth;
+    ///
+    /// SPI bus width in bits: 1, 2, 4
+    ///
+    UINT32 BusWidth;
 
-  ///
-  /// Frame size in bits, range: 1 - 32
-  ///
-  UINT32                      FrameSize;
+    ///
+    /// Frame size in bits, range: 1 - 32
+    ///
+    UINT32 FrameSize;
 
-  ///
-  /// Length of the write buffer in bytes
-  ///
-  UINT32                      WriteBytes;
+    ///
+    /// Length of the write buffer in bytes
+    ///
+    UINT32 WriteBytes;
 
-  ///
-  /// Buffer containing data to send to the SPI peripheral
-  /// Frame sizes 1 - 8 bits: UINT8 (one byte) per frame
-  /// Frame sizes 7 - 16 bits : UINT16 (two bytes) per frame
-  ///
-  UINT8                       *WriteBuffer;
+    ///
+    /// Buffer containing data to send to the SPI peripheral
+    /// Frame sizes 1 - 8 bits: UINT8 (one byte) per frame
+    /// Frame sizes 7 - 16 bits : UINT16 (two bytes) per frame
+    ///
+    UINT8 *WriteBuffer;
 
-  ///
-  /// Length of the read buffer in bytes
-  ///
-  UINT32                      ReadBytes;
+    ///
+    /// Length of the read buffer in bytes
+    ///
+    UINT32 ReadBytes;
 
-  ///
-  /// Buffer to receive the data from the SPI peripheral
-  /// * Frame sizes 1 - 8 bits: UINT8 (one byte) per frame
-  /// * Frame sizes 7 - 16 bits : UINT16 (two bytes) per frame
-  /// * Frame sizes 17 - 32 bits : UINT32 (four bytes) per frame
-  ///
-  UINT8                       *ReadBuffer;
+    ///
+    /// Buffer to receive the data from the SPI peripheral
+    /// * Frame sizes 1 - 8 bits: UINT8 (one byte) per frame
+    /// * Frame sizes 7 - 16 bits : UINT16 (two bytes) per frame
+    /// * Frame sizes 17 - 32 bits : UINT32 (four bytes) per frame
+    ///
+    UINT8 *ReadBuffer;
 } EFI_SPI_BUS_TRANSACTION;
 
 ///
 /// Definitions of SPI I/O Attributes.
 ///
-#define SPI_IO_SUPPORTS_2_BIT_DATA_BUS_WIDTH   BIT0
-#define SPI_IO_SUPPORTS_4_BIT_DATA_BUS_WIDTH   BIT1
-#define SPI_IO_SUPPORTS_8_BIT_DATA_BUS_WIDTH   BIT2
-#define SPI_IO_TRANSFER_SIZE_INCLUDES_OPCODE   BIT3
-#define SPI_IO_TRANSFER_SIZE_INCLUDES_ADDRESS  BIT4
+#define SPI_IO_SUPPORTS_2_BIT_DATA_BUS_WIDTH  BIT0
+#define SPI_IO_SUPPORTS_4_BIT_DATA_BUS_WIDTH  BIT1
+#define SPI_IO_SUPPORTS_8_BIT_DATA_BUS_WIDTH  BIT2
+#define SPI_IO_TRANSFER_SIZE_INCLUDES_OPCODE  BIT3
+#define SPI_IO_TRANSFER_SIZE_INCLUDES_ADDRESS BIT4
 
 ///
 /// Support managed SPI data transactions between the SPI controller and a SPI
 /// chip.
 ///
-struct _EFI_SPI_IO_PROTOCOL {
-  ///
-  /// Address of an EFI_SPI_PERIPHERAL data structure associated with this
-  /// protocol instance.
-  ///
-  CONST EFI_SPI_PERIPHERAL    *SpiPeripheral;
+struct _EFI_SPI_IO_PROTOCOL
+{
+    ///
+    /// Address of an EFI_SPI_PERIPHERAL data structure associated with this
+    /// protocol instance.
+    ///
+    CONST EFI_SPI_PERIPHERAL *SpiPeripheral;
 
-  ///
-  /// Address of the original EFI_SPI_PERIPHERAL data structure associated with
-  /// this protocol instance.
-  ///
-  CONST EFI_SPI_PERIPHERAL    *OriginalSpiPeripheral;
+    ///
+    /// Address of the original EFI_SPI_PERIPHERAL data structure associated with
+    /// this protocol instance.
+    ///
+    CONST EFI_SPI_PERIPHERAL *OriginalSpiPeripheral;
 
-  ///
-  /// Mask of frame sizes which the SPI 10 layer supports. Frame size of N-bits
-  /// is supported when bit N-1 is set. The host controller must support a
-  /// frame size of 8-bits. Frame sizes of 16, 24 and 32-bits are converted to
-  /// 8-bit frame sizes by the SPI bus layer if the frame size is not supported
-  /// by the SPI host controller.
-  ///
-  UINT32    FrameSizeSupportMask;
+    ///
+    /// Mask of frame sizes which the SPI 10 layer supports. Frame size of N-bits
+    /// is supported when bit N-1 is set. The host controller must support a
+    /// frame size of 8-bits. Frame sizes of 16, 24 and 32-bits are converted to
+    /// 8-bit frame sizes by the SPI bus layer if the frame size is not supported
+    /// by the SPI host controller.
+    ///
+    UINT32 FrameSizeSupportMask;
 
-  ///
-  /// Maximum transfer size in bytes: 1 - 0xffffffff
-  ///
-  UINT32    MaximumTransferBytes;
+    ///
+    /// Maximum transfer size in bytes: 1 - 0xffffffff
+    ///
+    UINT32 MaximumTransferBytes;
 
-  ///
-  /// Transaction attributes: One or more from:
-  /// * SPI_10_SUPPORTS_2_B1T_DATA_BUS_W1DTH
-  ///   - The SPI host and peripheral supports a 2-bit data bus
-  /// * SPI_IO_SUPPORTS_4_BIT_DATA_BUS_W1DTH
-  ///   - The SPI host and peripheral supports a 4-bit data bus
-  /// * SPI_IO_TRANSFER_SIZE_INCLUDES_OPCODE
-  ///   - Transfer size includes the opcode byte
-  /// * SPI_IO_TRANSFER_SIZE_INCLUDES_ADDRESS
-  ///   - Transfer size includes the 3 address bytes
-  ///
-  UINT32                                       Attributes;
+    ///
+    /// Transaction attributes: One or more from:
+    /// * SPI_10_SUPPORTS_2_B1T_DATA_BUS_W1DTH
+    ///   - The SPI host and peripheral supports a 2-bit data bus
+    /// * SPI_IO_SUPPORTS_4_BIT_DATA_BUS_W1DTH
+    ///   - The SPI host and peripheral supports a 4-bit data bus
+    /// * SPI_IO_TRANSFER_SIZE_INCLUDES_OPCODE
+    ///   - Transfer size includes the opcode byte
+    /// * SPI_IO_TRANSFER_SIZE_INCLUDES_ADDRESS
+    ///   - Transfer size includes the 3 address bytes
+    ///
+    UINT32 Attributes;
 
-  ///
-  /// Pointer to legacy SPI controller protocol
-  ///
-  CONST EFI_LEGACY_SPI_CONTROLLER_PROTOCOL     *LegacySpiProtocol;
+    ///
+    /// Pointer to legacy SPI controller protocol
+    ///
+    CONST EFI_LEGACY_SPI_CONTROLLER_PROTOCOL *LegacySpiProtocol;
 
-  ///
-  /// Initiate a SPI transaction between the host and a SPI peripheral.
-  ///
-  EFI_SPI_IO_PROTOCOL_TRANSACTION              Transaction;
+    ///
+    /// Initiate a SPI transaction between the host and a SPI peripheral.
+    ///
+    EFI_SPI_IO_PROTOCOL_TRANSACTION Transaction;
 
-  ///
-  /// Update the SPI peripheral associated with this SPI 10 instance.
-  ///
-  EFI_SPI_IO_PROTOCOL_UPDATE_SPI_PERIPHERAL    UpdateSpiPeripheral;
+    ///
+    /// Update the SPI peripheral associated with this SPI 10 instance.
+    ///
+    EFI_SPI_IO_PROTOCOL_UPDATE_SPI_PERIPHERAL UpdateSpiPeripheral;
 };

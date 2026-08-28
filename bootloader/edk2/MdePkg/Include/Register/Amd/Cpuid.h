@@ -34,9 +34,9 @@ CPUID Signature Information
 ///
 /// @{ CPUID signature values returned by AMD processors
 ///
-#define CPUID_SIGNATURE_AUTHENTIC_AMD_EBX  SIGNATURE_32 ('A', 'u', 't', 'h')
-#define CPUID_SIGNATURE_AUTHENTIC_AMD_EDX  SIGNATURE_32 ('e', 'n', 't', 'i')
-#define CPUID_SIGNATURE_AUTHENTIC_AMD_ECX  SIGNATURE_32 ('c', 'A', 'M', 'D')
+#define CPUID_SIGNATURE_AUTHENTIC_AMD_EBX SIGNATURE_32('A', 'u', 't', 'h')
+#define CPUID_SIGNATURE_AUTHENTIC_AMD_EDX SIGNATURE_32('e', 'n', 't', 'i')
+#define CPUID_SIGNATURE_AUTHENTIC_AMD_ECX SIGNATURE_32('c', 'A', 'M', 'D')
 ///
 /// @}
 ///
@@ -68,115 +68,121 @@ CPUID Signature Information
   @retval  EDX  Extended APIC ID of the logical processor.
 
 **/
-#define AMD_CPUID_EXTENDED_TOPOLOGY  0x80000026
+#define AMD_CPUID_EXTENDED_TOPOLOGY 0x80000026
 
 /**
   CPUID Extended Topology EAX for CPUID leaf
   #AMD_CPUID_EXTENDED_TOPOLOGY.
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 4:0] Number of bits to shift Extended APIC ID right to get a
-    /// unique topology ID of the current hierarchy level.
+    /// Individual bit fields
     ///
-    UINT32    MaskWidth                  : 5;
+    struct
+    {
+        ///
+        /// [Bits 4:0] Number of bits to shift Extended APIC ID right to get a
+        /// unique topology ID of the current hierarchy level.
+        ///
+        UINT32 MaskWidth : 5;
+        ///
+        /// [Bits 28:5] Reserved.
+        ///
+        UINT32 Reserved : 24;
+        ///
+        /// [Bit 29] Set to 1 if processor power efficiency ranking
+        /// (PwrEfficiencyRanking) is available and varies between cores.
+        /// Only valid for LevelType = 1h (Core).
+        ///
+        UINT32 EfficiencyRankingAvailable : 1;
+        ///
+        /// [Bit 30] Set to 1 if all components at the current hierarchy level
+        /// do not consist of the cores that report the same core type (CoreType).
+        ///
+        UINT32 HeterogeneousCores : 1;
+        ///
+        /// [Bit 31] Set to 1 if all components at the current hierarchy level
+        /// do not report the same number of logical processors (NumLogProc).
+        ///
+        UINT32 AsymmetricTopology : 1;
+    } Bits;
     ///
-    /// [Bits 28:5] Reserved.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    Reserved                   : 24;
-    ///
-    /// [Bit 29] Set to 1 if processor power efficiency ranking
-    /// (PwrEfficiencyRanking) is available and varies between cores.
-    /// Only valid for LevelType = 1h (Core).
-    ///
-    UINT32    EfficiencyRankingAvailable : 1;
-    ///
-    /// [Bit 30] Set to 1 if all components at the current hierarchy level
-    /// do not consist of the cores that report the same core type (CoreType).
-    ///
-    UINT32    HeterogeneousCores         : 1;
-    ///
-    /// [Bit 31] Set to 1 if all components at the current hierarchy level
-    /// do not report the same number of logical processors (NumLogProc).
-    ///
-    UINT32    AsymmetricTopology         : 1;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
+    UINT32 Uint32;
 } AMD_CPUID_EXTENDED_TOPOLOGY_EAX;
 
 /**
   CPUID Extended Topology EBX for CPUID leaf
   #AMD_CPUID_EXTENDED_TOPOLOGY.
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 15:0] Number of logical processors at the current hierarchy level.
+    /// Individual bit fields
     ///
-    UINT32    NumLogProc           : 16;
+    struct
+    {
+        ///
+        /// [Bits 15:0] Number of logical processors at the current hierarchy level.
+        ///
+        UINT32 NumLogProc : 16;
+        ///
+        /// [Bits 23:16] Processor power efficiency ranking. Lower value indicates
+        /// comparatively lower power consumption and lower performance.
+        /// Only valid for LevelType = 1h (Core).
+        ///
+        UINT32 PwrEfficiencyRanking : 8;
+        ///
+        /// [Bits 27:24] Native model ID. Used in conjunction with the family,
+        /// model, and stepping identifiers.
+        /// Only valid for LevelType = 1h (Core).
+        ///
+        UINT32 NativeModelId : 4;
+        ///
+        /// [Bits 31:28] Core type. Used to distinguish cores with different
+        /// architectural and microarchitectural properties.
+        /// Only valid for LevelType = 1h (Core).
+        ///
+        UINT32 CoreType : 4;
+    } Bits;
     ///
-    /// [Bits 23:16] Processor power efficiency ranking. Lower value indicates
-    /// comparatively lower power consumption and lower performance.
-    /// Only valid for LevelType = 1h (Core).
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    PwrEfficiencyRanking : 8;
-    ///
-    /// [Bits 27:24] Native model ID. Used in conjunction with the family,
-    /// model, and stepping identifiers.
-    /// Only valid for LevelType = 1h (Core).
-    ///
-    UINT32    NativeModelId        : 4;
-    ///
-    /// [Bits 31:28] Core type. Used to distinguish cores with different
-    /// architectural and microarchitectural properties.
-    /// Only valid for LevelType = 1h (Core).
-    ///
-    UINT32    CoreType             : 4;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
+    UINT32 Uint32;
 } AMD_CPUID_EXTENDED_TOPOLOGY_EBX;
 
 /**
   CPUID Extended Topology ECX for CPUID leaf
   #AMD_CPUID_EXTENDED_TOPOLOGY.
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 7:0] Input ECX[7:0].
+    /// Individual bit fields
     ///
-    UINT32    InputEcx  : 8;
+    struct
+    {
+        ///
+        /// [Bits 7:0] Input ECX[7:0].
+        ///
+        UINT32 InputEcx : 8;
+        ///
+        /// [Bits 15:8] Encoded hierarchy level type.
+        /// 0h = Reserved, 1h = Core, 2h = Complex, 3h = Die,
+        /// 4h = Socket, 05h-FFh = Reserved.
+        ///
+        UINT32 LevelType : 8;
+        ///
+        /// [Bits 31:16] Reserved.
+        ///
+        UINT32 Reserved : 16;
+    } Bits;
     ///
-    /// [Bits 15:8] Encoded hierarchy level type.
-    /// 0h = Reserved, 1h = Core, 2h = Complex, 3h = Die,
-    /// 4h = Socket, 05h-FFh = Reserved.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    LevelType : 8;
-    ///
-    /// [Bits 31:16] Reserved.
-    ///
-    UINT32    Reserved  : 16;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
+    UINT32 Uint32;
 } AMD_CPUID_EXTENDED_TOPOLOGY_ECX;
 
 /**
@@ -198,332 +204,340 @@ typedef union {
   CPUID Extended Processor Signature and Features EAX for CPUID leaf
   #CPUID_EXTENDED_CPU_SIG.
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 3:0] Stepping.
+    /// Individual bit fields
     ///
-    UINT32    Stepping   : 4;
+    struct
+    {
+        ///
+        /// [Bits 3:0] Stepping.
+        ///
+        UINT32 Stepping : 4;
+        ///
+        /// [Bits 7:4] Base Model.
+        ///
+        UINT32 BaseModel : 4;
+        ///
+        /// [Bits 11:8] Base Family.
+        ///
+        UINT32 BaseFamily : 4;
+        ///
+        /// [Bit 15:12] Reserved.
+        ///
+        UINT32 Reserved1 : 4;
+        ///
+        /// [Bits 19:16] Extended Model.
+        ///
+        UINT32 ExtModel : 4;
+        ///
+        /// [Bits 27:20] Extended Family.
+        ///
+        UINT32 ExtFamily : 8;
+        ///
+        /// [Bit 31:28] Reserved.
+        ///
+        UINT32 Reserved2 : 4;
+    } Bits;
     ///
-    /// [Bits 7:4] Base Model.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    BaseModel  : 4;
-    ///
-    /// [Bits 11:8] Base Family.
-    ///
-    UINT32    BaseFamily : 4;
-    ///
-    /// [Bit 15:12] Reserved.
-    ///
-    UINT32    Reserved1  : 4;
-    ///
-    /// [Bits 19:16] Extended Model.
-    ///
-    UINT32    ExtModel   : 4;
-    ///
-    /// [Bits 27:20] Extended Family.
-    ///
-    UINT32    ExtFamily  : 8;
-    ///
-    /// [Bit 31:28] Reserved.
-    ///
-    UINT32    Reserved2  : 4;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
+    UINT32 Uint32;
 } CPUID_AMD_EXTENDED_CPU_SIG_EAX;
 
 /**
   CPUID Extended Processor Signature and Features EBX for CPUID leaf
   #CPUID_EXTENDED_CPU_SIG.
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 27:0] Reserved.
+    /// Individual bit fields
     ///
-    UINT32    Reserved : 28;
+    struct
+    {
+        ///
+        /// [Bits 27:0] Reserved.
+        ///
+        UINT32 Reserved : 28;
+        ///
+        /// [Bit 31:28] Package Type.
+        ///
+        UINT32 PkgType : 4;
+    } Bits;
     ///
-    /// [Bit 31:28] Package Type.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    PkgType  : 4;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
+    UINT32 Uint32;
 } CPUID_AMD_EXTENDED_CPU_SIG_EBX;
 
 /**
   CPUID Extended Processor Signature and Features ECX for CPUID leaf
   #CPUID_EXTENDED_CPU_SIG.
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bit 0] LAHF/SAHF available in 64-bit mode.
+    /// Individual bit fields
     ///
-    UINT32    LAHF_SAHF               : 1;
+    struct
+    {
+        ///
+        /// [Bit 0] LAHF/SAHF available in 64-bit mode.
+        ///
+        UINT32 LAHF_SAHF : 1;
+        ///
+        /// [Bit 1] Core multi-processing legacy mode.
+        ///
+        UINT32 CmpLegacy : 1;
+        ///
+        /// [Bit 2] Secure Virtual Mode feature.
+        ///
+        UINT32 SVM : 1;
+        ///
+        /// [Bit 3] Extended APIC register space.
+        ///
+        UINT32 ExtApicSpace : 1;
+        ///
+        /// [Bit 4] LOCK MOV CR0 means MOV CR8.
+        ///
+        UINT32 AltMovCr8 : 1;
+        ///
+        /// [Bit 5] LZCNT instruction support.
+        ///
+        UINT32 LZCNT : 1;
+        ///
+        /// [Bit 6] SSE4A instruction support.
+        ///
+        UINT32 SSE4A : 1;
+        ///
+        /// [Bit 7] Misaligned SSE Mode.
+        ///
+        UINT32 MisAlignSse : 1;
+        ///
+        /// [Bit 8] ThreeDNow Prefetch instructions.
+        ///
+        UINT32 PREFETCHW : 1;
+        ///
+        /// [Bit 9] OS Visible Work-around support.
+        ///
+        UINT32 OSVW : 1;
+        ///
+        /// [Bit 10] Instruction Based Sampling.
+        ///
+        UINT32 IBS : 1;
+        ///
+        /// [Bit 11] Extended Operation Support.
+        ///
+        UINT32 XOP : 1;
+        ///
+        /// [Bit 12] SKINIT and STGI support.
+        ///
+        UINT32 SKINIT : 1;
+        ///
+        /// [Bit 13] Watchdog Timer support.
+        ///
+        UINT32 WDT : 1;
+        ///
+        /// [Bit 14] Reserved.
+        ///
+        UINT32 Reserved1 : 1;
+        ///
+        /// [Bit 15] Lightweight Profiling support.
+        ///
+        UINT32 LWP : 1;
+        ///
+        /// [Bit 16] 4-Operand FMA instruction support.
+        ///
+        UINT32 FMA4 : 1;
+        ///
+        /// [Bit 17] Translation Cache Extension.
+        ///
+        UINT32 TCE : 1;
+        ///
+        /// [Bit 21:18] Reserved.
+        ///
+        UINT32 Reserved2 : 4;
+        ///
+        /// [Bit 22] Topology Extensions support.
+        ///
+        UINT32 TopologyExtensions : 1;
+        ///
+        /// [Bit 23] Core Performance Counter Extensions.
+        ///
+        UINT32 PerfCtrExtCore : 1;
+        ///
+        /// [Bit 25:24] Reserved.
+        ///
+        UINT32 Reserved3 : 2;
+        ///
+        /// [Bit 26] Data Breakpoint Extension.
+        ///
+        UINT32 DataBreakpointExtension : 1;
+        ///
+        /// [Bit 27] Performance Time-Stamp Counter.
+        ///
+        UINT32 PerfTsc : 1;
+        ///
+        /// [Bit 28] L3 Performance Counter Extensions.
+        ///
+        UINT32 PerfCtrExtL3 : 1;
+        ///
+        /// [Bit 29] MWAITX and MONITORX capability.
+        ///
+        UINT32 MwaitExtended : 1;
+        ///
+        /// [Bit 31:30] Reserved.
+        ///
+        UINT32 Reserved4 : 2;
+    } Bits;
     ///
-    /// [Bit 1] Core multi-processing legacy mode.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    CmpLegacy               : 1;
-    ///
-    /// [Bit 2] Secure Virtual Mode feature.
-    ///
-    UINT32    SVM                     : 1;
-    ///
-    /// [Bit 3] Extended APIC register space.
-    ///
-    UINT32    ExtApicSpace            : 1;
-    ///
-    /// [Bit 4] LOCK MOV CR0 means MOV CR8.
-    ///
-    UINT32    AltMovCr8               : 1;
-    ///
-    /// [Bit 5] LZCNT instruction support.
-    ///
-    UINT32    LZCNT                   : 1;
-    ///
-    /// [Bit 6] SSE4A instruction support.
-    ///
-    UINT32    SSE4A                   : 1;
-    ///
-    /// [Bit 7] Misaligned SSE Mode.
-    ///
-    UINT32    MisAlignSse             : 1;
-    ///
-    /// [Bit 8] ThreeDNow Prefetch instructions.
-    ///
-    UINT32    PREFETCHW               : 1;
-    ///
-    /// [Bit 9] OS Visible Work-around support.
-    ///
-    UINT32    OSVW                    : 1;
-    ///
-    /// [Bit 10] Instruction Based Sampling.
-    ///
-    UINT32    IBS                     : 1;
-    ///
-    /// [Bit 11] Extended Operation Support.
-    ///
-    UINT32    XOP                     : 1;
-    ///
-    /// [Bit 12] SKINIT and STGI support.
-    ///
-    UINT32    SKINIT                  : 1;
-    ///
-    /// [Bit 13] Watchdog Timer support.
-    ///
-    UINT32    WDT                     : 1;
-    ///
-    /// [Bit 14] Reserved.
-    ///
-    UINT32    Reserved1               : 1;
-    ///
-    /// [Bit 15] Lightweight Profiling support.
-    ///
-    UINT32    LWP                     : 1;
-    ///
-    /// [Bit 16] 4-Operand FMA instruction support.
-    ///
-    UINT32    FMA4                    : 1;
-    ///
-    /// [Bit 17] Translation Cache Extension.
-    ///
-    UINT32    TCE                     : 1;
-    ///
-    /// [Bit 21:18] Reserved.
-    ///
-    UINT32    Reserved2               : 4;
-    ///
-    /// [Bit 22] Topology Extensions support.
-    ///
-    UINT32    TopologyExtensions      : 1;
-    ///
-    /// [Bit 23] Core Performance Counter Extensions.
-    ///
-    UINT32    PerfCtrExtCore          : 1;
-    ///
-    /// [Bit 25:24] Reserved.
-    ///
-    UINT32    Reserved3               : 2;
-    ///
-    /// [Bit 26] Data Breakpoint Extension.
-    ///
-    UINT32    DataBreakpointExtension : 1;
-    ///
-    /// [Bit 27] Performance Time-Stamp Counter.
-    ///
-    UINT32    PerfTsc                 : 1;
-    ///
-    /// [Bit 28] L3 Performance Counter Extensions.
-    ///
-    UINT32    PerfCtrExtL3            : 1;
-    ///
-    /// [Bit 29] MWAITX and MONITORX capability.
-    ///
-    UINT32    MwaitExtended           : 1;
-    ///
-    /// [Bit 31:30] Reserved.
-    ///
-    UINT32    Reserved4               : 2;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
+    UINT32 Uint32;
 } CPUID_AMD_EXTENDED_CPU_SIG_ECX;
 
 /**
   CPUID Extended Processor Signature and Features EDX for CPUID leaf
   #CPUID_EXTENDED_CPU_SIG.
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bit 0] x87 floating point unit on-chip.
+    /// Individual bit fields
     ///
-    UINT32    FPU            : 1;
+    struct
+    {
+        ///
+        /// [Bit 0] x87 floating point unit on-chip.
+        ///
+        UINT32 FPU : 1;
+        ///
+        /// [Bit 1] Virtual-mode enhancements.
+        ///
+        UINT32 VME : 1;
+        ///
+        /// [Bit 2] Debugging extensions, IO breakpoints, CR4.DE.
+        ///
+        UINT32 DE : 1;
+        ///
+        /// [Bit 3] Page-size extensions (4 MB pages).
+        ///
+        UINT32 PSE : 1;
+        ///
+        /// [Bit 4] Time stamp counter, RDTSC/RDTSCP instructions, CR4.TSD.
+        ///
+        UINT32 TSC : 1;
+        ///
+        /// [Bit 5] MSRs, with RDMSR and WRMSR instructions.
+        ///
+        UINT32 MSR : 1;
+        ///
+        /// [Bit 6] Physical-address extensions (PAE).
+        ///
+        UINT32 PAE : 1;
+        ///
+        /// [Bit 7] Machine check exception, CR4.MCE.
+        ///
+        UINT32 MCE : 1;
+        ///
+        /// [Bit 8] CMPXCHG8B instruction.
+        ///
+        UINT32 CMPXCHG8B : 1;
+        ///
+        /// [Bit 9] APIC exists and is enabled.
+        ///
+        UINT32 APIC : 1;
+        ///
+        /// [Bit 10] Reserved.
+        ///
+        UINT32 Reserved1 : 1;
+        ///
+        /// [Bit 11] SYSCALL and SYSRET instructions.
+        ///
+        UINT32 SYSCALL_SYSRET : 1;
+        ///
+        /// [Bit 12] Memory-type range registers.
+        ///
+        UINT32 MTRR : 1;
+        ///
+        /// [Bit 13] Page global extension, CR4.PGE.
+        ///
+        UINT32 PGE : 1;
+        ///
+        /// [Bit 14] Machine check architecture, MCG_CAP.
+        ///
+        UINT32 MCA : 1;
+        ///
+        /// [Bit 15] Conditional move instructions, CMOV, FCOMI, FCMOV.
+        ///
+        UINT32 CMOV : 1;
+        ///
+        /// [Bit 16] Page attribute table.
+        ///
+        UINT32 PAT : 1;
+        ///
+        /// [Bit 17] Page-size extensions.
+        ///
+        UINT32 PSE36 : 1;
+        ///
+        /// [Bit 19:18] Reserved.
+        ///
+        UINT32 Reserved2 : 2;
+        ///
+        /// [Bit 20] No-execute page protection.
+        ///
+        UINT32 NX : 1;
+        ///
+        /// [Bit 21] Reserved.
+        ///
+        UINT32 Reserved3 : 1;
+        ///
+        /// [Bit 22] AMD Extensions to MMX instructions.
+        ///
+        UINT32 MmxExt : 1;
+        ///
+        /// [Bit 23] MMX instructions.
+        ///
+        UINT32 MMX : 1;
+        ///
+        /// [Bit 24] FXSAVE and FXRSTOR instructions.
+        ///
+        UINT32 FFSR : 1;
+        ///
+        /// [Bit 25] FXSAVE and FXRSTOR instruction optimizations.
+        ///
+        UINT32 FFXSR : 1;
+        ///
+        /// [Bit 26] 1-GByte large page support.
+        ///
+        UINT32 Page1GB : 1;
+        ///
+        /// [Bit 27] RDTSCP instructions.
+        ///
+        UINT32 RDTSCP : 1;
+        ///
+        /// [Bit 28] Reserved.
+        ///
+        UINT32 Reserved4 : 1;
+        ///
+        /// [Bit 29] Long Mode.
+        ///
+        UINT32 LM : 1;
+        ///
+        /// [Bit 30] 3DNow! instructions.
+        ///
+        UINT32 ThreeDNow : 1;
+        ///
+        /// [Bit 31] AMD Extensions to 3DNow! instructions.
+        ///
+        UINT32 ThreeDNowExt : 1;
+    } Bits;
     ///
-    /// [Bit 1] Virtual-mode enhancements.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    VME            : 1;
-    ///
-    /// [Bit 2] Debugging extensions, IO breakpoints, CR4.DE.
-    ///
-    UINT32    DE             : 1;
-    ///
-    /// [Bit 3] Page-size extensions (4 MB pages).
-    ///
-    UINT32    PSE            : 1;
-    ///
-    /// [Bit 4] Time stamp counter, RDTSC/RDTSCP instructions, CR4.TSD.
-    ///
-    UINT32    TSC            : 1;
-    ///
-    /// [Bit 5] MSRs, with RDMSR and WRMSR instructions.
-    ///
-    UINT32    MSR            : 1;
-    ///
-    /// [Bit 6] Physical-address extensions (PAE).
-    ///
-    UINT32    PAE            : 1;
-    ///
-    /// [Bit 7] Machine check exception, CR4.MCE.
-    ///
-    UINT32    MCE            : 1;
-    ///
-    /// [Bit 8] CMPXCHG8B instruction.
-    ///
-    UINT32    CMPXCHG8B      : 1;
-    ///
-    /// [Bit 9] APIC exists and is enabled.
-    ///
-    UINT32    APIC           : 1;
-    ///
-    /// [Bit 10] Reserved.
-    ///
-    UINT32    Reserved1      : 1;
-    ///
-    /// [Bit 11] SYSCALL and SYSRET instructions.
-    ///
-    UINT32    SYSCALL_SYSRET : 1;
-    ///
-    /// [Bit 12] Memory-type range registers.
-    ///
-    UINT32    MTRR           : 1;
-    ///
-    /// [Bit 13] Page global extension, CR4.PGE.
-    ///
-    UINT32    PGE            : 1;
-    ///
-    /// [Bit 14] Machine check architecture, MCG_CAP.
-    ///
-    UINT32    MCA            : 1;
-    ///
-    /// [Bit 15] Conditional move instructions, CMOV, FCOMI, FCMOV.
-    ///
-    UINT32    CMOV           : 1;
-    ///
-    /// [Bit 16] Page attribute table.
-    ///
-    UINT32    PAT            : 1;
-    ///
-    /// [Bit 17] Page-size extensions.
-    ///
-    UINT32    PSE36          : 1;
-    ///
-    /// [Bit 19:18] Reserved.
-    ///
-    UINT32    Reserved2      : 2;
-    ///
-    /// [Bit 20] No-execute page protection.
-    ///
-    UINT32    NX             : 1;
-    ///
-    /// [Bit 21] Reserved.
-    ///
-    UINT32    Reserved3      : 1;
-    ///
-    /// [Bit 22] AMD Extensions to MMX instructions.
-    ///
-    UINT32    MmxExt         : 1;
-    ///
-    /// [Bit 23] MMX instructions.
-    ///
-    UINT32    MMX            : 1;
-    ///
-    /// [Bit 24] FXSAVE and FXRSTOR instructions.
-    ///
-    UINT32    FFSR           : 1;
-    ///
-    /// [Bit 25] FXSAVE and FXRSTOR instruction optimizations.
-    ///
-    UINT32    FFXSR          : 1;
-    ///
-    /// [Bit 26] 1-GByte large page support.
-    ///
-    UINT32    Page1GB        : 1;
-    ///
-    /// [Bit 27] RDTSCP instructions.
-    ///
-    UINT32    RDTSCP         : 1;
-    ///
-    /// [Bit 28] Reserved.
-    ///
-    UINT32    Reserved4      : 1;
-    ///
-    /// [Bit 29] Long Mode.
-    ///
-    UINT32    LM             : 1;
-    ///
-    /// [Bit 30] 3DNow! instructions.
-    ///
-    UINT32    ThreeDNow      : 1;
-    ///
-    /// [Bit 31] AMD Extensions to 3DNow! instructions.
-    ///
-    UINT32    ThreeDNowExt   : 1;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
+    UINT32 Uint32;
 } CPUID_AMD_EXTENDED_CPU_SIG_EDX;
 
 /**
@@ -544,100 +558,106 @@ CPUID Linear Physical Address Size
   CPUID Linear Physical Address Size EAX for CPUID leaf
   #CPUID_VIR_PHY_ADDRESS_SIZE.
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 7:0] Maximum physical byte address size in bits.
+    /// Individual bit fields
     ///
-    UINT32    PhysicalAddressBits : 8;
+    struct
+    {
+        ///
+        /// [Bits 7:0] Maximum physical byte address size in bits.
+        ///
+        UINT32 PhysicalAddressBits : 8;
+        ///
+        /// [Bits 15:8] Maximum linear byte address size in bits.
+        ///
+        UINT32 LinearAddressBits : 8;
+        ///
+        /// [Bits 23:16] Maximum guest physical byte address size in bits.
+        ///
+        UINT32 GuestPhysAddrSize : 8;
+        ///
+        /// [Bit 31:24] Reserved.
+        ///
+        UINT32 Reserved : 8;
+    } Bits;
     ///
-    /// [Bits 15:8] Maximum linear byte address size in bits.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    LinearAddressBits   : 8;
-    ///
-    /// [Bits 23:16] Maximum guest physical byte address size in bits.
-    ///
-    UINT32    GuestPhysAddrSize   : 8;
-    ///
-    /// [Bit 31:24] Reserved.
-    ///
-    UINT32    Reserved            : 8;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
+    UINT32 Uint32;
 } CPUID_AMD_VIR_PHY_ADDRESS_SIZE_EAX;
 
 /**
   CPUID Linear Physical Address Size EBX for CPUID leaf
   #CPUID_VIR_PHY_ADDRESS_SIZE.
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 0] Clear Zero Instruction.
+    /// Individual bit fields
     ///
-    UINT32    CLZERO     : 1;
+    struct
+    {
+        ///
+        /// [Bits 0] Clear Zero Instruction.
+        ///
+        UINT32 CLZERO : 1;
+        ///
+        /// [Bits 1] Instructions retired count support.
+        ///
+        UINT32 IRPerf : 1;
+        ///
+        /// [Bits 2] Restore error pointers for XSave instructions.
+        ///
+        UINT32 XSaveErPtr : 1;
+        ///
+        /// [Bit 31:3] Reserved.
+        ///
+        UINT32 Reserved : 29;
+    } Bits;
     ///
-    /// [Bits 1] Instructions retired count support.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    IRPerf     : 1;
-    ///
-    /// [Bits 2] Restore error pointers for XSave instructions.
-    ///
-    UINT32    XSaveErPtr : 1;
-    ///
-    /// [Bit 31:3] Reserved.
-    ///
-    UINT32    Reserved   : 29;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
+    UINT32 Uint32;
 } CPUID_AMD_VIR_PHY_ADDRESS_SIZE_EBX;
 
 /**
   CPUID Linear Physical Address Size ECX for CPUID leaf
   #CPUID_VIR_PHY_ADDRESS_SIZE.
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 7:0] Number of threads - 1.
+    /// Individual bit fields
     ///
-    UINT32    NC               : 8;
+    struct
+    {
+        ///
+        /// [Bits 7:0] Number of threads - 1.
+        ///
+        UINT32 NC : 8;
+        ///
+        /// [Bit 11:8] Reserved.
+        ///
+        UINT32 Reserved1 : 4;
+        ///
+        /// [Bits 15:12] APIC ID size.
+        ///
+        UINT32 ApicIdCoreIdSize : 4;
+        ///
+        /// [Bits 17:16] Performance time-stamp counter size.
+        ///
+        UINT32 PerfTscSize : 2;
+        ///
+        /// [Bit 31:18] Reserved.
+        ///
+        UINT32 Reserved2 : 14;
+    } Bits;
     ///
-    /// [Bit 11:8] Reserved.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    Reserved1        : 4;
-    ///
-    /// [Bits 15:12] APIC ID size.
-    ///
-    UINT32    ApicIdCoreIdSize : 4;
-    ///
-    /// [Bits 17:16] Performance time-stamp counter size.
-    ///
-    UINT32    PerfTscSize      : 2;
-    ///
-    /// [Bit 31:18] Reserved.
-    ///
-    UINT32    Reserved2        : 14;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
+    UINT32 Uint32;
 } CPUID_AMD_VIR_PHY_ADDRESS_SIZE_ECX;
 
 /**
@@ -653,82 +673,88 @@ typedef union {
                 CPUID_AMD_PROCESSOR_TOPOLOGY_ECX.
   @retval  EDX  Reserved.
 **/
-#define CPUID_AMD_PROCESSOR_TOPOLOGY  0x8000001E
+#define CPUID_AMD_PROCESSOR_TOPOLOGY 0x8000001E
 
 /**
   CPUID AMD Processor Topology EAX for CPUID leaf
   #CPUID_AMD_PROCESSOR_TOPOLOGY.
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bit 31:0] Extended APIC Id.
+    /// Individual bit fields
     ///
-    UINT32    ExtendedApicId;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
+    struct
+    {
+        ///
+        /// [Bit 31:0] Extended APIC Id.
+        ///
+        UINT32 ExtendedApicId;
+    } Bits;
+    ///
+    /// All bit fields as a 32-bit value
+    ///
+    UINT32 Uint32;
 } CPUID_AMD_PROCESSOR_TOPOLOGY_EAX;
 
 /**
   CPUID AMD Processor Topology EBX for CPUID leaf
   #CPUID_AMD_PROCESSOR_TOPOLOGY.
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 7:0] Core Id.
+    /// Individual bit fields
     ///
-    UINT32    CoreId         : 8;
+    struct
+    {
+        ///
+        /// [Bits 7:0] Core Id.
+        ///
+        UINT32 CoreId : 8;
+        ///
+        /// [Bits 15:8] Threads per core.
+        ///
+        UINT32 ThreadsPerCore : 8;
+        ///
+        /// [Bit 31:16] Reserved.
+        ///
+        UINT32 Reserved : 16;
+    } Bits;
     ///
-    /// [Bits 15:8] Threads per core.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    ThreadsPerCore : 8;
-    ///
-    /// [Bit 31:16] Reserved.
-    ///
-    UINT32    Reserved       : 16;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
+    UINT32 Uint32;
 } CPUID_AMD_PROCESSOR_TOPOLOGY_EBX;
 
 /**
   CPUID AMD Processor Topology ECX for CPUID leaf
   #CPUID_AMD_PROCESSOR_TOPOLOGY.
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bits 7:0] Node Id.
+    /// Individual bit fields
     ///
-    UINT32    NodeId            : 8;
+    struct
+    {
+        ///
+        /// [Bits 7:0] Node Id.
+        ///
+        UINT32 NodeId : 8;
+        ///
+        /// [Bits 10:8] Nodes per processor.
+        ///
+        UINT32 NodesPerProcessor : 3;
+        ///
+        /// [Bit 31:11] Reserved.
+        ///
+        UINT32 Reserved : 21;
+    } Bits;
     ///
-    /// [Bits 10:8] Nodes per processor.
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    NodesPerProcessor : 3;
-    ///
-    /// [Bit 31:11] Reserved.
-    ///
-    UINT32    Reserved          : 21;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
+    UINT32 Uint32;
 } CPUID_AMD_PROCESSOR_TOPOLOGY_ECX;
 
 /**
@@ -754,120 +780,128 @@ typedef union {
   @endcode
 **/
 
-#define CPUID_MEMORY_ENCRYPTION_INFO  0x8000001F
+#define CPUID_MEMORY_ENCRYPTION_INFO 0x8000001F
 
 /**
   CPUID Memory Encryption support information EAX for CPUID leaf
   #CPUID_MEMORY_ENCRYPTION_INFO.
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bit 0] Secure Memory Encryption (Sme) Support
+    /// Individual bit fields
     ///
-    UINT32    SmeBit          : 1;
+    struct
+    {
+        ///
+        /// [Bit 0] Secure Memory Encryption (Sme) Support
+        ///
+        UINT32 SmeBit : 1;
 
-    ///
-    /// [Bit 1] Secure Encrypted Virtualization (Sev) Support
-    ///
-    UINT32    SevBit          : 1;
+        ///
+        /// [Bit 1] Secure Encrypted Virtualization (Sev) Support
+        ///
+        UINT32 SevBit : 1;
 
-    ///
-    /// [Bit 2] Page flush MSR support
-    ///
-    UINT32    PageFlushMsrBit : 1;
+        ///
+        /// [Bit 2] Page flush MSR support
+        ///
+        UINT32 PageFlushMsrBit : 1;
 
-    ///
-    /// [Bit 3] Encrypted state support
-    ///
-    UINT32    SevEsBit        : 1;
+        ///
+        /// [Bit 3] Encrypted state support
+        ///
+        UINT32 SevEsBit : 1;
 
+        ///
+        /// [Bit 31:4] Reserved
+        ///
+        UINT32 ReservedBits : 28;
+    } Bits;
     ///
-    /// [Bit 31:4] Reserved
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    ReservedBits    : 28;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
+    UINT32 Uint32;
 } CPUID_MEMORY_ENCRYPTION_INFO_EAX;
 
 /**
   CPUID Memory Encryption support information EBX for CPUID leaf
   #CPUID_MEMORY_ENCRYPTION_INFO.
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bit 5:0] Page table bit number used to enable memory encryption
+    /// Individual bit fields
     ///
-    UINT32    PtePosBits      : 6;
+    struct
+    {
+        ///
+        /// [Bit 5:0] Page table bit number used to enable memory encryption
+        ///
+        UINT32 PtePosBits : 6;
 
-    ///
-    /// [Bit 11:6] Reduction of system physical address space bits when
-    ///  memory encryption is enabled
-    ///
-    UINT32    ReducedPhysBits : 5;
+        ///
+        /// [Bit 11:6] Reduction of system physical address space bits when
+        ///  memory encryption is enabled
+        ///
+        UINT32 ReducedPhysBits : 5;
 
-    ///
-    /// [Bit 30:12] Reserved
-    ///
-    UINT32    ReservedBits    : 20;
+        ///
+        /// [Bit 30:12] Reserved
+        ///
+        UINT32 ReservedBits : 20;
 
+        ///
+        /// [Bit 31] SEV-SNP Cache Coherency Mitigation is not needed
+        ///
+        UINT32 CoherencySfwNo : 1;
+    } Bits;
     ///
-    /// [Bit 31] SEV-SNP Cache Coherency Mitigation is not needed
+    /// All bit fields as a 32-bit value
     ///
-    UINT32    CoherencySfwNo  : 1;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
+    UINT32 Uint32;
 } CPUID_MEMORY_ENCRYPTION_INFO_EBX;
 
 /**
   CPUID Memory Encryption support information ECX for CPUID leaf
   #CPUID_MEMORY_ENCRYPTION_INFO.
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bit 31:0] Number of encrypted guest supported simultaneously
+    /// Individual bit fields
     ///
-    UINT32    NumGuests;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
+    struct
+    {
+        ///
+        /// [Bit 31:0] Number of encrypted guest supported simultaneously
+        ///
+        UINT32 NumGuests;
+    } Bits;
+    ///
+    /// All bit fields as a 32-bit value
+    ///
+    UINT32 Uint32;
 } CPUID_MEMORY_ENCRYPTION_INFO_ECX;
 
 /**
   CPUID Memory Encryption support information EDX for CPUID leaf
   #CPUID_MEMORY_ENCRYPTION_INFO.
 **/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
+typedef union
+{
     ///
-    /// [Bit 31:0] Minimum SEV enabled, SEV-ES disabled ASID
+    /// Individual bit fields
     ///
-    UINT32    MinAsid;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32    Uint32;
+    struct
+    {
+        ///
+        /// [Bit 31:0] Minimum SEV enabled, SEV-ES disabled ASID
+        ///
+        UINT32 MinAsid;
+    } Bits;
+    ///
+    /// All bit fields as a 32-bit value
+    ///
+    UINT32 Uint32;
 } CPUID_MEMORY_ENCRYPTION_INFO_EDX;

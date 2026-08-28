@@ -36,7 +36,4 @@
 **/
 RETURN_STATUS
 EFIAPI
-MmUnblockMemoryRequest (
-  IN PHYSICAL_ADDRESS  UnblockAddress,
-  IN UINT64            NumberOfPages
-  );
+MmUnblockMemoryRequest(IN PHYSICAL_ADDRESS UnblockAddress, IN UINT64 NumberOfPages);

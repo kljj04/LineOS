@@ -2,7 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <render/font_assets.h>
+#include <render/truetype/font_assets.h>
 
 UINTN FontAssetSize(CONST UINT8 *Start, CONST UINT8 *End)
 {

@@ -31,7 +31,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
   @return The encode PCI address.
 
 **/
-#define PCI_EXPRESS_LIB_ADDRESS(Bus, Device, Function, Offset)  PCI_ECAM_ADDRESS ((Bus), (Device), (Function), (Offset))
+#define PCI_EXPRESS_LIB_ADDRESS(Bus, Device, Function, Offset) PCI_ECAM_ADDRESS((Bus), (Device), (Function), (Offset))
 
 /**
   Registers a PCI device so PCI configuration registers may be accessed after
@@ -57,9 +57,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 RETURN_STATUS
 EFIAPI
-PciExpressRegisterForRuntimeAccess (
-  IN UINTN  Address
-  );
+PciExpressRegisterForRuntimeAccess(IN UINTN Address);
 
 /**
   Reads an 8-bit PCI configuration register.
@@ -78,9 +76,7 @@ PciExpressRegisterForRuntimeAccess (
 **/
 UINT8
 EFIAPI
-PciExpressRead8 (
-  IN      UINTN  Address
-  );
+PciExpressRead8(IN UINTN Address);
 
 /**
   Writes an 8-bit PCI configuration register.
@@ -100,10 +96,7 @@ PciExpressRead8 (
 **/
 UINT8
 EFIAPI
-PciExpressWrite8 (
-  IN      UINTN  Address,
-  IN      UINT8  Value
-  );
+PciExpressWrite8(IN UINTN Address, IN UINT8 Value);
 
 /**
   Performs a bitwise OR of an 8-bit PCI configuration register with
@@ -127,10 +120,7 @@ PciExpressWrite8 (
 **/
 UINT8
 EFIAPI
-PciExpressOr8 (
-  IN      UINTN  Address,
-  IN      UINT8  OrData
-  );
+PciExpressOr8(IN UINTN Address, IN UINT8 OrData);
 
 /**
   Performs a bitwise AND of an 8-bit PCI configuration register with an 8-bit
@@ -154,10 +144,7 @@ PciExpressOr8 (
 **/
 UINT8
 EFIAPI
-PciExpressAnd8 (
-  IN      UINTN  Address,
-  IN      UINT8  AndData
-  );
+PciExpressAnd8(IN UINTN Address, IN UINT8 AndData);
 
 /**
   Performs a bitwise AND of an 8-bit PCI configuration register with an 8-bit
@@ -183,11 +170,7 @@ PciExpressAnd8 (
 **/
 UINT8
 EFIAPI
-PciExpressAndThenOr8 (
-  IN      UINTN  Address,
-  IN      UINT8  AndData,
-  IN      UINT8  OrData
-  );
+PciExpressAndThenOr8(IN UINTN Address, IN UINT8 AndData, IN UINT8 OrData);
 
 /**
   Reads a bit field of a PCI configuration register.
@@ -212,11 +195,7 @@ PciExpressAndThenOr8 (
 **/
 UINT8
 EFIAPI
-PciExpressBitFieldRead8 (
-  IN      UINTN  Address,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit
-  );
+PciExpressBitFieldRead8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to a PCI configuration register.
@@ -244,12 +223,7 @@ PciExpressBitFieldRead8 (
 **/
 UINT8
 EFIAPI
-PciExpressBitFieldWrite8 (
-  IN      UINTN  Address,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit,
-  IN      UINT8  Value
-  );
+PciExpressBitFieldWrite8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 Value);
 
 /**
   Reads a bit field in an 8-bit PCI configuration, performs a bitwise OR, and
@@ -280,12 +254,7 @@ PciExpressBitFieldWrite8 (
 **/
 UINT8
 EFIAPI
-PciExpressBitFieldOr8 (
-  IN      UINTN  Address,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit,
-  IN      UINT8  OrData
-  );
+PciExpressBitFieldOr8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 OrData);
 
 /**
   Reads a bit field in an 8-bit PCI configuration register, performs a bitwise
@@ -316,12 +285,7 @@ PciExpressBitFieldOr8 (
 **/
 UINT8
 EFIAPI
-PciExpressBitFieldAnd8 (
-  IN      UINTN  Address,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit,
-  IN      UINT8  AndData
-  );
+PciExpressBitFieldAnd8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 AndData);
 
 /**
   Reads a bit field in an 8-bit port, performs a bitwise AND followed by a
@@ -356,13 +320,7 @@ PciExpressBitFieldAnd8 (
 **/
 UINT8
 EFIAPI
-PciExpressBitFieldAndThenOr8 (
-  IN      UINTN  Address,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit,
-  IN      UINT8  AndData,
-  IN      UINT8  OrData
-  );
+PciExpressBitFieldAndThenOr8(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT8 AndData, IN UINT8 OrData);
 
 /**
   Reads a 16-bit PCI configuration register.
@@ -382,9 +340,7 @@ PciExpressBitFieldAndThenOr8 (
 **/
 UINT16
 EFIAPI
-PciExpressRead16 (
-  IN      UINTN  Address
-  );
+PciExpressRead16(IN UINTN Address);
 
 /**
   Writes a 16-bit PCI configuration register.
@@ -405,10 +361,7 @@ PciExpressRead16 (
 **/
 UINT16
 EFIAPI
-PciExpressWrite16 (
-  IN      UINTN   Address,
-  IN      UINT16  Value
-  );
+PciExpressWrite16(IN UINTN Address, IN UINT16 Value);
 
 /**
   Performs a bitwise OR of a 16-bit PCI configuration register with
@@ -433,10 +386,7 @@ PciExpressWrite16 (
 **/
 UINT16
 EFIAPI
-PciExpressOr16 (
-  IN      UINTN   Address,
-  IN      UINT16  OrData
-  );
+PciExpressOr16(IN UINTN Address, IN UINT16 OrData);
 
 /**
   Performs a bitwise AND of a 16-bit PCI configuration register with a 16-bit
@@ -461,10 +411,7 @@ PciExpressOr16 (
 **/
 UINT16
 EFIAPI
-PciExpressAnd16 (
-  IN      UINTN   Address,
-  IN      UINT16  AndData
-  );
+PciExpressAnd16(IN UINTN Address, IN UINT16 AndData);
 
 /**
   Performs a bitwise AND of a 16-bit PCI configuration register with a 16-bit
@@ -491,11 +438,7 @@ PciExpressAnd16 (
 **/
 UINT16
 EFIAPI
-PciExpressAndThenOr16 (
-  IN      UINTN   Address,
-  IN      UINT16  AndData,
-  IN      UINT16  OrData
-  );
+PciExpressAndThenOr16(IN UINTN Address, IN UINT16 AndData, IN UINT16 OrData);
 
 /**
   Reads a bit field of a PCI configuration register.
@@ -521,11 +464,7 @@ PciExpressAndThenOr16 (
 **/
 UINT16
 EFIAPI
-PciExpressBitFieldRead16 (
-  IN      UINTN  Address,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit
-  );
+PciExpressBitFieldRead16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to a PCI configuration register.
@@ -554,12 +493,7 @@ PciExpressBitFieldRead16 (
 **/
 UINT16
 EFIAPI
-PciExpressBitFieldWrite16 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT16  Value
-  );
+PciExpressBitFieldWrite16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 Value);
 
 /**
   Reads a bit field in a 16-bit PCI configuration, performs a bitwise OR, and
@@ -591,12 +525,7 @@ PciExpressBitFieldWrite16 (
 **/
 UINT16
 EFIAPI
-PciExpressBitFieldOr16 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT16  OrData
-  );
+PciExpressBitFieldOr16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 OrData);
 
 /**
   Reads a bit field in a 16-bit PCI configuration register, performs a bitwise
@@ -628,12 +557,7 @@ PciExpressBitFieldOr16 (
 **/
 UINT16
 EFIAPI
-PciExpressBitFieldAnd16 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT16  AndData
-  );
+PciExpressBitFieldAnd16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 AndData);
 
 /**
   Reads a bit field in a 16-bit port, performs a bitwise AND followed by a
@@ -669,13 +593,7 @@ PciExpressBitFieldAnd16 (
 **/
 UINT16
 EFIAPI
-PciExpressBitFieldAndThenOr16 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT16  AndData,
-  IN      UINT16  OrData
-  );
+PciExpressBitFieldAndThenOr16(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT16 AndData, IN UINT16 OrData);
 
 /**
   Reads a 32-bit PCI configuration register.
@@ -695,9 +613,7 @@ PciExpressBitFieldAndThenOr16 (
 **/
 UINT32
 EFIAPI
-PciExpressRead32 (
-  IN      UINTN  Address
-  );
+PciExpressRead32(IN UINTN Address);
 
 /**
   Writes a 32-bit PCI configuration register.
@@ -718,10 +634,7 @@ PciExpressRead32 (
 **/
 UINT32
 EFIAPI
-PciExpressWrite32 (
-  IN      UINTN   Address,
-  IN      UINT32  Value
-  );
+PciExpressWrite32(IN UINTN Address, IN UINT32 Value);
 
 /**
   Performs a bitwise OR of a 32-bit PCI configuration register with
@@ -746,10 +659,7 @@ PciExpressWrite32 (
 **/
 UINT32
 EFIAPI
-PciExpressOr32 (
-  IN      UINTN   Address,
-  IN      UINT32  OrData
-  );
+PciExpressOr32(IN UINTN Address, IN UINT32 OrData);
 
 /**
   Performs a bitwise AND of a 32-bit PCI configuration register with a 32-bit
@@ -774,10 +684,7 @@ PciExpressOr32 (
 **/
 UINT32
 EFIAPI
-PciExpressAnd32 (
-  IN      UINTN   Address,
-  IN      UINT32  AndData
-  );
+PciExpressAnd32(IN UINTN Address, IN UINT32 AndData);
 
 /**
   Performs a bitwise AND of a 32-bit PCI configuration register with a 32-bit
@@ -804,11 +711,7 @@ PciExpressAnd32 (
 **/
 UINT32
 EFIAPI
-PciExpressAndThenOr32 (
-  IN      UINTN   Address,
-  IN      UINT32  AndData,
-  IN      UINT32  OrData
-  );
+PciExpressAndThenOr32(IN UINTN Address, IN UINT32 AndData, IN UINT32 OrData);
 
 /**
   Reads a bit field of a PCI configuration register.
@@ -834,11 +737,7 @@ PciExpressAndThenOr32 (
 **/
 UINT32
 EFIAPI
-PciExpressBitFieldRead32 (
-  IN      UINTN  Address,
-  IN      UINTN  StartBit,
-  IN      UINTN  EndBit
-  );
+PciExpressBitFieldRead32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit);
 
 /**
   Writes a bit field to a PCI configuration register.
@@ -867,12 +766,7 @@ PciExpressBitFieldRead32 (
 **/
 UINT32
 EFIAPI
-PciExpressBitFieldWrite32 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  Value
-  );
+PciExpressBitFieldWrite32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 Value);
 
 /**
   Reads a bit field in a 32-bit PCI configuration, performs a bitwise OR, and
@@ -904,12 +798,7 @@ PciExpressBitFieldWrite32 (
 **/
 UINT32
 EFIAPI
-PciExpressBitFieldOr32 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  OrData
-  );
+PciExpressBitFieldOr32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 OrData);
 
 /**
   Reads a bit field in a 32-bit PCI configuration register, performs a bitwise
@@ -941,12 +830,7 @@ PciExpressBitFieldOr32 (
 **/
 UINT32
 EFIAPI
-PciExpressBitFieldAnd32 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  AndData
-  );
+PciExpressBitFieldAnd32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 AndData);
 
 /**
   Reads a bit field in a 32-bit port, performs a bitwise AND followed by a
@@ -982,13 +866,7 @@ PciExpressBitFieldAnd32 (
 **/
 UINT32
 EFIAPI
-PciExpressBitFieldAndThenOr32 (
-  IN      UINTN   Address,
-  IN      UINTN   StartBit,
-  IN      UINTN   EndBit,
-  IN      UINT32  AndData,
-  IN      UINT32  OrData
-  );
+PciExpressBitFieldAndThenOr32(IN UINTN Address, IN UINTN StartBit, IN UINTN EndBit, IN UINT32 AndData, IN UINT32 OrData);
 
 /**
   Reads a range of PCI configuration registers into a caller supplied buffer.
@@ -1015,11 +893,7 @@ PciExpressBitFieldAndThenOr32 (
 **/
 UINTN
 EFIAPI
-PciExpressReadBuffer (
-  IN      UINTN  StartAddress,
-  IN      UINTN  Size,
-  OUT     VOID   *Buffer
-  );
+PciExpressReadBuffer(IN UINTN StartAddress, IN UINTN Size, OUT VOID *Buffer);
 
 /**
   Copies the data in a caller supplied buffer to a specified range of PCI
@@ -1047,8 +921,4 @@ PciExpressReadBuffer (
 **/
 UINTN
 EFIAPI
-PciExpressWriteBuffer (
-  IN      UINTN  StartAddress,
-  IN      UINTN  Size,
-  IN      VOID   *Buffer
-  );
+PciExpressWriteBuffer(IN UINTN StartAddress, IN UINTN Size, IN VOID *Buffer);

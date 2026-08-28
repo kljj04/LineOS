@@ -22,9 +22,9 @@
 // "CEDT" CXL Early Discovery Table
 // Compute Express Link Specification Revision 3.1  - Chapter 9.18.1
 //
-#define CXL_EARLY_DISCOVERY_TABLE_REVISION_02  0x2
+#define CXL_EARLY_DISCOVERY_TABLE_REVISION_02 0x2
 
-#define CEDT_TYPE_CSDS  0x4
+#define CEDT_TYPE_CSDS 0x4
 
 //
 // Ensure proper structure formats
@@ -35,10 +35,11 @@
 // Definition for CXL System Description Structure (CSDS)
 // Compute Express Link Specification Revision 3.1  - Chapter 9.18.6
 //
-typedef struct {
-  CEDT_STRUCTURE    Header;
-  UINT16            Capabilities;
-  UINT16            Reserved;
+typedef struct
+{
+    CEDT_STRUCTURE Header;
+    UINT16         Capabilities;
+    UINT16         Reserved;
 } CXL_DOWNSTREAM_PORT_ASSOCIATION_STRUCTURE;
 
 #pragma pack()

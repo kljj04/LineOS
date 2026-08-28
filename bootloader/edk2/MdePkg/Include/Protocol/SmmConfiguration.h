@@ -16,22 +16,23 @@
 #include <Protocol/MmConfiguration.h>
 #include <Pi/PiSmmCis.h>
 
-#define EFI_SMM_CONFIGURATION_PROTOCOL_GUID  EFI_MM_CONFIGURATION_PROTOCOL_GUID
+#define EFI_SMM_CONFIGURATION_PROTOCOL_GUID EFI_MM_CONFIGURATION_PROTOCOL_GUID
 
 ///
 /// Structure describing a SMRAM region which cannot be used for the SMRAM heap.
 ///
-typedef struct _EFI_SMM_RESERVED_SMRAM_REGION {
-  ///
-  /// Starting address of the reserved SMRAM area, as it appears while SMRAM is open.
-  /// Ignored if SmramReservedSize is 0.
-  ///
-  EFI_PHYSICAL_ADDRESS    SmramReservedStart;
-  ///
-  /// Number of bytes occupied by the reserved SMRAM area. A size of zero indicates the
-  /// last SMRAM area.
-  ///
-  UINT64                  SmramReservedSize;
+typedef struct _EFI_SMM_RESERVED_SMRAM_REGION
+{
+    ///
+    /// Starting address of the reserved SMRAM area, as it appears while SMRAM is open.
+    /// Ignored if SmramReservedSize is 0.
+    ///
+    EFI_PHYSICAL_ADDRESS SmramReservedStart;
+    ///
+    /// Number of bytes occupied by the reserved SMRAM area. A size of zero indicates the
+    /// last SMRAM area.
+    ///
+    UINT64 SmramReservedSize;
 } EFI_SMM_RESERVED_SMRAM_REGION;
 
 typedef struct _EFI_SMM_CONFIGURATION_PROTOCOL EFI_SMM_CONFIGURATION_PROTOCOL;
@@ -48,12 +49,7 @@ typedef struct _EFI_SMM_CONFIGURATION_PROTOCOL EFI_SMM_CONFIGURATION_PROTOCOL;
   @retval EFI_SUCCESS            Success to register SMM Entry Point.
   @retval EFI_INVALID_PARAMETER  SmmEntryPoint is NULL.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SMM_REGISTER_SMM_ENTRY)(
-  IN CONST EFI_SMM_CONFIGURATION_PROTOCOL  *This,
-  IN EFI_SMM_ENTRY_POINT                   SmmEntryPoint
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SMM_REGISTER_SMM_ENTRY)(IN CONST EFI_SMM_CONFIGURATION_PROTOCOL *This, IN EFI_SMM_ENTRY_POINT SmmEntryPoint);
 
 ///
 /// The EFI SMM Configuration Protocol is a mandatory protocol published by a DXE CPU driver to
@@ -63,12 +59,13 @@ EFI_STATUS
 /// The RegisterSmmEntry() function allows the SMM IPL DXE driver to register the SMM
 /// Foundation entry point with the SMM entry vector code.
 ///
-struct _EFI_SMM_CONFIGURATION_PROTOCOL {
-  ///
-  /// A pointer to an array SMRAM ranges used by the initial SMM entry code.
-  ///
-  EFI_SMM_RESERVED_SMRAM_REGION    *SmramReservedRegions;
-  EFI_SMM_REGISTER_SMM_ENTRY       RegisterSmmEntry;
+struct _EFI_SMM_CONFIGURATION_PROTOCOL
+{
+    ///
+    /// A pointer to an array SMRAM ranges used by the initial SMM entry code.
+    ///
+    EFI_SMM_RESERVED_SMRAM_REGION *SmramReservedRegions;
+    EFI_SMM_REGISTER_SMM_ENTRY     RegisterSmmEntry;
 };
 
-extern EFI_GUID  gEfiSmmConfigurationProtocolGuid;
+extern EFI_GUID gEfiSmmConfigurationProtocolGuid;

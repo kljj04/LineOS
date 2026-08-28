@@ -17,7 +17,7 @@
 #include <Pi/PiSmmCis.h>
 #include <Protocol/MmPeriodicTimerDispatch.h>
 
-#define EFI_SMM_PERIODIC_TIMER_DISPATCH2_PROTOCOL_GUID  EFI_MM_PERIODIC_TIMER_DISPATCH_PROTOCOL_GUID
+#define EFI_SMM_PERIODIC_TIMER_DISPATCH2_PROTOCOL_GUID EFI_MM_PERIODIC_TIMER_DISPATCH_PROTOCOL_GUID
 
 ///
 /// Example: A chipset supports periodic SMIs on every 64ms or 2 seconds.
@@ -38,18 +38,19 @@
 ///        SMIs occuring during system runtime which can negatively impact system
 ///        performance.
 ///
-typedef struct {
-  ///
-  /// The minimum period of time in 100 nanosecond units that the child gets called. The
-  /// child will be called back after a time greater than the time Period.
-  ///
-  UINT64    Period;
-  ///
-  /// The period of time interval between SMIs. Children of this interface should use this
-  /// field when registering for periodic timer intervals when a finer granularity periodic
-  /// SMI is desired.
-  ///
-  UINT64    SmiTickInterval;
+typedef struct
+{
+    ///
+    /// The minimum period of time in 100 nanosecond units that the child gets called. The
+    /// child will be called back after a time greater than the time Period.
+    ///
+    UINT64 Period;
+    ///
+    /// The period of time interval between SMIs. Children of this interface should use this
+    /// field when registering for periodic timer intervals when a finer granularity periodic
+    /// SMI is desired.
+    ///
+    UINT64 SmiTickInterval;
 } EFI_SMM_PERIODIC_TIMER_REGISTER_CONTEXT;
 
 ///
@@ -88,14 +89,7 @@ typedef struct _EFI_SMM_PERIODIC_TIMER_DISPATCH2_PROTOCOL EFI_SMM_PERIODIC_TIMER
                                  is not within valid range.
   @retval EFI_OUT_OF_RESOURCES   There is not enough memory (system or SMM) to manage this child.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SMM_PERIODIC_TIMER_REGISTER2)(
-  IN CONST EFI_SMM_PERIODIC_TIMER_DISPATCH2_PROTOCOL  *This,
-  IN       EFI_SMM_HANDLER_ENTRY_POINT2               DispatchFunction,
-  IN CONST EFI_SMM_PERIODIC_TIMER_REGISTER_CONTEXT    *RegisterContext,
-  OUT      EFI_HANDLE                                 *DispatchHandle
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SMM_PERIODIC_TIMER_REGISTER2)(IN CONST EFI_SMM_PERIODIC_TIMER_DISPATCH2_PROTOCOL *This, IN EFI_SMM_HANDLER_ENTRY_POINT2 DispatchFunction, IN CONST EFI_SMM_PERIODIC_TIMER_REGISTER_CONTEXT *RegisterContext, OUT EFI_HANDLE *DispatchHandle);
 
 /**
   Unregisters a periodic timer service.
@@ -109,12 +103,7 @@ EFI_STATUS
   @retval EFI_SUCCESS            The service has been successfully removed.
   @retval EFI_INVALID_PARAMETER  The DispatchHandle was not valid.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SMM_PERIODIC_TIMER_UNREGISTER2)(
-  IN CONST EFI_SMM_PERIODIC_TIMER_DISPATCH2_PROTOCOL  *This,
-  IN       EFI_HANDLE                                 DispatchHandle
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SMM_PERIODIC_TIMER_UNREGISTER2)(IN CONST EFI_SMM_PERIODIC_TIMER_DISPATCH2_PROTOCOL *This, IN EFI_HANDLE DispatchHandle);
 
 /**
   Returns the next SMI tick period supported by the chipset.
@@ -131,22 +120,18 @@ EFI_STATUS
 
   @retval EFI_SUCCESS             The service returned successfully.
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_SMM_PERIODIC_TIMER_INTERVAL2)(
-  IN CONST EFI_SMM_PERIODIC_TIMER_DISPATCH2_PROTOCOL  *This,
-  IN OUT UINT64                                       **SmiTickInterval
-  );
+typedef EFI_STATUS(EFIAPI *EFI_SMM_PERIODIC_TIMER_INTERVAL2)(IN CONST EFI_SMM_PERIODIC_TIMER_DISPATCH2_PROTOCOL *This, IN OUT UINT64 **SmiTickInterval);
 
 ///
 /// Interface structure for the SMM Periodic Timer Dispatch Protocol
 ///
 /// This protocol provides the parent dispatch service for the periodical timer SMI source generator.
 ///
-struct _EFI_SMM_PERIODIC_TIMER_DISPATCH2_PROTOCOL {
-  EFI_SMM_PERIODIC_TIMER_REGISTER2      Register;
-  EFI_SMM_PERIODIC_TIMER_UNREGISTER2    UnRegister;
-  EFI_SMM_PERIODIC_TIMER_INTERVAL2      GetNextShorterInterval;
+struct _EFI_SMM_PERIODIC_TIMER_DISPATCH2_PROTOCOL
+{
+    EFI_SMM_PERIODIC_TIMER_REGISTER2   Register;
+    EFI_SMM_PERIODIC_TIMER_UNREGISTER2 UnRegister;
+    EFI_SMM_PERIODIC_TIMER_INTERVAL2   GetNextShorterInterval;
 };
 
-extern EFI_GUID  gEfiSmmPeriodicTimerDispatch2ProtocolGuid;
+extern EFI_GUID gEfiSmmPeriodicTimerDispatch2ProtocolGuid;

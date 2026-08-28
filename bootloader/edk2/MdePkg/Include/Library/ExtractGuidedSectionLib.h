@@ -50,14 +50,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
   @retval  RETURN_INVALID_PARAMETER  The information can not be retrieved from the section specified by InputSection.
 
 **/
-typedef
-RETURN_STATUS
-(EFIAPI *EXTRACT_GUIDED_SECTION_GET_INFO_HANDLER)(
-  IN CONST  VOID    *InputSection,
-  OUT       UINT32  *OutputBufferSize,
-  OUT       UINT32  *ScratchBufferSize,
-  OUT       UINT16  *SectionAttribute
-  );
+typedef RETURN_STATUS(EFIAPI *EXTRACT_GUIDED_SECTION_GET_INFO_HANDLER)(IN CONST VOID *InputSection, OUT UINT32 *OutputBufferSize, OUT UINT32 *ScratchBufferSize, OUT UINT16 *SectionAttribute);
 
 /**
   Decodes a GUIDed section into a caller allocated output buffer.
@@ -92,14 +85,7 @@ RETURN_STATUS
   @retval  RETURN_INVALID_PARAMETER  The section specified by InputSection can not be decoded.
 
 **/
-typedef
-RETURN_STATUS
-(EFIAPI *EXTRACT_GUIDED_SECTION_DECODE_HANDLER)(
-  IN CONST  VOID    *InputSection,
-  OUT       VOID    **OutputBuffer,
-  IN        VOID    *ScratchBuffer         OPTIONAL,
-  OUT       UINT32  *AuthenticationStatus
-  );
+typedef RETURN_STATUS(EFIAPI *EXTRACT_GUIDED_SECTION_DECODE_HANDLER)(IN CONST VOID *InputSection, OUT VOID **OutputBuffer, IN VOID *ScratchBuffer OPTIONAL, OUT UINT32 *AuthenticationStatus);
 
 /**
   Registers handlers of type EXTRACT_GUIDED_SECTION_GET_INFO_HANDLER and EXTRACT_GUIDED_SECTION_DECODE_HANDLER
@@ -127,11 +113,7 @@ RETURN_STATUS
 **/
 RETURN_STATUS
 EFIAPI
-ExtractGuidedSectionRegisterHandlers (
-  IN CONST  GUID                                     *SectionGuid,
-  IN        EXTRACT_GUIDED_SECTION_GET_INFO_HANDLER  GetInfoHandler,
-  IN        EXTRACT_GUIDED_SECTION_DECODE_HANDLER    DecodeHandler
-  );
+ExtractGuidedSectionRegisterHandlers(IN CONST GUID *SectionGuid, IN EXTRACT_GUIDED_SECTION_GET_INFO_HANDLER GetInfoHandler, IN EXTRACT_GUIDED_SECTION_DECODE_HANDLER DecodeHandler);
 
 /**
   Retrieve the list GUIDs that have been registered through ExtractGuidedSectionRegisterHandlers().
@@ -149,9 +131,7 @@ ExtractGuidedSectionRegisterHandlers (
 **/
 UINTN
 EFIAPI
-ExtractGuidedSectionGetGuidList (
-  OUT  GUID  **ExtractHandlerGuidTable
-  );
+ExtractGuidedSectionGetGuidList(OUT GUID **ExtractHandlerGuidTable);
 
 /**
   Retrieves a GUID from a GUIDed section and uses that GUID to select an associated handler of type
@@ -189,12 +169,7 @@ ExtractGuidedSectionGetGuidList (
 **/
 RETURN_STATUS
 EFIAPI
-ExtractGuidedSectionGetInfo (
-  IN  CONST VOID    *InputSection,
-  OUT       UINT32  *OutputBufferSize,
-  OUT       UINT32  *ScratchBufferSize,
-  OUT       UINT16  *SectionAttribute
-  );
+ExtractGuidedSectionGetInfo(IN CONST VOID *InputSection, OUT UINT32 *OutputBufferSize, OUT UINT32 *ScratchBufferSize, OUT UINT16 *SectionAttribute);
 
 /**
   Retrieves the GUID from a GUIDed section and uses that GUID to select an associated handler of type
@@ -233,12 +208,7 @@ ExtractGuidedSectionGetInfo (
 **/
 RETURN_STATUS
 EFIAPI
-ExtractGuidedSectionDecode (
-  IN  CONST VOID    *InputSection,
-  OUT       VOID    **OutputBuffer,
-  IN        VOID    *ScratchBuffer         OPTIONAL,
-  OUT       UINT32  *AuthenticationStatus
-  );
+ExtractGuidedSectionDecode(IN CONST VOID *InputSection, OUT VOID **OutputBuffer, IN VOID *ScratchBuffer OPTIONAL, OUT UINT32 *AuthenticationStatus);
 
 /**
   Retrieves handlers of type EXTRACT_GUIDED_SECTION_GET_INFO_HANDLER and
@@ -269,8 +239,4 @@ ExtractGuidedSectionDecode (
 **/
 RETURN_STATUS
 EFIAPI
-ExtractGuidedSectionGetHandlers (
-  IN CONST   GUID                                     *SectionGuid,
-  OUT        EXTRACT_GUIDED_SECTION_GET_INFO_HANDLER  *GetInfoHandler   OPTIONAL,
-  OUT        EXTRACT_GUIDED_SECTION_DECODE_HANDLER    *DecodeHandler    OPTIONAL
-  );
+ExtractGuidedSectionGetHandlers(IN CONST GUID *SectionGuid, OUT EXTRACT_GUIDED_SECTION_GET_INFO_HANDLER *GetInfoHandler OPTIONAL, OUT EXTRACT_GUIDED_SECTION_DECODE_HANDLER *DecodeHandler OPTIONAL);

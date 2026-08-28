@@ -18,16 +18,17 @@
 // Limit the maximum number of agents tracked by this library instance.
 // This is intentionally capped to match the MPXY channel-list chunk size.
 //
-#define MAX_RAS_AGENTS  64
+#define MAX_RAS_AGENTS 64
 
-typedef enum {
-  DtGhesV2,
-  NumErrDescTypes
+typedef enum
+{
+    DtGhesV2,
+    NumErrDescTypes
 } ERROR_DESCRIPTOR_TYPE;
 
-#define ERROR_DESCRIPTOR_TYPE_SHIFT  4
-#define MAX_ERROR_DESCRIPTOR_TYPES   (0x1UL << ERROR_DESCRIPTOR_TYPE_SHIFT)
-#define ERROR_DESCRIPTOR_TYPE_MASK   (MAX_ERROR_DESCRIPTOR_TYPES - 1)
+#define ERROR_DESCRIPTOR_TYPE_SHIFT 4
+#define MAX_ERROR_DESCRIPTOR_TYPES  (0x1UL << ERROR_DESCRIPTOR_TYPE_SHIFT)
+#define ERROR_DESCRIPTOR_TYPE_MASK  (MAX_ERROR_DESCRIPTOR_TYPES - 1)
 
 /**
   Initialize the RAS agent client
@@ -36,9 +37,7 @@ typedef enum {
 **/
 EFI_STATUS
 EFIAPI
-RacInit (
-  VOID
-  );
+RacInit(VOID);
 
 /**
    Get number of RAS agents present
@@ -47,9 +46,7 @@ RacInit (
 **/
 EFI_STATUS
 EFIAPI
-RacGetNumRasAgents (
-  VOID
-  );
+RacGetNumRasAgents(VOID);
 
 /**
    Get the list of RAS agent MPXY channel Ids
@@ -63,11 +60,7 @@ RacGetNumRasAgents (
 **/
 EFI_STATUS
 EFIAPI
-RacGetRasAgentMpxyChannelId (
-  IN  UINT32  ChannelIdSize,
-  OUT UINT32  *ChannelId,
-  OUT UINT32  *NumChannelIds
-  );
+RacGetRasAgentMpxyChannelId(IN UINT32 ChannelIdSize, OUT UINT32 *ChannelId, OUT UINT32 *NumChannelIds);
 
 /**
    Open a RAS agent's MPXY channel
@@ -78,9 +71,7 @@ RacGetRasAgentMpxyChannelId (
 **/
 EFI_STATUS
 EFIAPI
-RacOpenRasAgentChannel (
-  IN  UINT32  ChannelId
-  );
+RacOpenRasAgentChannel(IN UINT32 ChannelId);
 
 /**
    Close a RAS agent's MPXY channel
@@ -92,9 +83,7 @@ RacOpenRasAgentChannel (
 **/
 EFI_STATUS
 EFIAPI
-RacCloseRasAgentChannel (
-  IN  UINT32  ChannelId
-  );
+RacCloseRasAgentChannel(IN UINT32 ChannelId);
 
 /**
   Get the number of hardware error sources from the RAS Agent
@@ -106,10 +95,7 @@ RacCloseRasAgentChannel (
 **/
 EFI_STATUS
 EFIAPI
-RacGetNumberErrorSources (
-  IN  UINT32  ChannelId,
-  OUT UINT32  *NumErrorSources
-  );
+RacGetNumberErrorSources(IN UINT32 ChannelId, OUT UINT32 *NumErrorSources);
 
 /**
   Get the list of hardware error source IDs from the RAS Agent
@@ -122,11 +108,7 @@ RacGetNumberErrorSources (
 **/
 EFI_STATUS
 EFIAPI
-RacGetErrorSourceIDList (
-  IN  UINT32  ChannelId,
-  OUT UINT32  **ErrorSourceList,
-  OUT UINT32  *NumSources
-  );
+RacGetErrorSourceIDList(IN UINT32 ChannelId, OUT UINT32 **ErrorSourceList, OUT UINT32 *NumSources);
 
 /**
   Get the hardware error source descriptor for a given error source ID.
@@ -141,10 +123,4 @@ RacGetErrorSourceIDList (
 **/
 EFI_STATUS
 EFIAPI
-RacGetErrorSourceDescriptor (
-  IN  UINT32  ChannelId,
-  IN  UINT32  SourceID,
-  OUT UINTN   *DescriptorType,
-  OUT VOID    **ErrorDescriptor,
-  OUT UINT32  *ErrorDescriptorSize
-  );
+RacGetErrorSourceDescriptor(IN UINT32 ChannelId, IN UINT32 SourceID, OUT UINTN *DescriptorType, OUT VOID **ErrorDescriptor, OUT UINT32 *ErrorDescriptorSize);

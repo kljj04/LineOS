@@ -16,8 +16,4 @@
   @param  FailureAddress  The address of the function that failed the stack cookie check.
 
 **/
-VOID
-EFIAPI
-StackCheckFailureHook (
-  VOID  *FailureAddress
-  );
+VOID EFIAPI StackCheckFailureHook(VOID *FailureAddress);

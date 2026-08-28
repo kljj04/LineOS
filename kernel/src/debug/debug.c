@@ -39,7 +39,7 @@ VOID DebugWriteWide(CONST CHAR16 *String)
 VOID DebugWriteHex(UINT64 Value)
 {
     STATIC CONST CHAR8 Digits[] = "0123456789abcdef";
-    BOOLEAN Started = FALSE;
+    BOOLEAN            Started = FALSE;
 
     DebugWrite("0x");
     for (INT32 Shift = 60; Shift >= 0; Shift -= 4)
@@ -56,7 +56,7 @@ VOID DebugWriteHex(UINT64 Value)
 
 VOID DebugWriteDec(UINT64 Value)
 {
-    CHAR8 Buffer[32];
+    CHAR8  Buffer[32];
     UINT32 Index = 0;
 
     if (Value == 0)

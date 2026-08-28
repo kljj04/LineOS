@@ -20,11 +20,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
   @return  The pointer to PeiServices.
 
 **/
-CONST EFI_PEI_SERVICES **
-EFIAPI
-GetPeiServicesTablePointer (
-  VOID
-  );
+CONST EFI_PEI_SERVICES **EFIAPI GetPeiServicesTablePointer(VOID);
 
 /**
   Caches a pointer PEI Services Table.
@@ -37,11 +33,7 @@ GetPeiServicesTablePointer (
 
   @param    PeiServicesTablePointer   The address of PeiServices pointer.
 **/
-VOID
-EFIAPI
-SetPeiServicesTablePointer (
-  IN CONST EFI_PEI_SERVICES  **PeiServicesTablePointer
-  );
+VOID EFIAPI SetPeiServicesTablePointer(IN CONST EFI_PEI_SERVICES **PeiServicesTablePointer);
 
 /**
   Perform CPU specific actions required to migrate the PEI Services Table
@@ -58,8 +50,4 @@ SetPeiServicesTablePointer (
   LoongArch CPUs.
 
 **/
-VOID
-EFIAPI
-MigratePeiServicesTablePointer (
-  VOID
-  );
+VOID EFIAPI MigratePeiServicesTablePointer(VOID);

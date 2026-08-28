@@ -7,5 +7,5 @@
 #include <lineos/bootinfo.h>
 #include <render/fontinfo.h>
 
-INT32  FindGlyph(UINT16 Unicode);
-UINT16 DrawGlyph(UINT16 Unicode, UINT32 x, UINT32 BaseLine, UINT32 Color);
+INT32  GOPFindGlyph(UINT16 Unicode);
+UINT16 GOPDrawGlyph(UINT16 Unicode, UINT32 x, UINT32 BaseLine, UINT32 Color);

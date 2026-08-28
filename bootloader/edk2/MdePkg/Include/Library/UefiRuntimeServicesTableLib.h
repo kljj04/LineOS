@@ -20,4 +20,4 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 ///
 /// Cached copy of the EFI Runtime Services Table
 ///
-extern EFI_RUNTIME_SERVICES  *gRT;
+extern EFI_RUNTIME_SERVICES *gRT;

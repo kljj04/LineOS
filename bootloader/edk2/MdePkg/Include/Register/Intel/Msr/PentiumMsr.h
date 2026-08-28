@@ -28,14 +28,7 @@
   @retval  TRUE   Yes, it is.
   @retval  FALSE  No, it isn't.
 **/
-#define IS_PENTIUM_PROCESSOR(DisplayFamily, DisplayModel) \
-  (DisplayFamily == 0x05 && \
-   (                        \
-    DisplayModel == 0x01 || \
-    DisplayModel == 0x02 || \
-    DisplayModel == 0x04    \
-    )                       \
-   )
+#define IS_PENTIUM_PROCESSOR(DisplayFamily, DisplayModel) (DisplayFamily == 0x05 && (DisplayModel == 0x01 || DisplayModel == 0x02 || DisplayModel == 0x04))
 
 /**
   See Section 15.10.2, "Pentium Processor Machine-Check Exception Handling.".
@@ -53,7 +46,7 @@
   @endcode
   @note MSR_PENTIUM_P5_MC_ADDR is defined as P5_MC_ADDR in SDM.
 **/
-#define MSR_PENTIUM_P5_MC_ADDR  0x00000000
+#define MSR_PENTIUM_P5_MC_ADDR 0x00000000
 
 /**
   See Section 15.10.2, "Pentium Processor Machine-Check Exception Handling.".
@@ -71,7 +64,7 @@
   @endcode
   @note MSR_PENTIUM_P5_MC_TYPE is defined as P5_MC_TYPE in SDM.
 **/
-#define MSR_PENTIUM_P5_MC_TYPE  0x00000001
+#define MSR_PENTIUM_P5_MC_TYPE 0x00000001
 
 /**
   See Section 17.17, "Time-Stamp Counter.".
@@ -89,7 +82,7 @@
   @endcode
   @note MSR_PENTIUM_TSC is defined as TSC in SDM.
 **/
-#define MSR_PENTIUM_TSC  0x00000010
+#define MSR_PENTIUM_TSC 0x00000010
 
 /**
   See Section 18.6.9.1, "Control and Event Select Register (CESR).".
@@ -107,7 +100,7 @@
   @endcode
   @note MSR_PENTIUM_CESR is defined as CESR in SDM.
 **/
-#define MSR_PENTIUM_CESR  0x00000011
+#define MSR_PENTIUM_CESR 0x00000011
 
 /**
   Section 18.6.9.3, "Events Counted.".
@@ -127,6 +120,6 @@
         MSR_PENTIUM_CTR1 is defined as CTR1 in SDM.
   @{
 **/
-#define MSR_PENTIUM_CTR0  0x00000012
-#define MSR_PENTIUM_CTR1  0x00000013
+#define MSR_PENTIUM_CTR0 0x00000012
+#define MSR_PENTIUM_CTR1 0x00000013
 /// @}

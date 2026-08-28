@@ -4,6 +4,37 @@
 
 #pragma once
 
+#ifndef LINEOS_KERNEL_BUILD
+#include <Protocol/GraphicsOutput.h>
+#include <Uefi.h>
+#endif
+
+#undef CONST
+#undef NULL
+#undef TRUE
+#undef FALSE
+#undef STATIC
+#undef EXTERN
+#undef INLINE
+#undef VOLATILE
+#undef PACKED
+#undef MS_ABI
+#undef SYSV_ABI
+#undef ASM
+
+#define CONST    const
+#define NULL     ((VOID *) 0)
+#define TRUE     ((BOOLEAN) 1)
+#define FALSE    ((BOOLEAN) 0)
+#define STATIC   static
+#define EXTERN   extern
+#define INLINE   inline
+#define VOLATILE volatile
+#define PACKED   __attribute__((packed))
+#define MS_ABI   __attribute__((ms_abi))
+#define SYSV_ABI __attribute__((sysv_abi))
+#define ASM      __asm__ volatile
+
 #ifdef LINEOS_KERNEL_BUILD
 typedef unsigned char      UINT8;
 typedef unsigned short     UINT16;
@@ -18,6 +49,7 @@ typedef signed __int128    INT128;
 typedef unsigned char      CHAR8;
 typedef unsigned short     CHAR16;
 typedef unsigned long long UINTN;
+typedef signed long long   INTN;
 typedef float              FLOAT32;
 typedef double             FLOAT64;
 typedef unsigned char      BOOLEAN;
@@ -41,22 +73,22 @@ typedef unsigned int       EFI_GRAPHICS_PIXEL_FORMAT;
 
 typedef enum
 {
-    EfiReservedMemoryType,
-    EfiLoaderCode,
-    EfiLoaderData,
-    EfiBootServicesCode,
-    EfiBootServicesData,
-    EfiRuntimeServicesCode,
-    EfiRuntimeServicesData,
-    EfiConventionalMemory,
-    EfiUnusableMemory,
-    EfiACPIReclaimMemory,
-    EfiACPIMemoryNVS,
-    EfiMemoryMappedIO,
-    EfiMemoryMappedIOPortSpace,
-    EfiPalCode,
-    EfiPersistentMemory,
-    EfiMaxMemoryType
+    EFI_RESERVED_MEMORY_TYPE,
+    EFI_LOADER_CODE,
+    EFI_LOADER_DATA,
+    EFI_BOOT_SERVICES_CODE,
+    EFI_BOOT_SERVICES_DATA,
+    EFI_RUNTIME_SERVICES_CODE,
+    EFI_RUNTIME_SERVICES_DATA,
+    EFI_CONVENTIONAL_MEMORY,
+    EFI_UNUSABLE_MEMORY,
+    EFI_ACPI_RECLAIM_MEMORY,
+    EFI_ACPI_MEMORY_NVS,
+    EFI_MEMORY_MAPPED_IO,
+    EFI_MEMORY_MAPPED_IO_PORT_SPACE,
+    EFI_PAL_CODE,
+    EFI_PERSISTENT_MEMORY,
+    EFI_MAX_MEMORY_TYPE
 } EFI_MEMORY_TYPE;
 
 typedef struct
@@ -68,17 +100,4 @@ typedef struct
     UINT64 NumberOfPages;
     UINT64 Attribute;
 } EFI_MEMORY_DESCRIPTOR;
-
-#define CONST    const
-#define NULL     ((VOID *) 0)
-#define TRUE     ((BOOLEAN) 1)
-#define FALSE    ((BOOLEAN) 0)
-#define STATIC   static
-#define PACKED   __attribute__((packed))
-#define MS_ABI   __attribute__((ms_abi))
-#define SYSV_ABI __attribute__((sysv_abi))
-#define ASM      __asm__ volatile
-#else
-#include <Protocol/GraphicsOutput.h>
-#include <Uefi.h>
 #endif

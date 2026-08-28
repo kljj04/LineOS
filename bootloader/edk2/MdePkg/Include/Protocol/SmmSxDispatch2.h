@@ -13,7 +13,7 @@
 
 #include <Protocol/MmSxDispatch.h>
 
-#define EFI_SMM_SX_DISPATCH2_PROTOCOL_GUID  EFI_MM_SX_DISPATCH_PROTOCOL_GUID
+#define EFI_SMM_SX_DISPATCH2_PROTOCOL_GUID EFI_MM_SX_DISPATCH_PROTOCOL_GUID
 
 ///
 /// The dispatch function's context
@@ -26,4 +26,4 @@ typedef EFI_MM_SX_REGISTER EFI_SMM_SX_REGISTER2;
 
 typedef EFI_MM_SX_UNREGISTER EFI_SMM_SX_UNREGISTER2;
 
-extern EFI_GUID  gEfiSmmSxDispatch2ProtocolGuid;
+extern EFI_GUID gEfiSmmSxDispatch2ProtocolGuid;

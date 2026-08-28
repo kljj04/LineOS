@@ -9,11 +9,12 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #pragma once
 
-typedef enum {
-  FilterWidth8,
-  FilterWidth16,
-  FilterWidth32,
-  FilterWidth64
+typedef enum
+{
+    FilterWidth8,
+    FilterWidth16,
+    FilterWidth32,
+    FilterWidth64
 } FILTER_IO_WIDTH;
 
 /**
@@ -33,11 +34,7 @@ typedef enum {
 **/
 BOOLEAN
 EFIAPI
-FilterBeforeIoRead (
-  IN FILTER_IO_WIDTH  Width,
-  IN UINTN            Address,
-  IN OUT VOID         *Buffer
-  );
+FilterBeforeIoRead(IN FILTER_IO_WIDTH Width, IN UINTN Address, IN OUT VOID *Buffer);
 
 /**
   Trace IO read operation after read IO port.
@@ -48,13 +45,7 @@ FilterBeforeIoRead (
   @param[in]       Buffer   The destination buffer to store the results.
 
 **/
-VOID
-EFIAPI
-FilterAfterIoRead (
-  IN FILTER_IO_WIDTH  Width,
-  IN UINTN            Address,
-  IN VOID             *Buffer
-  );
+VOID EFIAPI FilterAfterIoRead(IN FILTER_IO_WIDTH Width, IN UINTN Address, IN VOID *Buffer);
 
 /**
   Filter IO Write operation before write IO port.
@@ -73,11 +64,7 @@ FilterAfterIoRead (
 **/
 BOOLEAN
 EFIAPI
-FilterBeforeIoWrite (
-  IN FILTER_IO_WIDTH  Width,
-  IN UINTN            Address,
-  IN VOID             *Buffer
-  );
+FilterBeforeIoWrite(IN FILTER_IO_WIDTH Width, IN UINTN Address, IN VOID *Buffer);
 
 /**
 Trace IO Write operation after write IO port.
@@ -88,13 +75,7 @@ It is used to trace IO operation.
 @param[in]       Buffer   The source buffer from which to BeforeWrite data.
 
 **/
-VOID
-EFIAPI
-FilterAfterIoWrite (
-  IN FILTER_IO_WIDTH  Width,
-  IN UINTN            Address,
-  IN VOID             *Buffer
-  );
+VOID EFIAPI FilterAfterIoWrite(IN FILTER_IO_WIDTH Width, IN UINTN Address, IN VOID *Buffer);
 
 /**
   Filter memory IO before Read operation.
@@ -112,11 +93,7 @@ FilterAfterIoWrite (
 **/
 BOOLEAN
 EFIAPI
-FilterBeforeMmIoRead (
-  IN FILTER_IO_WIDTH  Width,
-  IN UINTN            Address,
-  IN OUT VOID         *Buffer
-  );
+FilterBeforeMmIoRead(IN FILTER_IO_WIDTH Width, IN UINTN Address, IN OUT VOID *Buffer);
 
 /**
   Tracer memory IO after read operation
@@ -126,13 +103,7 @@ FilterBeforeMmIoRead (
   @param[in]       Buffer   The destination buffer to store the results.
 
 **/
-VOID
-EFIAPI
-FilterAfterMmIoRead (
-  IN FILTER_IO_WIDTH  Width,
-  IN UINTN            Address,
-  IN VOID             *Buffer
-  );
+VOID EFIAPI FilterAfterMmIoRead(IN FILTER_IO_WIDTH Width, IN UINTN Address, IN VOID *Buffer);
 
 /**
   Filter memory IO before write operation
@@ -150,11 +121,7 @@ FilterAfterMmIoRead (
 **/
 BOOLEAN
 EFIAPI
-FilterBeforeMmIoWrite (
-  IN FILTER_IO_WIDTH  Width,
-  IN UINTN            Address,
-  IN VOID             *Buffer
-  );
+FilterBeforeMmIoWrite(IN FILTER_IO_WIDTH Width, IN UINTN Address, IN VOID *Buffer);
 
 /**
   Tracer memory IO after write operation
@@ -164,13 +131,7 @@ FilterBeforeMmIoWrite (
   @param[in]       Buffer   The source buffer from which to BeforeWrite data.
 
 **/
-VOID
-EFIAPI
-FilterAfterMmIoWrite (
-  IN FILTER_IO_WIDTH  Width,
-  IN UINTN            Address,
-  IN VOID             *Buffer
-  );
+VOID EFIAPI FilterAfterMmIoWrite(IN FILTER_IO_WIDTH Width, IN UINTN Address, IN VOID *Buffer);
 
 /**
   Filter MSR before read operation.
@@ -187,10 +148,7 @@ FilterAfterMmIoWrite (
 **/
 BOOLEAN
 EFIAPI
-FilterBeforeMsrRead (
-  IN UINT32      Index,
-  IN OUT UINT64  *Value
-  );
+FilterBeforeMsrRead(IN UINT32 Index, IN OUT UINT64 *Value);
 
 /**
   Trace MSR after read operation
@@ -199,12 +157,7 @@ FilterBeforeMsrRead (
   @param  Value                     The 64-bit value to BeforeRead from the Machine Specific Register.
 
 **/
-VOID
-EFIAPI
-FilterAfterMsrRead (
-  IN UINT32  Index,
-  IN UINT64  *Value
-  );
+VOID EFIAPI FilterAfterMsrRead(IN UINT32 Index, IN UINT64 *Value);
 
 /**
   Filter MSR before write operation
@@ -221,10 +174,7 @@ FilterAfterMsrRead (
 **/
 BOOLEAN
 EFIAPI
-FilterBeforeMsrWrite (
-  IN UINT32  Index,
-  IN UINT64  *Value
-  );
+FilterBeforeMsrWrite(IN UINT32 Index, IN UINT64 *Value);
 
 /**
   Trace MSR after write operation
@@ -233,9 +183,4 @@ FilterBeforeMsrWrite (
   @param  Value                     The 64-bit value to BeforeWrite to the Machine Specific Register.
 
 **/
-VOID
-EFIAPI
-FilterAfterMsrWrite (
-  IN UINT32  Index,
-  IN UINT64  *Value
-  );
+VOID EFIAPI FilterAfterMsrWrite(IN UINT32 Index, IN UINT64 *Value);

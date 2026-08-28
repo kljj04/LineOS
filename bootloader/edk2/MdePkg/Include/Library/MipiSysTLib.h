@@ -19,9 +19,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 RETURN_STATUS
 EFIAPI
-InitMipiSystHandle (
-  IN OUT VOID  *MipiSystHandle
-  );
+InitMipiSystHandle(IN OUT VOID *MipiSystHandle);
 
 /**
   Invoke write_debug_string function in Mipi Sys-T module.
@@ -37,12 +35,7 @@ InitMipiSystHandle (
 **/
 RETURN_STATUS
 EFIAPI
-MipiSystWriteDebug (
-  IN        VOID    *MipiSystHandle,
-  IN        UINT32  Severity,
-  IN        UINT16  Len,
-  IN CONST  CHAR8   *Str
-  );
+MipiSystWriteDebug(IN VOID *MipiSystHandle, IN UINT32 Severity, IN UINT16 Len, IN CONST CHAR8 *Str);
 
 /**
   Invoke catalog_write_message function in Mipi Sys-T module.
@@ -56,8 +49,4 @@ MipiSystWriteDebug (
 **/
 RETURN_STATUS
 EFIAPI
-MipiSystWriteCatalog (
-  IN  VOID    *MipiSystHandle,
-  IN  UINT32  Severity,
-  IN  UINT64  CatId
-  );
+MipiSystWriteCatalog(IN VOID *MipiSystHandle, IN UINT32 Severity, IN UINT64 CatId);

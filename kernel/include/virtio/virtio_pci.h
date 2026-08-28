@@ -17,22 +17,22 @@
 
 typedef struct PACKED
 {
-    volatile UINT32 DeviceFeatureSelect;
-    volatile UINT32 DeviceFeature;
-    volatile UINT32 DriverFeatureSelect;
-    volatile UINT32 DriverFeature;
-    volatile UINT16 MSIXConfig;
-    volatile UINT16 NumQueues;
-    volatile UINT8  DeviceStatus;
-    volatile UINT8  ConfigGeneration;
-    volatile UINT16 QueueSelect;
-    volatile UINT16 QueueSize;
-    volatile UINT16 QueueMSIXVector;
-    volatile UINT16 QueueEnable;
-    volatile UINT16 QueueNotifyOff;
-    volatile UINT64 QueueDesc;
-    volatile UINT64 QueueDriver;
-    volatile UINT64 QueueDevice;
+    VOLATILE UINT32 DeviceFeatureSelect;
+    VOLATILE UINT32 DeviceFeature;
+    VOLATILE UINT32 DriverFeatureSelect;
+    VOLATILE UINT32 DriverFeature;
+    VOLATILE UINT16 MSIXConfig;
+    VOLATILE UINT16 NumQueues;
+    VOLATILE UINT8  DeviceStatus;
+    VOLATILE UINT8  ConfigGeneration;
+    VOLATILE UINT16 QueueSelect;
+    VOLATILE UINT16 QueueSize;
+    VOLATILE UINT16 QueueMSIXVector;
+    VOLATILE UINT16 QueueEnable;
+    VOLATILE UINT16 QueueNotifyOff;
+    VOLATILE UINT64 QueueDesc;
+    VOLATILE UINT64 QueueDriver;
+    VOLATILE UINT64 QueueDevice;
 } VIRTIO_PCI_COMMON_CONFIG;
 
 typedef struct
@@ -40,9 +40,9 @@ typedef struct
     PCI_DEVICE               *PCIDevice;
     PCI_BAR                   BARs[6];
     VIRTIO_PCI_COMMON_CONFIG *CommonConfig;
-    volatile UINT16          *NotifyBase;
-    volatile UINT8           *ISRStatus;
-    volatile UINT8           *DeviceConfig;
+    VOLATILE UINT16          *NotifyBase;
+    VOLATILE UINT8           *ISRStatus;
+    VOLATILE UINT8           *DeviceConfig;
     UINT8                     CommonConfigBAR;
     UINT8                     NotifyBAR;
     UINT8                     ISRStatusBAR;

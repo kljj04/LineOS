@@ -19,6 +19,4 @@
 **/
 EFI_STATUS
 EFIAPI
-SmmWaitForAllProcessor (
-  IN  BOOLEAN  BlockingMode
-  );
+SmmWaitForAllProcessor(IN BOOLEAN BlockingMode);

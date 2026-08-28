@@ -10,11 +10,12 @@
 
 #pragma once
 
-typedef struct {
-  UINT16    SegmentNumber;              ///< Segment number.
-  UINT64    BaseAddress;                ///< ECAM Base address.
-  UINT8     StartBusNumber;             ///< Start BUS number, for verifying the PCI Segment address.
-  UINT8     EndBusNumber;               ///< End BUS number, for verifying the PCI Segment address.
+typedef struct
+{
+    UINT16 SegmentNumber;  ///< Segment number.
+    UINT64 BaseAddress;    ///< ECAM Base address.
+    UINT8  StartBusNumber; ///< Start BUS number, for verifying the PCI Segment address.
+    UINT8  EndBusNumber;   ///< End BUS number, for verifying the PCI Segment address.
 } PCI_SEGMENT_INFO;
 
 /**
@@ -26,8 +27,4 @@ typedef struct {
 
   @retval A callee owned array holding the segment information.
 **/
-PCI_SEGMENT_INFO *
-EFIAPI
-GetPciSegmentInfo (
-  UINTN  *Count
-  );
+PCI_SEGMENT_INFO *EFIAPI GetPciSegmentInfo(UINTN *Count);
