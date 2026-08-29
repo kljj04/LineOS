@@ -1,4 +1,4 @@
-// memory.h
+// kernel/include/memory/memory.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

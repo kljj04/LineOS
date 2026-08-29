@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# check_naming.py
+# tools/check_naming.py
 # LineOS Project
 # Copyright (C) 2026 LineOS Developer kljj04
 

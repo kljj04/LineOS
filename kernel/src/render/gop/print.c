@@ -1,4 +1,4 @@
-// print.c
+// kernel/src/render/gop/print.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

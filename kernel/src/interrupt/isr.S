@@ -1,4 +1,4 @@
-// isr.S
+// kernel/src/interrupt/isr.S
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
@@ -55,6 +55,8 @@ ISR_NO_ERROR_CODE 28
 ISR_ERROR_CODE    29
 ISR_ERROR_CODE    30
 ISR_NO_ERROR_CODE 31
+
+ISR_NO_ERROR_CODE 64
 
 ISRCommon:
     pushq %rax

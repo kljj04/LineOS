@@ -1,4 +1,4 @@
-// guid.h
+// bootloader/include/guid.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

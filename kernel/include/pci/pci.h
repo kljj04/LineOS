@@ -1,4 +1,4 @@
-// pci.h
+// kernel/include/pci/pci.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

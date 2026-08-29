@@ -1,4 +1,4 @@
-// typeinfo.h
+// common/lineos/typeinfo.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
@@ -56,4 +56,23 @@ typedef float              FLOAT32;
 typedef double             FLOAT64;
 typedef unsigned char      BOOLEAN;
 typedef void               VOID;
+
+#define UINT8_MAX   255U
+#define UINT16_MAX  65535U
+#define UINT32_MAX  4294967295U
+#define UINT64_MAX  18446744073709551615ULL
+#define INT8_MAX    127
+#define INT16_MAX   32767
+#define INT32_MAX   2147483647
+#define INT64_MAX   9223372036854775807LL
+#define INT8_MIN    (-128)
+#define INT16_MIN   (-32768)
+#define INT32_MIN   (-2147483647 - 1)
+#define INT64_MIN   (-9223372036854775807LL - 1)
+#define UINT128_MAX ((UINT128) 340282366920938463463374607431768211455)
+#define INT128_MAX  ((INT128) 170141183460469231731687303715884105727)
+#define INT128_MIN  (-INT128_MAX - 1)
+#define UINTN_MAX   18446744073709551615ULL
+#define INTN_MAX    9223372036854775807LL
+#define INTN_MIN    (-9223372036854775807LL - 1)
 #endif

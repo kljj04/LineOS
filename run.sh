@@ -31,8 +31,8 @@ KernelFile="${BaseDir}/LineOS/KERNEL/LINEOS_KERNEL.ELF"
 RTC="base=localtime,clock=host"
 Machine="q35"
 VGA="none"
-DisplayConfig="gtk"
-GraphicsResInput="QHD"
+DisplayConfig="gtk,"
+GraphicsResInput="CUSTOM"
 
 if [ "$GraphicsResInput" = "HD" ]; then
   GraphicsWidth="1280"
@@ -49,13 +49,16 @@ elif [ "$GraphicsResInput" = "QHD" ]; then
 elif [ "$GraphicsResInput" = "UHD" ]; then
   GraphicsWidth="3840"
   GraphicsHeight="2160"
+elif [ "$GraphicsResInput" = "CUSTOM" ]; then
+  GraphicsWidth="2560"
+  GraphicsHeight="1400"
 else
   echo -e "${RED}[-] Unknown resolution.${RESET}"
   exit 1
 fi
 
 GraphicsResolution="${GraphicsWidth}x${GraphicsHeight}"
-VideoDevice="virtio-gpu-pci,xres=${GraphicsWidth},yres=${GraphicsHeight}"
+VideoDevice="virtio-gpu-pci,xres=${GraphicsWidth},yres=${GraphicsHeight},hostmem=1G"
 BlkDevice="virtio-blk-pci,drive=lineos_disk,bootindex=0"
 
 Network="none"
@@ -228,6 +231,7 @@ StartQEMU() {
         -global isa-debugcon.iobase=0xe9 \
         -m $RAM \
         -display $DisplayConfig \
+        -full-screen \
         2> /dev/null
 
     echo -e "${GREEN}    [*] Done.${RESET}"

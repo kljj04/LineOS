@@ -1,4 +1,4 @@
-// fontinfo.h
+// kernel/include/render/fontinfo.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

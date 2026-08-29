@@ -1,4 +1,4 @@
-// bootinfo.h
+// common/lineos/bootinfo.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
@@ -9,8 +9,7 @@
 #define LINEOS_BOOT_MAGIC 0x4C494E454F530001ULL
 
 #ifdef LINEOS_KERNEL_BUILD
-typedef void        *EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER;
-typedef unsigned int EFI_GRAPHICS_PIXEL_FORMAT;
+typedef UINT32 EFI_GRAPHICS_PIXEL_FORMAT;
 
 #define EFI_MEMORY_UC            0x0000000000000001ULL
 #define EFI_MEMORY_WC            0x0000000000000002ULL
@@ -74,7 +73,7 @@ typedef struct
     UINT32                 MemoryMapDescriptorVersion;
 } LINEOS_MEMORY_MAP;
 
-typedef EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER LINEOS_ACPI_RSDP;
+typedef struct ACPI_RSDP ACPI_RSDP;
 
 typedef struct
 {
@@ -90,6 +89,6 @@ typedef struct
     UINT32              Size;
     LINEOS_GOP         *GOP;
     LINEOS_MEMORY_MAP  *MemoryMap;
-    LINEOS_ACPI_RSDP   *RSDP;
+    ACPI_RSDP          *RSDP;
     LINEOS_KERNEL_IMAGE Kernel;
 } LINEOS_BOOT_INFO;
