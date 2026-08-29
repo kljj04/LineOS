@@ -21,21 +21,18 @@ STATIC VOLATILE UINT32 *LAPICBase = NULL;
 typedef struct PACKED
 {
     ACPI_SDT_HEADER Header;
-    UINT64 Entries[];
+    UINT64          Entries[];
 } ACPI_XSDT;
 
 STATIC BOOLEAN ACPISignatureEqual(CONST CHAR8 *a, CONST CHAR8 *b)
 {
-    return a[0] == b[0] &&
-           a[1] == b[1] &&
-           a[2] == b[2] &&
-           a[3] == b[3];
+    return a[0] == b[0] && a[1] == b[1] && a[2] == b[2] && a[3] == b[3];
 }
 
 VOID *ACPIFindTable(LINEOS_BOOT_INFO *BootInfo, CONST CHAR8 *Signature)
 {
     ACPI_XSDT *XSDT;
-    UINT32 EntryCount;
+    UINT32     EntryCount;
 
     if (BootInfo == NULL || BootInfo->RSDP == NULL || Signature == NULL)
     {

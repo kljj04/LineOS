@@ -342,3 +342,70 @@ UINT32 DrawTrueTypeText(TRUE_TYPE_FONT Font, CONST CHAR16 *Text, UINT32 x, UINT3
 
     return x;
 }
+
+BOOLEAN MeasureTrueTypeText(TRUE_TYPE_FONT Font, CONST CHAR16 *Text, UINT32 PixelHeight, INT32 *Left, INT32 *Top, INT32 *Right, INT32 *Bottom)
+{
+    INT32   CursorX = 0;
+    BOOLEAN HasBounds = FALSE;
+
+    if (Text == NULL || Left == NULL || Top == NULL || Right == NULL || Bottom == NULL)
+    {
+        return FALSE;
+    }
+
+    for (UINT32 Index = 0; Text[Index] != 0; Index++)
+    {
+        UINT32     Codepoint = DecodeSurrogate(Text, &Index);
+        FONT_INFO *FontInfo = GetFont(Font, Codepoint);
+        FLOAT32    Scale;
+        INT32      BoxX0;
+        INT32      BoxY0;
+        INT32      BoxX1;
+        INT32      BoxY1;
+
+        if (FontInfo == NULL || Codepoint == '\n' || Codepoint == '\r' || Codepoint == '\t')
+        {
+            continue;
+        }
+
+        Scale = GetPixelScale(FontInfo, PixelHeight);
+        GetCodepointBitmapBox(FontInfo, (INT32) Codepoint, Scale, Scale, &BoxX0, &BoxY0, &BoxX1, &BoxY1);
+        BoxX0 += CursorX;
+        BoxX1 += CursorX;
+
+        if (!HasBounds)
+        {
+            *Left = BoxX0;
+            *Top = BoxY0;
+            *Right = BoxX1;
+            *Bottom = BoxY1;
+            HasBounds = TRUE;
+        }
+        else
+        {
+            if (BoxX0 < *Left)
+            {
+                *Left = BoxX0;
+            }
+
+            if (BoxY0 < *Top)
+            {
+                *Top = BoxY0;
+            }
+
+            if (BoxX1 > *Right)
+            {
+                *Right = BoxX1;
+            }
+
+            if (BoxY1 > *Bottom)
+            {
+                *Bottom = BoxY1;
+            }
+        }
+
+        CursorX += (INT32) CodepointAdvance(FontInfo, Codepoint, Scale);
+    }
+
+    return HasBounds;
+}
