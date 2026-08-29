@@ -1,4 +1,4 @@
-// framebuffer.h
+// kernel/include/render/gop/framebuffer.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

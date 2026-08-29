@@ -1,4 +1,4 @@
-// truetype_runtime.c
+// kernel/src/render/truetype/truetype_runtime.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

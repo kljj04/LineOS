@@ -1,7 +1,8 @@
-// pci.c
+// kernel/src/pci/pci.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
+#include <lineos/acpi.h>
 #include <lineos/bootinfo.h>
 #include <arch/x86_64/cpu.h>
 #include <pci/pci.h>
@@ -13,19 +14,6 @@
 #define PCI_CONFIG_DATA                0xCFC
 #define PCI_VENDOR_INVALID             0xFFFF
 #define PCI_HEADER_TYPE_MULTI_FUNCTION 0x80
-
-typedef struct PACKED
-{
-    CHAR8  Signature[8];
-    UINT8  Checksum;
-    CHAR8  OemId[6];
-    UINT8  Revision;
-    UINT32 RsdtAddress;
-    UINT32 Length;
-    UINT64 XsdtAddress;
-    UINT8  ExtendedChecksum;
-    UINT8  Reserved[3];
-} ACPI_RSDP;
 
 typedef struct PACKED
 {
@@ -166,18 +154,18 @@ STATIC ACPI_SDT_HEADER *FindACPITable(LINEOS_BOOT_INFO *BootInfo, UINT32 Signatu
         return NULL;
     }
 
-    if (RSDP->Revision >= 2 && RSDP->XsdtAddress != 0)
+    if (RSDP->Revision >= 2 && RSDP->XSDTAddress != 0)
     {
-        Table = FindTableInXSDT((ACPI_SDT_HEADER *) RSDP->XsdtAddress, Signature);
+        Table = FindTableInXSDT((ACPI_SDT_HEADER *) RSDP->XSDTAddress, Signature);
         if (Table != NULL)
         {
             return Table;
         }
     }
 
-    if (RSDP->RsdtAddress != 0)
+    if (RSDP->RSDTAddress != 0)
     {
-        return FindTableInRSDT((ACPI_SDT_HEADER *) ((UINT64) RSDP->RsdtAddress), Signature);
+        return FindTableInRSDT((ACPI_SDT_HEADER *) ((UINT64) RSDP->RSDTAddress), Signature);
     }
 
     return NULL;

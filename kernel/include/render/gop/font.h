@@ -1,4 +1,4 @@
-// font.h
+// kernel/include/render/gop/font.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

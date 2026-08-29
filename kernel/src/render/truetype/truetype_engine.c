@@ -1,4 +1,4 @@
-// truetype_engine.c
+// kernel/src/render/truetype/truetype_engine.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
@@ -11,10 +11,9 @@
 
 #define TRUE_TYPE_TAB_WIDTH 4
 
-STATIC FONT_INFO  PretendardFont;
-STATIC FONT_INFO  JetBrainsMonoFont;
-STATIC FONT_INFO *CurrentFont = NULL;
-STATIC UINT32     DebugGlyphCount = 0;
+STATIC FONT_INFO PretendardFont;
+STATIC FONT_INFO JetBrainsMonoFont;
+STATIC UINT32    DebugGlyphCount = 0;
 
 STATIC VOID DebugWriteSigned(INT32 Value)
 {
@@ -99,12 +98,35 @@ STATIC FLOAT32 GetPixelScale(FONT_INFO *Font, UINT32 PixelHeight)
     return (FLOAT32) PixelHeight / (FLOAT32) Units;
 }
 
+STATIC UINT8 GetColorAlpha(UINT32 Color)
+{
+    if (Color <= 0xFFFFFF)
+    {
+        return 255;
+    }
+
+    return (UINT8) (Color & 0xFF);
+}
+
+STATIC UINT32 GetColorRGB(UINT32 Color)
+{
+    if (Color <= 0xFFFFFF)
+    {
+        return Color;
+    }
+
+    return Color >> 8;
+}
+
 STATIC UINT32 BlendColor(UINT32 Background, UINT32 Foreground, UINT8 Alpha)
 {
-    UINT32 InverseAlpha = 255 - Alpha;
-    UINT32 Red = ((((Foreground >> 16) & 0xFF) * Alpha) + (((Background >> 16) & 0xFF) * InverseAlpha)) / 255;
-    UINT32 Green = ((((Foreground >> 8) & 0xFF) * Alpha) + (((Background >> 8) & 0xFF) * InverseAlpha)) / 255;
-    UINT32 Blue = (((Foreground & 0xFF) * Alpha) + ((Background & 0xFF) * InverseAlpha)) / 255;
+    UINT32 RGB = GetColorRGB(Foreground);
+    UINT32 ColorAlpha = GetColorAlpha(Foreground);
+    UINT32 EffectiveAlpha = ((UINT32) Alpha * ColorAlpha) / 255;
+    UINT32 InverseAlpha = 255 - EffectiveAlpha;
+    UINT32 Red = ((((RGB >> 16) & 0xFF) * EffectiveAlpha) + (((Background >> 16) & 0xFF) * InverseAlpha)) / 255;
+    UINT32 Green = ((((RGB >> 8) & 0xFF) * EffectiveAlpha) + (((Background >> 8) & 0xFF) * InverseAlpha)) / 255;
+    UINT32 Blue = (((RGB & 0xFF) * EffectiveAlpha) + ((Background & 0xFF) * InverseAlpha)) / 255;
 
     return 0xFF000000 | (Red << 16) | (Green << 8) | Blue;
 }
@@ -114,15 +136,15 @@ STATIC VOID BlendPixel(VIRTIO_GPU_INFO *GPU, INT32 x, INT32 y, UINT32 Color, UIN
     UINT32 *Pixel;
     UINT32  Background;
 
-    if (Alpha == 0 || GPU == NULL || GPU->FrameBuffer == NULL || x < 0 || y < 0 || (UINT32) x >= GPU->FrameBufferWidth || (UINT32) y >= GPU->FrameBufferHeight)
+    if (Alpha == 0 || GetColorAlpha(Color) == 0 || GPU == NULL || GPU->FrameBuffer == NULL || x < 0 || y < 0 || (UINT32) x >= GPU->FrameBufferWidth || (UINT32) y >= GPU->FrameBufferHeight)
     {
         return;
     }
 
     Pixel = &GPU->FrameBuffer[((UINT32) y * GPU->FrameBufferWidth) + (UINT32) x];
-    if (Alpha == 255)
+    if (Alpha == 255 && GetColorAlpha(Color) == 255)
     {
-        *Pixel = Color | 0xFF000000;
+        *Pixel = GetColorRGB(Color) | 0xFF000000;
         return;
     }
 
@@ -156,6 +178,29 @@ STATIC UINT32 DecodeSurrogate(CONST CHAR16 *Text, UINT32 *Index)
     return High;
 }
 
+STATIC BOOLEAN IsKoreanCodepoint(UINT32 Codepoint)
+{
+    return (Codepoint >= 0xAC00 && Codepoint <= 0xD7AF) || (Codepoint >= 0x1100 && Codepoint <= 0x11FF) || (Codepoint >= 0x3130 && Codepoint <= 0x318F) || (Codepoint >= 0xA960 && Codepoint <= 0xA97F) || (Codepoint >= 0xD7B0 && Codepoint <= 0xD7FF);
+}
+
+STATIC FONT_INFO *GetFont(TRUE_TYPE_FONT Font, UINT32 Codepoint)
+{
+    if (IsKoreanCodepoint(Codepoint))
+    {
+        return &PretendardFont;
+    }
+
+    switch (Font)
+    {
+    case JETBRAINS_MONO:
+        return &JetBrainsMonoFont;
+
+    case PRETENDARD:
+    default:
+        return &PretendardFont;
+    }
+}
+
 BOOLEAN TrueTypeInit(VOID)
 {
     BOOLEAN PretendardOK = InitFont(&PretendardFont, LineOSPretendardFontStart, 0) != 0;
@@ -165,41 +210,13 @@ BOOLEAN TrueTypeInit(VOID)
     DebugWriteTrueTypeFont("Pretendard", PretendardOK, LineOSPretendardFontStart, LineOSPretendardFontEnd);
     DebugWriteTrueTypeFont("JetBrainsMono", JetBrainsMonoOK, LineOSJetBrainsMonoFontStart, LineOSJetBrainsMonoFontEnd);
 
-    if (PretendardOK)
-    {
-        CurrentFont = &PretendardFont;
-    }
-    else if (JetBrainsMonoOK)
-    {
-        CurrentFont = &JetBrainsMonoFont;
-    }
-    else
-    {
-        CurrentFont = NULL;
-    }
-
-    return CurrentFont != NULL;
+    return PretendardOK || JetBrainsMonoOK;
 }
 
-BOOLEAN SelectFont(TRUE_TYPE_FONT Font)
-{
-    switch (Font)
-    {
-    case PRETENDARD:
-        CurrentFont = &PretendardFont;
-        return TRUE;
-
-    case JETBRAINS_MONO:
-        CurrentFont = &JetBrainsMonoFont;
-        return TRUE;
-    }
-
-    return FALSE;
-}
-
-UINT32 DrawTrueTypeCodepoint(UINT32 Codepoint, UINT32 x, UINT32 Baseline, UINT32 Color, UINT32 PixelHeight)
+UINT32 DrawTrueTypeCodepoint(TRUE_TYPE_FONT Font, UINT32 Codepoint, UINT32 x, UINT32 Baseline, UINT32 Color, UINT32 PixelHeight)
 {
     VIRTIO_GPU_INFO *GPU = VirtIOGPUGetInfo();
+    FONT_INFO       *DrawFont;
     FLOAT32          Scale;
     INT32            GlyphIndex;
     INT32            Width;
@@ -213,12 +230,14 @@ UINT32 DrawTrueTypeCodepoint(UINT32 Codepoint, UINT32 x, UINT32 Baseline, UINT32
     UINT8           *Bitmap;
     UINT32           AlphaSum = 0;
 
-    if (CurrentFont == NULL || GPU == NULL || GPU->FrameBuffer == NULL || Codepoint == 0)
+    DrawFont = GetFont(Font, Codepoint);
+
+    if (DrawFont == NULL || GPU == NULL || GPU->FrameBuffer == NULL || Codepoint == 0)
     {
         DebugWrite("ttf skip cp=");
         DebugWriteHex(Codepoint);
-        DebugWrite(" current=");
-        DebugWriteHex((UINT64) CurrentFont);
+        DebugWrite(" font=");
+        DebugWriteHex((UINT64) DrawFont);
         DebugWrite(" gpu=");
         DebugWriteHex((UINT64) GPU);
         DebugWrite(" fb=");
@@ -227,19 +246,19 @@ UINT32 DrawTrueTypeCodepoint(UINT32 Codepoint, UINT32 x, UINT32 Baseline, UINT32
         return x;
     }
 
-    Scale = GetPixelScale(CurrentFont, PixelHeight);
-    GlyphIndex = FindGlyphIndex(CurrentFont, (INT32) Codepoint);
-    GetCodepointBitmapBox(CurrentFont, (INT32) Codepoint, Scale, Scale, &BoxX0, &BoxY0, &BoxX1, &BoxY1);
+    Scale = GetPixelScale(DrawFont, PixelHeight);
+    GlyphIndex = FindGlyphIndex(DrawFont, (INT32) Codepoint);
+    GetCodepointBitmapBox(DrawFont, (INT32) Codepoint, Scale, Scale, &BoxX0, &BoxY0, &BoxX1, &BoxY1);
     Width = 0;
     Height = 0;
     XOff = 0;
     YOff = 0;
-    Bitmap = GetCodepointBitmap(CurrentFont, Scale, Scale, (INT32) Codepoint, &Width, &Height, &XOff, &YOff);
+    Bitmap = GetCodepointBitmap(DrawFont, Scale, Scale, (INT32) Codepoint, &Width, &Height, &XOff, &YOff);
     if (Bitmap == NULL)
     {
         if (Width == 0 && Height == 0)
         {
-            return x + CodepointAdvance(CurrentFont, Codepoint, Scale);
+            return x + CodepointAdvance(DrawFont, Codepoint, Scale);
         }
 
         DebugWrite("ttf glyph null cp=");
@@ -261,7 +280,7 @@ UINT32 DrawTrueTypeCodepoint(UINT32 Codepoint, UINT32 x, UINT32 Baseline, UINT32
         DebugWrite("x");
         DebugWriteDec((UINT64) Height);
         DebugWrite("\n");
-        return x + CodepointAdvance(CurrentFont, Codepoint, Scale);
+        return x + CodepointAdvance(DrawFont, Codepoint, Scale);
     }
 
     for (INT32 Row = 0; Row < Height; Row++)
@@ -274,13 +293,18 @@ UINT32 DrawTrueTypeCodepoint(UINT32 Codepoint, UINT32 x, UINT32 Baseline, UINT32
         }
     }
 
+    if ((INT32) x + XOff >= 0 && (INT32) Baseline + YOff >= 0)
+    {
+        VirtIOGPUMarkDirty((UINT32) ((INT32) x + XOff), (UINT32) ((INT32) Baseline + YOff), (UINT32) Width, (UINT32) Height);
+    }
+
     DebugWriteGlyph(Codepoint, GlyphIndex, Width, Height, XOff, YOff, AlphaSum);
 
-    FreeBitmap(Bitmap, CurrentFont->userdata);
-    return x + CodepointAdvance(CurrentFont, Codepoint, Scale);
+    FreeBitmap(Bitmap, DrawFont->userdata);
+    return x + CodepointAdvance(DrawFont, Codepoint, Scale);
 }
 
-UINT32 DrawTrueTypeText(CONST CHAR16 *Text, UINT32 x, UINT32 Baseline, UINT32 Color, UINT32 PixelHeight)
+UINT32 DrawTrueTypeText(TRUE_TYPE_FONT Font, CONST CHAR16 *Text, UINT32 x, UINT32 Baseline, UINT32 Color, UINT32 PixelHeight)
 {
     UINT32 OriginX = x;
 
@@ -308,12 +332,12 @@ UINT32 DrawTrueTypeText(CONST CHAR16 *Text, UINT32 x, UINT32 Baseline, UINT32 Co
 
         if (Codepoint == '\t')
         {
-            UINT32 SpaceAdvance = DrawTrueTypeCodepoint(' ', x, Baseline, Color, PixelHeight);
+            UINT32 SpaceAdvance = DrawTrueTypeCodepoint(Font, ' ', x, Baseline, Color, PixelHeight);
             x += (SpaceAdvance - x) * TRUE_TYPE_TAB_WIDTH;
             continue;
         }
 
-        x = DrawTrueTypeCodepoint(Codepoint, x, Baseline, Color, PixelHeight);
+        x = DrawTrueTypeCodepoint(Font, Codepoint, x, Baseline, Color, PixelHeight);
     }
 
     return x;

@@ -1,4 +1,4 @@
-// virtio_gpu_protocol.h
+// kernel/include/render/gpu/virtio_gpu_protocol.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
@@ -12,6 +12,8 @@
 #define VIRTIO_GPU_CMD_SET_SCANOUT             0x0103
 #define VIRTIO_GPU_CMD_TRANSFER_TO_HOST_2D     0x0105
 #define VIRTIO_GPU_CMD_RESOURCE_FLUSH          0x0104
+#define VIRTIO_GPU_CMD_UPDATE_CURSOR           0x0300
+#define VIRTIO_GPU_CMD_MOVE_CURSOR             0x0301
 #define VIRTIO_GPU_RESP_OK_NODATA              0x1100
 #define VIRTIO_GPU_RESP_OK_DISPLAY_INFO        0x1101
 
@@ -102,3 +104,21 @@ typedef struct PACKED
     UINT32                 ResourceId;
     UINT32                 Padding;
 } VIRTIO_GPU_RESOURCE_FLUSH_REQUEST;
+
+typedef struct PACKED
+{
+    UINT32 ScanoutId;
+    UINT32 X;
+    UINT32 Y;
+    UINT32 Padding;
+} VIRTIO_GPU_CURSOR_POSITION;
+
+typedef struct PACKED
+{
+    VIRTIO_GPU_CTRL_HEADER    Header;
+    VIRTIO_GPU_CURSOR_POSITION Position;
+    UINT32                    ResourceId;
+    UINT32                    HotX;
+    UINT32                    HotY;
+    UINT32                    Padding;
+} VIRTIO_GPU_UPDATE_CURSOR_REQUEST;

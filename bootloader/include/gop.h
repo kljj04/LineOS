@@ -1,4 +1,4 @@
-// gop.h
+// bootloader/include/gop.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

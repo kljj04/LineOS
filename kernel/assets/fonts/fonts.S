@@ -1,4 +1,4 @@
-// fonts.S
+// kernel/assets/fonts/fonts.S
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

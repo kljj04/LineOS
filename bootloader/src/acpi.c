@@ -1,4 +1,4 @@
-// acpi.c
+// bootloader/src/acpi.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
@@ -9,7 +9,7 @@
 #include <acpi.h>
 #include <lineosuefi.h>
 
-LINEOS_ACPI_RSDP *RSDP = NULL;
+ACPI_RSDP *RSDP = NULL;
 
 STATIC BOOLEAN IsGuidEqual(EFI_GUID *a, EFI_GUID *b)
 {
@@ -31,7 +31,7 @@ BOOLEAN ACPIInit(VOID)
 
         if (IsGuidEqual(guid, &gEfiAcpi20TableGuid))
         {
-            RSDP = (LINEOS_ACPI_RSDP *) table[i].VendorTable;
+            RSDP = (ACPI_RSDP *) table[i].VendorTable;
             return TRUE;
         }
     }

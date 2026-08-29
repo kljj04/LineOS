@@ -1,8 +1,11 @@
-// idt.c
+// kernel/src/interrupt/idt.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <interrupt/idt.h>
+#include <interrupt/apic.h>
+#include <debug/panic.h>
+#include <render/gpu/virtio_gpu.h>
 #include <lineos/typeinfo.h>
 #include <memory/memory.h>
 #include <arch/x86_64/cpu.h>
@@ -40,6 +43,8 @@ EXTERN VOID ISR29(VOID);
 EXTERN VOID ISR30(VOID);
 EXTERN VOID ISR31(VOID);
 
+EXTERN VOID ISR64(VOID);
+
 STATIC VOID (*ISRTable[32])(VOID) = {ISR0, ISR1, ISR2, ISR3, ISR4, ISR5, ISR6, ISR7, ISR8, ISR9, ISR10, ISR11, ISR12, ISR13, ISR14, ISR15, ISR16, ISR17, ISR18, ISR19, ISR20, ISR21, ISR22, ISR23, ISR24, ISR25, ISR26, ISR27, ISR28, ISR29, ISR30, ISR31};
 
 STATIC IDT_DESCRIPTOR IDTR;
@@ -60,6 +65,7 @@ VOID IDTInit(VOID)
     {
         IDTSetGate(vector, (UINT64) ISRTable[vector], selector, 0, 0x8E);
     }
+    IDTSetGate(64, (UINT64) ISR64, selector, 0, 0x8E);
 }
 
 VOID IDTSetGate(UINT8 vector, UINT64 handler, UINT16 selector, UINT8 IST, UINT8 TypeAttributes)
@@ -80,14 +86,14 @@ VOID IDTLoad(VOID)
 
 VOID SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *frame)
 {
-    UINT64 vector = frame->Vector;
-    UINT64 error = frame->ErrorCode;
-    UINT64 rip = frame->RIP;
+    if (frame->Vector < 32)
+    {
+        ExceptionPanic(frame);
+    }
 
-    (VOID) vector;
-    (VOID) error;
-    (VOID) rip;
-
-    CLI();
-    HLT();
+    if (frame->Vector == 64)
+    {
+        LAPICEOI();
+        return;
+    }
 }

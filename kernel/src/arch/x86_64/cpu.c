@@ -1,4 +1,4 @@
-// cpu.c
+// kernel/src/arch/x86_64/cpu.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
@@ -11,6 +11,11 @@ VOID HLT()
     {
         ASM("hlt");
     }
+}
+
+VOID HLTONCE()
+{
+    ASM("hlt");
 }
 
 VOID CLI()
@@ -26,6 +31,16 @@ VOID STI()
 VOID PAUSE()
 {
     ASM("pause");
+}
+
+UINT64 RDTSC()
+{
+    UINT32 low;
+    UINT32 high;
+
+    ASM ("rdtsc" : "=a"(low), "=d"(high));
+
+    return ((UINT64) high << 32) | low;
 }
 
 UINT8 INB(UINT16 Port)
@@ -70,4 +85,22 @@ VOID OUTL(UINT16 Port, UINT32 Value)
 VOID CPUID(UINT32 leaf, UINT32 subleaf, UINT32 *eax, UINT32 *ebx, UINT32 *ecx, UINT32 *edx)
 {
     ASM("cpuid" : "=a"(*eax), "=b"(*ebx), "=c"(*ecx), "=d"(*edx) : "a"(leaf), "c"(subleaf));
+}
+
+UINT64 ReadMSR(UINT32 msr)
+{
+    UINT32 low;
+    UINT32 high;
+
+    ASM("rdmsr" : "=a"(low), "=d"(high) : "c"(msr));
+
+    return ((UINT64) high << 32) | low;
+}
+
+VOID WriteMSR(UINT32 msr, UINT64 value)
+{
+    UINT32 low = (UINT32) value;
+    UINT32 high = (UINT32) (value >> 32);
+
+    ASM("wrmsr" : : "c"(msr), "a"(low), "d"(high));
 }

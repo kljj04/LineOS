@@ -1,4 +1,4 @@
-// debug.h
+// kernel/include/debug/debug.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
