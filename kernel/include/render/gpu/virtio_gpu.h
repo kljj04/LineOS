@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <lineos/bootinfo.h>
+#include <lineos/typeinfo.h>
 #include <pci/pci.h>
 #include <render/gpu/virtio_gpu_protocol.h>
 #include <virtio/virtio_pci.h>

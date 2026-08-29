@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <lineos/bootinfo.h>
+#include <lineos/typeinfo.h>
 
 VOID DebugWrite(CONST char *String);
 VOID DebugWriteLine(CONST char *String);

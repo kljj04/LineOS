@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <lineos/bootinfo.h>
+#include <lineos/typeinfo.h>
 
 #define BLACK      0x000000
 #define BLUE       0x0000AA

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <lineos/bootinfo.h>
+#include <lineos/typeinfo.h>
 #include <virtio/virtio_pci.h>
 
 #define VIRTQ_DESC_F_NEXT  1

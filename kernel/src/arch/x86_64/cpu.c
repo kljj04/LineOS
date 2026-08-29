@@ -3,11 +3,11 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <arch/x86_64/cpu.h>
-#include <lineos/bootinfo.h>
+#include <lineos/typeinfo.h>
 
 VOID HLT()
 {
-    while (1)
+    while (TRUE)
     {
         ASM("hlt");
     }
@@ -65,4 +65,9 @@ VOID OUTW(UINT16 Port, UINT16 Value)
 VOID OUTL(UINT16 Port, UINT32 Value)
 {
     ASM("outl %0, %w1" : : "a"(Value), "Nd"(Port));
+}
+
+VOID CPUID(UINT32 leaf, UINT32 subleaf, UINT32 *eax, UINT32 *ebx, UINT32 *ecx, UINT32 *edx)
+{
+    ASM("cpuid" : "=a"(*eax), "=b"(*ebx), "=c"(*ecx), "=d"(*edx) : "a"(leaf), "c"(subleaf));
 }
