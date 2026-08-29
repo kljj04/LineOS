@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <lineos/typeinfo.h>
 #include <lineos/bootinfo.h>
 
 #define GOP_PREFERRED_WIDTH  1920

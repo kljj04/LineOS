@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <lineos/bootinfo.h>
+#include <lineos/typeinfo.h>
 
 typedef struct
 {

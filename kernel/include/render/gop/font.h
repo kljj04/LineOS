@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <lineos/bootinfo.h>
+#include <lineos/typeinfo.h>
 #include <render/fontinfo.h>
 
 INT32  GOPFindGlyph(UINT16 Unicode);

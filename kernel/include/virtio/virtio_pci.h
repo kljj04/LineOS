@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <lineos/bootinfo.h>
+#include <lineos/typeinfo.h>
 #include <pci/pci.h>
 
 #define VIRTIO_STATUS_ACKNOWLEDGE 1

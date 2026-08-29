@@ -2,7 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <lineos/bootinfo.h>
+#include <lineos/typeinfo.h>
 #include <render/gop/font.h>
 #include <render/gop/framebuffer.h>
 #include <render/gop/print.h>

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <lineos/bootinfo.h>
+#include <lineos/typeinfo.h>
 
 #define VIRTIO_GPU_CMD_GET_DISPLAY_INFO        0x0100
 #define VIRTIO_GPU_CMD_RESOURCE_CREATE_2D      0x0101
