@@ -10,8 +10,8 @@
 #include <virtio/virtio_pci.h>
 #include <virtio/virtqueue.h>
 
-#define VIRTIO_GPU_VENDOR_ID 0x1AF4
-#define VIRTIO_GPU_DEVICE_ID 0x1050
+#define VIRTIO_GPU_VENDOR_ID       0x1AF4
+#define VIRTIO_GPU_DEVICE_ID       0x1050
 #define VIRTIO_GPU_MAX_DIRTY_RECTS 128
 
 typedef struct

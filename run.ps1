@@ -1,3 +1,9 @@
+# run.ps1
+# LineOS Project
+# Copyright (C) 2026 LineOS Developer kljj04
+
+$ErrorActionPreference = "Stop"
+
 $BaseDir = (Get-Location).Path
 $RAM = "4G"
 $LogFile = "qemu.log"
@@ -5,21 +11,43 @@ $DebugConFile = "debugcon.log"
 $QEMU = "qemu-system-x86_64"
 $Accel = "whpx"
 $CPU = "max"
+$CPUFlags = "+tsc-deadline,+invtsc,+rdtscp,+x2apic,+arat,+fsgsbase,+pdpe1gb"
+
 $ImgFile = "$BaseDir\LineOS\LineOS.img"
 $ImgSize = "8G"
 $EFISizeMiB = "300"
+
 $OVMF_CODE = "$BaseDir\uefi\OVMF_CODE.fd"
 $OVMF_VARS = "$BaseDir\uefi\OVMF_VARS.fd"
 $LogPath = "$BaseDir\logs\$LogFile"
 $DebugConPath = "$BaseDir\logs\$DebugConFile"
+$BootFile = "$BaseDir\LineOS\EFI\BOOT\BOOTX64.EFI"
+$KernelFile = "$BaseDir\LineOS\KERNEL\LINEOS_KERNEL.ELF"
+
 $RTC = "base=localtime,clock=host"
+$InputA = "virtio-keyboard-pci"
+$InputB = "virtio-tablet-pci"
 $Machine = "q35"
 $VGA = "none"
 $DisplayConfig = "gtk,zoom-to-fit=off"
-$GraphicsWidth = "1920"
-$GraphicsHeight = "1080"
+$GraphicsResInput = "CUSTOM"
+
+switch ($GraphicsResInput)
+{
+    "HD"     { $GraphicsWidth = "1280"; $GraphicsHeight = "720" }
+    "FHD"    { $GraphicsWidth = "1920"; $GraphicsHeight = "1080" }
+    "FHD+"   { $GraphicsWidth = "2240"; $GraphicsHeight = "1260" }
+    "QHD"    { $GraphicsWidth = "2560"; $GraphicsHeight = "1440" }
+    "UHD"    { $GraphicsWidth = "3840"; $GraphicsHeight = "2160" }
+    "CUSTOM" { $GraphicsWidth = "2560"; $GraphicsHeight = "1400" }
+    Default  {
+        Write-Host "    [-] Unknown resolution: $GraphicsResInput" -ForegroundColor Red
+        exit 1
+    }
+}
+
 $GraphicsResolution = "${GraphicsWidth}x${GraphicsHeight}"
-$VideoDevice = "virtio-gpu-pci,xres=${GraphicsWidth},yres=${GraphicsHeight}"
+$VideoDevice = "virtio-gpu-pci,xres=${GraphicsWidth},yres=${GraphicsHeight},hostmem=1G"
 $BlkDevice = "virtio-blk-pci,drive=lineos_disk,bootindex=0"
 $Network = "none"
 $DebugOption = "guest_errors,cpu_reset"
@@ -38,16 +66,12 @@ function Require-Command($Command)
         Write-Host "    [-] $Command not found." -ForegroundColor Red
         return $false
     }
-
     return $true
 }
 
 function Invoke-WSLImageStep
 {
-    if (-not (Require-Command "wsl.exe"))
-    {
-        return $false
-    }
+    if (-not (Require-Command "wsl.exe")) { return $false }
 
     $WSLBaseDir = (& wsl.exe wslpath -a "$BaseDir").Trim()
     if ($LastExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($WSLBaseDir))
@@ -72,8 +96,6 @@ RequireCommand() {
         echo "    [-] $1 not found."
         return 1
     fi
-
-    return 0
 }
 
 DismountImg() {
@@ -92,11 +114,7 @@ DismountImg() {
 }
 
 CreateImg() {
-    local LoopDev
-
-    if [ -f "$ImgFile" ]; then
-        return 0
-    fi
+    [ -f "$ImgFile" ] && return 0
 
     RequireCommand qemu-img
     RequireCommand parted
@@ -116,6 +134,7 @@ CreateImg() {
         set 1 esp on \
         mkpart LineOS "$((EFISizeMiB + 1))MiB" 100% >/dev/null 2>&1
 
+    local LoopDev
     LoopDev=$(sudo losetup -P -f --show "$ImgFile" 2>/dev/null)
     if [ -z "$LoopDev" ]; then
         echo "    [-] Failed to setup loop device."
@@ -124,14 +143,8 @@ CreateImg() {
 
     sleep 0.2
 
-    if [ ! -b "${LoopDev}p1" ]; then
-        echo "    [-] EFI partition not found on $LoopDev."
-        sudo losetup -d "$LoopDev" 2>/dev/null
-        return 1
-    fi
-
-    if [ ! -b "${LoopDev}p2" ]; then
-        echo "    [-] EXT3 partition not found on $LoopDev."
+    if [ ! -b "${LoopDev}p1" ] || [ ! -b "${LoopDev}p2" ]; then
+        echo "    [-] Partitions not found on $LoopDev."
         sudo losetup -d "$LoopDev" 2>/dev/null
         return 1
     fi
@@ -144,13 +157,12 @@ CreateImg() {
 }
 
 CopyImg() {
-    local LoopDev
-
     CreateImg
 
     sudo rm -rf "$MountDir"
     mkdir -p "$MountDir"
 
+    local LoopDev
     LoopDev=$(sudo losetup -P -f --show "$ImgFile" 2>/dev/null)
     if [ -z "$LoopDev" ]; then
         echo "    [-] Failed to setup loop device."
@@ -168,15 +180,11 @@ CopyImg() {
 
     echo "    [*] Image mounted."
 
-    sudo mkdir -p "${MountDir}/EFI/BOOT"
-    sudo mkdir -p "${MountDir}/KERNEL"
-
-    sudo rm -f "${MountDir}/EFI/BOOT/BOOTX64.EFI" 2>/dev/null
-    sudo rm -f "${MountDir}/KERNEL/LINEOS_KERNEL.ELF" 2>/dev/null
+    sudo mkdir -p "${MountDir}/EFI/BOOT" "${MountDir}/KERNEL"
+    sudo rm -f "${MountDir}/EFI/BOOT/BOOTX64.EFI" "${MountDir}/KERNEL/LINEOS_KERNEL.ELF" 2>/dev/null
 
     sudo cp -f "$BootFile" "${MountDir}/EFI/BOOT/BOOTX64.EFI"
     sudo cp -f "$KernelFile" "${MountDir}/KERNEL/LINEOS_KERNEL.ELF"
-
     sync
 
     echo "    [*] Copy complete."
@@ -197,53 +205,46 @@ CopyImg
 
 function Start-QEMU
 {
-    if (-not (Test-Path "$BaseDir\LineOS"))
-    {
-        New-Item -ItemType Directory -Path "$BaseDir\LineOS" -Force | Out-Null
-    }
+    if (-not (Test-Path "$BaseDir\LineOS")) { New-Item -ItemType Directory -Path "$BaseDir\LineOS" -Force | Out-Null }
+    if (-not (Test-Path "$BaseDir\logs"))   { New-Item -ItemType Directory -Path "$BaseDir\logs" -Force | Out-Null }
 
-    if (-not (Test-Path "$BaseDir\logs"))
-    {
-        New-Item -ItemType Directory -Path "$BaseDir\logs" -Force | Out-Null
-    }
+    if (-not (Require-Command $QEMU)) { return $false }
 
-    if (-not (Require-Command $QEMU))
-    {
-        return $false
-    }
-
-    if (Test-Path $DebugConPath)
-    {
-        Remove-Item $DebugConPath -Force
-    }
+    if (Test-Path $DebugConPath) { Remove-Item $DebugConPath -Force }
 
     Write-Host "    [*] QEMU start..." -ForegroundColor Cyan
-    & $QEMU `
-        -rtc $RTC `
-        -accel $Accel `
-        -cpu $CPU `
-        -drive "if=pflash,format=raw,readonly=on,file=$OVMF_CODE" `
-        -drive "if=pflash,format=raw,file=$OVMF_VARS" `
-        -net $Network `
-        -M $Machine `
-        -vga $VGA `
-        -device "$VideoDevice" `
-        -drive "file=$ImgFile,format=raw,id=lineos_disk,if=none" `
-        -device "$BlkDevice" `
-        -fw_cfg "name=opt/org.tianocore/GraphicsResolution,string=$GraphicsResolution" `
-        -no-reboot `
-        -d $DebugOption `
-        -D $LogPath `
-        -debugcon "file:$DebugConPath" `
-        -global isa-debugcon.iobase=0xe9 `
-        -m $RAM `
-        -display $DisplayConfig `
-        2> $null
+
+    $QemuArgs = @(
+        "-rtc", $RTC,
+        "-accel", $Accel,
+        "-cpu", "${CPU},${CPUFlags}",
+        "-drive", "if=pflash,format=raw,readonly=on,file=$OVMF_CODE",
+        "-drive", "if=pflash,format=raw,file=$OVMF_VARS",
+        "-net", $Network,
+        "-M", $Machine,
+        "-device", $InputA,
+        "-device", $InputB,
+        "-vga", $VGA,
+        "-device", $VideoDevice,
+        "-drive", "file=$ImgFile,format=raw,id=lineos_disk,if=none",
+        "-device", $BlkDevice,
+        "-fw_cfg", "name=opt/org.tianocore/GraphicsResolution,string=$GraphicsResolution",
+        "-no-reboot",
+        "-d", $DebugOption,
+        "-D", $LogPath,
+        "-debugcon", "file:$DebugConPath",
+        "-global", "isa-debugcon.iobase=0xe9",
+        "-m", $RAM,
+        "-display", $DisplayConfig
+    )
+
+    & $QEMU @QemuArgs 2>$null
 
     Write-Host "    [*] Done." -ForegroundColor Green
     return $true
 }
 
+# --- Main Logic ---
 if (-not (Test-Administrator))
 {
     Write-Host "    [-] Run PowerShell as administrator." -ForegroundColor Red
@@ -259,14 +260,14 @@ if ($LastExitCode -ne 0)
     Write-Host "    [-] make failed." -ForegroundColor Red
     exit $LastExitCode
 }
-Write-Host "---End of make---" -ForegroundColor Cyan
+Write-Host "━━━End of make━━━" -ForegroundColor Cyan
 
 Write-Host "[*] img:" -ForegroundColor Cyan
 if (-not (Invoke-WSLImageStep))
 {
     exit 1
 }
-Write-Host "---End of img---" -ForegroundColor Cyan
+Write-Host "━━━End of img━━━" -ForegroundColor Cyan
 
 Write-Host "[*] run:" -ForegroundColor Cyan
 if (-not (Start-QEMU))
@@ -287,5 +288,5 @@ if (Test-Path $LogPath)
     }
 }
 
-Write-Host "---End of run---" -ForegroundColor Cyan
+Write-Host "━━━End of run━━━" -ForegroundColor Cyan
 Write-Host "[*] Exit." -ForegroundColor Magenta

@@ -115,10 +115,10 @@ typedef struct PACKED
 
 typedef struct PACKED
 {
-    VIRTIO_GPU_CTRL_HEADER    Header;
+    VIRTIO_GPU_CTRL_HEADER     Header;
     VIRTIO_GPU_CURSOR_POSITION Position;
-    UINT32                    ResourceId;
-    UINT32                    HotX;
-    UINT32                    HotY;
-    UINT32                    Padding;
+    UINT32                     ResourceId;
+    UINT32                     HotX;
+    UINT32                     HotY;
+    UINT32                     Padding;
 } VIRTIO_GPU_UPDATE_CURSOR_REQUEST;

@@ -38,7 +38,7 @@ UINT64 RDTSC()
     UINT32 low;
     UINT32 high;
 
-    ASM ("rdtsc" : "=a"(low), "=d"(high));
+    ASM("rdtsc" : "=a"(low), "=d"(high));
 
     return ((UINT64) high << 32) | low;
 }

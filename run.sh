@@ -3,6 +3,8 @@
 # LineOS Project
 # Copyright (C) 2026 LineOS Developer kljj04
 
+set -e
+
 CYAN="\033[36m"
 YELLOW="\033[33m"
 GREEN="\033[32m"
@@ -17,72 +19,62 @@ DebugConFile="debugcon.log"
 QEMU="qemu-system-x86_64"
 Accel="kvm"
 CPU="host"
-CPUFlags="+tsc-deadline,+invtsc,+rdtscp,+x2apic,+arat,+fsgsbase,+pdpe1gb"
+CPUFlags="-tsc-deadline,+invtsc,+rdtscp,+x2apic,+arat,+fsgsbase,+pdpe1gb"
+
 ImgFile="${BaseDir}/LineOS/LineOS.img"
 ImgSize="8G"
 EFISizeMiB="300"
 MountDir="/tmp/lineos_img_mount"
+
 OVMF_CODE="${BaseDir}/uefi/OVMF_CODE.fd"
 OVMF_VARS="${BaseDir}/uefi/OVMF_VARS.fd"
 LogPath="${BaseDir}/logs/${LogFile}"
 DebugConPath="${BaseDir}/logs/${DebugConFile}"
 BootFile="${BaseDir}/LineOS/EFI/BOOT/BOOTX64.EFI"
 KernelFile="${BaseDir}/LineOS/KERNEL/LINEOS_KERNEL.ELF"
+
 RTC="base=localtime,clock=host"
+InputA="virtio-keyboard-pci"
+InputB="virtio-tablet-pci"
 Machine="q35"
 VGA="none"
-DisplayConfig="gtk,"
-GraphicsResInput="CUSTOM"
+GraphicsResInput="QHD"
 
-if [ "$GraphicsResInput" = "HD" ]; then
-  GraphicsWidth="1280"
-  GraphicsHeight="720"
-elif [ "$GraphicsResInput" = "FHD" ]; then
-  GraphicsWidth="1920"
-  GraphicsHeight="1080"
-elif [ "$GraphicsResInput" = "FHD+" ]; then
-  GraphicsWidth="2240"
-  GraphicsHeight="1260"
-elif [ "$GraphicsResInput" = "QHD" ]; then
-  GraphicsWidth="2560"
-  GraphicsHeight="1440"
-elif [ "$GraphicsResInput" = "UHD" ]; then
-  GraphicsWidth="3840"
-  GraphicsHeight="2160"
-elif [ "$GraphicsResInput" = "CUSTOM" ]; then
-  GraphicsWidth="2560"
-  GraphicsHeight="1400"
-else
-  echo -e "${RED}[-] Unknown resolution.${RESET}"
-  exit 1
-fi
+case "$GraphicsResInput" in
+    "HD")     GraphicsWidth="1280"; GraphicsHeight="720" ;;
+    "FHD")    GraphicsWidth="1920"; GraphicsHeight="1080" ;;
+    "FHD+")   GraphicsWidth="2240"; GraphicsHeight="1260" ;;
+    "QHD")    GraphicsWidth="2560"; GraphicsHeight="1440" ;;
+    "UHD")    GraphicsWidth="3840"; GraphicsHeight="2160" ;;
+    "CUSTOM") GraphicsWidth="2560"; GraphicsHeight="1400" ;;
+    *)
+        echo -e "${RED}[-] Unknown resolution: ${GraphicsResInput}${RESET}"
+        exit 1
+        ;;
+esac
 
 GraphicsResolution="${GraphicsWidth}x${GraphicsHeight}"
 VideoDevice="virtio-gpu-pci,xres=${GraphicsWidth},yres=${GraphicsHeight},hostmem=1G"
 BlkDevice="virtio-blk-pci,drive=lineos_disk,bootindex=0"
-
 Network="none"
 DebugOption="guest_errors,cpu_reset"
 
-RequireCommand() {
-    local Command=$1
+trap 'DismountImg true' EXIT INT TERM
 
+RequireCommand() {
+    local Command="$1"
     if ! command -v "$Command" &>/dev/null; then
         echo -e "${RED}    [-] $Command not found.${RESET}"
         return 1
     fi
-
-    return 0
 }
 
 DismountImg() {
-    local Silent=$1
+    local Silent="$1"
 
     if mountpoint -q "$MountDir" 2>/dev/null; then
         sudo umount -l "$MountDir" 2>/dev/null
-        if [ "$Silent" != "true" ]; then
-            echo -e "${CYAN}    [*] Image unmounted.${RESET}"
-        fi
+        [ "$Silent" != "true" ] && echo -e "${CYAN}    [*] Image unmounted.${RESET}"
     fi
 
     if [ -f "$ImgFile" ]; then
@@ -97,17 +89,13 @@ DismountImg() {
 }
 
 CreateImg() {
-    local LoopDev
-
-    if [ -f "$ImgFile" ]; then
-        return 0
-    fi
+    [ -f "$ImgFile" ] && return 0
 
     RequireCommand qemu-img || return 1
-    RequireCommand parted || return 1
+    RequireCommand parted   || return 1
     RequireCommand mkfs.vfat || return 1
     RequireCommand mkfs.ext3 || return 1
-    RequireCommand losetup || return 1
+    RequireCommand losetup  || return 1
 
     mkdir -p "$(dirname "$ImgFile")"
 
@@ -121,6 +109,7 @@ CreateImg() {
         set 1 esp on \
         mkpart LineOS "$((EFISizeMiB + 1))MiB" 100% >/dev/null 2>&1 || return 1
 
+    local LoopDev
     LoopDev=$(sudo losetup -P -f --show "$ImgFile" 2>/dev/null)
     if [ -z "$LoopDev" ]; then
         echo -e "${RED}    [-] Failed to setup loop device.${RESET}"
@@ -129,14 +118,8 @@ CreateImg() {
 
     sleep 0.2
 
-    if [ ! -b "${LoopDev}p1" ]; then
-        echo -e "${RED}    [-] EFI partition not found on $LoopDev.${RESET}"
-        sudo losetup -d "$LoopDev" 2>/dev/null
-        return 1
-    fi
-
-    if [ ! -b "${LoopDev}p2" ]; then
-        echo -e "${RED}    [-] EXT3 partition not found on $LoopDev.${RESET}"
+    if [ ! -b "${LoopDev}p1" ] || [ ! -b "${LoopDev}p2" ]; then
+        echo -e "${RED}    [-] Partitions not found on $LoopDev.${RESET}"
         sudo losetup -d "$LoopDev" 2>/dev/null
         return 1
     fi
@@ -157,7 +140,6 @@ CopyImg() {
 
     local LoopDev
     LoopDev=$(sudo losetup -P -f --show "$ImgFile" 2>/dev/null)
-
     if [ -z "$LoopDev" ]; then
         echo -e "${RED}    [-] Failed to setup loop device.${RESET}"
         return 1
@@ -165,13 +147,10 @@ CopyImg() {
 
     sleep 0.2
 
-    if [ -b "${LoopDev}p1" ]; then
-        sudo mount "${LoopDev}p1" "$MountDir" 2>/dev/null
-    else
-        sudo mount "$LoopDev" "$MountDir" 2>/dev/null
-    fi
+    local TargetPart="${LoopDev}p1"
+    [ ! -b "$TargetPart" ] && TargetPart="$LoopDev"
 
-    if ! mountpoint -q "$MountDir"; then
+    if ! sudo mount "$TargetPart" "$MountDir" 2>/dev/null; then
         echo -e "${RED}    [-] Mount failed on $LoopDev${RESET}"
         sudo losetup -d "$LoopDev" 2>/dev/null
         return 1
@@ -179,19 +158,14 @@ CopyImg() {
 
     echo -e "${CYAN}    [*] Image mounted.${RESET}"
 
-    sudo mkdir -p "${MountDir}/EFI/BOOT"
-    sudo mkdir -p "${MountDir}/KERNEL"
-
-    sudo rm -f "${MountDir}/EFI/BOOT/BOOTX64.EFI" 2>/dev/null
-    sudo rm -f "${MountDir}/KERNEL/LINEOS_KERNEL.ELF" 2>/dev/null
+    sudo mkdir -p "${MountDir}/EFI/BOOT" "${MountDir}/KERNEL"
+    sudo rm -f "${MountDir}/EFI/BOOT/BOOTX64.EFI" "${MountDir}/KERNEL/LINEOS_KERNEL.ELF" 2>/dev/null
 
     sudo cp -f "$BootFile" "${MountDir}/EFI/BOOT/BOOTX64.EFI"
     sudo cp -f "$KernelFile" "${MountDir}/KERNEL/LINEOS_KERNEL.ELF"
-
     sync
 
     echo -e "${CYAN}    [*] Copy complete.${RESET}"
-
     sudo umount -l "$MountDir" 2>/dev/null
     sudo losetup -d "$LoopDev" 2>/dev/null
     echo -e "${CYAN}    [*] Image unmounted.${RESET}"
@@ -199,9 +173,7 @@ CopyImg() {
 }
 
 StartQEMU() {
-    mkdir -p "${BaseDir}/LineOS"
-    mkdir -p "${BaseDir}/logs"
-
+    mkdir -p "${BaseDir}/LineOS" "${BaseDir}/logs"
     RequireCommand "$QEMU" || return 1
 
     echo -e "${CYAN}    [*] QEMU start...${RESET}"
@@ -211,38 +183,40 @@ StartQEMU() {
         OVMF_VARS="/usr/share/OVMF/OVMF_VARS.fd"
     fi
 
-    $QEMU \
-        -rtc $RTC \
-        -accel $Accel \
-        -cpu $CPU,$CPUFlags \
-        -drive "if=pflash,format=raw,readonly=on,file=$OVMF_CODE" \
-        -drive "if=pflash,format=raw,file=$OVMF_VARS" \
-        -net $Network \
-        -M $Machine \
-        -vga $VGA \
-        -device "$VideoDevice" \
-        -drive "file=$ImgFile,format=raw,id=lineos_disk,if=none" \
-        -device "$BlkDevice" \
-        -fw_cfg "name=opt/org.tianocore/GraphicsResolution,string=$GraphicsResolution" \
-        -no-reboot \
-        -d $DebugOption \
-        -D "$LogPath" \
-        -debugcon "file:$DebugConPath" \
-        -global isa-debugcon.iobase=0xe9 \
-        -m $RAM \
-        -display $DisplayConfig \
-        -full-screen \
-        2> /dev/null
+    local QEMU_ARGS=(
+        -rtc "$RTC"
+        -accel "$Accel"
+        -cpu "$CPU,$CPUFlags"
+        -drive "if=pflash,format=raw,readonly=on,file=$OVMF_CODE"
+        -drive "if=pflash,format=raw,file=$OVMF_VARS"
+        -net "$Network"
+        -M "$Machine"
+        -device "$InputA"
+        -device "$InputB"
+        -vga "$VGA"
+        -device "$VideoDevice"
+        -drive "file=$ImgFile,format=raw,id=lineos_disk,if=none"
+        -device "$BlkDevice"
+        -fw_cfg "name=opt/org.tianocore/GraphicsResolution,string=$GraphicsResolution"
+        -no-reboot
+        -d "$DebugOption"
+        -D "$LogPath"
+        -debugcon "file:$DebugConPath"
+        -global "isa-debugcon.iobase=0xe9"
+        -m "$RAM"
+    )
+
+    "$QEMU" "${QEMU_ARGS[@]}" 2>/dev/null || true
 
     echo -e "${GREEN}    [*] Done.${RESET}"
 }
 
+# --- Main Logic ---
 DismountImg true
 echo -e "${YELLOW}LineOS Builder v2.7.0 (Linux Native Raw)${RESET}"
 
 echo -e "${CYAN}[*] make:${RESET}"
-make
-if [ $? -ne 0 ]; then
+if ! make; then
     echo -e "${RED}    [-] make failed.${RESET}"
     exit 1
 fi
@@ -250,7 +224,6 @@ echo -e "${CYAN}━━━End of make━━━${RESET}"
 
 echo -e "${CYAN}[*] img:${RESET}"
 if ! CopyImg; then
-    DismountImg true
     exit 1
 fi
 echo -e "${CYAN}━━━End of img━━━${RESET}"
@@ -259,7 +232,7 @@ echo -e "${CYAN}[*] run:${RESET}"
 StartQEMU
 
 if [ -f "$LogPath" ]; then
-    if grep -E -q "cpu_reset|Triple fault|triple fault|Triple Fault" "$LogPath"; then
+    if grep -E -i -q "cpu_reset|triple fault" "$LogPath"; then
         echo -e "${RED}    [!!] Triple Fault.${RESET}"
         exit 1
     fi
@@ -267,4 +240,3 @@ fi
 
 echo -e "${CYAN}━━━End of run━━━${RESET}"
 echo -e "${MAGENTA}[*] Exit.${RESET}"
-DismountImg true

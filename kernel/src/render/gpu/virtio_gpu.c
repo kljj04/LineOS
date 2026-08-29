@@ -236,10 +236,7 @@ STATIC BOOLEAN RectsTouchOrOverlap(VIRTIO_GPU_RECT *a, VIRTIO_GPU_RECT *b)
     UINT32 BRight = b->X + b->Width;
     UINT32 BBottom = b->Y + b->Height;
 
-    return a->X <= BRight &&
-           b->X <= ARight &&
-           a->Y <= BBottom &&
-           b->Y <= ABottom;
+    return a->X <= BRight && b->X <= ARight && a->Y <= BBottom && b->Y <= ABottom;
 }
 
 STATIC VOID MergeRect(VIRTIO_GPU_RECT *Target, VIRTIO_GPU_RECT *Source)
@@ -502,53 +499,86 @@ VOID DrawLine(INT32 X1, INT32 Y1, INT32 X2, INT32 Y2, UINT32 Color)
     }
 }
 
-STATIC VOID DrawCirclePoints(INT32 CenterX, INT32 CenterY, INT32 X, INT32 Y, UINT32 Color)
+STATIC VOID DrawPixelWithCoverage(INT32 X, INT32 Y, UINT32 Color, UINT32 Coverage, UINT32 MaxCoverage)
 {
-    DrawPixel((UINT32) (CenterX + X), (UINT32) (CenterY + Y), Color);
-    DrawPixel((UINT32) (CenterX - X), (UINT32) (CenterY + Y), Color);
-    DrawPixel((UINT32) (CenterX + X), (UINT32) (CenterY - Y), Color);
-    DrawPixel((UINT32) (CenterX - X), (UINT32) (CenterY - Y), Color);
-    DrawPixel((UINT32) (CenterX + Y), (UINT32) (CenterY + X), Color);
-    DrawPixel((UINT32) (CenterX - Y), (UINT32) (CenterY + X), Color);
-    DrawPixel((UINT32) (CenterX + Y), (UINT32) (CenterY - X), Color);
-    DrawPixel((UINT32) (CenterX - Y), (UINT32) (CenterY - X), Color);
+    UINT32 Alpha;
+
+    if (Coverage == 0 || MaxCoverage == 0 || X < 0 || Y < 0)
+    {
+        return;
+    }
+
+    Alpha = ((UINT32) GetColorAlpha(Color) * Coverage) / MaxCoverage;
+    DrawPixel((UINT32) X, (UINT32) Y, (GetColorRGB(Color) << 8) | Alpha);
 }
 
 VOID DrawCircle(INT32 CenterX, INT32 CenterY, UINT32 Radius, UINT32 Color)
 {
-    INT32 X = 0;
-    INT32 Y = (INT32) Radius;
-    INT32 Decision = 1 - (INT32) Radius;
+    INT32 RadiusOuter = ((INT32) Radius * 4) + 2;
+    INT32 RadiusInner = ((INT32) Radius * 4) - 2;
+    INT32 OuterSquared = RadiusOuter * RadiusOuter;
+    INT32 InnerSquared = RadiusInner * RadiusInner;
+    INT32 SampleOffsets[4] = {-2, -1, 1, 2};
 
-    while (X <= Y)
+    if (Radius == 0)
     {
-        DrawCirclePoints(CenterX, CenterY, X, Y, Color);
-        X++;
+        DrawPixel((UINT32) CenterX, (UINT32) CenterY, Color);
+        return;
+    }
 
-        if (Decision < 0)
+    for (INT32 Y = -(INT32) Radius - 1; Y <= (INT32) Radius + 1; Y++)
+    {
+        for (INT32 X = -(INT32) Radius - 1; X <= (INT32) Radius + 1; X++)
         {
-            Decision += (2 * X) + 1;
-        }
-        else
-        {
-            Y--;
-            Decision += (2 * (X - Y)) + 1;
+            UINT32 Coverage = 0;
+
+            for (UINT32 SampleY = 0; SampleY < 4; SampleY++)
+            {
+                for (UINT32 SampleX = 0; SampleX < 4; SampleX++)
+                {
+                    INT32 SubX = (X * 4) + SampleOffsets[SampleX];
+                    INT32 SubY = (Y * 4) + SampleOffsets[SampleY];
+                    INT32 Distance = (SubX * SubX) + (SubY * SubY);
+
+                    if (Distance <= OuterSquared && Distance >= InnerSquared)
+                    {
+                        Coverage++;
+                    }
+                }
+            }
+
+            DrawPixelWithCoverage(CenterX + X, CenterY + Y, Color, Coverage, 16);
         }
     }
 }
 
 VOID FillCircle(INT32 CenterX, INT32 CenterY, UINT32 Radius, UINT32 Color)
 {
-    INT32 RadiusSquared = (INT32) (Radius * Radius);
+    INT32 RadiusScaled = (INT32) Radius * 4;
+    INT32 RadiusSquared = RadiusScaled * RadiusScaled;
+    INT32 SampleOffsets[4] = {-2, -1, 1, 2};
 
     for (INT32 Y = -(INT32) Radius; Y <= (INT32) Radius; Y++)
     {
         for (INT32 X = -(INT32) Radius; X <= (INT32) Radius; X++)
         {
-            if ((X * X) + (Y * Y) <= RadiusSquared)
+            UINT32 Coverage = 0;
+
+            for (UINT32 SampleY = 0; SampleY < 4; SampleY++)
             {
-                DrawPixel((UINT32) (CenterX + X), (UINT32) (CenterY + Y), Color);
+                for (UINT32 SampleX = 0; SampleX < 4; SampleX++)
+                {
+                    INT32 SubX = (X * 4) + SampleOffsets[SampleX];
+                    INT32 SubY = (Y * 4) + SampleOffsets[SampleY];
+
+                    if ((SubX * SubX) + (SubY * SubY) <= RadiusSquared)
+                    {
+                        Coverage++;
+                    }
+                }
             }
+
+            DrawPixelWithCoverage(CenterX + X, CenterY + Y, Color, Coverage, 16);
         }
     }
 }
@@ -705,7 +735,7 @@ VOID VirtIOGPUClearDirty(VOID)
 
 BOOLEAN VirtIOGPUSetScanout(VOID)
 {
-    VIRTIO_GPU_SET_SCANOUT_REQUEST         ScanoutRequest;
+    VIRTIO_GPU_SET_SCANOUT_REQUEST ScanoutRequest;
 
     if (VirtIOGPUInfo.FrameBuffer == NULL)
     {
@@ -762,7 +792,7 @@ STATIC BOOLEAN TransferResourceRect(UINT32 ResourceId, UINT32 FrameWidth, UINT32
 
 BOOLEAN VirtIOGPUFlushRect(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height)
 {
-    VIRTIO_GPU_RESOURCE_FLUSH_REQUEST      FlushRequest;
+    VIRTIO_GPU_RESOURCE_FLUSH_REQUEST FlushRequest;
 
     if (!ClipRect(&X, &Y, &Width, &Height))
     {
