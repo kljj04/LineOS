@@ -5,6 +5,13 @@
 #pragma once
 
 #include <lineos/typeinfo.h>
+#include <input/virtio_input_protocol.h>
 
-BOOLEAN VirtIOInputInit(VOID);
-VOID    VirtIOInputPoll(VOID);
+BOOLEAN       VirtIOInputInit(VOID);
+VOID          VirtIOInputPoll(VOID);
+BOOLEAN       VirtIOInputIsKeyboardAvailable(VOID);
+BOOLEAN       VirtIOInputIsTabletAvailable(VOID);
+BOOLEAN       VirtIOInputGetKeyEvent(VIRTIO_KEY_EVENT *Event);
+BOOLEAN       VirtIOInputGetPointerEvent(VIRTIO_POINTER_EVENT *Event);
+CONST CHAR16 *VirtIOInputGetLastError(VOID);
+BOOLEAN       VirtIOInputGetTabletRange(UINT32 *MinX, UINT32 *MaxX, UINT32 *MinY, UINT32 *MaxY);
