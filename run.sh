@@ -38,6 +38,7 @@ InputA="virtio-keyboard-pci"
 InputB="virtio-tablet-pci"
 Machine="q35"
 VGA="none"
+DisplayConfig="gtk,zoom-to-fit=off,show-cursor=on"
 GraphicsResInput="QHD"
 
 case "$GraphicsResInput" in
@@ -204,6 +205,7 @@ StartQEMU() {
         -debugcon "file:$DebugConPath"
         -global "isa-debugcon.iobase=0xe9"
         -m "$RAM"
+        -display "$DisplayConfig"
     )
 
     "$QEMU" "${QEMU_ARGS[@]}" 2>/dev/null || true

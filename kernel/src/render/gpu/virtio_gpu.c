@@ -20,6 +20,7 @@ STATIC CONST CHAR16   *LastError = L"not initialized";
 
 STATIC BOOLEAN SendCommandToQueue(VIRTQUEUE *Queue, VOID *Request, UINT32 RequestLength, VOID *Response, UINT32 ResponseLength, CONST CHAR16 *Stage);
 STATIC BOOLEAN SendNoDataCommandToQueue(VIRTQUEUE *Queue, VOID *Request, UINT32 RequestLength, CONST CHAR16 *Stage);
+STATIC BOOLEAN SendCursorCommand(VOID *Request, UINT32 RequestLength, CONST CHAR16 *Stage);
 STATIC BOOLEAN TransferResourceRect(UINT32 ResourceId, UINT32 FrameWidth, UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height);
 
 STATIC UINT64 AlignUp(UINT64 Value, UINT64 Alignment)
@@ -133,6 +134,78 @@ STATIC BOOLEAN SendCommandToQueue(VIRTQUEUE *Queue, VOID *Request, UINT32 Reques
     }
 
     VirtQueueFreeChain(Queue, Head);
+    LastError = L"ok";
+    return TRUE;
+}
+
+STATIC BOOLEAN SendCursorCommand(VOID *Request, UINT32 RequestLength, CONST CHAR16 *Stage)
+{
+    VIRTIO_GPU_CTRL_HEADER *RequestHeader;
+    VIRTIO_GPU_CTRL_HEADER  response;
+    VIRTQUEUE_BUFFER        buffers[2];
+    UINT16                  head;
+    UINT32                  UsedLength;
+
+    if (Request == NULL || RequestLength == 0)
+    {
+        LastError = L"cursor command args invalid";
+        return FALSE;
+    }
+
+    KMemSet(&response, 0, sizeof(response));
+
+    RequestHeader = (VIRTIO_GPU_CTRL_HEADER *) Request;
+    SetCommandDebug(Stage, RequestHeader->Type);
+
+    buffers[0].Buffer = Request;
+    buffers[0].Length = RequestLength;
+    buffers[0].Flags = 0;
+    buffers[1].Buffer = &response;
+    buffers[1].Length = sizeof(response);
+    buffers[1].Flags = VIRTQ_DESC_F_WRITE;
+
+    if (!VirtQueueBuildChain(&VirtIOGPUInfo.CursorQueue, buffers, 2, &head))
+    {
+        LastError = VirtQueueGetLastError();
+        return FALSE;
+    }
+
+    if (!VirtQueueSubmit(&VirtIOGPUInfo.Device, &VirtIOGPUInfo.CursorQueue, head))
+    {
+        LastError = VirtQueueGetLastError();
+        VirtQueueFreeChain(&VirtIOGPUInfo.CursorQueue, head);
+        return FALSE;
+    }
+
+    if (!VirtQueueWaitUsed(&VirtIOGPUInfo.CursorQueue, head, &UsedLength, VIRTIO_GPU_QUEUE_TIMEOUT))
+    {
+        LastError = VirtQueueGetLastError();
+        VirtQueueFreeChain(&VirtIOGPUInfo.CursorQueue, head);
+        return FALSE;
+    }
+
+    VirtQueueFreeChain(&VirtIOGPUInfo.CursorQueue, head);
+
+    if (UsedLength == 0)
+    {
+        VirtIOGPUInfo.Debug.LastResponse = VIRTIO_GPU_RESP_OK_NODATA;
+        LastError = L"ok";
+        return TRUE;
+    }
+
+    if (UsedLength < sizeof(VIRTIO_GPU_CTRL_HEADER))
+    {
+        LastError = L"cursor response too small";
+        return FALSE;
+    }
+
+    VirtIOGPUInfo.Debug.LastResponse = response.Type;
+    if (response.Type != VIRTIO_GPU_RESP_OK_NODATA)
+    {
+        LastError = L"cursor command rejected";
+        return FALSE;
+    }
+
     LastError = L"ok";
     return TRUE;
 }
@@ -989,7 +1062,7 @@ BOOLEAN VirtIOGPUCreateCursor(UINT32 Width, UINT32 Height, UINT32 HotX, UINT32 H
     CursorRequest.HotX = HotX;
     CursorRequest.HotY = HotY;
 
-    if (!SendNoDataCommandToQueue(&VirtIOGPUInfo.CursorQueue, &CursorRequest, sizeof(CursorRequest), L"cursor update"))
+    if (!SendCursorCommand(&CursorRequest, sizeof(CursorRequest), L"cursor update"))
     {
         return FALSE;
     }
@@ -1002,9 +1075,14 @@ BOOLEAN VirtIOGPUUpdateCursor(UINT32 X, UINT32 Y)
 {
     VIRTIO_GPU_UPDATE_CURSOR_REQUEST Request;
 
-    if (VirtIOGPUInfo.CursorBuffer == NULL)
+    if (VirtIOGPUInfo.CursorBuffer == NULL || VirtIOGPUInfo.CursorResourceId == 0)
     {
         LastError = L"cursor missing";
+        return FALSE;
+    }
+
+    if (!TransferResourceRect(VirtIOGPUInfo.CursorResourceId, VirtIOGPUInfo.CursorWidth, 0, 0, VirtIOGPUInfo.CursorWidth, VirtIOGPUInfo.CursorHeight))
+    {
         return FALSE;
     }
 
@@ -1017,7 +1095,7 @@ BOOLEAN VirtIOGPUUpdateCursor(UINT32 X, UINT32 Y)
     Request.HotX = 0;
     Request.HotY = 0;
 
-    if (!SendNoDataCommandToQueue(&VirtIOGPUInfo.CursorQueue, &Request, sizeof(Request), L"cursor update"))
+    if (!SendCursorCommand(&Request, sizeof(Request), L"cursor update"))
     {
         return FALSE;
     }
@@ -1043,7 +1121,7 @@ BOOLEAN VirtIOGPUMoveCursor(UINT32 X, UINT32 Y)
     Request.Position.Y = Y;
     Request.ResourceId = VirtIOGPUInfo.CursorResourceId;
 
-    if (!SendNoDataCommandToQueue(&VirtIOGPUInfo.CursorQueue, &Request, sizeof(Request), L"cursor move"))
+    if (!SendCursorCommand(&Request, sizeof(Request), L"cursor move"))
     {
         return FALSE;
     }
