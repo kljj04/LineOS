@@ -36,6 +36,7 @@ STATIC CONST CHAR16 *LastError = L"not initialized";
 STATIC VOID ResetDeviceInfo(VIRTIO_PCI_DEVICE *VirtIODevice)
 {
     KMemSet(VirtIODevice, 0, sizeof(VIRTIO_PCI_DEVICE));
+
     VirtIODevice->CommonConfigBAR = 0xFF;
     VirtIODevice->NotifyBAR = 0xFF;
     VirtIODevice->ISRStatusBAR = 0xFF;
@@ -54,13 +55,15 @@ STATIC VOID *GetBARAddress(VIRTIO_PCI_DEVICE *VirtIODevice, UINT8 BARIndex, UINT
 
 STATIC VOID LoadBARs(VIRTIO_PCI_DEVICE *VirtIODevice)
 {
-    for (UINT8 Index = 0; Index < 6; Index++)
-    {
-        PCIGetBAR(VirtIODevice->PCIDevice, Index, &VirtIODevice->BARs[Index]);
+    UINT8 index;
 
-        if (VirtIODevice->BARs[Index].Type == PCI_BAR_TYPE_MEMORY64)
+    for (index = 0; index < 6; index++)
+    {
+        PCIGetBAR(VirtIODevice->PCIDevice, index, &VirtIODevice->BARs[index]);
+
+        if (VirtIODevice->BARs[index].Type == PCI_BAR_TYPE_MEMORY64)
         {
-            Index++;
+            index++;
         }
     }
 }
@@ -73,7 +76,9 @@ STATIC UINT32 ReadCapability32(PCI_DEVICE *Device, UINT8 CapabilityOffset, UINT8
 STATIC VOID ReadVirtIOCapability(VIRTIO_PCI_DEVICE *VirtIODevice, UINT8 CapabilityOffset)
 {
     VIRTIO_PCI_CAP Capability;
-    PCI_DEVICE    *Device = VirtIODevice->PCIDevice;
+    PCI_DEVICE    *Device;
+
+    Device = VirtIODevice->PCIDevice;
 
     Capability.CapVendor = PCIConfigRead8(Device, CapabilityOffset);
     Capability.CapNext = PCIConfigRead8(Device, (UINT8) (CapabilityOffset + 1));
@@ -98,10 +103,12 @@ STATIC VOID ReadVirtIOCapability(VIRTIO_PCI_DEVICE *VirtIODevice, UINT8 Capabili
     case VIRTIO_PCI_CAP_NOTIFY_CFG:
         VirtIODevice->NotifyBAR = Capability.BAR;
         VirtIODevice->NotifyOffset = Capability.Offset;
+
         if (Capability.CapLength >= 20)
         {
             VirtIODevice->NotifyMultiplier = ReadCapability32(Device, CapabilityOffset, 16);
         }
+
         break;
 
     case VIRTIO_PCI_CAP_ISR_CFG:
@@ -121,8 +128,11 @@ STATIC VOID ReadVirtIOCapability(VIRTIO_PCI_DEVICE *VirtIODevice, UINT8 Capabili
 
 STATIC BOOLEAN ScanCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
 {
-    PCI_DEVICE *Device = VirtIODevice->PCIDevice;
+    PCI_DEVICE *Device;
     UINT8       CapabilityOffset;
+    UINT8       guard;
+
+    Device = VirtIODevice->PCIDevice;
 
     if ((PCIConfigRead16(Device, 0x06) & PCI_STATUS_CAPABILITIES) == 0)
     {
@@ -131,9 +141,12 @@ STATIC BOOLEAN ScanCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
     }
 
     CapabilityOffset = PCIConfigRead8(Device, PCI_CAPABILITY_POINTER) & 0xFC;
-    for (UINT8 Guard = 0; CapabilityOffset != 0 && Guard < 48; Guard++)
+
+    for (guard = 0; CapabilityOffset != 0 && guard < 48; guard++)
     {
-        UINT8 CapabilityId = PCIConfigRead8(Device, CapabilityOffset);
+        UINT8 CapabilityId;
+
+        CapabilityId = PCIConfigRead8(Device, CapabilityOffset);
 
         if (CapabilityId == PCI_CAP_VENDOR_SPECIFIC)
         {
@@ -170,39 +183,40 @@ STATIC BOOLEAN MapCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
 
 STATIC VOID EnablePCIDevice(PCI_DEVICE *Device)
 {
-    UINT16 Command = PCIConfigRead16(Device, PCI_COMMAND);
+    UINT16 Command;
 
+    Command = PCIConfigRead16(Device, PCI_COMMAND);
     Command |= PCI_COMMAND_IO_SPACE | PCI_COMMAND_MEMORY_SPACE | PCI_COMMAND_BUS_MASTER;
+
     PCIConfigWrite16(Device, PCI_COMMAND, Command);
 }
 
-BOOLEAN VirtIOPCIInitDevice(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 VendorId, UINT16 DeviceId)
+BOOLEAN VirtIOPCIInitDevice(VIRTIO_PCI_DEVICE *VirtIODevice, PCI_DEVICE *Device)
 {
-    PCI_DEVICE *Device;
-
-    if (VirtIODevice == NULL)
+    if (VirtIODevice == NULL || Device == NULL)
     {
-        LastError = L"virtio pci info null";
+        LastError = L"virtio pci args invalid";
         return FALSE;
     }
 
     ResetDeviceInfo(VirtIODevice);
-    Device = PCIFindDevice(VendorId, DeviceId);
-    if (Device == NULL)
+
+    VirtIODevice->PCIDevice = Device;
+
+    LoadBARs(VirtIODevice);
+
+    if (!ScanCapabilities(VirtIODevice))
     {
-        LastError = L"virtio pci device missing";
         return FALSE;
     }
 
-    VirtIODevice->PCIDevice = Device;
-    LoadBARs(VirtIODevice);
-
-    if (!ScanCapabilities(VirtIODevice) || !MapCapabilities(VirtIODevice))
+    if (!MapCapabilities(VirtIODevice))
     {
         return FALSE;
     }
 
     EnablePCIDevice(Device);
+
     LastError = L"ok";
     return TRUE;
 }
@@ -218,13 +232,18 @@ BOOLEAN VirtIOPCIStartDevice(VIRTIO_PCI_DEVICE *VirtIODevice)
     }
 
     CommonConfig = VirtIODevice->CommonConfig;
+
     CommonConfig->DeviceStatus = 0;
+
     CommonConfig->DeviceStatus = VIRTIO_STATUS_ACKNOWLEDGE;
     CommonConfig->DeviceStatus |= VIRTIO_STATUS_DRIVER;
+
     CommonConfig->DriverFeatureSelect = 0;
     CommonConfig->DriverFeature = 0;
+
     CommonConfig->DriverFeatureSelect = 1;
     CommonConfig->DriverFeature = 1U << (VIRTIO_F_VERSION_1 - 32);
+
     CommonConfig->DeviceStatus |= VIRTIO_STATUS_FEATURES_OK;
 
     if ((CommonConfig->DeviceStatus & VIRTIO_STATUS_FEATURES_OK) == 0)
@@ -235,6 +254,19 @@ BOOLEAN VirtIOPCIStartDevice(VIRTIO_PCI_DEVICE *VirtIODevice)
 
     LastError = L"ok";
     return TRUE;
+}
+
+VOID VirtIOPCIReadyDevice(VIRTIO_PCI_DEVICE *VirtIODevice)
+{
+    if (VirtIODevice == NULL || VirtIODevice->CommonConfig == NULL)
+    {
+        LastError = L"virtio common cfg missing";
+        return;
+    }
+
+    VirtIODevice->CommonConfig->DeviceStatus |= VIRTIO_STATUS_DRIVER_OK;
+
+    LastError = L"ok";
 }
 
 VOID VirtIOPCINotifyQueue(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 QueueIndex)
@@ -248,8 +280,11 @@ VOID VirtIOPCINotifyQueue(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 QueueIndex)
     }
 
     CommonConfig = VirtIODevice->CommonConfig;
+
     CommonConfig->QueueSelect = QueueIndex;
+
     NotifyAddress = (VOLATILE UINT16 *) ((UINT8 *) VirtIODevice->NotifyBase + (CommonConfig->QueueNotifyOff * VirtIODevice->NotifyMultiplier));
+
     *NotifyAddress = QueueIndex;
 }
 

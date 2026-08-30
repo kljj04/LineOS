@@ -15,8 +15,10 @@ STATIC CONST CHAR16   *LastError = L"not initialized";
 #define VIRTIO_GPU_RESOURCE_FRAMEBUFFER 1
 #define VIRTIO_GPU_RESOURCE_CURSOR      2
 #define VIRTIO_GPU_BYTES_PER_PIXEL      4
+#define VIRTIO_GPU_QUEUE_TIMEOUT        100000000
 #define PAGE_SIZE                       4096ULL
 
+STATIC BOOLEAN SendCommandToQueue(VIRTQUEUE *Queue, VOID *Request, UINT32 RequestLength, VOID *Response, UINT32 ResponseLength, CONST CHAR16 *Stage);
 STATIC BOOLEAN SendNoDataCommandToQueue(VIRTQUEUE *Queue, VOID *Request, UINT32 RequestLength, CONST CHAR16 *Stage);
 STATIC BOOLEAN TransferResourceRect(UINT32 ResourceId, UINT32 FrameWidth, UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height);
 
@@ -47,9 +49,8 @@ STATIC BOOLEAN GetDisplayInfo(VOID)
     Request.Header.Type = VIRTIO_GPU_CMD_GET_DISPLAY_INFO;
     SetCommandDebug(L"display info", Request.Header.Type);
 
-    if (!VirtQueueSend(&VirtIOGPUInfo.Device, &VirtIOGPUInfo.ControlQueue, &Request, sizeof(Request), &VirtIOGPUInfo.DisplayInfo, sizeof(VirtIOGPUInfo.DisplayInfo)))
+    if (!SendCommandToQueue(&VirtIOGPUInfo.ControlQueue, &Request, sizeof(Request), &VirtIOGPUInfo.DisplayInfo, sizeof(VirtIOGPUInfo.DisplayInfo), L"display info"))
     {
-        LastError = VirtQueueGetLastError();
         return FALSE;
     }
 
@@ -70,14 +71,11 @@ STATIC BOOLEAN SendNoDataCommand(VOID *Request, UINT32 RequestLength, CONST CHAR
 
 STATIC BOOLEAN SendNoDataCommandToQueue(VIRTQUEUE *Queue, VOID *Request, UINT32 RequestLength, CONST CHAR16 *Stage)
 {
-    VIRTIO_GPU_CTRL_HEADER *RequestHeader = (VIRTIO_GPU_CTRL_HEADER *) Request;
-    VIRTIO_GPU_CTRL_HEADER  Response;
+    VIRTIO_GPU_CTRL_HEADER Response;
 
     KMemSet(&Response, 0, sizeof(Response));
-    SetCommandDebug(Stage, RequestHeader->Type);
-    if (!VirtQueueSend(&VirtIOGPUInfo.Device, Queue, Request, RequestLength, &Response, sizeof(Response)))
+    if (!SendCommandToQueue(Queue, Request, RequestLength, &Response, sizeof(Response), Stage))
     {
-        LastError = VirtQueueGetLastError();
         return FALSE;
     }
 
@@ -88,6 +86,54 @@ STATIC BOOLEAN SendNoDataCommandToQueue(VIRTQUEUE *Queue, VOID *Request, UINT32 
         return FALSE;
     }
 
+    return TRUE;
+}
+
+STATIC BOOLEAN SendCommandToQueue(VIRTQUEUE *Queue, VOID *Request, UINT32 RequestLength, VOID *Response, UINT32 ResponseLength, CONST CHAR16 *Stage)
+{
+    VIRTIO_GPU_CTRL_HEADER *RequestHeader;
+    VIRTQUEUE_BUFFER        Buffers[2];
+    UINT16                  Head;
+    UINT32                  UsedLength;
+
+    if (Queue == NULL || Request == NULL || RequestLength == 0 || Response == NULL || ResponseLength == 0)
+    {
+        LastError = L"gpu command args invalid";
+        return FALSE;
+    }
+
+    RequestHeader = (VIRTIO_GPU_CTRL_HEADER *) Request;
+    SetCommandDebug(Stage, RequestHeader->Type);
+
+    Buffers[0].Buffer = Request;
+    Buffers[0].Length = RequestLength;
+    Buffers[0].Flags = 0;
+    Buffers[1].Buffer = Response;
+    Buffers[1].Length = ResponseLength;
+    Buffers[1].Flags = VIRTQ_DESC_F_WRITE;
+
+    if (!VirtQueueBuildChain(Queue, Buffers, 2, &Head))
+    {
+        LastError = VirtQueueGetLastError();
+        return FALSE;
+    }
+
+    if (!VirtQueueSubmit(&VirtIOGPUInfo.Device, Queue, Head))
+    {
+        LastError = VirtQueueGetLastError();
+        VirtQueueFreeChain(Queue, Head);
+        return FALSE;
+    }
+
+    if (!VirtQueueWaitUsed(Queue, Head, &UsedLength, VIRTIO_GPU_QUEUE_TIMEOUT))
+    {
+        LastError = VirtQueueGetLastError();
+        VirtQueueFreeChain(Queue, Head);
+        return FALSE;
+    }
+
+    VirtQueueFreeChain(Queue, Head);
+    LastError = L"ok";
     return TRUE;
 }
 
@@ -258,19 +304,27 @@ STATIC VOID MergeRect(VIRTIO_GPU_RECT *Target, VIRTIO_GPU_RECT *Source)
 
 BOOLEAN VirtIOGPUInit(VOID)
 {
+    PCI_DEVICE *PCIDevice;
+
     ResetInfo();
-    if (!VirtIOPCIInitDevice(&VirtIOGPUInfo.Device, VIRTIO_GPU_VENDOR_ID, VIRTIO_GPU_DEVICE_ID))
+
+    PCIDevice = PCIFindDevice(VIRTIO_GPU_VENDOR_ID, VIRTIO_GPU_DEVICE_ID);
+
+    if (PCIDevice == NULL)
     {
-        LastError = VirtIOPCIGetLastError();
         return FALSE;
     }
-    VirtIOGPUInfo.Debug.InitOK = TRUE;
+
+    if (!VirtIOPCIInitDevice(&VirtIOGPUInfo.Device, PCIDevice))
+    {
+        return FALSE;
+    }
 
     if (!VirtIOPCIStartDevice(&VirtIOGPUInfo.Device))
     {
-        LastError = VirtIOPCIGetLastError();
         return FALSE;
     }
+
     VirtIOGPUInfo.Debug.StartOK = TRUE;
 
     if (!VirtQueueInit(&VirtIOGPUInfo.Device, &VirtIOGPUInfo.ControlQueue, 0, 64))
@@ -278,6 +332,7 @@ BOOLEAN VirtIOGPUInit(VOID)
         LastError = VirtQueueGetLastError();
         return FALSE;
     }
+
     VirtIOGPUInfo.Debug.ControlQueueOK = TRUE;
 
     if (!VirtQueueInit(&VirtIOGPUInfo.Device, &VirtIOGPUInfo.CursorQueue, 1, 16))
@@ -285,17 +340,21 @@ BOOLEAN VirtIOGPUInit(VOID)
         LastError = VirtQueueGetLastError();
         return FALSE;
     }
+
     VirtIOGPUInfo.Debug.CursorQueueOK = TRUE;
 
-    VirtIOGPUInfo.Device.CommonConfig->DeviceStatus |= VIRTIO_STATUS_DRIVER_OK;
+    VirtIOPCIReadyDevice(&VirtIOGPUInfo.Device);
+
     if (!GetDisplayInfo())
     {
         return FALSE;
     }
+
     VirtIOGPUInfo.Debug.DisplayInfoOK = TRUE;
 
     VirtIOGPUInfo.Found = TRUE;
     LastError = L"ok";
+
     return TRUE;
 }
 

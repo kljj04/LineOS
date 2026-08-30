@@ -46,30 +46,22 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
 
     FillScreen(0x1E1E1E);
     PCI_DEVICE *Device;
+    UINT32      i;
+    UINTN       y = 100;
 
-    Device = PCIGetDevice(0);
-    KPrint(L"Bus=%X Dev=%X Func=%X Vendor=%X Device=%X\n", 100, 100, 0xFFFFFFFF, 50, PRETENDARD, Device->Bus, Device->Device, Device->Function, Device->VendorId, Device->DeviceId);
-    Device = PCIGetDevice(1);
-    KPrint(L"Bus=%X Dev=%X Func=%X Vendor=%X Device=%X\n", 100, 200, 0xFFFFFFFF, 50, PRETENDARD, Device->Bus, Device->Device, Device->Function, Device->VendorId, Device->DeviceId);
-    Device = PCIGetDevice(2);
-    KPrint(L"Bus=%X Dev=%X Func=%X Vendor=%X Device=%X\n", 100, 300, 0xFFFFFFFF, 50, PRETENDARD, Device->Bus, Device->Device, Device->Function, Device->VendorId, Device->DeviceId);
-    Device = PCIGetDevice(3);
-    KPrint(L"Bus=%X Dev=%X Func=%X Vendor=%X Device=%X\n", 100, 400, 0xFFFFFFFF, 50, PRETENDARD, Device->Bus, Device->Device, Device->Function, Device->VendorId, Device->DeviceId);
-    Device = PCIGetDevice(4);
-    KPrint(L"Bus=%X Dev=%X Func=%X Vendor=%X Device=%X\n", 100, 500, 0xFFFFFFFF, 50, PRETENDARD, Device->Bus, Device->Device, Device->Function, Device->VendorId, Device->DeviceId);
-    Device = PCIGetDevice(5);
-    KPrint(L"Bus=%X Dev=%X Func=%X Vendor=%X Device=%X\n", 100, 600, 0xFFFFFFFF, 50, PRETENDARD, Device->Bus, Device->Device, Device->Function, Device->VendorId, Device->DeviceId);
-    Device = PCIGetDevice(6);
-    KPrint(L"Bus=%X Dev=%X Func=%X Vendor=%X Device=%X\n", 100, 6700, 0xFFFFFFFF, 50, PRETENDARD, Device->Bus, Device->Device, Device->Function, Device->VendorId, Device->DeviceId);
-    Device = PCIGetDevice(7);
-    KPrint(L"Bus=%X Dev=%X Func=%X Vendor=%X Device=%X\n", 100, 800, 0xFFFFFFFF, 50, PRETENDARD, Device->Bus, Device->Device, Device->Function, Device->VendorId, Device->DeviceId);
-    Device = PCIGetDevice(8);
-    KPrint(L"Bus=%X Dev=%X Func=%X Vendor=%X Device=%X\n", 100, 900, 0xFFFFFFFF, 50, PRETENDARD, Device->Bus, Device->Device, Device->Function, Device->VendorId, Device->DeviceId);
-    Device = PCIGetDevice(9);
-    KPrint(L"Bus=%X Dev=%X Func=%X Vendor=%X Device=%X\n", 100, 1000, 0xFFFFFFFF, 50, PRETENDARD, Device->Bus, Device->Device, Device->Function, Device->VendorId, Device->DeviceId);
+    for (i = 0; i < PCIGetDeviceCount(); i++)
+    {
+        Device = PCIGetDevice(i);
 
+        if (Device == NULL)
+        {
+            continue;
+        }
+
+        KPrint(L"Bus=%X Dev=%X Func=%X Vendor=%s (%X) Device=%X\n", 100, y, 0xFFFFFFFF, 50, PRETENDARD, Device->Bus, Device->Device, Device->Function, PCIGetVendorName(Device->VendorId), Device->VendorId, Device->DeviceId);
+        y += 100;
+    }
 
     VirtIOGPUFlush();
-
     HLT();
 }

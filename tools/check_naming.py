@@ -430,6 +430,8 @@ def check_keyword_use(path, line_number, stripped):
 def check_function(path, lines, line_number, stripped):
     if "__asm__" in stripped or stripped.startswith("ASM("):
         return 0
+    if re.search(r"\(\s*\*\s*[A-Za-z_][A-Za-z0-9_]*(?:\[[^\]]*\])?\s*\)\s*\(", stripped):
+        return 0
 
     match = re.match(
         rf"^{RETURN_TYPE_PATTERN}\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(",

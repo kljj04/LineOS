@@ -47,8 +47,27 @@ typedef struct
     VIRTQ_USED  *Used;
     UINT16       AvailIndex;
     UINT16       UsedIndex;
+    UINT16       FreeHead;
+    UINT16       FreeCount;
+    UINT8       *DescInUse;
+    UINT8       *Completed;
+    UINT32      *CompletedLength;
 } VIRTQUEUE;
 
+typedef struct
+{
+    VOID  *Buffer;
+    UINT32 Length;
+    UINT16 Flags;
+} VIRTQUEUE_BUFFER;
+
 BOOLEAN       VirtQueueInit(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, UINT16 QueueIndex, UINT16 WantedSize);
-BOOLEAN       VirtQueueSend(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, VOID *Request, UINT32 RequestLength, VOID *Response, UINT32 ResponseLength);
+BOOLEAN       VirtQueueAllocDesc(VIRTQUEUE *Queue, UINT16 *DescIndex);
+VOID          VirtQueueFreeDesc(VIRTQUEUE *Queue, UINT16 DescIndex);
+VOID          VirtQueueFreeChain(VIRTQUEUE *Queue, UINT16 Head);
+BOOLEAN       VirtQueueBuildChain(VIRTQUEUE *Queue, VIRTQUEUE_BUFFER *Buffers, UINT16 BufferCount, UINT16 *Head);
+BOOLEAN       VirtQueueSubmit(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, UINT16 Head);
+BOOLEAN       VirtQueuePostBuffer(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, VOID *Buffer, UINT32 Length, UINT16 Flags, UINT16 *Head);
+BOOLEAN       VirtQueuePopUsed(VIRTQUEUE *Queue, UINT16 *Head, UINT32 *Length);
+BOOLEAN       VirtQueueWaitUsed(VIRTQUEUE *Queue, UINT16 Head, UINT32 *Length, UINT32 Timeout);
 CONST CHAR16 *VirtQueueGetLastError(VOID);

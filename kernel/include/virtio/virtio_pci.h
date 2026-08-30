@@ -54,7 +54,8 @@ typedef struct
     UINT32                    NotifyMultiplier;
 } VIRTIO_PCI_DEVICE;
 
-BOOLEAN       VirtIOPCIInitDevice(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 VendorId, UINT16 DeviceId);
+BOOLEAN       VirtIOPCIInitDevice(VIRTIO_PCI_DEVICE *VirtIODevice, PCI_DEVICE *Device);
 BOOLEAN       VirtIOPCIStartDevice(VIRTIO_PCI_DEVICE *VirtIODevice);
+VOID          VirtIOPCIReadyDevice(VIRTIO_PCI_DEVICE *VirtIODevice);
 VOID          VirtIOPCINotifyQueue(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 QueueIndex);
 CONST CHAR16 *VirtIOPCIGetLastError(VOID);
