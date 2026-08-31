@@ -6,6 +6,12 @@
 
 .extern IDTInterruptHandler
 
+.global PRRRestoreContext
+.type PRRRestoreContext, @function
+PRRRestoreContext:
+    movq %rdi, %rsp
+    jmp ISRRestoreContext
+
 .macro ISR_NO_ERROR_CODE vector
 .global ISR\vector
 .type ISR\vector, @function
@@ -57,6 +63,9 @@ ISR_ERROR_CODE    30
 ISR_NO_ERROR_CODE 31
 
 ISR_NO_ERROR_CODE 64
+ISR_NO_ERROR_CODE 65
+ISR_NO_ERROR_CODE 66
+ISR_NO_ERROR_CODE 67
 
 ISRCommon:
     pushq %rax
@@ -76,15 +85,39 @@ ISRCommon:
     pushq %r15
 
     movq %rsp, %rdi
-
     movq %rsp, %rbx
     andq $-16, %rsp
 
     cld
     call IDTInterruptHandler
 
-    movq %rbx, %rsp
+    cmpq $0, %rax
+    jne 1f
+    movq %rbx, %rax
+1:
+    movq %rax, %rsp
 
+    popq %r15
+    popq %r14
+    popq %r13
+    popq %r12
+    popq %r11
+    popq %r10
+    popq %r9
+    popq %r8
+    popq %rbp
+    popq %rdi
+    popq %rsi
+    popq %rdx
+    popq %rcx
+    popq %rbx
+    popq %rax
+
+    addq $16, %rsp
+
+    iretq
+
+ISRRestoreContext:
     popq %r15
     popq %r14
     popq %r13

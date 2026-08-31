@@ -18,6 +18,11 @@ VOID HLTONCE()
     ASM("hlt");
 }
 
+VOID STIHLT()
+{
+    ASM("sti; hlt" ::: "memory");
+}
+
 VOID CLI()
 {
     ASM("cli" ::: "memory");

@@ -61,6 +61,7 @@ KERN_CFLAGS = -target x86_64-elf \
 			  -DLINEOS_KERNEL_BUILD \
 			  -Icommon \
 			  -Ikernel/include \
+			  -Ikernel/assets \
 			  -Wunused-variable \
 			  -fshort-wchar
 

@@ -47,15 +47,21 @@ typedef struct
     UINT8                     NotifyBAR;
     UINT8                     ISRStatusBAR;
     UINT8                     DeviceConfigBAR;
+    UINT8                     MSIXCapOffset;
+    UINT8                     MSIXTableBAR;
     UINT32                    CommonConfigOffset;
     UINT32                    NotifyOffset;
     UINT32                    ISRStatusOffset;
     UINT32                    DeviceConfigOffset;
     UINT32                    NotifyMultiplier;
+    UINT32                    MSIXTableOffset;
+    UINT16                    MSIXTableSize;
+    VOLATILE VOID            *MSIXTable;
 } VIRTIO_PCI_DEVICE;
 
 BOOLEAN       VirtIOPCIInitDevice(VIRTIO_PCI_DEVICE *VirtIODevice, PCI_DEVICE *Device);
 BOOLEAN       VirtIOPCIStartDevice(VIRTIO_PCI_DEVICE *VirtIODevice);
 VOID          VirtIOPCIReadyDevice(VIRTIO_PCI_DEVICE *VirtIODevice);
+BOOLEAN       VirtIOPCIEnableQueueMSIX(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 QueueIndex, UINT8 Vector);
 VOID          VirtIOPCINotifyQueue(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 QueueIndex);
 CONST CHAR16 *VirtIOPCIGetLastError(VOID);

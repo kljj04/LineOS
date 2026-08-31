@@ -4,20 +4,35 @@
 
 #include <memory/memory.h>
 #include <pci/pci.h>
+#include <interrupt/apic.h>
 #include <virtio/virtio_pci.h>
 
-#define PCI_STATUS_CAPABILITIES  0x10
-#define PCI_CAPABILITY_POINTER   0x34
-#define PCI_CAP_VENDOR_SPECIFIC  0x09
-#define PCI_COMMAND              0x04
-#define PCI_COMMAND_IO_SPACE     0x1
-#define PCI_COMMAND_MEMORY_SPACE 0x2
-#define PCI_COMMAND_BUS_MASTER   0x4
+#define PCI_STATUS_CAPABILITIES    0x10
+#define PCI_CAPABILITY_POINTER     0x34
+#define PCI_CAP_VENDOR_SPECIFIC    0x09
+#define PCI_CAP_MSIX               0x11
+#define PCI_COMMAND                0x04
+#define PCI_COMMAND_IO_SPACE       0x1
+#define PCI_COMMAND_MEMORY_SPACE   0x2
+#define PCI_COMMAND_BUS_MASTER     0x4
+#define PCI_COMMAND_INTX_DISABLE   0x400
+#define PCI_MSIX_MESSAGE_CONTROL   0x02
+#define PCI_MSIX_TABLE_OFFSET      0x04
+#define PCI_MSIX_TABLE_BIR_MASK    0x7
+#define PCI_MSIX_TABLE_OFFSET_MASK 0xFFFFFFF8U
+#define PCI_MSIX_TABLE_SIZE_MASK   0x7FF
+#define PCI_MSIX_ENABLE            (1U << 15)
+#define PCI_MSIX_FUNCTION_MASK     (1U << 14)
 
 #define VIRTIO_PCI_CAP_COMMON_CFG 1
 #define VIRTIO_PCI_CAP_NOTIFY_CFG 2
 #define VIRTIO_PCI_CAP_ISR_CFG    3
 #define VIRTIO_PCI_CAP_DEVICE_CFG 4
+#define VIRTIO_PCI_MSIX_ENTRY     0
+#define VIRTIO_PCI_MSIX_NO_VECTOR 0xFFFF
+
+#define MSI_ADDRESS_BASE 0xFEE00000ULL
+#define MSI_DELIVERY_FIXED 0x0000
 
 typedef struct PACKED
 {
@@ -31,6 +46,14 @@ typedef struct PACKED
     UINT32 Length;
 } VIRTIO_PCI_CAP;
 
+typedef struct PACKED
+{
+    VOLATILE UINT32 MessageAddress;
+    VOLATILE UINT32 MessageUpperAddress;
+    VOLATILE UINT32 MessageData;
+    VOLATILE UINT32 VectorControl;
+} VIRTIO_PCI_MSIX_TABLE_ENTRY;
+
 STATIC CONST CHAR16 *LastError = L"not initialized";
 
 STATIC VOID ResetDeviceInfo(VIRTIO_PCI_DEVICE *VirtIODevice)
@@ -41,6 +64,8 @@ STATIC VOID ResetDeviceInfo(VIRTIO_PCI_DEVICE *VirtIODevice)
     VirtIODevice->NotifyBAR = 0xFF;
     VirtIODevice->ISRStatusBAR = 0xFF;
     VirtIODevice->DeviceConfigBAR = 0xFF;
+    VirtIODevice->MSIXCapOffset = 0;
+    VirtIODevice->MSIXTableBAR = 0xFF;
 }
 
 STATIC VOID *GetBARAddress(VIRTIO_PCI_DEVICE *VirtIODevice, UINT8 BARIndex, UINT32 Offset)
@@ -126,6 +151,20 @@ STATIC VOID ReadVirtIOCapability(VIRTIO_PCI_DEVICE *VirtIODevice, UINT8 Capabili
     }
 }
 
+STATIC VOID ReadMSIXCapability(VIRTIO_PCI_DEVICE *VirtIODevice, UINT8 CapabilityOffset)
+{
+    UINT16 MessageControl;
+    UINT32 TableInfo;
+
+    MessageControl = PCIConfigRead16(VirtIODevice->PCIDevice, (UINT8) (CapabilityOffset + PCI_MSIX_MESSAGE_CONTROL));
+    TableInfo = PCIConfigRead32(VirtIODevice->PCIDevice, (UINT8) (CapabilityOffset + PCI_MSIX_TABLE_OFFSET));
+
+    VirtIODevice->MSIXCapOffset = CapabilityOffset;
+    VirtIODevice->MSIXTableBAR = TableInfo & PCI_MSIX_TABLE_BIR_MASK;
+    VirtIODevice->MSIXTableOffset = TableInfo & PCI_MSIX_TABLE_OFFSET_MASK;
+    VirtIODevice->MSIXTableSize = (MessageControl & PCI_MSIX_TABLE_SIZE_MASK) + 1;
+}
+
 STATIC BOOLEAN ScanCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
 {
     PCI_DEVICE *Device;
@@ -152,6 +191,10 @@ STATIC BOOLEAN ScanCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
         {
             ReadVirtIOCapability(VirtIODevice, CapabilityOffset);
         }
+        else if (CapabilityId == PCI_CAP_MSIX)
+        {
+            ReadMSIXCapability(VirtIODevice, CapabilityOffset);
+        }
 
         CapabilityOffset = PCIConfigRead8(Device, (UINT8) (CapabilityOffset + 1)) & 0xFC;
     }
@@ -171,6 +214,7 @@ STATIC BOOLEAN MapCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
     VirtIODevice->NotifyBase = (VOLATILE UINT16 *) GetBARAddress(VirtIODevice, VirtIODevice->NotifyBAR, VirtIODevice->NotifyOffset);
     VirtIODevice->ISRStatus = (VOLATILE UINT8 *) GetBARAddress(VirtIODevice, VirtIODevice->ISRStatusBAR, VirtIODevice->ISRStatusOffset);
     VirtIODevice->DeviceConfig = (VOLATILE UINT8 *) GetBARAddress(VirtIODevice, VirtIODevice->DeviceConfigBAR, VirtIODevice->DeviceConfigOffset);
+    VirtIODevice->MSIXTable = GetBARAddress(VirtIODevice, VirtIODevice->MSIXTableBAR, VirtIODevice->MSIXTableOffset);
 
     if (VirtIODevice->CommonConfig == NULL || VirtIODevice->NotifyBase == NULL || VirtIODevice->ISRStatus == NULL || VirtIODevice->DeviceConfig == NULL)
     {
@@ -179,6 +223,36 @@ STATIC BOOLEAN MapCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
     }
 
     return TRUE;
+}
+
+STATIC VOID WriteMSIXTableEntry(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 TableIndex, UINT8 Vector)
+{
+    VIRTIO_PCI_MSIX_TABLE_ENTRY *Entry;
+    UINT64                       MessageAddress;
+
+    Entry = (VIRTIO_PCI_MSIX_TABLE_ENTRY *) VirtIODevice->MSIXTable + TableIndex;
+    MessageAddress = MSI_ADDRESS_BASE | ((UINT64) LAPICGetID() << 12);
+
+    Entry->VectorControl = 1;
+    Entry->MessageAddress = (UINT32) MessageAddress;
+    Entry->MessageUpperAddress = (UINT32) (MessageAddress >> 32);
+    Entry->MessageData = MSI_DELIVERY_FIXED | Vector;
+    Entry->VectorControl = 0;
+}
+
+STATIC VOID EnableMSIXCapability(VIRTIO_PCI_DEVICE *VirtIODevice)
+{
+    UINT16 MessageControl;
+    UINT16 Command;
+
+    MessageControl = PCIConfigRead16(VirtIODevice->PCIDevice, (UINT8) (VirtIODevice->MSIXCapOffset + PCI_MSIX_MESSAGE_CONTROL));
+    MessageControl &= ~PCI_MSIX_FUNCTION_MASK;
+    MessageControl |= PCI_MSIX_ENABLE;
+    PCIConfigWrite16(VirtIODevice->PCIDevice, (UINT8) (VirtIODevice->MSIXCapOffset + PCI_MSIX_MESSAGE_CONTROL), MessageControl);
+
+    Command = PCIConfigRead16(VirtIODevice->PCIDevice, PCI_COMMAND);
+    Command |= PCI_COMMAND_INTX_DISABLE;
+    PCIConfigWrite16(VirtIODevice->PCIDevice, PCI_COMMAND, Command);
 }
 
 STATIC VOID EnablePCIDevice(PCI_DEVICE *Device)
@@ -267,6 +341,53 @@ VOID VirtIOPCIReadyDevice(VIRTIO_PCI_DEVICE *VirtIODevice)
     VirtIODevice->CommonConfig->DeviceStatus |= VIRTIO_STATUS_DRIVER_OK;
 
     LastError = L"ok";
+}
+
+BOOLEAN VirtIOPCIEnableQueueMSIX(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 QueueIndex, UINT8 Vector)
+{
+    VIRTIO_PCI_COMMON_CONFIG *CommonConfig;
+
+    if (VirtIODevice == NULL || VirtIODevice->CommonConfig == NULL)
+    {
+        LastError = L"virtio common cfg missing";
+        return FALSE;
+    }
+
+    if (VirtIODevice->MSIXCapOffset == 0 || VirtIODevice->MSIXTable == NULL || VirtIODevice->MSIXTableSize == 0)
+    {
+        LastError = L"pci msix cap missing";
+        return FALSE;
+    }
+
+    if (VirtIODevice->MSIXTableBAR >= 6 || VirtIODevice->MSIXTableSize <= VIRTIO_PCI_MSIX_ENTRY)
+    {
+        LastError = L"pci msix table invalid";
+        return FALSE;
+    }
+
+    CommonConfig = VirtIODevice->CommonConfig;
+    CommonConfig->QueueSelect = QueueIndex;
+
+    if (CommonConfig->QueueSize == 0)
+    {
+        LastError = L"virtqueue missing";
+        return FALSE;
+    }
+
+    WriteMSIXTableEntry(VirtIODevice, VIRTIO_PCI_MSIX_ENTRY, Vector);
+
+    CommonConfig->QueueMSIXVector = VIRTIO_PCI_MSIX_ENTRY;
+
+    if (CommonConfig->QueueMSIXVector == VIRTIO_PCI_MSIX_NO_VECTOR)
+    {
+        LastError = L"virtqueue msix vector rejected";
+        return FALSE;
+    }
+
+    EnableMSIXCapability(VirtIODevice);
+
+    LastError = L"ok";
+    return TRUE;
 }
 
 VOID VirtIOPCINotifyQueue(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 QueueIndex)

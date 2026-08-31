@@ -15,4 +15,5 @@ VOID   *KMemMove(VOID *destination, CONST VOID *source, UINTN size);
 VOID   *KMemCpy(VOID *destination, CONST VOID *source, UINTN size);
 VOID   *KMemSet(VOID *destination, UINT8 value, UINTN size);
 VOID   *KAllocPages(UINTN pageCount);
+VOID   *KAllocPagesBelow(UINTN pageCount, UINT64 limit);
 VOID    KMemFreePages(VOID *address, UINTN pageCount);

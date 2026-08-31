@@ -6,7 +6,8 @@
 #include <virtio/virtio_pci.h>
 #include <virtio/virtqueue.h>
 
-#define PAGE_SIZE 4096ULL
+#define PAGE_SIZE        4096ULL
+#define VIRTIO_DMA_LIMIT 0x100000000ULL
 
 STATIC CONST CHAR16 *LastError = L"not initialized";
 
@@ -22,7 +23,7 @@ STATIC UINTN PagesForBytes(UINTN Bytes)
 
 STATIC VOID *AllocQueueMemory(UINTN Bytes)
 {
-    return KAllocPages(PagesForBytes(Bytes));
+    return KAllocPagesBelow(PagesForBytes(Bytes), VIRTIO_DMA_LIMIT);
 }
 
 STATIC VOID MemoryBarrier(VOID)

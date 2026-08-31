@@ -16,7 +16,14 @@ STATIC CONST CHAR16   *LastError = L"not initialized";
 #define VIRTIO_GPU_RESOURCE_CURSOR      2
 #define VIRTIO_GPU_BYTES_PER_PIXEL      4
 #define VIRTIO_GPU_QUEUE_TIMEOUT        100000000
+#define VIRTIO_GPU_BOUNCE_BUFFER_SIZE   1024
+#define VIRTIO_GPU_DMA_LIMIT            0x100000000ULL
 #define PAGE_SIZE                       4096ULL
+
+STATIC UINT8 ControlRequestBuffer[VIRTIO_GPU_BOUNCE_BUFFER_SIZE];
+STATIC UINT8 ControlResponseBuffer[VIRTIO_GPU_BOUNCE_BUFFER_SIZE];
+STATIC UINT8 CursorRequestBuffer[VIRTIO_GPU_BOUNCE_BUFFER_SIZE];
+STATIC UINT8 CursorResponseBuffer[VIRTIO_GPU_BOUNCE_BUFFER_SIZE];
 
 STATIC BOOLEAN SendCommandToQueue(VIRTQUEUE *Queue, VOID *Request, UINT32 RequestLength, VOID *Response, UINT32 ResponseLength, CONST CHAR16 *Stage);
 STATIC BOOLEAN SendNoDataCommandToQueue(VIRTQUEUE *Queue, VOID *Request, UINT32 RequestLength, CONST CHAR16 *Stage);
@@ -94,6 +101,8 @@ STATIC BOOLEAN SendCommandToQueue(VIRTQUEUE *Queue, VOID *Request, UINT32 Reques
 {
     VIRTIO_GPU_CTRL_HEADER *RequestHeader;
     VIRTQUEUE_BUFFER        Buffers[2];
+    UINT8                  *RequestBuffer;
+    UINT8                  *ResponseBuffer;
     UINT16                  Head;
     UINT32                  UsedLength;
 
@@ -103,13 +112,33 @@ STATIC BOOLEAN SendCommandToQueue(VIRTQUEUE *Queue, VOID *Request, UINT32 Reques
         return FALSE;
     }
 
+    if (RequestLength > VIRTIO_GPU_BOUNCE_BUFFER_SIZE || ResponseLength > VIRTIO_GPU_BOUNCE_BUFFER_SIZE)
+    {
+        LastError = L"gpu command too large";
+        return FALSE;
+    }
+
+    if (Queue == &VirtIOGPUInfo.CursorQueue)
+    {
+        RequestBuffer = CursorRequestBuffer;
+        ResponseBuffer = CursorResponseBuffer;
+    }
+    else
+    {
+        RequestBuffer = ControlRequestBuffer;
+        ResponseBuffer = ControlResponseBuffer;
+    }
+
+    KMemCpy(RequestBuffer, Request, RequestLength);
+    KMemSet(ResponseBuffer, 0, ResponseLength);
+
     RequestHeader = (VIRTIO_GPU_CTRL_HEADER *) Request;
     SetCommandDebug(Stage, RequestHeader->Type);
 
-    Buffers[0].Buffer = Request;
+    Buffers[0].Buffer = RequestBuffer;
     Buffers[0].Length = RequestLength;
     Buffers[0].Flags = 0;
-    Buffers[1].Buffer = Response;
+    Buffers[1].Buffer = ResponseBuffer;
     Buffers[1].Length = ResponseLength;
     Buffers[1].Flags = VIRTQ_DESC_F_WRITE;
 
@@ -134,6 +163,7 @@ STATIC BOOLEAN SendCommandToQueue(VIRTQUEUE *Queue, VOID *Request, UINT32 Reques
     }
 
     VirtQueueFreeChain(Queue, Head);
+    KMemCpy(Response, ResponseBuffer, ResponseLength);
     LastError = L"ok";
     return TRUE;
 }
@@ -141,7 +171,6 @@ STATIC BOOLEAN SendCommandToQueue(VIRTQUEUE *Queue, VOID *Request, UINT32 Reques
 STATIC BOOLEAN SendCursorCommand(VOID *Request, UINT32 RequestLength, CONST CHAR16 *Stage)
 {
     VIRTIO_GPU_CTRL_HEADER *RequestHeader;
-    VIRTIO_GPU_CTRL_HEADER  response;
     VIRTQUEUE_BUFFER        buffers[2];
     UINT16                  head;
     UINT32                  UsedLength;
@@ -152,16 +181,23 @@ STATIC BOOLEAN SendCursorCommand(VOID *Request, UINT32 RequestLength, CONST CHAR
         return FALSE;
     }
 
-    KMemSet(&response, 0, sizeof(response));
+    if (RequestLength > VIRTIO_GPU_BOUNCE_BUFFER_SIZE)
+    {
+        LastError = L"cursor command too large";
+        return FALSE;
+    }
+
+    KMemCpy(CursorRequestBuffer, Request, RequestLength);
+    KMemSet(CursorResponseBuffer, 0, sizeof(VIRTIO_GPU_CTRL_HEADER));
 
     RequestHeader = (VIRTIO_GPU_CTRL_HEADER *) Request;
     SetCommandDebug(Stage, RequestHeader->Type);
 
-    buffers[0].Buffer = Request;
+    buffers[0].Buffer = CursorRequestBuffer;
     buffers[0].Length = RequestLength;
     buffers[0].Flags = 0;
-    buffers[1].Buffer = &response;
-    buffers[1].Length = sizeof(response);
+    buffers[1].Buffer = CursorResponseBuffer;
+    buffers[1].Length = sizeof(VIRTIO_GPU_CTRL_HEADER);
     buffers[1].Flags = VIRTQ_DESC_F_WRITE;
 
     if (!VirtQueueBuildChain(&VirtIOGPUInfo.CursorQueue, buffers, 2, &head))
@@ -199,8 +235,9 @@ STATIC BOOLEAN SendCursorCommand(VOID *Request, UINT32 RequestLength, CONST CHAR
         return FALSE;
     }
 
-    VirtIOGPUInfo.Debug.LastResponse = response.Type;
-    if (response.Type != VIRTIO_GPU_RESP_OK_NODATA)
+    RequestHeader = (VIRTIO_GPU_CTRL_HEADER *) CursorResponseBuffer;
+    VirtIOGPUInfo.Debug.LastResponse = RequestHeader->Type;
+    if (RequestHeader->Type != VIRTIO_GPU_RESP_OK_NODATA)
     {
         LastError = L"cursor command rejected";
         return FALSE;
@@ -452,7 +489,7 @@ BOOLEAN VirtIOGPUCreateFrameBuffer(UINT32 Width, UINT32 Height)
 
     FrameBufferBytes = (UINT64) Width * Height * VIRTIO_GPU_BYTES_PER_PIXEL;
     FrameBufferPages = AlignUp(FrameBufferBytes, PAGE_SIZE) / PAGE_SIZE;
-    VirtIOGPUInfo.FrameBuffer = (UINT32 *) KAllocPages((UINTN) FrameBufferPages);
+    VirtIOGPUInfo.FrameBuffer = (UINT32 *) KAllocPagesBelow((UINTN) FrameBufferPages, VIRTIO_GPU_DMA_LIMIT);
     if (VirtIOGPUInfo.FrameBuffer == NULL)
     {
         LastError = L"gpu framebuffer alloc failed";
@@ -993,7 +1030,6 @@ BOOLEAN VirtIOGPUCreateCursor(UINT32 Width, UINT32 Height, UINT32 HotX, UINT32 H
 {
     VIRTIO_GPU_RESOURCE_CREATE_2D_REQUEST      CreateRequest;
     VIRTIO_GPU_RESOURCE_ATTACH_BACKING_REQUEST AttachRequest;
-    VIRTIO_GPU_UPDATE_CURSOR_REQUEST           CursorRequest;
     UINT64                                     CursorBytes;
     UINT64                                     CursorPages;
 
@@ -1005,7 +1041,7 @@ BOOLEAN VirtIOGPUCreateCursor(UINT32 Width, UINT32 Height, UINT32 HotX, UINT32 H
 
     CursorBytes = (UINT64) Width * Height * VIRTIO_GPU_BYTES_PER_PIXEL;
     CursorPages = AlignUp(CursorBytes, PAGE_SIZE) / PAGE_SIZE;
-    VirtIOGPUInfo.CursorBuffer = (UINT32 *) KAllocPages((UINTN) CursorPages);
+    VirtIOGPUInfo.CursorBuffer = (UINT32 *) KAllocPagesBelow((UINTN) CursorPages, VIRTIO_GPU_DMA_LIMIT);
     if (VirtIOGPUInfo.CursorBuffer == NULL)
     {
         LastError = L"cursor alloc failed";
@@ -1015,18 +1051,10 @@ BOOLEAN VirtIOGPUCreateCursor(UINT32 Width, UINT32 Height, UINT32 HotX, UINT32 H
     VirtIOGPUInfo.CursorResourceId = VIRTIO_GPU_RESOURCE_CURSOR;
     VirtIOGPUInfo.CursorWidth = Width;
     VirtIOGPUInfo.CursorHeight = Height;
+    VirtIOGPUInfo.CursorHotX = HotX;
+    VirtIOGPUInfo.CursorHotY = HotY;
 
     KMemSet(VirtIOGPUInfo.CursorBuffer, 0, (UINTN) CursorBytes);
-    for (UINT32 Y = 0; Y < Height; Y++)
-    {
-        for (UINT32 X = 0; X < Width; X++)
-        {
-            if (X == 0 || Y == 0 || X == Y || (X < 6 && Y < 18) || (Y >= 14 && Y < 20 && X >= 6 && X <= 10))
-            {
-                VirtIOGPUInfo.CursorBuffer[(Y * Width) + X] = 0xFFFFFFFF;
-            }
-        }
-    }
 
     KMemSet(&CreateRequest, 0, sizeof(CreateRequest));
     CreateRequest.Header.Type = VIRTIO_GPU_CMD_RESOURCE_CREATE_2D;
@@ -1050,25 +1078,41 @@ BOOLEAN VirtIOGPUCreateCursor(UINT32 Width, UINT32 Height, UINT32 HotX, UINT32 H
         return FALSE;
     }
 
-    if (!TransferResourceRect(VirtIOGPUInfo.CursorResourceId, Width, 0, 0, Width, Height))
-    {
-        return FALSE;
-    }
-
-    KMemSet(&CursorRequest, 0, sizeof(CursorRequest));
-    CursorRequest.Header.Type = VIRTIO_GPU_CMD_UPDATE_CURSOR;
-    CursorRequest.Position.ScanoutId = 0;
-    CursorRequest.ResourceId = VirtIOGPUInfo.CursorResourceId;
-    CursorRequest.HotX = HotX;
-    CursorRequest.HotY = HotY;
-
-    if (!SendCursorCommand(&CursorRequest, sizeof(CursorRequest), L"cursor update"))
-    {
-        return FALSE;
-    }
-
     LastError = L"ok";
     return TRUE;
+}
+
+BOOLEAN VirtIOGPUSetCursorImage(CONST UINT32 *Pixels, UINT32 Width, UINT32 Height, UINT32 HotX, UINT32 HotY, UINT32 X, UINT32 Y)
+{
+    UINT64 CursorBytes;
+
+    if (VirtIOGPUInfo.CursorBuffer == NULL || VirtIOGPUInfo.CursorResourceId == 0 || Pixels == NULL)
+    {
+        LastError = L"cursor image args invalid";
+        return FALSE;
+    }
+
+    if (Width == 0 || Height == 0 || Width > VirtIOGPUInfo.CursorWidth || Height > VirtIOGPUInfo.CursorHeight)
+    {
+        LastError = L"cursor image size invalid";
+        return FALSE;
+    }
+
+    CursorBytes = (UINT64) VirtIOGPUInfo.CursorWidth * VirtIOGPUInfo.CursorHeight * VIRTIO_GPU_BYTES_PER_PIXEL;
+    KMemSet(VirtIOGPUInfo.CursorBuffer, 0, (UINTN) CursorBytes);
+
+    for (UINT32 Row = 0; Row < Height; Row++)
+    {
+        for (UINT32 Column = 0; Column < Width; Column++)
+        {
+            VirtIOGPUInfo.CursorBuffer[Row * VirtIOGPUInfo.CursorWidth + Column] = Pixels[Row * Width + Column];
+        }
+    }
+
+    VirtIOGPUInfo.CursorHotX = HotX;
+    VirtIOGPUInfo.CursorHotY = HotY;
+
+    return VirtIOGPUUpdateCursor(X, Y);
 }
 
 BOOLEAN VirtIOGPUUpdateCursor(UINT32 X, UINT32 Y)
@@ -1092,8 +1136,8 @@ BOOLEAN VirtIOGPUUpdateCursor(UINT32 X, UINT32 Y)
     Request.Position.X = X;
     Request.Position.Y = Y;
     Request.ResourceId = VirtIOGPUInfo.CursorResourceId;
-    Request.HotX = 0;
-    Request.HotY = 0;
+    Request.HotX = VirtIOGPUInfo.CursorHotX;
+    Request.HotY = VirtIOGPUInfo.CursorHotY;
 
     if (!SendCursorCommand(&Request, sizeof(Request), L"cursor update"))
     {
