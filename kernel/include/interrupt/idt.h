@@ -49,7 +49,7 @@ typedef struct
     UINT64 RFLAGS;
 } INTERRUPT_FRAME;
 
-VOID          IDTInit(VOID);
-VOID          IDTSetGate(UINT8 vector, UINT64 handler, UINT16 selector, UINT8 IST, UINT8 TypeAttributes);
-VOID          IDTLoad(VOID);
-VOID SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *frame);
+VOID            IDTInit(VOID);
+VOID            IDTSetGate(UINT8 vector, UINT64 handler, UINT16 selector, UINT8 IST, UINT8 TypeAttributes);
+VOID            IDTLoad(VOID);
+UINT64 SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *frame);

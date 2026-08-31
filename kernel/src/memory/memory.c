@@ -176,6 +176,32 @@ STATIC UINT64 FindFreePageRange(UINTN PageCount)
     return TotalPages;
 }
 
+STATIC UINT64 FindFreePageRangeBelow(UINTN PageCount, UINT64 Limit)
+{
+    UINT64 LimitPage;
+
+    if (Limit == 0)
+    {
+        return TotalPages;
+    }
+
+    LimitPage = AlignUp(Limit, PAGE_SIZE) / PAGE_SIZE;
+    if (LimitPage > TotalPages)
+    {
+        LimitPage = TotalPages;
+    }
+
+    for (UINT64 Page = LOW_MEMORY_RESERVED_PAGES; Page + PageCount <= LimitPage; Page++)
+    {
+        if (ArePagesFree(Page, PageCount))
+        {
+            return Page;
+        }
+    }
+
+    return TotalPages;
+}
+
 BOOLEAN KMemoryInit(LINEOS_BOOT_INFO *BootInfo)
 {
     LINEOS_MEMORY_MAP     *MemoryMap;
@@ -300,6 +326,27 @@ VOID *KAllocPages(UINTN pageCount)
     }
 
     Page = FindFreePageRange(pageCount);
+    if (Page == TotalPages)
+    {
+        return NULL;
+    }
+
+    MarkPagesUsed(Page, pageCount);
+    KMemSet((VOID *) AddressFromPageIndex(Page), 0, (UINTN) (pageCount * PAGE_SIZE));
+
+    return (VOID *) AddressFromPageIndex(Page);
+}
+
+VOID *KAllocPagesBelow(UINTN pageCount, UINT64 limit)
+{
+    UINT64 Page;
+
+    if (pageCount == 0 || PageBitmap == NULL)
+    {
+        return NULL;
+    }
+
+    Page = FindFreePageRangeBelow(pageCount, limit);
     if (Page == TotalPages)
     {
         return NULL;

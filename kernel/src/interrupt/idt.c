@@ -3,8 +3,10 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <interrupt/idt.h>
+#include <scheduler/prr.h>
 #include <interrupt/apic.h>
 #include <debug/panic.h>
+#include <input/virtio_input.h>
 #include <render/gpu/virtio_gpu.h>
 #include <lineos/typeinfo.h>
 #include <memory/memory.h>
@@ -44,6 +46,9 @@ EXTERN VOID ISR30(VOID);
 EXTERN VOID ISR31(VOID);
 
 EXTERN VOID ISR64(VOID);
+EXTERN VOID ISR65(VOID);
+EXTERN VOID ISR66(VOID);
+EXTERN VOID ISR67(VOID);
 
 STATIC VOID (*ISRTable[32])(VOID) = {ISR0, ISR1, ISR2, ISR3, ISR4, ISR5, ISR6, ISR7, ISR8, ISR9, ISR10, ISR11, ISR12, ISR13, ISR14, ISR15, ISR16, ISR17, ISR18, ISR19, ISR20, ISR21, ISR22, ISR23, ISR24, ISR25, ISR26, ISR27, ISR28, ISR29, ISR30, ISR31};
 
@@ -66,6 +71,9 @@ VOID IDTInit(VOID)
         IDTSetGate(vector, (UINT64) ISRTable[vector], selector, 0, 0x8E);
     }
     IDTSetGate(64, (UINT64) ISR64, selector, 0, 0x8E);
+    IDTSetGate(65, (UINT64) ISR65, selector, 0, 0x8E);
+    IDTSetGate(66, (UINT64) ISR66, selector, 0, 0x8E);
+    IDTSetGate(67, (UINT64) ISR67, selector, 0, 0x8E);
 }
 
 VOID IDTSetGate(UINT8 vector, UINT64 handler, UINT16 selector, UINT8 IST, UINT8 TypeAttributes)
@@ -84,7 +92,7 @@ VOID IDTLoad(VOID)
     ASM("lidt %0" : : "m"(IDTR));
 }
 
-VOID SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *frame)
+UINT64 SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *frame)
 {
     if (frame->Vector < 32)
     {
@@ -93,7 +101,30 @@ VOID SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *frame)
 
     if (frame->Vector == 64)
     {
+        PRRTick(frame);
         LAPICEOI();
-        return;
+        return PRRGetSwitchStack(frame);
     }
+
+    if (frame->Vector == 65)
+    {
+        VirtIOKeyboardInterruptHandler();
+        LAPICEOI();
+        return (UINT64) frame;
+    }
+
+    if (frame->Vector == 66)
+    {
+        VirtIOTabletInterruptHandler();
+        LAPICEOI();
+        return (UINT64) frame;
+    }
+
+    if (frame->Vector == 67)
+    {
+        PRRTick(frame);
+        return PRRGetSwitchStack(frame);
+    }
+
+    return (UINT64) frame;
 }

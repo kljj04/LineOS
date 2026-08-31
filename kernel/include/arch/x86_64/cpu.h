@@ -8,6 +8,7 @@
 
 VOID   HLT();
 VOID   HLTONCE();
+VOID   STIHLT();
 VOID   CLI();
 VOID   STI();
 VOID   PAUSE();

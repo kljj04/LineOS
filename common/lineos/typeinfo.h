@@ -36,6 +36,7 @@
 #define MS_ABI   __attribute__((ms_abi))
 #define SYSV_ABI __attribute__((sysv_abi))
 #define ASM      __asm__ volatile
+#define NORETURN __attribute__((noreturn))
 
 #ifdef LINEOS_KERNEL_BUILD
 typedef unsigned char      UINT8;

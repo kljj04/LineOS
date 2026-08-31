@@ -8,6 +8,9 @@
 #include <virtio/virtio_pci.h>
 #include <virtio/virtqueue.h>
 
+#define VIRTIO_INPUT_KEYBOARD_VECTOR 65
+#define VIRTIO_INPUT_TABLET_VECTOR   66
+
 STATIC VIRTIO_INPUT_DEVICE_INFO Keyboard;
 STATIC VIRTIO_INPUT_DEVICE_INFO Tablet;
 STATIC VIRTIO_KEY_EVENT         KeyEvents[VIRTIO_INPUT_KEY_QUEUE_SIZE];
@@ -130,6 +133,7 @@ STATIC BOOLEAN InitInputDevice(PCI_DEVICE *PCIDevice, VIRTIO_INPUT_DEVICE_INFO *
 {
     VIRTIO_INPUT_ABS_INFO XInfo;
     VIRTIO_INPUT_ABS_INFO YInfo;
+    UINT8                 Vector;
 
     KMemSet(InputDevice, 0, sizeof(VIRTIO_INPUT_DEVICE_INFO));
 
@@ -156,6 +160,14 @@ STATIC BOOLEAN InitInputDevice(PCI_DEVICE *PCIDevice, VIRTIO_INPUT_DEVICE_INFO *
     if (!VirtQueueInit(&InputDevice->Device, &InputDevice->EventQueue, VIRTIO_INPUT_EVENT_QUEUE, VIRTIO_INPUT_QUEUE_SIZE))
     {
         LastError = VirtQueueGetLastError();
+        return FALSE;
+    }
+
+    Vector = InputDevice->Type == VIRTIO_INPUT_DEVICE_KEYBOARD ? VIRTIO_INPUT_KEYBOARD_VECTOR : VIRTIO_INPUT_TABLET_VECTOR;
+
+    if (!VirtIOPCIEnableQueueMSIX(&InputDevice->Device, VIRTIO_INPUT_EVENT_QUEUE, Vector))
+    {
+        LastError = VirtIOPCIGetLastError();
         return FALSE;
     }
 
@@ -302,50 +314,85 @@ STATIC VOID ProcessTabletEvent(VIRTIO_INPUT_DEVICE_INFO *InputDevice, VIRTIO_INP
     }
 }
 
-STATIC VOID PollDevice(VIRTIO_INPUT_DEVICE_INFO *InputDevice)
+STATIC VIRTIO_INPUT_EVENT_BUFFER *FindEventBuffer(VIRTIO_INPUT_DEVICE_INFO *InputDevice, UINT16 Head)
 {
-    UINT16 head;
-    UINT32 length;
     UINT16 index;
 
-    if (!InputDevice->Found)
+    for (index = 0; index < InputDevice->EventBufferCount; index++)
+    {
+        if (InputDevice->EventBuffers[index].Head == Head)
+        {
+            return &InputDevice->EventBuffers[index];
+        }
+    }
+
+    return NULL;
+}
+
+STATIC VOID AcknowledgeInputInterrupt(VIRTIO_INPUT_DEVICE_INFO *InputDevice)
+{
+    VOLATILE UINT8 *ISRStatus;
+
+    ISRStatus = InputDevice->Device.ISRStatus;
+
+    if (ISRStatus == NULL)
     {
         return;
     }
 
+    if ((*ISRStatus & 0x3) == 0)
+    {
+        return;
+    }
+}
+
+STATIC VOID ProcessInputQueue(VIRTIO_INPUT_DEVICE_INFO *InputDevice)
+{
+    VIRTIO_INPUT_EVENT_BUFFER *EventBuffer;
+    UINT16                     head;
+    UINT32                     length;
+
+    if (InputDevice == NULL || !InputDevice->Found)
+    {
+        return;
+    }
+
+    AcknowledgeInputInterrupt(InputDevice);
+
     while (VirtQueuePopUsed(&InputDevice->EventQueue, &head, &length))
     {
-        for (index = 0; index < InputDevice->EventBufferCount; index++)
+        EventBuffer = FindEventBuffer(InputDevice, head);
+
+        if (EventBuffer != NULL && length >= sizeof(VIRTIO_INPUT_EVENT))
         {
-            if (InputDevice->EventBuffers[index].Head != head)
+            if (InputDevice->Type == VIRTIO_INPUT_DEVICE_KEYBOARD)
             {
-                continue;
+                ProcessKeyboardEvent(&EventBuffer->Event);
             }
-
-            if (length >= sizeof(VIRTIO_INPUT_EVENT))
+            else if (InputDevice->Type == VIRTIO_INPUT_DEVICE_TABLET)
             {
-                if (InputDevice->Type == VIRTIO_INPUT_DEVICE_KEYBOARD)
-                {
-                    ProcessKeyboardEvent(&InputDevice->EventBuffers[index].Event);
-                }
-                else if (InputDevice->Type == VIRTIO_INPUT_DEVICE_TABLET)
-                {
-                    ProcessTabletEvent(InputDevice, &InputDevice->EventBuffers[index].Event);
-                }
+                ProcessTabletEvent(InputDevice, &EventBuffer->Event);
             }
+        }
 
-            VirtQueueFreeChain(&InputDevice->EventQueue, head);
+        VirtQueueFreeChain(&InputDevice->EventQueue, head);
 
-            KMemSet(&InputDevice->EventBuffers[index].Event, 0, sizeof(VIRTIO_INPUT_EVENT));
+        if (EventBuffer == NULL)
+        {
+            LastError = L"virtio input event buffer missing";
+            continue;
+        }
 
-            if (!VirtQueuePostBuffer(&InputDevice->Device, &InputDevice->EventQueue, &InputDevice->EventBuffers[index].Event, sizeof(VIRTIO_INPUT_EVENT), VIRTQ_DESC_F_WRITE, &InputDevice->EventBuffers[index].Head))
-            {
-                LastError = VirtQueueGetLastError();
-            }
+        KMemSet(&EventBuffer->Event, 0, sizeof(VIRTIO_INPUT_EVENT));
 
-            break;
+        if (!VirtQueuePostBuffer(&InputDevice->Device, &InputDevice->EventQueue, &EventBuffer->Event, sizeof(VIRTIO_INPUT_EVENT), VIRTQ_DESC_F_WRITE, &EventBuffer->Head))
+        {
+            LastError = VirtQueueGetLastError();
+            return;
         }
     }
+
+    LastError = L"ok";
 }
 
 BOOLEAN VirtIOInputInit(VOID)
@@ -406,10 +453,14 @@ BOOLEAN VirtIOInputInit(VOID)
     return TRUE;
 }
 
-VOID VirtIOInputPoll(VOID)
+VOID VirtIOKeyboardInterruptHandler(VOID)
 {
-    PollDevice(&Keyboard);
-    PollDevice(&Tablet);
+    ProcessInputQueue(&Keyboard);
+}
+
+VOID VirtIOTabletInterruptHandler(VOID)
+{
+    ProcessInputQueue(&Tablet);
 }
 
 BOOLEAN VirtIOInputIsKeyboardAvailable(VOID)
@@ -420,6 +471,11 @@ BOOLEAN VirtIOInputIsKeyboardAvailable(VOID)
 BOOLEAN VirtIOInputIsTabletAvailable(VOID)
 {
     return Tablet.Found;
+}
+
+BOOLEAN VirtIOInputHasPendingEvent(VOID)
+{
+    return KeyReadIndex != KeyWriteIndex || PointerReadIndex != PointerWriteIndex;
 }
 
 BOOLEAN VirtIOInputGetKeyEvent(VIRTIO_KEY_EVENT *Event)

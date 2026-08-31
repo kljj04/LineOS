@@ -19,7 +19,7 @@ DebugConFile="debugcon.log"
 QEMU="qemu-system-x86_64"
 Accel="kvm"
 CPU="host"
-CPUFlags="-tsc-deadline,+invtsc,+rdtscp,+x2apic,+arat,+fsgsbase,+pdpe1gb"
+CPUFlags="+tsc-deadline,+invtsc,+rdtscp,+x2apic,+arat,+fsgsbase,+pdpe1gb"
 
 ImgFile="${BaseDir}/LineOS/LineOS.img"
 ImgSize="8G"
@@ -38,7 +38,7 @@ InputA="virtio-keyboard-pci"
 InputB="virtio-tablet-pci"
 Machine="q35"
 VGA="none"
-DisplayConfig="gtk,zoom-to-fit=off,show-cursor=on"
+DisplayConfig="gtk"
 GraphicsResInput="QHD"
 
 case "$GraphicsResInput" in

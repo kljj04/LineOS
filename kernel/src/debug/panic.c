@@ -7,6 +7,7 @@
 #include <render/truetype/print.h>
 #include <render/truetype/truetype_engine.h>
 #include <arch/x86_64/cpu.h>
+#include <debug/debug.h>
 
 #define PANIC_BACKGROUND             0x0B1020
 #define PANIC_PANEL                  0x141A2ECC
@@ -19,6 +20,8 @@
 #define PANIC_SUCCESS                0x43D39EFF
 #define EXCEPTION_PAGE_FAULT         14
 #define EXCEPTION_GENERAL_PROTECTION 13
+
+STATIC BOOLEAN PanicActive = FALSE;
 
 typedef struct
 {
@@ -802,15 +805,47 @@ STATIC VOID DrawInterruptFrame(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, 
 
 STATIC VOID HaltAfterPanic(VOID)
 {
-    VirtIOGPUFlush();
+    VIRTIO_GPU_INFO *GPU = VirtIOGPUGetInfo();
+
+    if (GPU != NULL && GPU->FrameBuffer != NULL)
+    {
+        VirtIOGPUFlush();
+    }
+
+    CLI();
+    HLT();
+}
+
+STATIC VOID HaltWithoutScreen(VOID)
+{
     CLI();
     HLT();
 }
 
 VOID Panic(CONST CHAR16 *msg)
 {
-    VIRTIO_GPU_INFO        *GPU = VirtIOGPUGetInfo();
+    VIRTIO_GPU_INFO        *GPU;
     PANIC_REGISTER_SNAPSHOT Registers;
+
+    CLI();
+    GPU = VirtIOGPUGetInfo();
+
+    DebugWrite("PANIC: ");
+    DebugWriteWide(msg);
+    DebugWrite("\n");
+
+    if (PanicActive)
+    {
+        DebugWrite("PANIC: reentered\n");
+        HaltWithoutScreen();
+    }
+
+    PanicActive = TRUE;
+
+    if (GPU == NULL || GPU->FrameBuffer == NULL)
+    {
+        HaltAfterPanic();
+    }
 
     UINT32 width = GPU->DisplayInfo.Displays[0].Rect.Width;
     UINT32 height = GPU->DisplayInfo.Displays[0].Rect.Height;
@@ -837,7 +872,31 @@ VOID Panic(CONST CHAR16 *msg)
 
 VOID ExceptionPanic(INTERRUPT_FRAME *frame)
 {
-    VIRTIO_GPU_INFO *GPU = VirtIOGPUGetInfo();
+    VIRTIO_GPU_INFO *GPU;
+
+    CLI();
+    GPU = VirtIOGPUGetInfo();
+
+    DebugWrite("EXCEPTION: vector=");
+    DebugWriteHex(frame == NULL ? 0 : frame->Vector);
+    DebugWrite(" rip=");
+    DebugWriteHex(frame == NULL ? 0 : frame->RIP);
+    DebugWrite(" error=");
+    DebugWriteHex(frame == NULL ? 0 : frame->ErrorCode);
+    DebugWrite("\n");
+
+    if (PanicActive)
+    {
+        DebugWrite("EXCEPTION: panic reentered\n");
+        HaltWithoutScreen();
+    }
+
+    PanicActive = TRUE;
+
+    if (GPU == NULL || GPU->FrameBuffer == NULL)
+    {
+        HaltAfterPanic();
+    }
 
     UINT32 width = GPU->DisplayInfo.Displays[0].Rect.Width;
     UINT32 height = GPU->DisplayInfo.Displays[0].Rect.Height;

@@ -50,6 +50,8 @@ typedef struct
     UINT32                               CursorResourceId;
     UINT32                               CursorWidth;
     UINT32                               CursorHeight;
+    UINT32                               CursorHotX;
+    UINT32                               CursorHotY;
     VIRTIO_GPU_DEBUG                     Debug;
 } VIRTIO_GPU_INFO;
 
@@ -73,6 +75,7 @@ BOOLEAN          VirtIOGPUFlushRect(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Hei
 BOOLEAN          VirtIOGPUPresent(VOID);
 BOOLEAN          VirtIOGPUFlush(VOID);
 BOOLEAN          VirtIOGPUCreateCursor(UINT32 Width, UINT32 Height, UINT32 HotX, UINT32 HotY);
+BOOLEAN          VirtIOGPUSetCursorImage(CONST UINT32 *Pixels, UINT32 Width, UINT32 Height, UINT32 HotX, UINT32 HotY, UINT32 X, UINT32 Y);
 BOOLEAN          VirtIOGPUUpdateCursor(UINT32 X, UINT32 Y);
 BOOLEAN          VirtIOGPUMoveCursor(UINT32 X, UINT32 Y);
 VIRTIO_GPU_INFO *VirtIOGPUGetInfo(VOID);
