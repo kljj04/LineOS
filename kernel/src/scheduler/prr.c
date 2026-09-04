@@ -15,7 +15,7 @@
 #include <debug/debug.h>
 
 #define PRR_MAX_TASKS        256
-#define PRR_TASK_STACK_PAGES 256
+#define PRR_TASK_STACK_PAGES 16
 #define PRR_PAGE_SIZE        4096
 #define PRR_QUANTUM_MS       5
 #define PRR_YIELD_VECTOR     0x43
@@ -190,6 +190,7 @@ BOOLEAN PRRCreateTask(VOID (*entry)(VOID))
     UINT64           ReturnSlot;
     INTERRUPT_FRAME *frame;
     UINT16           selector;
+    UINT16           StackSelector;
 
     if (entry == NULL || TaskCount >= PRR_MAX_TASKS)
     {
@@ -218,6 +219,7 @@ BOOLEAN PRRCreateTask(VOID (*entry)(VOID))
     KMemSet(frame, 0, sizeof(INTERRUPT_FRAME));
 
     ASM("mov %%cs, %0" : "=r"(selector));
+    ASM("mov %%ss, %0" : "=r"(StackSelector));
 
     frame->RDI = 0;
     frame->Vector = 0;
@@ -225,7 +227,8 @@ BOOLEAN PRRCreateTask(VOID (*entry)(VOID))
     frame->RIP = (UINT64) entry;
     frame->CS = selector;
     frame->RFLAGS = PRR_INITIAL_RFLAGS;
-    
+    frame->RSP = ReturnSlot;
+    frame->SS = StackSelector;
 
     task->RSP = (UINT64) frame;
     task->InitialRSP = task->RSP;
@@ -233,16 +236,32 @@ BOOLEAN PRRCreateTask(VOID (*entry)(VOID))
 
     TaskCount++;
 
+    DebugWrite("CREATE TASK=");
+    DebugWriteHex(TaskCount);
+    DebugWrite(" RSP=");
+    DebugWriteHex(task->RSP);
+    DebugWrite(" STACK=");
+    DebugWriteHex(task->StackBase);
+    DebugWrite("\n");
+
     return TRUE;
 }
 
 VOID StartSchedule(VOID)
 {
+    DebugWrite("PRESTART TASK1 RSP=");
+    DebugWriteHex(Tasks[1].RSP);
+    DebugWrite("\n");
+
+    Tasks[0].State = TASK_BLOCKED;
     SchedulerStarted = TRUE;
     PRRArmQuantum();
     STI();
 }
 
+VOLATILE UINT64 PRRDebugRSPAfterSwitch = 0;
+VOLATILE UINT64 PRRDebugRSPBeforeIRET = 0;
+VOLATILE UINT64 PRRDebugTaskEntryRSP = 0;
 VOID Yield(VOID)
 {
     ASM("int %0" : : "i"(PRR_YIELD_VECTOR));
@@ -250,6 +269,10 @@ VOID Yield(VOID)
 
 VOID PRRTick(INTERRUPT_FRAME *frame)
 {
+    DebugWrite("TICK ENTRY TASK1 RSP=");
+    DebugWriteHex(Tasks[1].RSP);
+    DebugWrite("\n");
+
     UINT64 next;
 
     SwitchStack = (UINT64) frame;
@@ -267,7 +290,19 @@ VOID PRRTick(INTERRUPT_FRAME *frame)
 
     if (CurrentTaskValid)
     {
+        DebugWrite("SAVE TASK=");
+        DebugWriteHex(CurrentTask);
+        DebugWrite(" FRAME=");
+        DebugWriteHex((UINT64) frame);
+        DebugWrite(" OLD RSP=");
+        DebugWriteHex(Tasks[CurrentTask].RSP);
+        DebugWrite("\n");
+
         Tasks[CurrentTask].RSP = (UINT64) frame;
+
+        DebugWrite(" NEW RSP=");
+        DebugWriteHex(Tasks[CurrentTask].RSP);
+        DebugWrite("\n");
         if (Tasks[CurrentTask].State == TASK_RUNNING)
         {
             Tasks[CurrentTask].State = TASK_READY;

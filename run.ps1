@@ -7,7 +7,6 @@ $ErrorActionPreference = "Stop"
 $BaseDir = (Get-Location).Path
 $RAM = "4G"
 $LogFile = "qemu.log"
-$DebugConFile = "debugcon.log"
 $QEMU = "qemu-system-x86_64"
 $Accel = "whpx"
 $CPU = "max"
@@ -20,7 +19,6 @@ $EFISizeMiB = "300"
 $OVMF_CODE = "$BaseDir\uefi\OVMF_CODE.fd"
 $OVMF_VARS = "$BaseDir\uefi\OVMF_VARS.fd"
 $LogPath = "$BaseDir\logs\$LogFile"
-$DebugConPath = "$BaseDir\logs\$DebugConFile"
 $BootFile = "$BaseDir\LineOS\EFI\BOOT\BOOTX64.EFI"
 $KernelFile = "$BaseDir\LineOS\KERNEL\LINEOS_KERNEL.ELF"
 
@@ -210,8 +208,6 @@ function Start-QEMU
 
     if (-not (Require-Command $QEMU)) { return $false }
 
-    if (Test-Path $DebugConPath) { Remove-Item $DebugConPath -Force }
-
     Write-Host "    [*] QEMU start..." -ForegroundColor Cyan
 
     $QemuArgs = @(
@@ -232,8 +228,6 @@ function Start-QEMU
         "-no-reboot",
         "-d", $DebugOption,
         "-D", $LogPath,
-        "-debugcon", "file:$DebugConPath",
-        "-global", "isa-debugcon.iobase=0xe9",
         "-m", $RAM,
         "-display", $DisplayConfig
     )

@@ -15,7 +15,6 @@ RESET="\033[0m"
 BaseDir="$(pwd)"
 RAM="4G"
 LogFile="qemu.log"
-DebugConFile="debugcon.log"
 QEMU="qemu-system-x86_64"
 Accel="kvm"
 CPU="host"
@@ -29,7 +28,6 @@ MountDir="/tmp/lineos_img_mount"
 OVMF_CODE="${BaseDir}/uefi/OVMF_CODE.fd"
 OVMF_VARS="${BaseDir}/uefi/OVMF_VARS.fd"
 LogPath="${BaseDir}/logs/${LogFile}"
-DebugConPath="${BaseDir}/logs/${DebugConFile}"
 BootFile="${BaseDir}/LineOS/EFI/BOOT/BOOTX64.EFI"
 KernelFile="${BaseDir}/LineOS/KERNEL/LINEOS_KERNEL.ELF"
 
@@ -178,7 +176,6 @@ StartQEMU() {
     RequireCommand "$QEMU" || return 1
 
     echo -e "${CYAN}    [*] QEMU start...${RESET}"
-    rm -f "$DebugConPath"
 
     if [ ! -f "$OVMF_VARS" ]; then
         OVMF_VARS="/usr/share/OVMF/OVMF_VARS.fd"
@@ -202,8 +199,6 @@ StartQEMU() {
         -no-reboot
         -d "$DebugOption"
         -D "$LogPath"
-        -debugcon "file:$DebugConPath"
-        -global "isa-debugcon.iobase=0xe9"
         -m "$RAM"
         -display "$DisplayConfig"
     )
