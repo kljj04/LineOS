@@ -5,6 +5,9 @@
 .section .text
 
 .extern IDTInterruptHandler
+.extern HostLoopTask
+.extern PRRDebugTaskEntryRSP
+
 
 .global PRRRestoreContext
 .type PRRRestoreContext, @function
@@ -96,6 +99,7 @@ ISRCommon:
     movq %rbx, %rax
 1:
     movq %rax, %rsp
+    movq %rsp, PRRDebugRSPAfterSwitch(%rip)
 
     popq %r15
     popq %r14
@@ -114,7 +118,7 @@ ISRCommon:
     popq %rax
 
     addq $16, %rsp
-
+    movq %rsp, PRRDebugRSPBeforeIRET(%rip)
     iretq
 
 ISRRestoreContext:

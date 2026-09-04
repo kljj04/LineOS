@@ -33,7 +33,6 @@ Current boot flow:
 - VirtIO GPU framebuffer creation, transfer, scanout, and flush
 - Raw disk image boot flow
 - GPT disk image with EFI and EXT3 partitions
-- Debug output through QEMU debugcon port `0xE9`
 - TrueType font parsing and rasterization
 - Pretendard SemiBold Korean rendering
 - JetBrains Mono Nerd Font rendering
@@ -101,13 +100,11 @@ The script:
 2. Creates `LineOS/LineOS.img` if it does not exist.
 3. Creates a GPT layout with a 300 MiB EFI partition and an EXT3 root partition.
 4. Copies `BOOTX64.EFI` and `LINEOS_KERNEL.ELF` into the EFI partition.
-5. Starts QEMU with Q35, VirtIO GPU, VirtIO block, OVMF, and debugcon logging.
+5. Starts QEMU with Q35, VirtIO GPU, VirtIO block, and OVMF.
 
 Runtime logs:
 
 - `logs/qemu.log`: QEMU debug log
-- `logs/debugcon.log`: kernel debugcon output
-
 ## Font Rendering
 
 LineOS currently embeds two TrueType font files into the kernel image with assembler `.incbin`:

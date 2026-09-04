@@ -105,7 +105,7 @@ STATIC VOID DrawPanicFooter(UINT32 Width, UINT32 Height, UINT32 scale)
 
     FillRect(0, FooterY, Width, Scale(54, scale), PANIC_PANEL_DARK);
     DrawMarker(Scale(40, scale), FooterY + Scale(32, scale), Scale(12, scale), scale, PANIC_ACCENT);
-    KPrint(L"CPU halted. Check logs/debugcon.log, then reboot the virtual machine.", Scale(60, scale), FooterY + Scale(32, scale), PANIC_MUTED, Scale(12, scale), PRETENDARD);
+    KPrint(L"CPU halted. Reboot the virtual machine.", Scale(60, scale), FooterY + Scale(32, scale), PANIC_MUTED, Scale(12, scale), PRETENDARD);
     KPrint(L"kljj04 / LineOS", Width - Scale(200, scale), FooterY + Scale(32, scale), PANIC_MUTED, Scale(12, scale), JETBRAINS_MONO);
 }
 
@@ -712,7 +712,7 @@ STATIC VOID DrawRecoveryPanel(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, U
 {
     DrawPanel(X, Y, Width, Height, scale);
     DrawSectionTitle(X + Scale(24, scale), Y + Scale(40, scale), scale, L"RECOVERY");
-    KPrint(L"1. Read logs/debugcon.log", X + Scale(24, scale), Y + Scale(84, scale), PANIC_TEXT, Scale(14, scale), PRETENDARD);
+    KPrint(L"1. Review the panic screen", X + Scale(24, scale), Y + Scale(84, scale), PANIC_TEXT, Scale(14, scale), PRETENDARD);
     KPrint(L"2. Check the caller path around RIP", X + Scale(24, scale), Y + Scale(116, scale), PANIC_TEXT, Scale(14, scale), PRETENDARD);
     KPrint(L"3. Reboot after fixing the stop reason", X + Scale(24, scale), Y + Scale(148, scale), PANIC_TEXT, Scale(14, scale), PRETENDARD);
 }
