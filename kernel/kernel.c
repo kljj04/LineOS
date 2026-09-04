@@ -19,6 +19,7 @@
 #include <pci/pci.h>
 
 #include <input/input.h>
+
 VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
 {
     VIRTIO_GPU_INFO *GPU;
