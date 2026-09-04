@@ -262,7 +262,7 @@ VOID StartSchedule(VOID)
 VOLATILE UINT64 PRRDebugRSPAfterSwitch = 0;
 VOLATILE UINT64 PRRDebugRSPBeforeIRET = 0;
 VOLATILE UINT64 PRRDebugTaskEntryRSP = 0;
-VOID Yield(VOID)
+VOID            Yield(VOID)
 {
     ASM("int %0" : : "i"(PRR_YIELD_VECTOR));
 }
