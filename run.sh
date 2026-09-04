@@ -93,7 +93,7 @@ CreateImg() {
     RequireCommand qemu-img || return 1
     RequireCommand parted   || return 1
     RequireCommand mkfs.vfat || return 1
-    RequireCommand mkfs.ext3 || return 1
+    RequireCommand mkfs.ext2 || return 1
     RequireCommand losetup  || return 1
 
     mkdir -p "$(dirname "$ImgFile")"
@@ -124,7 +124,7 @@ CreateImg() {
     fi
 
     sudo mkfs.vfat -F 32 -n LINEOS_EFI "${LoopDev}p1" >/dev/null 2>&1
-    sudo mkfs.ext3 -F -L LINEOS_ROOT "${LoopDev}p2" >/dev/null 2>&1
+    sudo mkfs.ext2 -F -L LINEOS_ROOT "${LoopDev}p2" >/dev/null 2>&1
     sudo losetup -d "$LoopDev" 2>/dev/null
 
     echo -e "${CYAN}    [*] Image ready.${RESET}"
