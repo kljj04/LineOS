@@ -18,7 +18,7 @@ LogFile="qemu.log"
 QEMU="qemu-system-x86_64"
 Accel="kvm"
 CPU="host"
-CPUCount="16"
+CPUCount="4"
 CPUFlags="+tsc-deadline,+invtsc,+rdtscp,+arat,+fsgsbase,+pdpe1gb"
 
 ImgFile="${BaseDir}/LineOS/LineOS.img"
