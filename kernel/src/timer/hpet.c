@@ -33,7 +33,7 @@ BOOLEAN HPETInit(LINEOS_BOOT_INFO *BootInfo)
     UINT64     period;
     UINT64     configuration;
 
-    HPETTable = (ACPI_HPET *) ACPIFindTable(BootInfo, "HPET");
+    HPETTable = (ACPI_HPET *) ACPIFindTable(BootInfo, (CONST CHAR8 *) "HPET");
 
     if (HPETTable == NULL)
     {

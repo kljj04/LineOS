@@ -300,7 +300,7 @@ UINT32 DrawTrueTypeCodepoint(TRUE_TYPE_FONT Font, UINT32 Codepoint, UINT32 x, UI
 
     DebugWriteGlyph(Codepoint, GlyphIndex, Width, Height, XOff, YOff, AlphaSum);
 
-    FreeBitmap(Bitmap, DrawFont->userdata);
+    FreeBitmap(Bitmap, DrawFont->UserData);
     return x + CodepointAdvance(DrawFont, Codepoint, Scale);
 }
 

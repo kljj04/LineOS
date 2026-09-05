@@ -6,18 +6,6 @@
 #include <lineos/typeinfo.h>
 #include <lineos/bootinfo.h>
 
-#define IA32_APIC_BASE_MSR     0x1B
-#define IA32_APIC_BASE_ENABLE  (1ULL << 11)
-#define IA32_APIC_BASE_ADDRESS 0xFFFFF000ULL
-
-#define LAPIC_REG_ID  0x020
-#define LAPIC_REG_EOI 0x0B0
-#define LAPIC_REG_SVR 0x0F0
-
-#define LAPIC_SVR_ENABLE (1U << 8)
-
-STATIC VOLATILE UINT32 *LAPICBase = NULL;
-
 typedef struct PACKED
 {
     ACPI_SDT_HEADER Header;
