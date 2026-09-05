@@ -27,7 +27,7 @@ typedef struct PACKED
 
 typedef struct PACKED
 {
-    UINT32 Id;
+    UINT32 ID;
     UINT32 Length;
 } VIRTQ_USED_ELEMENT;
 

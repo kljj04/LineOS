@@ -341,13 +341,13 @@ BOOLEAN VirtQueuePopUsed(VIRTQUEUE *Queue, UINT16 *Head, UINT32 *Length)
     UsedElement = Queue->Used->Ring[Queue->UsedIndex % Queue->Size];
     Queue->UsedIndex++;
 
-    if (UsedElement.Id >= Queue->Size)
+    if (UsedElement.ID >= Queue->Size)
     {
         LastError = L"virtqueue used id invalid";
         return FALSE;
     }
 
-    *Head = (UINT16) UsedElement.Id;
+    *Head = (UINT16) UsedElement.ID;
     if (Length != NULL)
     {
         *Length = UsedElement.Length;

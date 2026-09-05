@@ -11,33 +11,33 @@
 
 typedef struct
 {
-    UINT8 *data;
-    INT32  cursor;
-    INT32  size;
+    UINT8 *Data;
+    INT32  Cursor;
+    INT32  Size;
 } BUFFER;
 
 typedef struct
 {
-    UINT16  x0, y0, x1, y1;
-    FLOAT32 xoff, yoff, xadvance;
+    UINT16  X0, Y0, X1, Y1;
+    FLOAT32 Xoff, Yoff, Xadvance;
 } BAKED_CHAR;
 
 typedef struct
 {
-    INT32  w, h, stride;
-    UINT8 *pixels;
+    INT32  W, H, Stride;
+    UINT8 *Pixels;
 } BITMAP;
 
 typedef struct
 {
-    FLOAT32 x0, y0, s0, T0;
-    FLOAT32 x1, y1, s1, T1;
+    FLOAT32 X0, Y0, S0, T0;
+    FLOAT32 X1, Y1, S1, T1;
 } ALIGNED_QUAD;
 
 typedef struct
 {
-    UINT16  x0, y0, x1, y1;
-    FLOAT32 xoff, yoff, xadvance;
+    UINT16  X0, Y0, X1, Y1;
+    FLOAT32 Xoff, Yoff, Xadvance;
     FLOAT32 Xoff2, Yoff2;
 } PACKED_CHAR;
 
@@ -59,14 +59,14 @@ struct PACK_CONTEXT
 {
     VOID  *UserAllocatorContext;
     VOID  *PackInfo;
-    INT32  width;
-    INT32  height;
+    INT32  Width;
+    INT32  Height;
     INT32  StrideInBytes;
-    INT32  padding;
+    INT32  Padding;
     INT32  SkipMissing;
     UINT32 HOversample, VOversample;
-    UINT8 *pixels;
-    VOID  *nodes;
+    UINT8 *Pixels;
+    VOID  *Nodes;
 };
 
 enum
@@ -79,32 +79,32 @@ enum
 
 typedef struct
 {
-    VERTEX_TYPE x, y, cx, cy, cx1, cy1;
-    UINT8       type, padding;
+    VERTEX_TYPE X, Y, Cx, Cy, Cx1, Cy1;
+    UINT8       Type, Padding;
 } VERTEX;
 
 struct FONT_INFO
 {
-    VOID  *userdata;
-    UINT8 *data;
-    INT32  fontstart;
+    VOID  *UserData;
+    UINT8 *Data;
+    INT32  FontStart;
     INT32  NumGlyphs;
-    INT32  loca, head, glyf, hhea, hmtx, kern, gpos, svg;
+    INT32  Loca, Head, Glyf, Hhea, Hmtx, Kern, GPOS, Svg;
     INT32  IndexMap;
     INT32  IndexToLocFormat;
-    BUFFER cff;
-    BUFFER charstrings;
-    BUFFER gsubrs;
-    BUFFER subrs;
-    BUFFER fontdicts;
-    BUFFER fdselect;
+    BUFFER CFF;
+    BUFFER CharStrings;
+    BUFFER GSubrs;
+    BUFFER Subrs;
+    BUFFER FontDicts;
+    BUFFER FdSelect;
 };
 
 typedef struct KERNING_ENTRY
 {
-    INT32 glyph1;
-    INT32 glyph2;
-    INT32 advance;
+    INT32 Glyph1;
+    INT32 Glyph2;
+    INT32 Advance;
 } KERNING_ENTRY;
 
 EXTERN INT32   BakeFontBitmap(CONST UINT8 *data, INT32 offset, FLOAT32 PixelHeight, UINT8 *pixels, INT32 pw, INT32 ph, INT32 FirstChar, INT32 NumChars, BAKED_CHAR *chardata);

@@ -30,4 +30,37 @@ typedef struct PACKED
     UINT64 Address;
 } ACPI_GENERIC_ADDRESS_STRUCTURE;
 
+typedef struct PACKED
+{
+    ACPI_SDT_HEADER Header;
+    UINT32          LocalAPICAddress;
+    UINT32          Flags;
+    UINT8           Entries[];
+} ACPI_MADT;
+
+typedef struct PACKED
+{
+    UINT8  Type;
+    UINT8  Length;
+    UINT8  ACPIProcessorID;
+    UINT8  APICID;
+    UINT32 Flags;
+} ACPI_MADT_LOCAL_APIC;
+
+typedef struct PACKED ACPI_MADT_ENTRY
+{
+    UINT8 Type;
+    UINT8 Length;
+} ACPI_MADT_ENTRY;
+
+typedef struct PACKED ACPI_MADT_LOCAL_X2APIC
+{
+    UINT8  Type;
+    UINT8  Length;
+    UINT16 Reserved;
+    UINT32 X2APICID;
+    UINT32 Flags;
+    UINT32 ACPIProcessorUID;
+} ACPI_MADT_LOCAL_X2APIC;
+
 VOID *ACPIFindTable(LINEOS_BOOT_INFO *BootInfo, CONST CHAR8 *Signature);

@@ -99,7 +99,7 @@ VOID SleepMls(UINT64 milliseconds)
 
     while ((INT64) (RDTSC() - deadline) < 0)
     {
-        HLTONCE();
+        PAUSE();
     }
 }
 
@@ -114,7 +114,7 @@ VOID SleepMis(UINT64 microseconds)
 
     while ((INT64) (RDTSC() - deadline) < 0)
     {
-        HLTONCE();
+        PAUSE();
     }
 }
 
@@ -129,6 +129,6 @@ VOID SleepNs(UINT64 nanoseconds)
 
     while ((INT64) (RDTSC() - deadline) < 0)
     {
-        HLTONCE();
+        PAUSE();
     }
 }
