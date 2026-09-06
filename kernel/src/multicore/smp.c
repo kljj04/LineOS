@@ -3,6 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <acpi/acpi.h>
+#include <arch/x86_64/cpu.h>
 #include <interrupt/apic.h>
 #include <memory/memory.h>
 #include <multicore/smp.h>
@@ -141,8 +142,10 @@ STATIC BOOLEAN SMPStartAP(CPU_INFO *CPU)
     *(VOLATILE UINT64 *) SMP_TRAMPOLINE_STACK_ADDRESS = StackTop;
     *(VOLATILE UINT64 *) SMP_TRAMPOLINE_ENTRY_ADDRESS = (UINT64) APMain;
     *(VOLATILE UINT32 *) SMP_TRAMPOLINE_CPUID_ADDRESS = CPU->CPUID;
+    CompilerBarrier();
 
     CPU->Online = FALSE;
+    CompilerBarrier();
 
     vector = (UINT8) (SMP_TRAMPOLINE_ADDRESS >> 12);
 
@@ -167,8 +170,10 @@ STATIC BOOLEAN SMPStartAP(CPU_INFO *CPU)
 
     for (UINT32 elapsed = 0; elapsed < SMP_AP_START_TIMEOUT_MS; elapsed++)
     {
+        CompilerBarrier();
         if (CPU->Online)
         {
+            CompilerBarrier();
             return TRUE;
         }
 
@@ -308,4 +313,21 @@ CPU_INFO *SMPGetCPUByAPICId(UINT32 APICID)
     }
 
     return NULL;
+}
+
+UINT32 SMPGetCurrentCPUID(VOID)
+{
+    UINT32 APICID;
+
+    APICID = LAPICGetID();
+
+    for (UINT32 CPUID = 0; CPUID < CPUCount; CPUID++)
+    {
+        if (CPUs[CPUID].APICID == APICID)
+        {
+            return CPUs[CPUID].CPUID;
+        }
+    }
+
+    return UINT32_MAX;
 }

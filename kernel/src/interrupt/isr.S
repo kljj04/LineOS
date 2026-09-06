@@ -6,12 +6,12 @@
 
 .extern IDTInterruptHandler
 .extern HostLoopTask
-.extern PRRDebugTaskEntryRSP
+.extern LBPWRRDebugRSPAfterSwitch
+.extern LBPWRRDebugRSPBeforeIRET
 
-
-.global PRRRestoreContext
-.type PRRRestoreContext, @function
-PRRRestoreContext:
+.global LBPWRRRestoreContext
+.type LBPWRRRestoreContext, @function
+LBPWRRRestoreContext:
     movq %rdi, %rsp
     jmp ISRRestoreContext
 
@@ -96,10 +96,12 @@ ISRCommon:
 
     cmpq $0, %rax
     jne 1f
+
     movq %rbx, %rax
+
 1:
     movq %rax, %rsp
-    movq %rsp, PRRDebugRSPAfterSwitch(%rip)
+    movq %rsp, LBPWRRDebugRSPAfterSwitch(%rip)
 
     popq %r15
     popq %r14
@@ -118,7 +120,8 @@ ISRCommon:
     popq %rax
 
     addq $16, %rsp
-    movq %rsp, PRRDebugRSPBeforeIRET(%rip)
+    movq %rsp, LBPWRRDebugRSPBeforeIRET(%rip)
+
     iretq
 
 ISRRestoreContext:

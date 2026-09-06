@@ -3,7 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <interrupt/idt.h>
-#include <scheduler/prr.h>
+#include <scheduler/lbpwrr.h>
 #include <interrupt/apic.h>
 #include <debug/panic.h>
 #include <input/virtio_input.h>
@@ -101,9 +101,9 @@ UINT64 SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *frame)
 
     if (frame->Vector == 64)
     {
-        PRRTick(frame);
+        LBPWRRTick(frame);
         LAPICEOI();
-        return PRRGetSwitchStack(frame);
+        return LBPWRRGetSwitchStack(frame);
     }
 
     if (frame->Vector == 65)
@@ -122,8 +122,8 @@ UINT64 SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *frame)
 
     if (frame->Vector == 67)
     {
-        PRRTick(frame);
-        return PRRGetSwitchStack(frame);
+        LBPWRRTick(frame);
+        return LBPWRRGetSwitchStack(frame);
     }
 
     return (UINT64) frame;

@@ -51,7 +51,6 @@ STATIC BOOLEAN LAPICSupported(VOID)
 BOOLEAN LAPICInit(VOID)
 {
     UINT64 APICBaseMSR;
-    UINT32 SVR;
 
     if (!LAPICSupported())
     {
@@ -67,6 +66,27 @@ BOOLEAN LAPICInit(VOID)
     }
 
     LAPICBase = (VOLATILE UINT32 *) (APICBaseMSR & IA32_APIC_BASE_ADDRESS);
+
+    return LAPICInitCurrentCPU();
+}
+
+BOOLEAN LAPICInitCurrentCPU(VOID)
+{
+    UINT64 APICBaseMSR;
+    UINT32 SVR;
+
+    if (LAPICBase == NULL)
+    {
+        return FALSE;
+    }
+
+    APICBaseMSR = ReadMSR(IA32_APIC_BASE_MSR);
+
+    if ((APICBaseMSR & IA32_APIC_BASE_ENABLE) == 0)
+    {
+        APICBaseMSR |= IA32_APIC_BASE_ENABLE;
+        WriteMSR(IA32_APIC_BASE_MSR, APICBaseMSR);
+    }
 
     SVR = LAPICRead(LAPIC_REG_SVR);
     SVR &= ~0xFFU;

@@ -5,6 +5,7 @@
 #include <lineos/acpi.h>
 #include <lineos/bootinfo.h>
 #include <arch/x86_64/cpu.h>
+#include <arch/x86_64/spinlock.h>
 #include <pci/pci.h>
 
 #define ACPI_MCFG_SIGNATURE            0x4746434D
@@ -42,6 +43,7 @@ STATIC UINT32           DeviceCount = 0;
 STATIC ACPI_SDT_HEADER *MCFG = NULL;
 STATIC CONST CHAR16    *ScanMethodName = L"none";
 STATIC CONST CHAR16    *LastError = L"not initialized";
+STATIC SPIN_LOCK        ConfigIOLock;
 
 typedef struct
 {
@@ -278,16 +280,37 @@ STATIC UINT32 PCIMakeIOAddress(UINT8 Bus, UINT8 Device, UINT8 Function, UINT8 Of
     return 0x80000000U | ((UINT32) Bus << 16) | ((UINT32) Device << 11) | ((UINT32) Function << 8) | (Offset & 0xFC);
 }
 
-STATIC UINT32 PCIRead32IO(UINT8 Bus, UINT8 Device, UINT8 Function, UINT8 Offset)
+STATIC UINT32 PCIRead32IOUnlocked(UINT8 Bus, UINT8 Device, UINT8 Function, UINT8 Offset)
 {
     OUTL(PCI_CONFIG_ADDRESS, PCIMakeIOAddress(Bus, Device, Function, Offset));
     return INL(PCI_CONFIG_DATA);
 }
 
-STATIC VOID PCIWrite32IO(UINT8 Bus, UINT8 Device, UINT8 Function, UINT8 Offset, UINT32 Value)
+STATIC VOID PCIWrite32IOUnlocked(UINT8 Bus, UINT8 Device, UINT8 Function, UINT8 Offset, UINT32 Value)
 {
     OUTL(PCI_CONFIG_ADDRESS, PCIMakeIOAddress(Bus, Device, Function, Offset));
     OUTL(PCI_CONFIG_DATA, Value);
+}
+
+STATIC UINT32 PCIRead32IO(UINT8 Bus, UINT8 Device, UINT8 Function, UINT8 Offset)
+{
+    UINT32 Value;
+    UINT64 flags;
+
+    flags = SpinLockAcquireIRQSave(&ConfigIOLock);
+    Value = PCIRead32IOUnlocked(Bus, Device, Function, Offset);
+    SpinLockReleaseIRQRestore(&ConfigIOLock, flags);
+
+    return Value;
+}
+
+STATIC VOID PCIWrite32IO(UINT8 Bus, UINT8 Device, UINT8 Function, UINT8 Offset, UINT32 Value)
+{
+    UINT64 flags;
+
+    flags = SpinLockAcquireIRQSave(&ConfigIOLock);
+    PCIWrite32IOUnlocked(Bus, Device, Function, Offset, Value);
+    SpinLockReleaseIRQRestore(&ConfigIOLock, flags);
 }
 
 STATIC UINT16 PCIRead16IO(UINT8 Bus, UINT8 Device, UINT8 Function, UINT8 Offset)
@@ -349,6 +372,7 @@ STATIC VOID PCIScanIO(VOID)
 
 BOOLEAN PCIInit(LINEOS_BOOT_INFO *BootInfo)
 {
+    SpinLockInit(&ConfigIOLock);
     DeviceCount = 0;
     ScanMethodName = L"none";
     LastError = L"ok";
@@ -459,6 +483,7 @@ VOID PCIConfigWrite8(PCI_DEVICE *Device, UINT8 Offset, UINT8 Value)
     UINT32 Shift;
     UINT32 Mask;
     UINT32 Current;
+    UINT64 flags;
 
     if (Device == NULL)
     {
@@ -467,8 +492,10 @@ VOID PCIConfigWrite8(PCI_DEVICE *Device, UINT8 Offset, UINT8 Value)
 
     Shift = (Offset & 3) * 8;
     Mask = 0xFFU << Shift;
-    Current = PCIConfigRead32(Device, Offset);
-    PCIConfigWrite32(Device, Offset, (Current & ~Mask) | ((UINT32) Value << Shift));
+    flags = SpinLockAcquireIRQSave(&ConfigIOLock);
+    Current = PCIRead32IOUnlocked(Device->Bus, Device->Device, Device->Function, Offset);
+    PCIWrite32IOUnlocked(Device->Bus, Device->Device, Device->Function, Offset, (Current & ~Mask) | ((UINT32) Value << Shift));
+    SpinLockReleaseIRQRestore(&ConfigIOLock, flags);
 }
 
 VOID PCIConfigWrite16(PCI_DEVICE *Device, UINT8 Offset, UINT16 Value)
@@ -476,6 +503,7 @@ VOID PCIConfigWrite16(PCI_DEVICE *Device, UINT8 Offset, UINT16 Value)
     UINT32 Shift;
     UINT32 Mask;
     UINT32 Current;
+    UINT64 flags;
 
     if (Device == NULL)
     {
@@ -484,8 +512,10 @@ VOID PCIConfigWrite16(PCI_DEVICE *Device, UINT8 Offset, UINT16 Value)
 
     Shift = (Offset & 2) * 8;
     Mask = 0xFFFFU << Shift;
-    Current = PCIConfigRead32(Device, Offset);
-    PCIConfigWrite32(Device, Offset, (Current & ~Mask) | ((UINT32) Value << Shift));
+    flags = SpinLockAcquireIRQSave(&ConfigIOLock);
+    Current = PCIRead32IOUnlocked(Device->Bus, Device->Device, Device->Function, Offset);
+    PCIWrite32IOUnlocked(Device->Bus, Device->Device, Device->Function, Offset, (Current & ~Mask) | ((UINT32) Value << Shift));
+    SpinLockReleaseIRQRestore(&ConfigIOLock, flags);
 }
 
 VOID PCIConfigWrite32(PCI_DEVICE *Device, UINT8 Offset, UINT32 Value)

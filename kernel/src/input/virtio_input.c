@@ -5,6 +5,7 @@
 #include <input/virtio_input.h>
 #include <memory/memory.h>
 #include <pci/pci.h>
+#include <arch/x86_64/spinlock.h>
 #include <virtio/virtio_pci.h>
 #include <virtio/virtqueue.h>
 
@@ -19,6 +20,10 @@ STATIC UINT32                   KeyWriteIndex;
 STATIC VIRTIO_POINTER_EVENT     PointerEvents[VIRTIO_INPUT_POINTER_QUEUE_SIZE];
 STATIC UINT32                   PointerReadIndex;
 STATIC UINT32                   PointerWriteIndex;
+STATIC SPIN_LOCK                KeyboardQueueLock;
+STATIC SPIN_LOCK                TabletQueueLock;
+STATIC SPIN_LOCK                KeyEventLock;
+STATIC SPIN_LOCK                PointerEventLock;
 
 STATIC CONST CHAR16 *LastError = L"not initialized";
 
@@ -225,11 +230,14 @@ STATIC VIRTIO_INPUT_DEVICE_TYPE ProbeInputDevice(PCI_DEVICE *PCIDevice)
 STATIC VOID PushKeyEvent(UINT16 Code, BOOLEAN Pressed)
 {
     UINT32 NextIndex;
+    UINT64 flags;
 
+    flags = SpinLockAcquireIRQSave(&KeyEventLock);
     NextIndex = (KeyWriteIndex + 1) % VIRTIO_INPUT_KEY_QUEUE_SIZE;
 
     if (NextIndex == KeyReadIndex)
     {
+        SpinLockReleaseIRQRestore(&KeyEventLock, flags);
         return;
     }
 
@@ -237,16 +245,20 @@ STATIC VOID PushKeyEvent(UINT16 Code, BOOLEAN Pressed)
     KeyEvents[KeyWriteIndex].Pressed = Pressed;
 
     KeyWriteIndex = NextIndex;
+    SpinLockReleaseIRQRestore(&KeyEventLock, flags);
 }
 
 STATIC VOID PushPointerEvent(VIRTIO_INPUT_DEVICE_INFO *InputDevice)
 {
     UINT32 NextIndex;
+    UINT64 flags;
 
+    flags = SpinLockAcquireIRQSave(&PointerEventLock);
     NextIndex = (PointerWriteIndex + 1) % VIRTIO_INPUT_POINTER_QUEUE_SIZE;
 
     if (NextIndex == PointerReadIndex)
     {
+        SpinLockReleaseIRQRestore(&PointerEventLock, flags);
         return;
     }
 
@@ -257,6 +269,7 @@ STATIC VOID PushPointerEvent(VIRTIO_INPUT_DEVICE_INFO *InputDevice)
     PointerEvents[PointerWriteIndex].MiddleButton = InputDevice->MiddleButton;
 
     PointerWriteIndex = NextIndex;
+    SpinLockReleaseIRQRestore(&PointerEventLock, flags);
 }
 
 STATIC VOID ProcessKeyboardEvent(VIRTIO_INPUT_EVENT *Event)
@@ -346,17 +359,19 @@ STATIC VOID AcknowledgeInputInterrupt(VIRTIO_INPUT_DEVICE_INFO *InputDevice)
     }
 }
 
-STATIC VOID ProcessInputQueue(VIRTIO_INPUT_DEVICE_INFO *InputDevice)
+STATIC VOID ProcessInputQueue(VIRTIO_INPUT_DEVICE_INFO *InputDevice, SPIN_LOCK *QueueLock)
 {
     VIRTIO_INPUT_EVENT_BUFFER *EventBuffer;
     UINT16                     head;
     UINT32                     length;
+    UINT64                     flags;
 
     if (InputDevice == NULL || !InputDevice->Found)
     {
         return;
     }
 
+    flags = SpinLockAcquireIRQSave(QueueLock);
     AcknowledgeInputInterrupt(InputDevice);
 
     while (VirtQueuePopUsed(&InputDevice->EventQueue, &head, &length))
@@ -388,11 +403,13 @@ STATIC VOID ProcessInputQueue(VIRTIO_INPUT_DEVICE_INFO *InputDevice)
         if (!VirtQueuePostBuffer(&InputDevice->Device, &InputDevice->EventQueue, &EventBuffer->Event, sizeof(VIRTIO_INPUT_EVENT), VIRTQ_DESC_F_WRITE, &EventBuffer->Head))
         {
             LastError = VirtQueueGetLastError();
+            SpinLockReleaseIRQRestore(QueueLock, flags);
             return;
         }
     }
 
     LastError = L"ok";
+    SpinLockReleaseIRQRestore(QueueLock, flags);
 }
 
 BOOLEAN VirtIOInputInit(VOID)
@@ -405,6 +422,10 @@ BOOLEAN VirtIOInputInit(VOID)
     KMemSet(&Tablet, 0, sizeof(VIRTIO_INPUT_DEVICE_INFO));
     KMemSet(KeyEvents, 0, sizeof(KeyEvents));
     KMemSet(PointerEvents, 0, sizeof(PointerEvents));
+    SpinLockInit(&KeyboardQueueLock);
+    SpinLockInit(&TabletQueueLock);
+    SpinLockInit(&KeyEventLock);
+    SpinLockInit(&PointerEventLock);
 
     KeyReadIndex = 0;
     KeyWriteIndex = 0;
@@ -455,12 +476,12 @@ BOOLEAN VirtIOInputInit(VOID)
 
 VOID VirtIOKeyboardInterruptHandler(VOID)
 {
-    ProcessInputQueue(&Keyboard);
+    ProcessInputQueue(&Keyboard, &KeyboardQueueLock);
 }
 
 VOID VirtIOTabletInterruptHandler(VOID)
 {
-    ProcessInputQueue(&Tablet);
+    ProcessInputQueue(&Tablet, &TabletQueueLock);
 }
 
 BOOLEAN VirtIOInputIsKeyboardAvailable(VOID)
@@ -475,42 +496,68 @@ BOOLEAN VirtIOInputIsTabletAvailable(VOID)
 
 BOOLEAN VirtIOInputHasPendingEvent(VOID)
 {
-    return KeyReadIndex != KeyWriteIndex || PointerReadIndex != PointerWriteIndex;
+    BOOLEAN Pending;
+    UINT64  flags;
+
+    flags = SpinLockAcquireIRQSave(&KeyEventLock);
+    Pending = KeyReadIndex != KeyWriteIndex;
+    SpinLockReleaseIRQRestore(&KeyEventLock, flags);
+
+    if (Pending)
+    {
+        return TRUE;
+    }
+
+    flags = SpinLockAcquireIRQSave(&PointerEventLock);
+    Pending = PointerReadIndex != PointerWriteIndex;
+    SpinLockReleaseIRQRestore(&PointerEventLock, flags);
+
+    return Pending;
 }
 
 BOOLEAN VirtIOInputGetKeyEvent(VIRTIO_KEY_EVENT *Event)
 {
+    UINT64 flags;
+
     if (Event == NULL)
     {
         return FALSE;
     }
 
+    flags = SpinLockAcquireIRQSave(&KeyEventLock);
     if (KeyReadIndex == KeyWriteIndex)
     {
+        SpinLockReleaseIRQRestore(&KeyEventLock, flags);
         return FALSE;
     }
 
     *Event = KeyEvents[KeyReadIndex];
     KeyReadIndex = (KeyReadIndex + 1) % VIRTIO_INPUT_KEY_QUEUE_SIZE;
 
+    SpinLockReleaseIRQRestore(&KeyEventLock, flags);
     return TRUE;
 }
 
 BOOLEAN VirtIOInputGetPointerEvent(VIRTIO_POINTER_EVENT *Event)
 {
+    UINT64 flags;
+
     if (Event == NULL)
     {
         return FALSE;
     }
 
+    flags = SpinLockAcquireIRQSave(&PointerEventLock);
     if (PointerReadIndex == PointerWriteIndex)
     {
+        SpinLockReleaseIRQRestore(&PointerEventLock, flags);
         return FALSE;
     }
 
     *Event = PointerEvents[PointerReadIndex];
     PointerReadIndex = (PointerReadIndex + 1) % VIRTIO_INPUT_POINTER_QUEUE_SIZE;
 
+    SpinLockReleaseIRQRestore(&PointerEventLock, flags);
     return TRUE;
 }
 

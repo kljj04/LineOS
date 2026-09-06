@@ -7,8 +7,8 @@
 #include <lineos/bootinfo.h>
 #include <lineos/typeinfo.h>
 
-#define SMP_MAX_CPUS                 256
-#define SMP_AP_STACK_PAGES           16
+#define SMP_MAX_CPUS       256
+#define SMP_AP_STACK_PAGES 16
 
 #define SMP_TRAMPOLINE_ADDRESS       0x8000ULL
 #define SMP_TRAMPOLINE_CR3_ADDRESS   0x8F00ULL
@@ -26,8 +26,9 @@ typedef struct CPU_INFO
     VOID            *Stack;
 } CPU_INFO;
 
-BOOLEAN SMPInit(LINEOS_BOOT_INFO *BootInfo);
-UINT32 SMPGetCPUCount(VOID);
+BOOLEAN   SMPInit(LINEOS_BOOT_INFO *BootInfo);
+UINT32    SMPGetCPUCount(VOID);
 CPU_INFO *SMPGetCPU(UINT32 CPUID);
 CPU_INFO *SMPGetCPUByAPICId(UINT32 APICID);
-VOID APMain(UINT32 CPUID);
+UINT32    SMPGetCurrentCPUID(VOID);
+VOID      APMain(UINT32 CPUID);

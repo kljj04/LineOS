@@ -229,6 +229,7 @@ UINT32 DrawTrueTypeCodepoint(TRUE_TYPE_FONT Font, UINT32 Codepoint, UINT32 x, UI
     INT32            BoxY1;
     UINT8           *Bitmap;
     UINT32           AlphaSum = 0;
+    UINT64           flags;
 
     DrawFont = GetFont(Font, Codepoint);
 
@@ -283,6 +284,7 @@ UINT32 DrawTrueTypeCodepoint(TRUE_TYPE_FONT Font, UINT32 Codepoint, UINT32 x, UI
         return x + CodepointAdvance(DrawFont, Codepoint, Scale);
     }
 
+    flags = VirtIOGPUAcquireRenderLock();
     for (INT32 Row = 0; Row < Height; Row++)
     {
         for (INT32 Column = 0; Column < Width; Column++)
@@ -292,6 +294,7 @@ UINT32 DrawTrueTypeCodepoint(TRUE_TYPE_FONT Font, UINT32 Codepoint, UINT32 x, UI
             BlendPixel(GPU, (INT32) x + XOff + Column, (INT32) Baseline + YOff + Row, Color, Alpha);
         }
     }
+    VirtIOGPUReleaseRenderLock(flags);
 
     if ((INT32) x + XOff >= 0 && (INT32) Baseline + YOff >= 0)
     {

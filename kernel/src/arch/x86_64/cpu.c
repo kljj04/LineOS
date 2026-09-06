@@ -5,6 +5,29 @@
 #include <arch/x86_64/cpu.h>
 #include <lineos/typeinfo.h>
 
+EXTERN VOID LBPWRRRecordIdleTSC(UINT64 StartTSC, UINT64 EndTSC);
+
+#define GDT_KERNEL_DATA_SELECTOR 0x10
+#define GDT_KERNEL_CODE_SELECTOR 0x18
+
+typedef struct PACKED
+{
+    UINT16 Limit;
+    UINT64 Base;
+} GDT_DESCRIPTOR;
+
+STATIC UINT64 GDT[] = {
+    0x0000000000000000ULL,
+    0x00CF9A000000FFFFULL,
+    0x00CF92000000FFFFULL,
+    0x00AF9A000000FFFFULL,
+};
+
+STATIC GDT_DESCRIPTOR GDTR = {
+    sizeof(GDT) - 1,
+    (UINT64) GDT,
+};
+
 VOID HLT()
 {
     while (TRUE)
@@ -15,7 +38,14 @@ VOID HLT()
 
 VOID HLTONCE()
 {
+    UINT64 StartTSC;
+    UINT64 EndTSC;
+
+    StartTSC = RDTSC();
     ASM("hlt");
+    EndTSC = RDTSC();
+
+    LBPWRRRecordIdleTSC(StartTSC, EndTSC);
 }
 
 VOID STIHLT()
@@ -36,6 +66,29 @@ VOID STI()
 VOID PAUSE()
 {
     ASM("pause");
+}
+
+VOID CompilerBarrier()
+{
+    ASM("" ::: "memory");
+}
+
+VOID GDTInitCurrentCPU(VOID)
+{
+    ASM(
+        "lgdt %0\n"
+        "movw %1, %%ax\n"
+        "movw %%ax, %%ds\n"
+        "movw %%ax, %%es\n"
+        "movw %%ax, %%ss\n"
+        "pushq %2\n"
+        "leaq 1f(%%rip), %%rax\n"
+        "pushq %%rax\n"
+        "lretq\n"
+        "1:\n"
+        :
+        : "m"(GDTR), "i"(GDT_KERNEL_DATA_SELECTOR), "i"(GDT_KERNEL_CODE_SELECTOR)
+        : "rax", "memory");
 }
 
 UINT64 RDTSC()
