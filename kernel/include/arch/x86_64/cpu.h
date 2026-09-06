@@ -12,6 +12,8 @@ VOID   STIHLT();
 VOID   CLI();
 VOID   STI();
 VOID   PAUSE();
+VOID   CompilerBarrier();
+VOID   GDTInitCurrentCPU(VOID);
 UINT64 RDTSC();
 UINT8  INB(UINT16 Port);
 UINT16 INW(UINT16 Port);

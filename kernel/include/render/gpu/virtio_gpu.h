@@ -69,6 +69,8 @@ VOID             CopyRect(UINT32 SourceX, UINT32 SourceY, UINT32 Width, UINT32 H
 UINT32           ReadPixel(UINT32 X, UINT32 Y);
 VOID             VirtIOGPUMarkDirty(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height);
 VOID             VirtIOGPUClearDirty(VOID);
+UINT64           VirtIOGPUAcquireRenderLock(VOID);
+VOID             VirtIOGPUReleaseRenderLock(UINT64 flags);
 BOOLEAN          VirtIOGPUSetScanout(VOID);
 BOOLEAN          VirtIOGPUTransferRect(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height);
 BOOLEAN          VirtIOGPUFlushRect(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height);
