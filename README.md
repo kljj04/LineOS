@@ -1,3 +1,5 @@
+> **Notice:** LineOS development will be mostly paused until **October 2, 2026** due to exams. Updates during this period may be infrequent or unavailable.
+
 # LineOS
 
 LineOS is a 64-bit x86_64 UEFI hobby operating system written primarily in freestanding C and x86 assembly.
