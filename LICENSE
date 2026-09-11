@@ -1,21 +1,27 @@
-MIT License
+Preservation of Origin License
+Version 1.0
 
-Copyright (c) 2026 LineOS Developer kljj04
+Copyright (c) 2026 kljj04
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Use, Modify, Distribute, including in Closed-Source Form.
+Origin Must Be Preserved.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Full License text is in: https://github.com/kljj04/POL
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Original Author: kljj04
+Original Project: LineOS
+
+Applies To:
+The following files, directories, components, or other portions of this
+project include POL-licensed software:
+
+    /bootloader/src
+    /bootloader/lib
+    /bootloader/include
+    /bootloader/entry.c
+    /kernel/
+
+Notes:
+This notice does not require disclosure of corresponding source code.
+Modification information is optional. If modification information is provided,
+it must not falsify, replace, or obscure the Required Origin Information.

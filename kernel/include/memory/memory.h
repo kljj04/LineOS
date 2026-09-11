@@ -13,8 +13,8 @@ typedef struct BUDDY_BLOCK
 
 typedef struct HEAP_BLOCK
 {
-    UINTN             Size;
-    BOOLEAN           Free;
+    UINTN              Size;
+    BOOLEAN            Free;
     struct HEAP_BLOCK *Next;
     struct HEAP_BLOCK *Previous;
 } HEAP_BLOCK;

@@ -75,8 +75,7 @@ VOID CompilerBarrier()
 
 VOID GDTInitCurrentCPU(VOID)
 {
-    ASM(
-        "lgdt %0\n"
+    ASM("lgdt %0\n"
         "movw %1, %%ax\n"
         "movw %%ax, %%ds\n"
         "movw %%ax, %%es\n"

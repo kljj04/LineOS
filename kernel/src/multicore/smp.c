@@ -23,7 +23,7 @@ EXTERN UINT8 APTrampolineStart[];
 EXTERN UINT8 APTrampolineEnd[];
 
 STATIC CPU_INFO CPUs[SMP_MAX_CPUS];
-STATIC UINT32 CPUCount = 0;
+STATIC UINT32   CPUCount = 0;
 
 STATIC UINT64 SMPReadCR3(VOID)
 {
@@ -90,7 +90,7 @@ STATIC BOOLEAN SMPDetectBSP(VOID)
 STATIC BOOLEAN SMPPrepareTrampoline(VOID)
 {
     UINT64 CR3;
-    UINTN TrampolineSize;
+    UINTN  TrampolineSize;
 
     CR3 = SMPReadCR3();
 
@@ -118,7 +118,7 @@ STATIC BOOLEAN SMPPrepareTrampoline(VOID)
 STATIC BOOLEAN SMPStartAP(CPU_INFO *CPU)
 {
     UINT64 StackTop;
-    UINT8 vector;
+    UINT8  vector;
 
     if (CPU == NULL || CPU->BSP || !CPU->Enabled)
     {
@@ -186,9 +186,9 @@ STATIC BOOLEAN SMPStartAP(CPU_INFO *CPU)
 BOOLEAN SMPInit(LINEOS_BOOT_INFO *BootInfo)
 {
     ACPI_MADT *MADT;
-    UINT8 *entry;
-    UINT8 *end;
-    BOOLEAN HasAP;
+    UINT8     *entry;
+    UINT8     *end;
+    BOOLEAN    HasAP;
 
     CPUCount = 0;
 

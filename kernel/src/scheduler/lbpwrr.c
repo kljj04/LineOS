@@ -12,16 +12,17 @@
 #include <arch/x86_64/cpu.h>
 #include <debug/panic.h>
 #include <debug/debug.h>
+#include <scheduler/task_types.h>
 
-#define LBPWRR_MAX_TASKS         4096
+#define LBPWRR_MAX_TASKS        4096
 #define LBPWRR_TASK_STACK_PAGES 16
-#define LBPWRR_PAGE_SIZE         4096
-#define LBPWRR_QUANTUM_MS        5
-#define LBPWRR_YIELD_VECTOR      0x43
-#define LBPWRR_TIMER_VECTOR      0x40
-#define LBPWRR_INITIAL_RFLAGS    0x202ULL
-#define LBPWRR_KERNEL_RIP_MIN    0x400000ULL
-#define LBPWRR_KERNEL_RIP_MAX    0x80000000ULL
+#define LBPWRR_PAGE_SIZE        4096
+#define LBPWRR_QUANTUM_MS       5
+#define LBPWRR_YIELD_VECTOR     0x43
+#define LBPWRR_TIMER_VECTOR     0x40
+#define LBPWRR_INITIAL_RFLAGS   0x202ULL
+#define LBPWRR_KERNEL_RIP_MIN   0x400000ULL
+#define LBPWRR_KERNEL_RIP_MAX   0x80000000ULL
 
 STATIC TASK       Tasks[LBPWRR_MAX_TASKS];
 STATIC LBPWRR_CPU CPUStates[SMP_MAX_CPUS];
@@ -37,7 +38,6 @@ VOLATILE UINT64 LBPWRRDebugRSPBeforeIRET = 0;
 EXTERN VOID LBPWRRRestoreContext(UINT64 stack);
 
 STATIC BOOLEAN LBPWRRCreateTaskForCPU(VOID (*Entry)(VOID), UINT32 CPUID, BOOLEAN IsIdle);
-
 
 STATIC VOID LBPWRRUpdateCPUUsage(LBPWRR_CPU *CPUState)
 {
@@ -55,9 +55,7 @@ STATIC VOID LBPWRRUpdateCPUUsage(LBPWRR_CPU *CPUState)
     delta = now - CPUState->LastTSC;
     CPUState->LastTSC = now;
 
-    if (CPUState->CurrentTaskValid &&
-        CPUState->CurrentTask < TaskCount &&
-        !Tasks[CPUState->CurrentTask].IsIdle)
+    if (CPUState->CurrentTaskValid && CPUState->CurrentTask < TaskCount && !Tasks[CPUState->CurrentTask].IsIdle)
     {
         CPUState->BusyTSC += delta;
     }
@@ -122,7 +120,7 @@ STATIC VOID LBPWRRDumpTask(UINT64 index)
 STATIC VOID LBPWRRFatal(CONST CHAR16 *reason, INTERRUPT_FRAME *frame)
 {
     LBPWRR_CPU *CPUState;
-    UINT32 CPUID;
+    UINT32      CPUID;
 
     CLI();
     TSCSetDeadline(0);
@@ -195,9 +193,7 @@ STATIC UINT64 LBPWRRNextReadyTask(UINT32 CPUID, UINT64 start)
     {
         index = (start + offset) % TaskCount;
 
-        if (Tasks[index].CPUID == CPUID &&
-            Tasks[index].State == TASK_READY &&
-            !Tasks[index].IsIdle)
+        if (Tasks[index].CPUID == CPUID && Tasks[index].State == TASK_READY && !Tasks[index].IsIdle)
         {
             return index;
         }
@@ -264,7 +260,7 @@ STATIC UINT32 LBPWRRSelectNextCPU(VOID)
 
     for (UINT32 offset = 0; offset < CPUCount; offset++)
     {
-        UINT32 CPUID;
+        UINT32    CPUID;
         CPU_INFO *CPU;
 
         CPUID = (NextCPU + offset) % CPUCount;
@@ -339,13 +335,13 @@ BOOLEAN LBPWRRInit(VOID)
 
 STATIC BOOLEAN LBPWRRCreateTaskForCPU(VOID (*Entry)(VOID), UINT32 CPUID, BOOLEAN IsIdle)
 {
-    TASK *task;
-    VOID *stack;
-    UINT64 StackTop;
-    UINT64 ReturnSlot;
+    TASK            *task;
+    VOID            *stack;
+    UINT64           StackTop;
+    UINT64           ReturnSlot;
     INTERRUPT_FRAME *frame;
-    UINT16 selector;
-    UINT16 StackSelector;
+    UINT16           selector;
+    UINT16           StackSelector;
 
     if (Entry == NULL || CPUID >= SMPGetCPUCount() || TaskCount >= LBPWRR_MAX_TASKS || SchedulerStarted)
     {
@@ -443,7 +439,7 @@ VOID StartSchedule(VOID)
 VOID APJoinSchedule(VOID)
 {
     LBPWRR_CPU *CPUState;
-    UINT32 CPUID;
+    UINT32      CPUID;
 
     CLI();
 
@@ -495,9 +491,9 @@ VOID Yield(VOID)
 VOID LBPWRRRecordIdleTSC(UINT64 StartTSC, UINT64 EndTSC)
 {
     LBPWRR_CPU *CPUState;
-    UINT32 CPUID;
-    UINT64 BusyDelta;
-    UINT64 IdleDelta;
+    UINT32      CPUID;
+    UINT64      BusyDelta;
+    UINT64      IdleDelta;
 
     if (!SchedulerStarted || EndTSC <= StartTSC)
     {
@@ -522,9 +518,7 @@ VOID LBPWRRRecordIdleTSC(UINT64 StartTSC, UINT64 EndTSC)
     BusyDelta = StartTSC - CPUState->LastTSC;
     IdleDelta = EndTSC - StartTSC;
 
-    if (CPUState->CurrentTaskValid &&
-        CPUState->CurrentTask < TaskCount &&
-        !Tasks[CPUState->CurrentTask].IsIdle)
+    if (CPUState->CurrentTaskValid && CPUState->CurrentTask < TaskCount && !Tasks[CPUState->CurrentTask].IsIdle)
     {
         CPUState->BusyTSC += BusyDelta;
     }
@@ -540,8 +534,8 @@ VOID LBPWRRRecordIdleTSC(UINT64 StartTSC, UINT64 EndTSC)
 VOID LBPWRRTick(INTERRUPT_FRAME *frame)
 {
     LBPWRR_CPU *CPUState;
-    UINT32 CPUID;
-    UINT64 next;
+    UINT32      CPUID;
+    UINT64      next;
 
     CPUID = SMPGetCurrentCPUID();
 
@@ -562,9 +556,7 @@ VOID LBPWRRTick(INTERRUPT_FRAME *frame)
         return;
     }
 
-    if (CPUState->CurrentTaskValid &&
-        Tasks[CPUState->CurrentTask].StackBase != 0 &&
-        !LBPWRRTaskOwnsStack(CPUState->CurrentTask, (UINT64) frame))
+    if (CPUState->CurrentTaskValid && Tasks[CPUState->CurrentTask].StackBase != 0 && !LBPWRRTaskOwnsStack(CPUState->CurrentTask, (UINT64) frame))
     {
         LBPWRRFatal(L"LBPWRR tick bad stack", frame);
     }
@@ -590,10 +582,7 @@ VOID LBPWRRTick(INTERRUPT_FRAME *frame)
 
     if (next == UINT64_MAX)
     {
-        if (CPUState->CurrentTaskValid &&
-            !Tasks[CPUState->CurrentTask].IsIdle &&
-            Tasks[CPUState->CurrentTask].State != TASK_DEAD &&
-            Tasks[CPUState->CurrentTask].State != TASK_BLOCKED)
+        if (CPUState->CurrentTaskValid && !Tasks[CPUState->CurrentTask].IsIdle && Tasks[CPUState->CurrentTask].State != TASK_DEAD && Tasks[CPUState->CurrentTask].State != TASK_BLOCKED)
         {
             Tasks[CPUState->CurrentTask].State = TASK_RUNNING;
             CPUState->SwitchStack = Tasks[CPUState->CurrentTask].RSP;
@@ -661,9 +650,7 @@ UINT64 LBPWRRGetCPUAssignedTaskCount(UINT32 CPUID)
 
     for (UINT64 index = 0; index < TaskCount; index++)
     {
-        if (Tasks[index].CPUID == CPUID &&
-            Tasks[index].State != TASK_DEAD &&
-            !Tasks[index].IsIdle)
+        if (Tasks[index].CPUID == CPUID && Tasks[index].State != TASK_DEAD && !Tasks[index].IsIdle)
         {
             count++;
         }
@@ -675,13 +662,13 @@ UINT64 LBPWRRGetCPUAssignedTaskCount(UINT32 CPUID)
 UINTN LBPWRRGetCPUUsage(UINT32 CPUID)
 {
     LBPWRR_CPU *CPUState;
-    UINT64 BusyTSC;
-    UINT64 IdleTSC;
-    UINT64 RunningDelta;
-    UINT64 BusyDelta;
-    UINT64 IdleDelta;
-    UINT64 TotalTSC;
-    UINT64 now;
+    UINT64      BusyTSC;
+    UINT64      IdleTSC;
+    UINT64      RunningDelta;
+    UINT64      BusyDelta;
+    UINT64      IdleDelta;
+    UINT64      TotalTSC;
+    UINT64      now;
 
     if (CPUID >= SMPGetCPUCount())
     {

@@ -6,9 +6,9 @@
 #include <lineos/bootinfo.h>
 #include <memory/memory.h>
 
-#define PAGE_SIZE                  4096ULL
+#define PAGE_SIZE                 4096ULL
 #define LOW_MEMORY_RESERVED_PAGES 256ULL
-#define BUDDY_MAX_ORDER            20
+#define BUDDY_MAX_ORDER           20
 
 #define HEAP_ALIGNMENT      16ULL
 #define HEAP_INITIAL_PAGES  16ULL
@@ -16,13 +16,13 @@
 #define HEAP_MIN_BLOCK_SIZE 16ULL
 
 STATIC BUDDY_BLOCK *FreeLists[BUDDY_MAX_ORDER + 1];
-STATIC UINT64 TotalPages = 0;
-STATIC SPIN_LOCK BuddyLock;
+STATIC UINT64       TotalPages = 0;
+STATIC SPIN_LOCK    BuddyLock;
 
 STATIC HEAP_BLOCK *HeapHead = NULL;
 STATIC HEAP_BLOCK *HeapTail = NULL;
-STATIC BOOLEAN HeapInitialized = FALSE;
-STATIC SPIN_LOCK HeapLock;
+STATIC BOOLEAN     HeapInitialized = FALSE;
+STATIC SPIN_LOCK   HeapLock;
 
 STATIC UINT64 AlignUp(UINT64 Value, UINT64 Alignment)
 {
@@ -71,12 +71,12 @@ STATIC UINTN GetMemoryDescriptorCount(LINEOS_MEMORY_MAP *MemoryMap)
 STATIC UINT64 FindHighestConventionalMemoryAddress(LINEOS_MEMORY_MAP *MemoryMap)
 {
     UINT64 HighestAddress = 0;
-    UINTN EntryCount = GetMemoryDescriptorCount(MemoryMap);
+    UINTN  EntryCount = GetMemoryDescriptorCount(MemoryMap);
 
     for (UINTN index = 0; index < EntryCount; index++)
     {
         EFI_MEMORY_DESCRIPTOR *Descriptor = GetMemoryDescriptor(MemoryMap, index);
-        UINT64 end;
+        UINT64                 end;
 
         if (Descriptor->Type != EFI_CONVENTIONAL_MEMORY)
         {
@@ -172,7 +172,7 @@ STATIC UINTN LargestOrderForRange(UINT64 address, UINT64 PageCount)
 
     while (order < BUDDY_MAX_ORDER)
     {
-        UINTN NextOrder = order + 1;
+        UINTN  NextOrder = order + 1;
         UINT64 NextPages = OrderToPages(NextOrder);
         UINT64 NextSize = OrderToSize(NextOrder);
 
@@ -196,7 +196,7 @@ STATIC VOID BuddyAddRange(UINT64 address, UINT64 PageCount)
 {
     while (PageCount != 0)
     {
-        UINTN order = LargestOrderForRange(address, PageCount);
+        UINTN  order = LargestOrderForRange(address, PageCount);
         UINT64 pages = OrderToPages(order);
 
         BuddyPush(order, address);
@@ -280,9 +280,9 @@ STATIC VOID BuddyAddUsableRangeExcept(UINT64 address, UINT64 PageCount, UINT64 R
 
 STATIC VOID *BuddyAllocate(UINTN order)
 {
-    UINTN CurrentOrder;
+    UINTN        CurrentOrder;
     BUDDY_BLOCK *block;
-    UINT64 address;
+    UINT64       address;
 
     if (order > BUDDY_MAX_ORDER)
     {
@@ -397,10 +397,10 @@ STATIC VOID BuddyFree(UINT64 address, UINTN order)
 BOOLEAN KMemoryInit(LINEOS_BOOT_INFO *BootInfo)
 {
     LINEOS_MEMORY_MAP *MemoryMap;
-    UINTN EntryCount;
-    UINT64 HighestAddress;
-    UINT64 KernelStart;
-    UINT64 KernelEnd;
+    UINTN              EntryCount;
+    UINT64             HighestAddress;
+    UINT64             KernelStart;
+    UINT64             KernelEnd;
 
     if (BootInfo == NULL || BootInfo->MemoryMap == NULL || BootInfo->MemoryMap->MemoryMap == NULL || BootInfo->MemoryMap->MemoryMapDescriptorSize == 0)
     {
@@ -450,7 +450,7 @@ UINT64 KGetTotalPages(VOID)
 
 VOID *KMemMove(VOID *destination, CONST VOID *source, UINTN size)
 {
-    UINT8 *dst = (UINT8 *) destination;
+    UINT8       *dst = (UINT8 *) destination;
     CONST UINT8 *src = (CONST UINT8 *) source;
 
     if (dst == src || size == 0)
@@ -478,7 +478,7 @@ VOID *KMemMove(VOID *destination, CONST VOID *source, UINTN size)
 
 VOID *KMemCpy(VOID *destination, CONST VOID *source, UINTN size)
 {
-    UINT8 *dst = (UINT8 *) destination;
+    UINT8       *dst = (UINT8 *) destination;
     CONST UINT8 *src = (CONST UINT8 *) source;
 
     for (UINTN index = 0; index < size; index++)
@@ -503,9 +503,9 @@ VOID *KMemSet(VOID *destination, UINT8 value, UINTN size)
 
 VOID *KAllocPages(UINTN PageCount)
 {
-    UINTN order;
+    UINTN  order;
     UINT64 flags;
-    VOID *address;
+    VOID  *address;
 
     if (PageCount == 0)
     {
@@ -535,9 +535,9 @@ VOID *KAllocPages(UINTN PageCount)
 
 VOID *KAllocPagesBelow(UINTN PageCount, UINT64 limit)
 {
-    UINTN order;
+    UINTN  order;
     UINT64 flags;
-    VOID *address;
+    VOID  *address;
 
     if (PageCount == 0 || limit == 0)
     {
@@ -568,7 +568,7 @@ VOID *KAllocPagesBelow(UINTN PageCount, UINT64 limit)
 VOID KMemFreePages(VOID *address, UINTN PageCount)
 {
     UINT64 Address;
-    UINTN order;
+    UINTN  order;
     UINT64 flags;
 
     if (address == NULL || PageCount == 0)
@@ -623,7 +623,7 @@ STATIC HEAP_BLOCK *HeapFindFreeBlock(UINTN size)
 STATIC VOID HeapSplitBlock(HEAP_BLOCK *block, UINTN size)
 {
     HEAP_BLOCK *NewBlock;
-    UINTN RemainingSize;
+    UINTN       RemainingSize;
 
     if (block->Size < size)
     {
@@ -697,12 +697,12 @@ STATIC VOID HeapMergeWithNext(HEAP_BLOCK *block)
 
 STATIC HEAP_BLOCK *HeapExpand(UINTN MinimumSize)
 {
-    UINTN RequiredSize;
-    UINTN PageCount;
-    UINTN order;
-    UINTN AllocatedPages;
-    UINTN AllocatedSize;
-    VOID *memory;
+    UINTN       RequiredSize;
+    UINTN       PageCount;
+    UINTN       order;
+    UINTN       AllocatedPages;
+    UINTN       AllocatedSize;
+    VOID       *memory;
     HEAP_BLOCK *block;
 
     RequiredSize = MinimumSize + sizeof(HEAP_BLOCK);
@@ -776,7 +776,7 @@ BOOLEAN KHeapInit(VOID)
 VOID *KAlloc(UINTN size)
 {
     HEAP_BLOCK *block;
-    UINT64 flags;
+    UINT64      flags;
 
     if (size == 0 || !HeapInitialized)
     {
@@ -811,7 +811,7 @@ VOID *KAlloc(UINTN size)
 VOID KFree(VOID *address)
 {
     HEAP_BLOCK *block;
-    UINT64 flags;
+    UINT64      flags;
 
     if (address == NULL || !HeapInitialized)
     {
