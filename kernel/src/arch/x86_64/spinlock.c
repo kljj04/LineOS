@@ -18,12 +18,7 @@ VOID SpinLockAcquire(SPIN_LOCK *lock)
     {
         value = 1;
 
-        ASM(
-            "xchgl %0, %1"
-            : "+r"(value), "+m"(lock->Locked)
-            :
-            : "memory"
-        );
+        ASM("xchgl %0, %1" : "+r"(value), "+m"(lock->Locked) : : "memory");
 
         if (value == 0)
         {
@@ -47,14 +42,12 @@ UINT64 SpinLockAcquireIRQSave(SPIN_LOCK *lock)
 {
     UINT64 flags;
 
-    ASM(
-        "pushfq\n"
+    ASM("pushfq\n"
         "popq %0\n"
         "cli"
         : "=r"(flags)
         :
-        : "memory"
-    );
+        : "memory");
 
     SpinLockAcquire(lock);
 

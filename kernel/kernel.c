@@ -13,13 +13,9 @@
 #include <interrupt/apic.h>
 #include <interrupt/idt.h>
 #include <memory/memory.h>
-#include <debug/panic.h>
 #include <timer/hpet.h>
 #include <timer/tsc.h>
-#include <acpi/acpi.h>
 #include <pci/pci.h>
-
-#include <input/input.h>
 
 #define CPU_USAGE_REFRESH_MS 500
 
@@ -95,13 +91,13 @@ STATIC VOID WaitCPUUsageRefresh(VOID)
         return;
     }
 
-    ticks = (UINT64) (((UINT128) frequency * CPU_USAGE_REFRESH_MS) / 1000ULL);
+    ticks = (UINT64) ((UINT128) frequency * CPU_USAGE_REFRESH_MS / 1000ULL);
     deadline = RDTSC() + ticks;
 
     while ((INT64) (RDTSC() - deadline) < 0)
     {
         Yield();
-        PAUSE();
+        HLTONCE();
     }
 }
 
@@ -109,7 +105,7 @@ STATIC VOID DrawCPUUsageMonitor(VOID)
 {
     UINT32 CPUCount;
     UINT64 TotalUsage;
-    UINTN AverageUsage;
+    UINTN  AverageUsage;
     UINT32 PanelHeight;
 
     CPUCount = SMPGetCPUCount();
@@ -125,7 +121,7 @@ STATIC VOID DrawCPUUsageMonitor(VOID)
 
     if (CPUCount != 0)
     {
-        AverageUsage = (UINTN) (TotalUsage / CPUCount);
+        AverageUsage = TotalUsage / CPUCount;
     }
 
     PanelHeight = 130 + CPUCount * 40;
@@ -136,7 +132,7 @@ STATIC VOID DrawCPUUsageMonitor(VOID)
     for (UINT32 CPUID = 0; CPUID < CPUCount; CPUID++)
     {
         CPU_INFO *CPU;
-        UINT64 AssignedTaskCount;
+        UINT64    AssignedTaskCount;
 
         CPU = SMPGetCPU(CPUID);
 

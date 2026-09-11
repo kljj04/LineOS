@@ -16,14 +16,14 @@ STATIC UINT32 MouseMaxX = 32767;
 STATIC UINT32 MouseMinY = 0;
 STATIC UINT32 MouseMaxY = 32767;
 
-STATIC MOUSE_STATUS MouseStatus = {0};
+STATIC MOUSE_STATUS    MouseStatus = {0};
 STATIC KEYBOARD_STATUS KeyboardStatus = {0};
-STATIC SPIN_LOCK MouseStatusLock;
-STATIC SPIN_LOCK KeyboardStatusLock;
+STATIC SPIN_LOCK       MouseStatusLock;
+STATIC SPIN_LOCK       KeyboardStatusLock;
 
 STATIC BOOLEAN CursorReady = FALSE;
-STATIC UINT32 CursorDrawX = 0;
-STATIC UINT32 CursorDrawY = 0;
+STATIC UINT32  CursorDrawX = 0;
+STATIC UINT32  CursorDrawY = 0;
 
 STATIC UINT32 CursorBackground[INPUT_CURSOR_REDRAW_SIZE * INPUT_CURSOR_REDRAW_SIZE];
 
@@ -272,8 +272,8 @@ VOID HideMouseCursor(VOID)
 VOID ShowMouseCursor(VOID)
 {
     VIRTIO_GPU_INFO *GPU;
-    MOUSE_STATUS status;
-    UINT64 flags;
+    MOUSE_STATUS     status;
+    UINT64           flags;
 
     GPU = VirtIOGPUGetInfo();
 
@@ -299,10 +299,10 @@ VOID ShowMouseCursor(VOID)
 VOID UpdateMouseCursor(VOID)
 {
     VIRTIO_GPU_INFO *GPU;
-    MOUSE_STATUS status;
-    UINT32 OldX;
-    UINT32 OldY;
-    UINT64 flags;
+    MOUSE_STATUS     status;
+    UINT32           OldX;
+    UINT32           OldY;
+    UINT64           flags;
 
     GPU = VirtIOGPUGetInfo();
 
@@ -350,10 +350,10 @@ VOID UpdateMouseCursor(VOID)
 
 VOID InputMouseHandler(VOID)
 {
-    VIRTIO_GPU_INFO *GPU;
+    VIRTIO_GPU_INFO     *GPU;
     VIRTIO_POINTER_EVENT PointerEvent;
-    MOUSE_STATUS Status;
-    UINT64 flags;
+    MOUSE_STATUS         Status;
+    UINT64               flags;
 
     GPU = VirtIOGPUGetInfo();
 
@@ -388,7 +388,7 @@ VOID InputMouseHandler(VOID)
 VOID InputKeyboardHandler(VOID)
 {
     VIRTIO_KEY_EVENT KeyEvent;
-    UINT64 flags;
+    UINT64           flags;
 
     while (TRUE)
     {

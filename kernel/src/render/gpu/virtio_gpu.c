@@ -32,7 +32,7 @@ STATIC BOOLEAN SendCommandToQueue(VIRTQUEUE *Queue, VOID *Request, UINT32 Reques
 STATIC BOOLEAN SendNoDataCommandToQueue(VIRTQUEUE *Queue, VOID *Request, UINT32 RequestLength, CONST CHAR16 *Stage);
 STATIC BOOLEAN SendCursorCommand(VOID *Request, UINT32 RequestLength, CONST CHAR16 *Stage);
 STATIC BOOLEAN TransferResourceRect(UINT32 ResourceId, UINT32 FrameWidth, UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height);
-STATIC VOID VirtIOGPUMarkDirtyLocked(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height);
+STATIC VOID    VirtIOGPUMarkDirtyLocked(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height);
 
 STATIC UINT64 AlignUp(UINT64 Value, UINT64 Alignment)
 {
@@ -796,7 +796,7 @@ VOID VirtIOGPUBlendPixel(UINT32 X, UINT32 Y, UINT32 Color, UINT8 Alpha)
 
 VOID CopyRect(UINT32 SourceX, UINT32 SourceY, UINT32 Width, UINT32 Height, UINT32 TargetX, UINT32 TargetY)
 {
-    UINTN CopySize;
+    UINTN  CopySize;
     UINT64 flags;
 
     flags = VirtIOGPUAcquireRenderLock();
