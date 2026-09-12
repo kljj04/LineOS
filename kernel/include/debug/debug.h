@@ -11,3 +11,5 @@ VOID DebugWriteLine(CONST char *String);
 VOID DebugWriteWide(CONST CHAR16 *String);
 VOID DebugWriteHex(UINT64 Value);
 VOID DebugWriteDec(UINT64 Value);
+VOID DebugDumpIretFrame(UINT64 RSP);
+VOID DebugDumpDescriptorState(VOID);

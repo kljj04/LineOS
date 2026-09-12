@@ -6,14 +6,15 @@
 
 #include <lineos/typeinfo.h>
 #include <interrupt/idt.h>
+#include <scheduler/task_types.h>
+#include <scheduler/lbpwrr_types.h>
 
 BOOLEAN LBPWRRInit(VOID);
-BOOLEAN LBPWRRCreateTask(VOID (*entry)(VOID));
-VOID    StartSchedule(VOID);
-VOID    APJoinSchedule(VOID);
-VOID    Yield(VOID);
-VOID    LBPWRRTick(INTERRUPT_FRAME *frame);
-VOID    LBPWRRRecordIdleTSC(UINT64 StartTSC, UINT64 EndTSC);
-UINT64  LBPWRRGetSwitchStack(INTERRUPT_FRAME *frame);
-UINT64  LBPWRRGetCPUAssignedTaskCount(UINT32 CPUID);
+BOOLEAN LBPWRRAddTask(TASK *task);
+VOID    LBPWRRStart(VOID);
+VOID    LBPWRRJoin(VOID);
+VOID    LBPWRRYield(VOID);
+UINT64  LBPWRRTick(INTERRUPT_FRAME *frame);
+TASK   *LBPWRRGetCurrentTask(VOID);
 UINTN   LBPWRRGetCPUUsage(UINT32 CPUID);
+UINT32  LBPWRRGetCPUAssignedTaskCount(UINT32 CPUID);

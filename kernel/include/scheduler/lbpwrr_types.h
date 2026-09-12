@@ -4,19 +4,25 @@
 
 #pragma once
 
-#include <arch/x86_64/spinlock.h>
 #include <lineos/typeinfo.h>
+
+#define LBPWRR_MAX_TASKS 1024
 
 typedef struct LBPWRR_CPU
 {
     VOLATILE UINT64  CurrentTask;
     VOLATILE UINT64  SwitchStack;
     VOLATILE BOOLEAN CurrentTaskValid;
+    TASK            *RunQueue[LBPWRR_MAX_TASKS];
+    UINT32           RunQueueCount;
+    UINT32           RunQueueIndex;
+} LBPWRR_CPU;
 
-    VOLATILE UINT64 LastTSC;
+typedef struct CPU_USAGE
+{
     VOLATILE UINT64 BusyTSC;
     VOLATILE UINT64 IdleTSC;
     VOLATILE UINT64 LastSampleBusyTSC;
     VOLATILE UINT64 LastSampleIdleTSC;
     VOLATILE UINTN  CPUUsage;
-} LBPWRR_CPU;
+} CPU_USAGE;

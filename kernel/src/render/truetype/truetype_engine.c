@@ -3,7 +3,6 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <render/truetype/font_assets.h>
-#include <debug/debug.h>
 #include <render/gpu/virtio_gpu.h>
 #include <render/truetype/truetype.h>
 #include <render/truetype/truetype_engine.h>
@@ -13,57 +12,6 @@
 
 STATIC FONT_INFO PretendardFont;
 STATIC FONT_INFO JetBrainsMonoFont;
-STATIC UINT32    DebugGlyphCount = 0;
-
-STATIC VOID DebugWriteSigned(INT32 Value)
-{
-    if (Value < 0)
-    {
-        DebugWrite("-");
-        DebugWriteDec((UINT64) -Value);
-        return;
-    }
-
-    DebugWriteDec((UINT64) Value);
-}
-
-STATIC VOID DebugWriteTrueTypeFont(CONST char *Name, BOOLEAN OK, CONST UINT8 *Start, CONST UINT8 *End)
-{
-    DebugWrite("ttf font ");
-    DebugWrite(Name);
-    DebugWrite(" ok=");
-    DebugWriteDec(OK);
-    DebugWrite(" start=");
-    DebugWriteHex((UINT64) Start);
-    DebugWrite(" size=");
-    DebugWriteDec(FontAssetSize(Start, End));
-    DebugWrite("\n");
-}
-
-STATIC VOID DebugWriteGlyph(UINT32 Codepoint, INT32 GlyphIndex, INT32 Width, INT32 Height, INT32 XOff, INT32 YOff, UINT32 AlphaSum)
-{
-    if (DebugGlyphCount >= 32)
-    {
-        return;
-    }
-
-    DebugWrite("ttf glyph cp=");
-    DebugWriteHex(Codepoint);
-    DebugWrite(" glyph=");
-    DebugWriteDec((UINT64) GlyphIndex);
-    DebugWrite(" w=");
-    DebugWriteDec((UINT64) Width);
-    DebugWrite(" h=");
-    DebugWriteDec((UINT64) Height);
-    DebugWrite(" xoff=");
-    DebugWriteSigned(XOff);
-    DebugWrite(" yoff=");
-    DebugWriteSigned(YOff);
-    DebugWrite(" alpha=");
-    DebugWriteDec(AlphaSum);
-    DebugWrite("\n");
-    DebugGlyphCount++;
-}
 
 STATIC FLOAT32 GetPixelScale(FONT_INFO *Font, UINT32 PixelHeight)
 {
@@ -74,21 +22,6 @@ STATIC FLOAT32 GetPixelScale(FONT_INFO *Font, UINT32 PixelHeight)
 
     GetFontVMetrics(Font, &Ascent, &Descent, &LineGap);
     Units = Ascent - Descent;
-
-    if (DebugGlyphCount == 0)
-    {
-        DebugWrite("ttf metrics ascent=");
-        DebugWriteDec((UINT64) Ascent);
-        DebugWrite(" descent=");
-        DebugWriteDec((UINT64) Descent);
-        DebugWrite(" linegap=");
-        DebugWriteDec((UINT64) LineGap);
-        DebugWrite(" units=");
-        DebugWriteDec((UINT64) Units);
-        DebugWrite(" pixel=");
-        DebugWriteDec((UINT64) PixelHeight);
-        DebugWrite("\n");
-    }
 
     if (Units == 0)
     {
@@ -206,10 +139,6 @@ BOOLEAN TrueTypeInit(VOID)
     BOOLEAN PretendardOK = InitFont(&PretendardFont, LineOSPretendardFontStart, 0) != 0;
     BOOLEAN JetBrainsMonoOK = InitFont(&JetBrainsMonoFont, LineOSJetBrainsMonoFontStart, 0) != 0;
 
-    DebugGlyphCount = 0;
-    DebugWriteTrueTypeFont("Pretendard", PretendardOK, LineOSPretendardFontStart, LineOSPretendardFontEnd);
-    DebugWriteTrueTypeFont("JetBrainsMono", JetBrainsMonoOK, LineOSJetBrainsMonoFontStart, LineOSJetBrainsMonoFontEnd);
-
     return PretendardOK || JetBrainsMonoOK;
 }
 
@@ -218,38 +147,21 @@ UINT32 DrawTrueTypeCodepoint(TRUE_TYPE_FONT Font, UINT32 Codepoint, UINT32 x, UI
     VIRTIO_GPU_INFO *GPU = VirtIOGPUGetInfo();
     FONT_INFO       *DrawFont;
     FLOAT32          Scale;
-    INT32            GlyphIndex;
     INT32            Width;
     INT32            Height;
     INT32            XOff;
     INT32            YOff;
-    INT32            BoxX0;
-    INT32            BoxY0;
-    INT32            BoxX1;
-    INT32            BoxY1;
     UINT8           *Bitmap;
-    UINT32           AlphaSum = 0;
-    UINT64           flags;
+    UINT64           Flags;
 
     DrawFont = GetFont(Font, Codepoint);
 
     if (DrawFont == NULL || GPU == NULL || GPU->FrameBuffer == NULL || Codepoint == 0)
     {
-        DebugWrite("ttf skip cp=");
-        DebugWriteHex(Codepoint);
-        DebugWrite(" font=");
-        DebugWriteHex((UINT64) DrawFont);
-        DebugWrite(" gpu=");
-        DebugWriteHex((UINT64) GPU);
-        DebugWrite(" fb=");
-        DebugWriteHex(GPU == NULL ? 0 : (UINT64) GPU->FrameBuffer);
-        DebugWrite("\n");
         return x;
     }
 
     Scale = GetPixelScale(DrawFont, PixelHeight);
-    GlyphIndex = FindGlyphIndex(DrawFont, (INT32) Codepoint);
-    GetCodepointBitmapBox(DrawFont, (INT32) Codepoint, Scale, Scale, &BoxX0, &BoxY0, &BoxX1, &BoxY1);
     Width = 0;
     Height = 0;
     XOff = 0;
@@ -262,46 +174,24 @@ UINT32 DrawTrueTypeCodepoint(TRUE_TYPE_FONT Font, UINT32 Codepoint, UINT32 x, UI
             return x + CodepointAdvance(DrawFont, Codepoint, Scale);
         }
 
-        DebugWrite("ttf glyph null cp=");
-        DebugWriteHex(Codepoint);
-        DebugWrite(" glyph=");
-        DebugWriteDec((UINT64) GlyphIndex);
-        DebugWrite(" scale=");
-        DebugWriteHex((UINT64) (Scale * 1000000.0f));
-        DebugWrite(" box=");
-        DebugWriteSigned(BoxX0);
-        DebugWrite(",");
-        DebugWriteSigned(BoxY0);
-        DebugWrite("-");
-        DebugWriteSigned(BoxX1);
-        DebugWrite(",");
-        DebugWriteSigned(BoxY1);
-        DebugWrite(" wh=");
-        DebugWriteDec((UINT64) Width);
-        DebugWrite("x");
-        DebugWriteDec((UINT64) Height);
-        DebugWrite("\n");
         return x + CodepointAdvance(DrawFont, Codepoint, Scale);
     }
 
-    flags = VirtIOGPUAcquireRenderLock();
+    Flags = VirtIOGPUAcquireRenderLock();
     for (INT32 Row = 0; Row < Height; Row++)
     {
         for (INT32 Column = 0; Column < Width; Column++)
         {
             UINT8 Alpha = Bitmap[(Row * Width) + Column];
-            AlphaSum += Alpha;
             BlendPixel(GPU, (INT32) x + XOff + Column, (INT32) Baseline + YOff + Row, Color, Alpha);
         }
     }
-    VirtIOGPUReleaseRenderLock(flags);
+    VirtIOGPUReleaseRenderLock(Flags);
 
     if ((INT32) x + XOff >= 0 && (INT32) Baseline + YOff >= 0)
     {
         VirtIOGPUMarkDirty((UINT32) ((INT32) x + XOff), (UINT32) ((INT32) Baseline + YOff), (UINT32) Width, (UINT32) Height);
     }
-
-    DebugWriteGlyph(Codepoint, GlyphIndex, Width, Height, XOff, YOff, AlphaSum);
 
     FreeBitmap(Bitmap, DrawFont->UserData);
     return x + CodepointAdvance(DrawFont, Codepoint, Scale);

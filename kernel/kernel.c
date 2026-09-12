@@ -5,10 +5,11 @@
 #include <multicore/smp.h>
 #include <render/truetype/truetype_engine.h>
 #include <render/gpu/virtio_gpu.h>
-#include <render/truetype/print.h>
 #include <input/virtio_input.h>
 #include <scheduler/lbpwrr.h>
+#include <scheduler/task.h>
 #include <arch/x86_64/cpu.h>
+#include <debug/debug.h>
 #include <lineos/bootinfo.h>
 #include <interrupt/apic.h>
 #include <interrupt/idt.h>
@@ -17,9 +18,9 @@
 #include <timer/tsc.h>
 #include <pci/pci.h>
 
-#define CPU_USAGE_REFRESH_MS 500
+#define SMP_TEST_TASK_COUNT 1
 
-STATIC UINTN CPUUsageSamples[SMP_MAX_CPUS];
+STATIC VOLATILE BOOLEAN SchedulerReady = FALSE;
 
 VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
 {
@@ -56,122 +57,51 @@ VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
     VirtIOInputInit();
 
     LBPWRRInit();
-
-    STI();
 }
 
 VOID TestTask(VOID)
 {
-    HLTONCE();
-}
+    DebugWrite("TESTTASK ENTRY\n");
 
-VOID FlushScreen(VOID)
-{
-    if (!VirtIOGPUFlush())
-    {
-        VirtIOGPUFlush();
-    }
-}
-
-STATIC VOID WaitCPUUsageRefresh(VOID)
-{
-    UINT64 frequency;
-    UINT64 ticks;
-    UINT64 deadline;
-
-    frequency = TSCGetFrequency();
-
-    if (frequency == 0)
-    {
-        for (UINT32 count = 0; count < 1000; count++)
-        {
-            Yield();
-        }
-
-        return;
-    }
-
-    ticks = (UINT64) ((UINT128) frequency * CPU_USAGE_REFRESH_MS / 1000ULL);
-    deadline = RDTSC() + ticks;
-
-    while ((INT64) (RDTSC() - deadline) < 0)
-    {
-        Yield();
-        HLTONCE();
-    }
-}
-
-STATIC VOID DrawCPUUsageMonitor(VOID)
-{
-    UINT32 CPUCount;
-    UINT64 TotalUsage;
-    UINTN  AverageUsage;
-    UINT32 PanelHeight;
-
-    CPUCount = SMPGetCPUCount();
-    TotalUsage = 0;
-
-    for (UINT32 CPUID = 0; CPUID < CPUCount && CPUID < SMP_MAX_CPUS; CPUID++)
-    {
-        CPUUsageSamples[CPUID] = LBPWRRGetCPUUsage(CPUID);
-        TotalUsage += CPUUsageSamples[CPUID];
-    }
-
-    AverageUsage = 0;
-
-    if (CPUCount != 0)
-    {
-        AverageUsage = TotalUsage / CPUCount;
-    }
-
-    PanelHeight = 130 + CPUCount * 40;
-
-    FillRect(80, 60, 1320, PanelHeight, 0x000000);
-    KPrint(L"CPU Count: %u   Total Usage: %u%%", 100, 100, 0xFFFFFF, 48, JETBRAINS_MONO, CPUCount, (UINT32) AverageUsage);
-
-    for (UINT32 CPUID = 0; CPUID < CPUCount; CPUID++)
-    {
-        CPU_INFO *CPU;
-        UINT64    AssignedTaskCount;
-
-        CPU = SMPGetCPU(CPUID);
-
-        if (CPU == NULL)
-        {
-            continue;
-        }
-
-        AssignedTaskCount = LBPWRRGetCPUAssignedTaskCount(CPUID);
-
-        KPrint(L"CPU %u APIC %u BSP %u Online %u Tasks %llu Usage %u%%", 100, 160 + CPUID * 40, 0xFFFFFF, 32, JETBRAINS_MONO, CPU->CPUID, CPU->APICID, CPU->BSP, CPU->Online, AssignedTaskCount, (UINT32) CPUUsageSamples[CPUID]);
-    }
-
+    FillScreen(0x0000FF);
     VirtIOGPUFlush();
-}
-
-VOID CPUUsageMonitorTask(VOID)
-{
-    WaitCPUUsageRefresh();
 
     while (TRUE)
     {
-        DrawCPUUsageMonitor();
-        WaitCPUUsageRefresh();
+        for (UINT32 i = 0; i < 100000; i++)
+        {
+            PAUSE();
+        }
+
+        LBPWRRYield();
     }
 }
 
 VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
 {
+    TASK *task;
+
     InitKernel(BootInfo);
 
-    LBPWRRCreateTask(CPUUsageMonitorTask);
-
-    for (UINT32 i = 0; i < 1024; i++)
+    for (UINT32 i = 0; i < SMP_TEST_TASK_COUNT; i++)
     {
-        LBPWRRCreateTask(TestTask);
+        task = TaskCreate(TestTask);
+
+        if (task == NULL)
+        {
+            continue;
+        }
+
+        LBPWRRAddTask(task);
     }
 
-    StartSchedule();
+    CompilerBarrier();
+
+    SchedulerReady = TRUE;
+
+    CompilerBarrier();
+
+    LBPWRRStart();
 
     while (TRUE)
     {
@@ -201,5 +131,5 @@ VOID APMain(UINT32 CPUID)
         CompilerBarrier();
     }
 
-    APJoinSchedule();
+    HLT();
 }

@@ -3,3 +3,5 @@
 build/
 /LineOS/
 logs/
+__pycache__/
+*.pyc
