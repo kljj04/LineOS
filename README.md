@@ -217,7 +217,7 @@ Current rendering support includes:
 - Korean Hangul
 - Nerd Font private-use glyphs
 
-The bundled fonts are third-party assets. See `THIRD_PARTY_NOTICES.md` and `LICENSES/OFL-1.1.txt`.
+The bundled fonts are third-party assets. See `THIRD_PARTY_NOTICES.md` and `LICENSES/OFL-1.1`.
 
 ## Memory Notes
 

@@ -101,29 +101,36 @@ UINT64 SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *frame)
 
     if (frame->Vector == 64)
     {
-        LBPWRRTick(frame);
+        UINT64 NextRSP;
+
+        NextRSP = LBPWRRTick(frame);
+
         LAPICEOI();
-        return LBPWRRGetSwitchStack(frame);
+
+        return NextRSP;
     }
 
     if (frame->Vector == 65)
     {
         VirtIOKeyboardInterruptHandler();
+
         LAPICEOI();
+
         return (UINT64) frame;
     }
 
     if (frame->Vector == 66)
     {
         VirtIOTabletInterruptHandler();
+
         LAPICEOI();
+
         return (UINT64) frame;
     }
 
     if (frame->Vector == 67)
     {
-        LBPWRRTick(frame);
-        return LBPWRRGetSwitchStack(frame);
+        return LBPWRRTick(frame);
     }
 
     return (UINT64) frame;

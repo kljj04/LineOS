@@ -5,8 +5,6 @@
 #include <arch/x86_64/cpu.h>
 #include <lineos/typeinfo.h>
 
-EXTERN VOID LBPWRRRecordIdleTSC(UINT64 StartTSC, UINT64 EndTSC);
-
 #define GDT_KERNEL_DATA_SELECTOR 0x10
 #define GDT_KERNEL_CODE_SELECTOR 0x18
 
@@ -38,14 +36,7 @@ VOID HLT()
 
 VOID HLTONCE()
 {
-    UINT64 StartTSC;
-    UINT64 EndTSC;
-
-    StartTSC = RDTSC();
     ASM("hlt");
-    EndTSC = RDTSC();
-
-    LBPWRRRecordIdleTSC(StartTSC, EndTSC);
 }
 
 VOID STIHLT()

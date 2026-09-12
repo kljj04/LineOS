@@ -18,7 +18,7 @@ LogFile="qemu.log"
 QEMU="qemu-system-x86_64"
 Accel="kvm"
 CPU="host"
-CPUCount="16"
+CPUCount="1"
 CPUFlags="+tsc-deadline,+invtsc,+rdtscp,+arat,+fsgsbase,+pdpe1gb"
 
 ImgFile="${BaseDir}/LineOS/LineOS.img"
@@ -29,6 +29,7 @@ MountDir="/tmp/lineos_img_mount"
 OVMF_CODE="${BaseDir}/uefi/OVMF_CODE.fd"
 OVMF_VARS="${BaseDir}/uefi/OVMF_VARS.fd"
 LogPath="${BaseDir}/logs/${LogFile}"
+DebugConLogPath="${BaseDir}/logs/debugcon.log"
 BootFile="${BaseDir}/LineOS/EFI/BOOT/BOOTX64.EFI"
 KernelFile="${BaseDir}/LineOS/KERNEL/LINEOS_KERNEL.ELF"
 
@@ -174,6 +175,7 @@ CopyImg() {
 
 StartQEMU() {
     mkdir -p "${BaseDir}/LineOS" "${BaseDir}/logs"
+    rm -f "$DebugConLogPath"
     RequireCommand "$QEMU" || return 1
 
     echo -e "${CYAN}    [*] QEMU start...${RESET}"
@@ -201,8 +203,11 @@ StartQEMU() {
         -no-reboot
         -d "$DebugOption"
         -D "$LogPath"
+        -debugcon "file:$DebugConLogPath"
+        -global "isa-debugcon.iobase=0xe9"
         -m "$RAM"
         -display "$DisplayConfig"
+        -no-shutdown
     )
 
     "$QEMU" "${QEMU_ARGS[@]}" 2>/dev/null || true

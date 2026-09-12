@@ -5,9 +5,9 @@
 .section .text
 
 .extern IDTInterruptHandler
+.extern DebugDumpIretFrame
+.extern DebugDumpDescriptorState
 .extern HostLoopTask
-.extern LBPWRRDebugRSPAfterSwitch
-.extern LBPWRRDebugRSPBeforeIRET
 
 .global LBPWRRRestoreContext
 .type LBPWRRRestoreContext, @function
@@ -71,6 +71,9 @@ ISR_NO_ERROR_CODE 66
 ISR_NO_ERROR_CODE 67
 
 ISRCommon:
+    movb $'C', %al
+    outb %al, $0xE9
+
     pushq %rax
     pushq %rbx
     pushq %rcx
@@ -101,7 +104,6 @@ ISRCommon:
 
 1:
     movq %rax, %rsp
-    movq %rsp, LBPWRRDebugRSPAfterSwitch(%rip)
 
     popq %r15
     popq %r14
@@ -120,11 +122,13 @@ ISRCommon:
     popq %rax
 
     addq $16, %rsp
-    movq %rsp, LBPWRRDebugRSPBeforeIRET(%rip)
 
     iretq
 
 ISRRestoreContext:
+    movb $'R', %al
+    outb %al, $0xE9
+
     popq %r15
     popq %r14
     popq %r13
@@ -142,6 +146,13 @@ ISRRestoreContext:
     popq %rax
 
     addq $16, %rsp
+
+    movq %rsp, %rdi
+    call DebugDumpIretFrame
+    call DebugDumpDescriptorState
+
+    movb $'I', %al
+    outb %al, $0xE9
 
     iretq
 

@@ -83,6 +83,7 @@ BOOLEAN TSCDeadlineInit(UINT8 vector)
 
     return TRUE;
 }
+
 VOID TSCSetDeadline(UINT64 deadline)
 {
     WriteMSR(IA32_TSC_DEADLINE, deadline);
