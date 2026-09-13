@@ -61,14 +61,12 @@ VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
 
 VOID TestTask(VOID)
 {
-    DebugWrite("TESTTASK ENTRY\n");
-
-    FillScreen(0x0000FF);
-    VirtIOGPUFlush();
-
     while (TRUE)
     {
-        for (UINT32 i = 0; i < 100000; i++)
+        FillScreen(0x0000FF);
+        VirtIOGPUFlush();
+
+        for (UINT32 LoopCount = 0; LoopCount < 5000000; LoopCount++)
         {
             PAUSE();
         }
@@ -77,23 +75,38 @@ VOID TestTask(VOID)
     }
 }
 
-VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
+VOID TestTask2(VOID)
 {
-    TASK *task;
-
-    InitKernel(BootInfo);
-
-    for (UINT32 i = 0; i < SMP_TEST_TASK_COUNT; i++)
+    while (TRUE)
     {
-        task = TaskCreate(TestTask);
+        FillScreen(0xFF0000);
+        VirtIOGPUFlush();
 
-        if (task == NULL)
+        for (UINT32 LoopCount = 0; LoopCount < 5000000; LoopCount++)
         {
-            continue;
+            PAUSE();
         }
 
-        LBPWRRAddTask(task);
+        LBPWRRYield();
     }
+}
+
+VOID Flush(VOID)
+{
+    while (TRUE)
+    {
+        LBPWRRYield();
+    }
+}
+
+VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
+{
+    InitKernel(BootInfo);
+
+    LBPWRRAddTask(TaskCreate(TestTask));
+    LBPWRRAddTask(TaskCreate(TestTask2));
+    LBPWRRAddTask(TaskCreate(Flush));
+
 
     CompilerBarrier();
 

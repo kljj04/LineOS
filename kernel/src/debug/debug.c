@@ -121,6 +121,10 @@ VOID DebugDumpIretFrame(UINT64 RSP)
     DebugWriteHex(Frame[1]);
     DebugWrite(" rflags=");
     DebugWriteHex(Frame[2]);
+    DebugWrite(" frame-rsp=");
+    DebugWriteHex(Frame[3]);
+    DebugWrite(" ss=");
+    DebugWriteHex(Frame[4]);
     DebugWrite("\n");
 }
 

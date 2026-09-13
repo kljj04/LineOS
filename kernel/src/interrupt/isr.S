@@ -71,9 +71,6 @@ ISR_NO_ERROR_CODE 66
 ISR_NO_ERROR_CODE 67
 
 ISRCommon:
-    movb $'C', %al
-    outb %al, $0xE9
-
     pushq %rax
     pushq %rbx
     pushq %rcx
@@ -122,6 +119,13 @@ ISRCommon:
     popq %rax
 
     addq $16, %rsp
+
+    movq %rsp, %rdi
+    call DebugDumpIretFrame
+    call DebugDumpDescriptorState
+
+    movb $'T', %al
+    outb %al, $0xE9
 
     iretq
 

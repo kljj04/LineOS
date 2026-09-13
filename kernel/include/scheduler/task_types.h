@@ -39,6 +39,8 @@ typedef struct TASK_CONTEXT
     UINT64 RIP;
     UINT64 CS;
     UINT64 RFLAGS;
+    UINT64 RSP;
+    UINT64 SS;
 } TASK_CONTEXT;
 
 typedef struct TASK
