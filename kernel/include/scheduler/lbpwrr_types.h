@@ -5,6 +5,7 @@
 #pragma once
 
 #include <lineos/typeinfo.h>
+#include <scheduler/task_types.h>
 
 #define LBPWRR_MAX_TASKS 1024
 

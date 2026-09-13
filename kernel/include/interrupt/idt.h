@@ -47,6 +47,8 @@ typedef struct
     UINT64 RIP;
     UINT64 CS;
     UINT64 RFLAGS;
+    UINT64 RSP;
+    UINT64 SS;
 } INTERRUPT_FRAME;
 
 VOID            IDTInit(VOID);
