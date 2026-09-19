@@ -8,16 +8,26 @@
 #include <scheduler/task_types.h>
 
 #define LBPWRR_MAX_TASKS 1024
+#define CHUNK_MAX_COUNT  1024
+#define TASK_STACK_PAGES 16
+#define PAGE_SIZE        4096
 
-typedef struct LBPWRR_CPU
+typedef struct CHUNK
 {
-    VOLATILE UINT64  CurrentTask;
-    VOLATILE UINT64  SwitchStack;
-    VOLATILE BOOLEAN CurrentTaskValid;
-    TASK            *RunQueue[LBPWRR_MAX_TASKS];
-    UINT32           RunQueueCount;
-    UINT32           RunQueueIndex;
-} LBPWRR_CPU;
+    TASK  *Tasks[CHUNK_MAX_COUNT];
+    UINT32 Count;
+} CHUNK;
+
+typedef struct LBPWRR_RUNQUEUE
+{
+    TASK  *Runnable[LBPWRR_MAX_TASKS];
+    UINT32 RunnableCount;
+    TASK  *Unrunnable[LBPWRR_MAX_TASKS];
+    UINT32 UnrunnableCount;
+    CHUNK  Chunk;
+    UINT32 CurrentIndex;
+
+} LBPWRR_RUNQUEUE;
 
 typedef struct CPU_USAGE
 {

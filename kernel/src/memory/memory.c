@@ -34,7 +34,7 @@ STATIC UINT64 AlignDown(UINT64 Value, UINT64 Alignment)
     return Value & ~(Alignment - 1);
 }
 
-STATIC UINTN PTOO(UINTN PageCount)
+STATIC UINTN PToO(UINTN PageCount)
 {
     UINTN order = 0;
     UINTN pages = 1;
@@ -48,12 +48,12 @@ STATIC UINTN PTOO(UINTN PageCount)
     return order;
 }
 
-STATIC UINT64 OrderToPages(UINTN order)
+STATIC UINT64 OToP(UINTN order)
 {
     return 1ULL << order;
 }
 
-STATIC UINT64 OrderToSize(UINTN order)
+STATIC UINT64 OToS(UINTN order)
 {
     return PAGE_SIZE << order;
 }
@@ -173,8 +173,8 @@ STATIC UINTN LargestOrderForRange(UINT64 address, UINT64 PageCount)
     while (order < BUDDY_MAX_ORDER)
     {
         UINTN  NextOrder = order + 1;
-        UINT64 NextPages = OrderToPages(NextOrder);
-        UINT64 NextSize = OrderToSize(NextOrder);
+        UINT64 NextPages = OToP(NextOrder);
+        UINT64 NextSize = OToS(NextOrder);
 
         if (NextPages > PageCount)
         {
@@ -197,7 +197,7 @@ STATIC VOID BuddyAddRange(UINT64 address, UINT64 PageCount)
     while (PageCount != 0)
     {
         UINTN  order = LargestOrderForRange(address, PageCount);
-        UINT64 pages = OrderToPages(order);
+        UINT64 pages = OToP(order);
 
         BuddyPush(order, address);
 
@@ -315,7 +315,7 @@ STATIC VOID *BuddyAllocate(UINTN order)
         UINT64 BuddyAddress;
 
         CurrentOrder--;
-        BuddyAddress = address + OrderToSize(CurrentOrder);
+        BuddyAddress = address + OToS(CurrentOrder);
 
         BuddyPush(CurrentOrder, BuddyAddress);
     }
@@ -337,7 +337,7 @@ STATIC VOID *BuddyAllocateBelow(UINTN order, UINT64 limit)
         while (block != NULL)
         {
             UINT64 address = (UINT64) block;
-            UINT64 RequestedSize = OrderToSize(order);
+            UINT64 RequestedSize = OToS(order);
 
             if (address <= limit && RequestedSize <= limit - address)
             {
@@ -351,7 +351,7 @@ STATIC VOID *BuddyAllocateBelow(UINTN order, UINT64 limit)
                     UINT64 BuddyAddress;
 
                     CurrentOrder--;
-                    BuddyAddress = address + OrderToSize(CurrentOrder);
+                    BuddyAddress = address + OToS(CurrentOrder);
 
                     BuddyPush(CurrentOrder, BuddyAddress);
                 }
@@ -375,7 +375,7 @@ STATIC VOID BuddyFree(UINT64 address, UINTN order)
 
     while (order < BUDDY_MAX_ORDER)
     {
-        UINT64 size = OrderToSize(order);
+        UINT64 size = OToS(order);
         UINT64 BuddyAddress = address ^ size;
 
         if (!BuddyRemove(order, BuddyAddress))
@@ -512,7 +512,7 @@ VOID *KAllocPages(UINTN PageCount)
         return NULL;
     }
 
-    order = PTOO(PageCount);
+    order = PToO(PageCount);
 
     if (order > BUDDY_MAX_ORDER)
     {
@@ -528,7 +528,7 @@ VOID *KAllocPages(UINTN PageCount)
         return NULL;
     }
 
-    KMemSet(address, 0, (UINTN) OrderToSize(order));
+    KMemSet(address, 0, (UINTN) OToS(order));
 
     return address;
 }
@@ -544,7 +544,7 @@ VOID *KAllocPagesBelow(UINTN PageCount, UINT64 limit)
         return NULL;
     }
 
-    order = PTOO(PageCount);
+    order = PToO(PageCount);
 
     if (order > BUDDY_MAX_ORDER)
     {
@@ -560,7 +560,7 @@ VOID *KAllocPagesBelow(UINTN PageCount, UINT64 limit)
         return NULL;
     }
 
-    KMemSet(address, 0, (UINTN) OrderToSize(order));
+    KMemSet(address, 0, (UINTN) OToS(order));
 
     return address;
 }
@@ -583,7 +583,7 @@ VOID KMemFreePages(VOID *address, UINTN PageCount)
         return;
     }
 
-    order = PTOO(PageCount);
+    order = PToO(PageCount);
 
     if (order > BUDDY_MAX_ORDER)
     {
@@ -713,14 +713,14 @@ STATIC HEAP_BLOCK *HeapExpand(UINTN MinimumSize)
         PageCount = HEAP_EXPAND_PAGES;
     }
 
-    order = PTOO(PageCount);
+    order = PToO(PageCount);
 
     if (order > BUDDY_MAX_ORDER)
     {
         return NULL;
     }
 
-    AllocatedPages = (UINTN) OrderToPages(order);
+    AllocatedPages = (UINTN) OToP(order);
     AllocatedSize = AllocatedPages * PAGE_SIZE;
 
     memory = KAllocPages(AllocatedPages);

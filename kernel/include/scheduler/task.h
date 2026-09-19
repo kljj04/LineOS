@@ -10,6 +10,7 @@
 BOOLEAN TaskInit(VOID);
 TASK   *TaskCreate(VOID (*entry)(VOID));
 VOID    TaskKill(TASK *task);
-VOID    TaskReap(VOID);
+VOID    TaskTerminate(TASK *task);
+BOOLEAN TaskDestroy(TASK *task);
 TASK   *TaskGetByPID(UINT16 PID);
 UINTN   TaskGetCount(VOID);
