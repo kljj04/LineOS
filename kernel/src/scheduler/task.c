@@ -3,20 +3,162 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <scheduler/task.h>
+#include <scheduler/lbpwrr_types.h>
 #include <arch/x86_64/cpu.h>
 #include <debug/debug.h>
 #include <memory/memory.h>
 
-#define TASK_MAX_COUNT   1024
-#define TASK_STACK_PAGES 16
-#define TASK_PAGE_SIZE   4096
+STATIC TASK TaskPool[LBPWRR_MAX_TASKS];
+STATIC BOOLEAN TaskUsed[LBPWRR_MAX_TASKS];
 
-STATIC TASK    TaskPool[TASK_MAX_COUNT];
-STATIC BOOLEAN TaskUsed[TASK_MAX_COUNT];
+STATIC UINTN TaskCount;
+STATIC UINT16 NextPID;
 
-STATIC UINTN  TaskCount = 0;
-STATIC UINT16 NextPID = 1;
+STATIC BOOLEAN TaskGetIndex(TASK *task, UINTN *Index)
+{
+    UINTN index;
 
+    if (task == NULL || Index == NULL)
+    {
+        return FALSE;
+    }
+
+    for (index = 0; index < LBPWRR_MAX_TASKS; index++)
+    {
+        if (&TaskPool[index] == task)
+        {
+            *Index = index;
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+STATIC UINT8 PToW(UINT8 Priority)
+{
+    if (Priority > 5)
+    {
+        return 0;
+    }
+
+    return 6 - Priority;
+}
+
+STATIC UINT8 WToC(UINT8 Weight)
+{
+    return Weight;
+}
+
+STATIC TASK *TaskAllocate(VOID)
+{
+    UINTN index;
+
+    for (index = 0; index < LBPWRR_MAX_TASKS; index++)
+    {
+        if (!TaskUsed[index])
+        {
+            TaskUsed[index] = TRUE;
+            KMemSet(&TaskPool[index], 0, sizeof(TASK));
+
+            return &TaskPool[index];
+        }
+    }
+
+    return NULL;
+}
+
+STATIC BOOLEAN TaskPIDUsed(UINT16 PID)
+{
+    UINTN index;
+
+    if (PID == 0)
+    {
+        return TRUE;
+    }
+
+    for (index = 0; index < LBPWRR_MAX_TASKS; index++)
+    {
+        if (!TaskUsed[index])
+        {
+            continue;
+        }
+
+        if (TaskPool[index].PID == PID)
+        {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+STATIC BOOLEAN TaskAllocatePID(UINT16 *PID)
+{
+    UINT32 Retry;
+    UINT16 Candidate;
+
+    if (PID == NULL)
+    {
+        return FALSE;
+    }
+
+    Candidate = NextPID;
+
+    for (Retry = 0; Retry < 0xFFFF; Retry++)
+    {
+        if (Candidate == 0)
+        {
+            Candidate = 1;
+        }
+
+        if (!TaskPIDUsed(Candidate))
+        {
+            *PID = Candidate;
+
+            Candidate++;
+
+            if (Candidate == 0)
+            {
+                Candidate = 1;
+            }
+
+            NextPID = Candidate;
+
+            return TRUE;
+        }
+
+        Candidate++;
+    }
+
+    return FALSE;
+}
+
+STATIC VOID TaskFreeSlot(TASK *task)
+{
+    UINTN index;
+
+    if (!TaskGetIndex(task, &index))
+    {
+        return;
+    }
+
+    KMemSet(task, 0, sizeof(TASK));
+    TaskUsed[index] = FALSE;
+}
+
+STATIC VOID InitTaskContext(TASK *task, VOID (*entry)(VOID))
+{
+    KMemSet(&task->Context, 0, sizeof(TASK_CONTEXT));
+
+    task->Context.RIP = (UINT64)entry;
+    task->Context.CS = 0x18;
+    task->Context.RFLAGS = 0x202;
+    task->Context.RSP = task->InitialRSP;
+    task->Context.SS = 0x10;
+
+    task->RSP = (UINT64)&task->Context;
+}
 BOOLEAN TaskInit(VOID)
 {
     KMemSet(TaskPool, 0, sizeof(TaskPool));
@@ -28,18 +170,119 @@ BOOLEAN TaskInit(VOID)
     return TRUE;
 }
 
-STATIC TASK *TaskAllocate(VOID)
+TASK *TaskCreate(VOID (*entry)(VOID))
+{
+    TASK *task;
+
+    if (entry == NULL)
+    {
+        return NULL;
+    }
+
+    task = TaskAllocate();
+
+    if (task == NULL)
+    {
+        return NULL;
+    }
+
+    if (!TaskAllocatePID(&task->PID))
+    {
+        TaskFreeSlot(task);
+        return NULL;
+    }
+
+    task->Priority = 3;
+    task->Weight = PToW(task->Priority);
+    task->Credit = WToC(task->Weight);
+
+    task->StackBase = (UINT64)KAllocPages(TASK_STACK_PAGES);
+
+    if (task->StackBase == 0)
+    {
+        TaskFreeSlot(task);
+        return NULL;
+    }
+
+    task->StackSize = TASK_STACK_PAGES * PAGE_SIZE;
+    task->InitialRSP = task->StackBase + task->StackSize;
+
+    task->State = TASK_READY;
+
+    InitTaskContext(task, entry);
+
+    TaskCount++;
+
+    return task;
+}
+
+BOOLEAN TaskDestroy(TASK *task)
 {
     UINTN index;
 
-    for (index = 0; index < TASK_MAX_COUNT; index++)
+    if (task == NULL)
+    {
+        return FALSE;
+    }
+
+    if (!TaskGetIndex(task, &index) || !TaskUsed[index])
+    {
+        return FALSE;
+    }
+
+    if (task->State != TASK_TERMINATED && task->State != TASK_KILLED)
+    {
+        return FALSE;
+    }
+
+    if (task->StackBase != 0)
+    {
+        KMemFreePages((VOID *)task->StackBase, TASK_STACK_PAGES);
+    }
+
+    TaskFreeSlot(task);
+
+    if (TaskCount > 0)
+    {
+        TaskCount--;
+    }
+
+    return TRUE;
+}
+
+VOID TaskKill(TASK *task)
+{
+    if (task == NULL)
+    {
+        return;
+    }
+
+    task->State = TASK_KILLED;
+}
+
+VOID TaskTerminate(TASK *task)
+{
+    if (task == NULL)
+    {
+        return;
+    }
+
+    task->State = TASK_TERMINATED;
+}
+
+TASK *TaskGetByPID(UINT16 PID)
+{
+    UINTN index;
+
+    for (index = 0; index < LBPWRR_MAX_TASKS; index++)
     {
         if (!TaskUsed[index])
         {
-            TaskUsed[index] = TRUE;
+            continue;
+        }
 
-            KMemSet(&TaskPool[index], 0, sizeof(TASK));
-
+        if (TaskPool[index].PID == PID)
+        {
             return &TaskPool[index];
         }
     }
@@ -47,26 +290,7 @@ STATIC TASK *TaskAllocate(VOID)
     return NULL;
 }
 
-STATIC UINT16 TaskAllocatePID(VOID)
+UINTN TaskGetCount(VOID)
 {
-    UINT16 PID;
-
-    PID = NextPID++;
-
-    if (NextPID == 0)
-    {
-        NextPID = 1;
-    }
-
-    return PID;
+    return TaskCount;
 }
-
-TASK   *TaskCreate(VOID (*entry)(VOID)) {}
-
-VOID    TaskKill(TASK *task) {}
-
-VOID    TaskReap(VOID) {}
-
-TASK   *TaskGetByPID(UINT16 PID) {}
-
-UINTN   TaskGetCount(VOID) {}

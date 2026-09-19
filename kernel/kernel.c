@@ -66,11 +66,6 @@ VOID TestTask(VOID)
         FillScreen(0x0000FF);
         VirtIOGPUFlush();
 
-        for (UINT32 LoopCount = 0; LoopCount < 5000000; LoopCount++)
-        {
-            PAUSE();
-        }
-
         LBPWRRYield();
     }
 }
@@ -81,11 +76,6 @@ VOID TestTask2(VOID)
     {
         FillScreen(0xFF0000);
         VirtIOGPUFlush();
-
-        for (UINT32 LoopCount = 0; LoopCount < 5000000; LoopCount++)
-        {
-            PAUSE();
-        }
 
         LBPWRRYield();
     }

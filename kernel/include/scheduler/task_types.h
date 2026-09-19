@@ -11,9 +11,47 @@ typedef enum
     TASK_READY,
     TASK_RUNNING,
     TASK_BLOCKED,
-    TASK_DEAD,
-    TASK_SLEEPING
+    TASK_SLEEPING,
+    TASK_TERMINATED,
+    TASK_KILLED
 } TASK_STATE;
+
+typedef enum {
+    RESERVED,
+    SIGHUP,
+    SIGINT,
+    SIGQUIT,
+    SIGILL,
+    SIGTRAP,
+    SIGABRT,
+    SIGBUS,
+    SIGFPE,
+    SIGKILL,
+    SIGUSR1,
+    SIGSEGV,
+    SIGUSR2,
+    SIGPIPE,
+    SIGALRM,
+    SIGTERM,
+    SIGSTKFLT,
+    SIGCHLD,
+    SIGCONT,
+    SIGSTOP,
+    SIGTSTP,
+    SIGTTIN,
+    SIGTTOU,
+    SIGURG,
+    SIGXCPU,
+    SIGXFSZ,
+    SIGVTALRM,
+    SIGPROF,
+    SIGWINCH,
+    SIGIO,
+    SIGPWR,
+    SIGSYS,
+    SIGRTMIN,
+    SIGRTMAX
+} TASK_SIGNAL;
 
 typedef struct TASK_CONTEXT
 {
@@ -45,16 +83,16 @@ typedef struct TASK_CONTEXT
 
 typedef struct TASK
 {
-    UINT64     RSP;
-    UINT64     InitialRSP;
-    UINT64     StackBase;
-    UINT64     StackSize;
-    TASK_STATE State;
-    UINT32     CPUID;
-    UINT8      Priority;
-    UINT8      Weight;
-    UINT16     Reserved;
-    UINT32     Quantum;
-    BOOLEAN    IsIdle;
-    UINT16     PID;
+    UINT64       RSP;
+    UINT64       InitialRSP;
+    UINT64       StackBase;
+    UINT64       StackSize;
+    TASK_STATE   State;
+    TASK_CONTEXT Context;
+    UINT32       CPUID;
+    UINT8        Priority;
+    UINT8        Weight;
+    UINT8        Credit;
+    UINT16       PID;
+    TASK_SIGNAL  Signal;
 } TASK;

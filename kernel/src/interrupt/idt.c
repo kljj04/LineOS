@@ -101,13 +101,9 @@ UINT64 SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *frame)
 
     if (frame->Vector == 64)
     {
-        UINT64 NextRSP;
-
-        NextRSP = LBPWRRTick(frame);
-
         LAPICEOI();
 
-        return NextRSP;
+        return (UINT64) frame;
     }
 
     if (frame->Vector == 65)

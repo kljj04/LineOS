@@ -5,8 +5,6 @@
 .section .text
 
 .extern IDTInterruptHandler
-.extern DebugDumpIretFrame
-.extern DebugDumpDescriptorState
 .extern HostLoopTask
 
 .global LBPWRRRestoreContext
@@ -120,10 +118,6 @@ ISRCommon:
 
     addq $16, %rsp
 
-    movq %rsp, %rdi
-    call DebugDumpIretFrame
-    call DebugDumpDescriptorState
-
     movb $'T', %al
     outb %al, $0xE9
 
@@ -150,10 +144,6 @@ ISRRestoreContext:
     popq %rax
 
     addq $16, %rsp
-
-    movq %rsp, %rdi
-    call DebugDumpIretFrame
-    call DebugDumpDescriptorState
 
     movb $'I', %al
     outb %al, $0xE9
