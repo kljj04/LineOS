@@ -3,6 +3,9 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <interrupt/idt.h>
+
+#include "debug/debug.h"
+
 #include <scheduler/lbpwrr.h>
 #include <interrupt/apic.h>
 #include <debug/panic.h>
@@ -126,7 +129,13 @@ UINT64 SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *frame)
 
     if (frame->Vector == 67)
     {
-        return LBPWRRTick(frame);
+        UINT64 RSP;
+
+        RSP = LBPWRRTick(frame);
+
+        LAPICEOI();
+
+        return RSP;
     }
 
     return (UINT64) frame;

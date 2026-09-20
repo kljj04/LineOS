@@ -9,6 +9,7 @@
 
 BOOLEAN TaskInit(VOID);
 TASK   *TaskCreate(VOID (*entry)(VOID));
+BOOLEAN TaskSetPriority(TASK *task, UINT8 priority);
 VOID    TaskKill(TASK *task);
 VOID    TaskTerminate(TASK *task);
 BOOLEAN TaskDestroy(TASK *task);

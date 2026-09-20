@@ -6,20 +6,19 @@
 #include <scheduler/task.h>
 #include <multicore/smp.h>
 #include <arch/x86_64/cpu.h>
-#include <debug/debug.h>
 #include <memory/memory.h>
 
 STATIC LBPWRR_RUNQUEUE RunQueues[SMP_MAX_CPUS];
-STATIC TASK            *CurrentTasks[SMP_MAX_CPUS];
-STATIC CPU_USAGE        CPUUsages[SMP_MAX_CPUS];
-STATIC UINT32           ActiveCPUCount;
-STATIC UINT32           DebugSwitchCount;
+STATIC TASK           *CurrentTasks[SMP_MAX_CPUS];
+STATIC CPU_USAGE       CPUUsages[SMP_MAX_CPUS];
+STATIC UINT32          ActiveCPUCount;
 
 EXTERN VOID LBPWRRRestoreContext(UINT64 RSP) NORETURN;
 
 STATIC VOID LBPWRRInitRunQueue(LBPWRR_RUNQUEUE *RunQueue)
 {
     KMemSet(RunQueue, 0, sizeof(LBPWRR_RUNQUEUE));
+    SpinLockInit(&RunQueue->Lock);
 }
 
 STATIC UINT32 LBPWRRGetActiveCPUCount(VOID)
@@ -32,93 +31,83 @@ STATIC UINT32 LBPWRRGetActiveCPUCount(VOID)
     return ActiveCPUCount;
 }
 
-STATIC TASK *LBPWRRSelectRunnableTask(LBPWRR_RUNQUEUE *RunQueue, UINT32 StartIndex)
+STATIC BOOLEAN LBPWRRBuildChunk(LBPWRR_RUNQUEUE *RunQueue)
 {
-    UINT32 Count;
+    INT32  Scores[LBPWRR_MAX_TASKS];
+    UINT32 TotalWeight;
     UINT32 Index;
-    TASK  *task;
+    UINT32 ChunkIndex;
+    UINT32 SelectedIndex;
+    INT32  SelectedScore;
+    UINT32 Weight;
 
-    if (RunQueue == NULL || RunQueue->RunnableCount == 0)
+    if (RunQueue == NULL)
     {
-        return NULL;
+        return FALSE;
     }
 
-    for (Count = 0; Count < RunQueue->RunnableCount; Count++)
+    TotalWeight = 0;
+
+    for (Index = 0; Index < RunQueue->RunnableCount; Index++)
     {
-        Index = StartIndex + Count;
+        Weight = RunQueue->Runnable[Index]->Weight;
 
-        if (Index >= RunQueue->RunnableCount)
-        {
-            Index -= RunQueue->RunnableCount;
-        }
-
-        task = RunQueue->Runnable[Index];
-
-        if (task == NULL)
+        if (Weight == 0)
         {
             continue;
         }
 
-        if (task->State == TASK_READY || task->State == TASK_RUNNING)
+        if (TotalWeight + Weight > CHUNK_MAX_COUNT)
         {
-            RunQueue->CurrentIndex = Index;
-            return task;
+            return FALSE;
         }
+
+        TotalWeight += Weight;
     }
 
-    return NULL;
-}
-
-STATIC UINT32 LBPWRRGetRunQueueIndex(LBPWRR_RUNQUEUE *RunQueue, TASK *task)
-{
-    UINT32 Index;
-
-    if (RunQueue == NULL || task == NULL)
+    if (TotalWeight == 0)
     {
-        return UINT32_MAX;
+        RunQueue->Chunk.Count = 0;
+        RunQueue->CurrentIndex = 0;
+
+        return TRUE;
     }
 
-    for (Index = 0; Index < RunQueue->RunnableCount; Index++)
+    KMemSet(Scores, 0, sizeof(Scores));
+
+    for (ChunkIndex = 0; ChunkIndex < TotalWeight; ChunkIndex++)
     {
-        if (RunQueue->Runnable[Index] == task)
+        SelectedIndex = 0;
+        SelectedScore = 0;
+
+        for (Index = 0; Index < RunQueue->RunnableCount; Index++)
         {
-            return Index;
+            Weight = RunQueue->Runnable[Index]->Weight;
+
+            if (Weight == 0)
+            {
+                continue;
+            }
+
+            Scores[Index] += (INT32)Weight;
+
+            if (Scores[Index] > SelectedScore)
+            {
+                SelectedScore = Scores[Index];
+                SelectedIndex = Index;
+            }
         }
+
+        RunQueue->Chunk.Tasks[ChunkIndex] =
+            RunQueue->Runnable[SelectedIndex];
+
+        Scores[SelectedIndex] -= (INT32)TotalWeight;
     }
 
-    return UINT32_MAX;
-}
+    RunQueue->Chunk.Count = TotalWeight;
+    RunQueue->CurrentIndex = 0;
 
-STATIC VOID LBPWRRDebugSwitch(LBPWRR_RUNQUEUE *RunQueue, TASK *CurrentTask, TASK *NextTask, UINT32 StartIndex)
-{
-    if (DebugSwitchCount >= 16)
-    {
-        return;
-    }
-
-    DebugSwitchCount++;
-
-    DebugWrite("SW cur=");
-    DebugWriteHex((UINT64)CurrentTask);
-    DebugWrite(" curi=");
-    DebugWriteHex(LBPWRRGetRunQueueIndex(RunQueue, CurrentTask));
-    DebugWrite(" curs=");
-    DebugWriteHex(CurrentTask == NULL ? UINT64_MAX : CurrentTask->State);
-    DebugWrite(" currsp=");
-    DebugWriteHex(CurrentTask == NULL ? 0 : CurrentTask->RSP);
-    DebugWrite(" rqidx=");
-    DebugWriteHex(RunQueue->CurrentIndex);
-    DebugWrite(" start=");
-    DebugWriteHex(StartIndex);
-    DebugWrite(" next=");
-    DebugWriteHex((UINT64)NextTask);
-    DebugWrite(" nexti=");
-    DebugWriteHex(LBPWRRGetRunQueueIndex(RunQueue, NextTask));
-    DebugWrite(" nexts=");
-    DebugWriteHex(NextTask == NULL ? UINT64_MAX : NextTask->State);
-    DebugWrite(" nextrsp=");
-    DebugWriteHex(NextTask == NULL ? 0 : NextTask->RSP);
-    DebugWrite("\n");
+    return TRUE;
 }
 
 BOOLEAN LBPWRRInit(VOID)
@@ -144,7 +133,6 @@ BOOLEAN LBPWRRInit(VOID)
     }
 
     ActiveCPUCount = CPUCount;
-    DebugSwitchCount = 0;
 
     for (CPUID = 0; CPUID < ActiveCPUCount; CPUID++)
     {
@@ -173,7 +161,8 @@ BOOLEAN LBPWRRAddTask(TASK *task)
 
     for (CPUID = 1; CPUID < CPUCount; CPUID++)
     {
-        if (RunQueues[CPUID].RunnableCount < RunQueues[TargetCPUID].RunnableCount)
+        if (RunQueues[CPUID].RunnableCount <
+            RunQueues[TargetCPUID].RunnableCount)
         {
             TargetCPUID = CPUID;
         }
@@ -192,8 +181,22 @@ BOOLEAN LBPWRRAddTask(TASK *task)
     RunQueue->Runnable[RunQueue->RunnableCount] = task;
     RunQueue->RunnableCount++;
 
+    RunQueue->Generation++;
+    RunQueue->RebuildPending = TRUE;
+
+    if (!LBPWRRBuildChunk(RunQueue))
+    {
+        RunQueue->RunnableCount--;
+
+        RunQueue->Generation++;
+        RunQueue->RebuildPending = TRUE;
+
+        return FALSE;
+    }
+
     return TRUE;
 }
+
 VOID LBPWRRStart(VOID)
 {
     UINT32           CPUID;
@@ -209,17 +212,17 @@ VOID LBPWRRStart(VOID)
 
     RunQueue = &RunQueues[CPUID];
 
-    if (RunQueue->RunnableCount == 0)
+    if (RunQueue->Chunk.Count == 0)
     {
         return;
     }
 
-    if (RunQueue->CurrentIndex >= RunQueue->RunnableCount)
+    if (RunQueue->CurrentIndex >= RunQueue->Chunk.Count)
     {
         RunQueue->CurrentIndex = 0;
     }
 
-    task = LBPWRRSelectRunnableTask(RunQueue, RunQueue->CurrentIndex);
+    task = RunQueue->Chunk.Tasks[RunQueue->CurrentIndex];
 
     if (task == NULL)
     {
@@ -231,6 +234,7 @@ VOID LBPWRRStart(VOID)
 
     LBPWRRRestoreContext(task->RSP);
 }
+
 VOID LBPWRRJoin(VOID)
 {
     UINT32 CPUID;
@@ -252,10 +256,10 @@ VOID LBPWRRYield(VOID)
 {
     ASM("int $0x43" ::: "memory");
 }
-UINT64  LBPWRRTick(INTERRUPT_FRAME *frame)
+
+UINT64 LBPWRRTick(INTERRUPT_FRAME *frame)
 {
     UINT32           CPUID;
-    UINT32           StartIndex;
     LBPWRR_RUNQUEUE *RunQueue;
     TASK            *CurrentTask;
     TASK            *NextTask;
@@ -285,36 +289,23 @@ UINT64  LBPWRRTick(INTERRUPT_FRAME *frame)
         }
     }
 
-    if (RunQueue->RunnableCount == 0)
+    if (RunQueue->Chunk.Count == 0)
     {
         CurrentTasks[CPUID] = NULL;
         return (UINT64)frame;
     }
 
-    StartIndex = RunQueue->CurrentIndex;
+    RunQueue->CurrentIndex++;
 
-    if (CurrentTask != NULL && RunQueue->RunnableCount > 1)
+    if (RunQueue->CurrentIndex >= RunQueue->Chunk.Count)
     {
-        StartIndex++;
-
-        if (StartIndex >= RunQueue->RunnableCount)
-        {
-            StartIndex = 0;
-        }
+        RunQueue->CurrentIndex = 0;
     }
 
-    NextTask = LBPWRRSelectRunnableTask(RunQueue, StartIndex);
-
-    LBPWRRDebugSwitch(RunQueue, CurrentTask, NextTask, StartIndex);
+    NextTask = RunQueue->Chunk.Tasks[RunQueue->CurrentIndex];
 
     if (NextTask == NULL)
     {
-        if (CurrentTask != NULL)
-        {
-            CurrentTask->State = TASK_RUNNING;
-            return CurrentTask->RSP;
-        }
-
         return (UINT64)frame;
     }
 
@@ -322,6 +313,148 @@ UINT64  LBPWRRTick(INTERRUPT_FRAME *frame)
     NextTask->State = TASK_RUNNING;
 
     return NextTask->RSP;
+}
+
+BOOLEAN LBPWRRMoveTask(TASK *task, UINT32 TargetCPUID)
+{
+    UINT32           SourceCPUID;
+    UINT32           CPUCount;
+    UINT32           Index;
+    UINT32           LockCPUID;
+    UINT32           OtherCPUID;
+    UINT64           Flags;
+    LBPWRR_RUNQUEUE *SourceRunQueue;
+    LBPWRR_RUNQUEUE *TargetRunQueue;
+    TASK            *MovedTask;
+
+    if (task == NULL)
+    {
+        return FALSE;
+    }
+
+    CPUCount = LBPWRRGetActiveCPUCount();
+
+    if (TargetCPUID >= CPUCount)
+    {
+        return FALSE;
+    }
+
+    SourceCPUID = task->CPUID;
+
+    if (SourceCPUID >= CPUCount)
+    {
+        return FALSE;
+    }
+
+    if (SourceCPUID == TargetCPUID)
+    {
+        return FALSE;
+    }
+
+    SourceRunQueue = &RunQueues[SourceCPUID];
+    TargetRunQueue = &RunQueues[TargetCPUID];
+
+    if (SourceCPUID < TargetCPUID)
+    {
+        LockCPUID = SourceCPUID;
+        OtherCPUID = TargetCPUID;
+    }
+    else
+    {
+        LockCPUID = TargetCPUID;
+        OtherCPUID = SourceCPUID;
+    }
+
+    Flags = SpinLockAcquireIRQSave(&RunQueues[LockCPUID].Lock);
+    SpinLockAcquire(&RunQueues[OtherCPUID].Lock);
+
+    MovedTask = NULL;
+
+    for (Index = 0; Index < SourceRunQueue->RunnableCount; Index++)
+    {
+        if (SourceRunQueue->Runnable[Index] == task)
+        {
+            MovedTask = SourceRunQueue->Runnable[Index];
+
+            SourceRunQueue->Runnable[Index] =
+                SourceRunQueue->Runnable[
+                    SourceRunQueue->RunnableCount - 1
+                ];
+
+            SourceRunQueue->RunnableCount--;
+
+            break;
+        }
+    }
+
+    if (MovedTask == NULL)
+    {
+        SpinLockRelease(&RunQueues[OtherCPUID].Lock);
+        SpinLockReleaseIRQRestore(
+            &RunQueues[LockCPUID].Lock,
+            Flags
+        );
+
+        return FALSE;
+    }
+
+    if (TargetRunQueue->RunnableCount >= LBPWRR_MAX_TASKS)
+    {
+        SourceRunQueue->Runnable[
+            SourceRunQueue->RunnableCount
+        ] = MovedTask;
+
+        SpinLockRelease(&RunQueues[OtherCPUID].Lock);
+        SpinLockReleaseIRQRestore(
+            &RunQueues[LockCPUID].Lock,
+            Flags
+        );
+
+        return FALSE;
+    }
+
+    TargetRunQueue->Runnable[
+        TargetRunQueue->RunnableCount
+    ] = MovedTask;
+
+    TargetRunQueue->RunnableCount++;
+
+    task->CPUID = TargetCPUID;
+
+    SourceRunQueue->Generation++;
+    TargetRunQueue->Generation++;
+
+    SourceRunQueue->RebuildPending = TRUE;
+    TargetRunQueue->RebuildPending = TRUE;
+
+    SpinLockRelease(&RunQueues[OtherCPUID].Lock);
+    SpinLockReleaseIRQRestore(
+        &RunQueues[LockCPUID].Lock,
+        Flags
+    );
+
+    return TRUE;
+}
+
+TASK *LBPWRRGetTaskFromCPU(UINT32 CPUID)
+{
+    LBPWRR_RUNQUEUE *RunQueue;
+
+    if (CPUID >= LBPWRRGetActiveCPUCount())
+    {
+        return NULL;
+    }
+
+    RunQueue = &RunQueues[CPUID];
+
+    if (RunQueue->RunnableCount == 0)
+    {
+        return NULL;
+    }
+
+    return RunQueue->Runnable[
+        RunQueue->RunnableCount - 1
+    ];
 }
 
 TASK *LBPWRRGetCurrentTask(VOID)
@@ -355,5 +488,6 @@ UINT32 LBPWRRGetCPUAssignedTaskCount(UINT32 CPUID)
         return 0;
     }
 
-    return RunQueues[CPUID].RunnableCount + RunQueues[CPUID].UnrunnableCount;
+    return RunQueues[CPUID].RunnableCount +
+           RunQueues[CPUID].UnrunnableCount;
 }
