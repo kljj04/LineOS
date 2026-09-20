@@ -118,15 +118,9 @@ ISRCommon:
 
     addq $16, %rsp
 
-    movb $'T', %al
-    outb %al, $0xE9
-
     iretq
 
 ISRRestoreContext:
-    movb $'R', %al
-    outb %al, $0xE9
-
     popq %r15
     popq %r14
     popq %r13
@@ -144,9 +138,6 @@ ISRRestoreContext:
     popq %rax
 
     addq $16, %rsp
-
-    movb $'I', %al
-    outb %al, $0xE9
 
     iretq
 

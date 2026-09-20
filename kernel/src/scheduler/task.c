@@ -216,6 +216,20 @@ TASK *TaskCreate(VOID (*entry)(VOID))
     return task;
 }
 
+BOOLEAN TaskSetPriority(TASK *task, UINT8 priority)
+{
+    if (task == NULL || priority > 5)
+    {
+        return FALSE;
+    }
+
+    task->Priority = priority;
+    task->Weight = PToW(task->Priority);
+    task->Credit = WToC(task->Weight);
+
+    return TRUE;
+}
+
 BOOLEAN TaskDestroy(TASK *task)
 {
     UINTN index;

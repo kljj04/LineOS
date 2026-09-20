@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <arch/x86_64/spinlock.h>
 #include <lineos/typeinfo.h>
 #include <scheduler/task_types.h>
 
@@ -20,13 +21,18 @@ typedef struct CHUNK
 
 typedef struct LBPWRR_RUNQUEUE
 {
-    TASK  *Runnable[LBPWRR_MAX_TASKS];
-    UINT32 RunnableCount;
-    TASK  *Unrunnable[LBPWRR_MAX_TASKS];
-    UINT32 UnrunnableCount;
-    CHUNK  Chunk;
-    UINT32 CurrentIndex;
-
+    TASK            *Runnable[LBPWRR_MAX_TASKS];
+    UINT32           RunnableCount;
+    TASK            *Unrunnable[LBPWRR_MAX_TASKS];
+    UINT32           UnrunnableCount;
+    CHUNK            Chunk;
+    CHUNK            BuildChunk;
+    UINT32           CurrentIndex;
+    UINT64           Generation;
+    UINT64           BuildGeneration;
+    VOLATILE BOOLEAN RebuildPending;
+    VOLATILE BOOLEAN RebuildRunning;
+    SPIN_LOCK        Lock;
 } LBPWRR_RUNQUEUE;
 
 typedef struct CPU_USAGE
