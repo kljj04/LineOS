@@ -35,19 +35,14 @@ STATIC BOOLEAN TaskGetIndex(TASK *task, UINTN *Index)
     return FALSE;
 }
 
-STATIC UINT8 PToW(UINT8 Priority)
+STATIC UINT8 PToW(UINT8 priority)
 {
-    if (Priority > 5)
+    if (priority > 5)
     {
         return 0;
     }
 
-    return 6 - Priority;
-}
-
-STATIC UINT8 WToC(UINT8 Weight)
-{
-    return Weight;
+    return 6 - priority;
 }
 
 STATIC TASK *TaskAllocate(VOID)
@@ -95,40 +90,40 @@ STATIC BOOLEAN TaskPIDUsed(UINT16 PID)
 
 STATIC BOOLEAN TaskAllocatePID(UINT16 *PID)
 {
-    UINT32 Retry;
-    UINT16 Candidate;
+    UINT32 retry;
+    UINT16 candidate;
 
     if (PID == NULL)
     {
         return FALSE;
     }
 
-    Candidate = NextPID;
+    candidate = NextPID;
 
-    for (Retry = 0; Retry < 0xFFFF; Retry++)
+    for (retry = 0; retry < 0xFFFF; retry++)
     {
-        if (Candidate == 0)
+        if (candidate == 0)
         {
-            Candidate = 1;
+            candidate = 1;
         }
 
-        if (!TaskPIDUsed(Candidate))
+        if (!TaskPIDUsed(candidate))
         {
-            *PID = Candidate;
+            *PID = candidate;
 
-            Candidate++;
+            candidate++;
 
-            if (Candidate == 0)
+            if (candidate == 0)
             {
-                Candidate = 1;
+                candidate = 1;
             }
 
-            NextPID = Candidate;
+            NextPID = candidate;
 
             return TRUE;
         }
 
-        Candidate++;
+        candidate++;
     }
 
     return FALSE;
@@ -159,6 +154,7 @@ STATIC VOID InitTaskContext(TASK *task, VOID (*entry)(VOID))
 
     task->RSP = (UINT64)&task->Context;
 }
+
 BOOLEAN TaskInit(VOID)
 {
     KMemSet(TaskPool, 0, sizeof(TaskPool));
@@ -194,7 +190,6 @@ TASK *TaskCreate(VOID (*entry)(VOID))
 
     task->Priority = 3;
     task->Weight = PToW(task->Priority);
-    task->Credit = WToC(task->Weight);
 
     task->StackBase = (UINT64)KAllocPages(TASK_STACK_PAGES);
 
@@ -211,6 +206,8 @@ TASK *TaskCreate(VOID (*entry)(VOID))
 
     InitTaskContext(task, entry);
 
+    task->Modified = FALSE;
+
     TaskCount++;
 
     return task;
@@ -225,7 +222,7 @@ BOOLEAN TaskSetPriority(TASK *task, UINT8 priority)
 
     task->Priority = priority;
     task->Weight = PToW(task->Priority);
-    task->Credit = WToC(task->Weight);
+    task->Modified = TRUE;
 
     return TRUE;
 }
@@ -244,7 +241,8 @@ BOOLEAN TaskDestroy(TASK *task)
         return FALSE;
     }
 
-    if (task->State != TASK_TERMINATED && task->State != TASK_KILLED)
+    if (task->State != TASK_TERMINATED &&
+        task->State != TASK_KILLED)
     {
         return FALSE;
     }
@@ -272,6 +270,7 @@ VOID TaskKill(TASK *task)
     }
 
     task->State = TASK_KILLED;
+    task->Modified = TRUE;
 }
 
 VOID TaskTerminate(TASK *task)
@@ -282,6 +281,7 @@ VOID TaskTerminate(TASK *task)
     }
 
     task->State = TASK_TERMINATED;
+    task->Modified = TRUE;
 }
 
 TASK *TaskGetByPID(UINT16 PID)

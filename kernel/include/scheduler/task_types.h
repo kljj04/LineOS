@@ -92,7 +92,7 @@ typedef struct TASK
     UINT32       CPUID;
     UINT8        Priority;
     UINT8        Weight;
-    UINT8        Credit;
     UINT16       PID;
     TASK_SIGNAL  Signal;
+    BOOLEAN      Modified;
 } TASK;

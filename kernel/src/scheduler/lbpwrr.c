@@ -33,13 +33,13 @@ STATIC UINT32 LBPWRRGetActiveCPUCount(VOID)
 
 STATIC BOOLEAN LBPWRRBuildChunk(LBPWRR_RUNQUEUE *RunQueue)
 {
-    INT32  Scores[LBPWRR_MAX_TASKS];
+    INT32  scores[LBPWRR_MAX_TASKS];
     UINT32 TotalWeight;
-    UINT32 Index;
+    UINT32 index;
     UINT32 ChunkIndex;
     UINT32 SelectedIndex;
     INT32  SelectedScore;
-    UINT32 Weight;
+    UINT32 weight;
 
     if (RunQueue == NULL)
     {
@@ -48,21 +48,21 @@ STATIC BOOLEAN LBPWRRBuildChunk(LBPWRR_RUNQUEUE *RunQueue)
 
     TotalWeight = 0;
 
-    for (Index = 0; Index < RunQueue->RunnableCount; Index++)
+    for (index = 0; index < RunQueue->RunnableCount; index++)
     {
-        Weight = RunQueue->Runnable[Index]->Weight;
+        weight = RunQueue->Runnable[index]->Weight;
 
-        if (Weight == 0)
+        if (weight == 0)
         {
             continue;
         }
 
-        if (TotalWeight + Weight > CHUNK_MAX_COUNT)
+        if (TotalWeight + weight > CHUNK_MAX_COUNT)
         {
             return FALSE;
         }
 
-        TotalWeight += Weight;
+        TotalWeight += weight;
     }
 
     if (TotalWeight == 0)
@@ -73,41 +73,74 @@ STATIC BOOLEAN LBPWRRBuildChunk(LBPWRR_RUNQUEUE *RunQueue)
         return TRUE;
     }
 
-    KMemSet(Scores, 0, sizeof(Scores));
+    KMemSet(scores, 0, sizeof(scores));
 
     for (ChunkIndex = 0; ChunkIndex < TotalWeight; ChunkIndex++)
     {
         SelectedIndex = 0;
         SelectedScore = 0;
 
-        for (Index = 0; Index < RunQueue->RunnableCount; Index++)
+        for (index = 0; index < RunQueue->RunnableCount; index++)
         {
-            Weight = RunQueue->Runnable[Index]->Weight;
+            weight = RunQueue->Runnable[index]->Weight;
 
-            if (Weight == 0)
+            if (weight == 0)
             {
                 continue;
             }
 
-            Scores[Index] += (INT32)Weight;
+            scores[index] += (INT32) weight;
 
-            if (Scores[Index] > SelectedScore)
+            if (scores[index] > SelectedScore)
             {
-                SelectedScore = Scores[Index];
-                SelectedIndex = Index;
+                SelectedScore = scores[index];
+                SelectedIndex = index;
             }
         }
 
-        RunQueue->Chunk.Tasks[ChunkIndex] =
-            RunQueue->Runnable[SelectedIndex];
+        RunQueue->Chunk.Tasks[ChunkIndex] = RunQueue->Runnable[SelectedIndex];
 
-        Scores[SelectedIndex] -= (INT32)TotalWeight;
+        scores[SelectedIndex] -= (INT32) TotalWeight;
     }
 
     RunQueue->Chunk.Count = TotalWeight;
     RunQueue->CurrentIndex = 0;
 
     return TRUE;
+}
+
+STATIC BOOLEAN CheckRebuildPending(LBPWRR_RUNQUEUE *RunQueue)
+{
+    UINT32 index;
+    UINT32 Count;
+
+    if (RunQueue == NULL)
+    {
+        return FALSE;
+    }
+
+    Count = RunQueue->RunnableCount;
+
+    if (RunQueue->UnrunnableCount > Count)
+    {
+        Count = RunQueue->UnrunnableCount;
+    }
+
+    for (index = 0; index < Count; index++)
+    {
+        if ((index < RunQueue->RunnableCount && RunQueue->Runnable[index]->Modified) || (index < RunQueue->UnrunnableCount && RunQueue->Unrunnable[index]->Modified))
+        {
+            RunQueue->RebuildPending = TRUE;
+            break;
+        }
+    }
+
+    return RunQueue->RebuildPending;
+}
+
+STATIC BOOLEAN LBPWRRRebuildChunk(LBPWRR_RUNQUEUE *RunQueue)
+{
+    return CheckRebuildPending(RunQueue);
 }
 
 BOOLEAN LBPWRRInit(VOID)
@@ -161,8 +194,7 @@ BOOLEAN LBPWRRAddTask(TASK *task)
 
     for (CPUID = 1; CPUID < CPUCount; CPUID++)
     {
-        if (RunQueues[CPUID].RunnableCount <
-            RunQueues[TargetCPUID].RunnableCount)
+        if (RunQueues[CPUID].RunnableCount < RunQueues[TargetCPUID].RunnableCount)
         {
             TargetCPUID = CPUID;
         }
@@ -177,6 +209,7 @@ BOOLEAN LBPWRRAddTask(TASK *task)
 
     task->CPUID = TargetCPUID;
     task->State = TASK_READY;
+    task->Modified = TRUE;
 
     RunQueue->Runnable[RunQueue->RunnableCount] = task;
     RunQueue->RunnableCount++;
@@ -273,7 +306,7 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *frame)
 
     if (CPUID >= LBPWRRGetActiveCPUCount())
     {
-        return (UINT64)frame;
+        return (UINT64) frame;
     }
 
     RunQueue = &RunQueues[CPUID];
@@ -281,7 +314,7 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *frame)
 
     if (CurrentTask != NULL)
     {
-        CurrentTask->RSP = (UINT64)frame;
+        CurrentTask->RSP = (UINT64) frame;
 
         if (CurrentTask->State == TASK_RUNNING)
         {
@@ -292,7 +325,7 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *frame)
     if (RunQueue->Chunk.Count == 0)
     {
         CurrentTasks[CPUID] = NULL;
-        return (UINT64)frame;
+        return (UINT64) frame;
     }
 
     RunQueue->CurrentIndex++;
@@ -306,7 +339,7 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *frame)
 
     if (NextTask == NULL)
     {
-        return (UINT64)frame;
+        return (UINT64) frame;
     }
 
     CurrentTasks[CPUID] = NextTask;
@@ -376,10 +409,7 @@ BOOLEAN LBPWRRMoveTask(TASK *task, UINT32 TargetCPUID)
         {
             MovedTask = SourceRunQueue->Runnable[Index];
 
-            SourceRunQueue->Runnable[Index] =
-                SourceRunQueue->Runnable[
-                    SourceRunQueue->RunnableCount - 1
-                ];
+            SourceRunQueue->Runnable[Index] = SourceRunQueue->Runnable[SourceRunQueue->RunnableCount - 1];
 
             SourceRunQueue->RunnableCount--;
 
@@ -390,36 +420,27 @@ BOOLEAN LBPWRRMoveTask(TASK *task, UINT32 TargetCPUID)
     if (MovedTask == NULL)
     {
         SpinLockRelease(&RunQueues[OtherCPUID].Lock);
-        SpinLockReleaseIRQRestore(
-            &RunQueues[LockCPUID].Lock,
-            Flags
-        );
+        SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, Flags);
 
         return FALSE;
     }
 
     if (TargetRunQueue->RunnableCount >= LBPWRR_MAX_TASKS)
     {
-        SourceRunQueue->Runnable[
-            SourceRunQueue->RunnableCount
-        ] = MovedTask;
+        SourceRunQueue->Runnable[SourceRunQueue->RunnableCount] = MovedTask;
 
         SpinLockRelease(&RunQueues[OtherCPUID].Lock);
-        SpinLockReleaseIRQRestore(
-            &RunQueues[LockCPUID].Lock,
-            Flags
-        );
+        SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, Flags);
 
         return FALSE;
     }
 
-    TargetRunQueue->Runnable[
-        TargetRunQueue->RunnableCount
-    ] = MovedTask;
+    TargetRunQueue->Runnable[TargetRunQueue->RunnableCount] = MovedTask;
 
     TargetRunQueue->RunnableCount++;
 
     task->CPUID = TargetCPUID;
+    task->Modified = TRUE;
 
     SourceRunQueue->Generation++;
     TargetRunQueue->Generation++;
@@ -428,10 +449,7 @@ BOOLEAN LBPWRRMoveTask(TASK *task, UINT32 TargetCPUID)
     TargetRunQueue->RebuildPending = TRUE;
 
     SpinLockRelease(&RunQueues[OtherCPUID].Lock);
-    SpinLockReleaseIRQRestore(
-        &RunQueues[LockCPUID].Lock,
-        Flags
-    );
+    SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, Flags);
 
     return TRUE;
 }
@@ -452,9 +470,7 @@ TASK *LBPWRRGetTaskFromCPU(UINT32 CPUID)
         return NULL;
     }
 
-    return RunQueue->Runnable[
-        RunQueue->RunnableCount - 1
-    ];
+    return RunQueue->Runnable[RunQueue->RunnableCount - 1];
 }
 
 TASK *LBPWRRGetCurrentTask(VOID)
@@ -488,6 +504,5 @@ UINT32 LBPWRRGetCPUAssignedTaskCount(UINT32 CPUID)
         return 0;
     }
 
-    return RunQueues[CPUID].RunnableCount +
-           RunQueues[CPUID].UnrunnableCount;
+    return RunQueues[CPUID].RunnableCount + RunQueues[CPUID].UnrunnableCount;
 }

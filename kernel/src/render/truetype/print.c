@@ -157,14 +157,14 @@ VOID KPrint(CONST CHAR16 *msg, UINT32 x, UINT32 baseline, UINT32 color, UINT32 P
 
         case 's':
         {
-            CONST CHAR16 *String = va_arg(args, CONST CHAR16 *);
+            CONST CHAR16 *string = va_arg(args, CONST CHAR16 *);
 
-            if (String == NULL)
+            if (string == NULL)
             {
-                String = (CONST CHAR16 *) L"(null)";
+                string = (CONST CHAR16 *) L"(null)";
             }
 
-            x = KPrintString(String, x, baseline, color, PixelHeight, font);
+            x = KPrintString(string, x, baseline, color, PixelHeight, font);
             break;
         }
 
