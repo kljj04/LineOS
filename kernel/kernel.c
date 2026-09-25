@@ -141,10 +141,10 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
     TaskSetPriority(Task2, 2);
     TaskSetPriority(Task3, 4);
 
-    LBPWRRAddTask(Task1);
-    LBPWRRAddTask(Task2);
-    LBPWRRAddTask(Task3);
 
+        LBPWRRAddTask(Task1);
+        LBPWRRAddTask(Task2);
+        LBPWRRAddTask(Task3);
     CompilerBarrier();
 
     SchedulerReady = TRUE;
@@ -180,6 +180,8 @@ VOID APMain(UINT32 CPUID)
         CPU->Online = TRUE;
         CompilerBarrier();
     }
+
+    LBPWRRJoin();
 
     HLT();
 }

@@ -180,6 +180,6 @@ $(FORMAT_TARGETS):
 
 naming:
 	@$(call PRINT_YELLOW,    [*] naming:)
-	@$(PYTHON) tools/check_naming.py $(NAMING_SRCS)
+	@$(PYTHON) tools/check_naming.py
 
 -include $(DEPS)
