@@ -89,47 +89,81 @@ VOID TSCSetDeadline(UINT64 deadline)
     WriteMSR(IA32_TSC_DEADLINE, deadline);
 }
 
-VOID SleepMls(UINT64 milliseconds)
+STATIC VOID TSCSleepTicks(UINT128 ticks)
 {
-    UINT64 ticks;
+    UINT64 flags;
+    UINT64 chunk;
     UINT64 deadline;
 
-    ticks = (UINT64) (((UINT128) TSCFrequency * milliseconds) / 1000ULL);
-    deadline = RDTSC() + ticks;
-    TSCSetDeadline(deadline);
-
-    while ((INT64) (RDTSC() - deadline) < 0)
+    if (ticks == 0)
     {
-        PAUSE();
+        return;
     }
+
+    ASM("pushfq\n"
+        "popq %0\n"
+        "cli"
+        : "=r"(flags)
+        :
+        : "memory");
+
+    while (ticks != 0)
+    {
+        chunk = ticks > INT64_MAX ? INT64_MAX : (UINT64) ticks;
+        deadline = RDTSC() + chunk;
+
+        if (deadline == 0)
+        {
+            deadline = 1;
+        }
+
+        TSCSetDeadline(deadline);
+
+        while ((INT64) (RDTSC() - deadline) < 0)
+        {
+            STIHLT();
+            CLI();
+        }
+
+        TSCSetDeadline(0);
+        ticks -= chunk;
+    }
+
+    if ((flags & (1ULL << 9)) != 0)
+    {
+        STI();
+    }
+}
+
+STATIC VOID TSCSleepDuration(UINT64 duration, UINT64 divisor)
+{
+    UINT128 ticks;
+
+    if (duration == 0)
+    {
+        return;
+    }
+
+    if (TSCFrequency == 0)
+    {
+        Panic(L"TSC is not calibrated");
+    }
+
+    ticks = (((UINT128) TSCFrequency * duration) + divisor - 1) / divisor;
+    TSCSleepTicks(ticks);
+}
+
+VOID SleepMls(UINT64 milliseconds)
+{
+    TSCSleepDuration(milliseconds, 1000ULL);
 }
 
 VOID SleepMis(UINT64 microseconds)
 {
-    UINT64 ticks;
-    UINT64 deadline;
-
-    ticks = (UINT64) (((UINT128) TSCFrequency * microseconds) / 1000000ULL);
-    deadline = RDTSC() + ticks;
-    TSCSetDeadline(deadline);
-
-    while ((INT64) (RDTSC() - deadline) < 0)
-    {
-        PAUSE();
-    }
+    TSCSleepDuration(microseconds, 1000000ULL);
 }
 
 VOID SleepNs(UINT64 nanoseconds)
 {
-    UINT64 ticks;
-    UINT64 deadline;
-
-    ticks = (UINT64) (((UINT128) TSCFrequency * nanoseconds) / 1000000000ULL);
-    deadline = RDTSC() + ticks;
-    TSCSetDeadline(deadline);
-
-    while ((INT64) (RDTSC() - deadline) < 0)
-    {
-        PAUSE();
-    }
+    TSCSleepDuration(nanoseconds, 1000000000ULL);
 }

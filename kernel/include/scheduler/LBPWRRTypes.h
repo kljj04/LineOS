@@ -1,4 +1,4 @@
-// kernel/include/scheduler/lbpwrr_types.h
+// kernel/include/scheduler/LBPWRRTypes.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
@@ -38,10 +38,10 @@ typedef struct LBPWRR_RUNQUEUE
 
 typedef struct CPU_USAGE
 {
-    VOLATILE UINT64 BusyTSC;
-    VOLATILE UINT64 IdleTSC;
-    VOLATILE UINT64 LastSampleBusyTSC;
-    VOLATILE UINT64 LastSampleIdleTSC;
-    VOLATILE UINT64 LastTSC;
-    VOLATILE UINTN  CPUUsage;
+    UINT64 BusyTSC;
+    UINT64 IdleTSC;
+    UINT64 LastSampleBusyTSC;
+    UINT64 LastSampleIdleTSC;
+    UINT64 LastTSC;
+    UINTN  CPUUsage;
 } CPU_USAGE;
