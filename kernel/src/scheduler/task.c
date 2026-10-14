@@ -16,11 +16,11 @@ STATIC BOOLEAN TaskUsed[LBPWRR_MAX_TASKS];
 STATIC UINTN  TaskCount;
 STATIC UINT16 NextPID;
 
-STATIC BOOLEAN TaskGetIndex(TASK *task, UINTN *Index)
+STATIC BOOLEAN TaskGetIndex(TASK *task, UINTN *TaskIndex)
 {
     UINTN index;
 
-    if (task == NULL || Index == NULL)
+    if (task == NULL || TaskIndex == NULL)
     {
         return FALSE;
     }
@@ -29,7 +29,7 @@ STATIC BOOLEAN TaskGetIndex(TASK *task, UINTN *Index)
     {
         if (&TaskPool[index] == task)
         {
-            *Index = index;
+            *TaskIndex = index;
             return TRUE;
         }
     }
@@ -234,7 +234,7 @@ BOOLEAN TaskSetPriority(TASK *task, UINT8 priority)
 VOID TaskSleepMls(UINT64 milliseconds)
 {
     TASK   *task;
-    UINT64 Ticks;
+    UINT64 ticks;
 
     task = LBPWRRGetCurrentTask();
 
@@ -244,9 +244,9 @@ VOID TaskSleepMls(UINT64 milliseconds)
         return;
     }
 
-    Ticks = (UINT64) (((UINT128) TSCGetFrequency() * milliseconds) / 1000ULL);
+    ticks = (UINT64) (((UINT128) TSCGetFrequency() * milliseconds) / 1000ULL);
 
-    task->WakeDeadlineTSC = RDTSC() + Ticks;
+    task->WakeDeadlineTSC = RDTSC() + ticks;
     task->State = TASK_SLEEPING;
     task->Modified = TRUE;
 

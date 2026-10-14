@@ -14,7 +14,7 @@ STATIC BOOLEAN LoadBalancerFindSourceCPU(UINT32 *CPUID)
 {
     UINT32 CPUCount;
     UINT32 CurrentCPUID;
-    UINT32 Count;
+    UINT32 count;
     UINT32 MaxCount;
 
     if (CPUID == NULL)
@@ -34,11 +34,11 @@ STATIC BOOLEAN LoadBalancerFindSourceCPU(UINT32 *CPUID)
 
     for (CurrentCPUID = 0; CurrentCPUID < CPUCount; CurrentCPUID++)
     {
-        Count = LBPWRRGetCPUAssignedTaskCount(CurrentCPUID);
+        count = LBPWRRGetCPUAssignedTaskCount(CurrentCPUID);
 
-        if (Count > MaxCount)
+        if (count > MaxCount)
         {
-            MaxCount = Count;
+            MaxCount = count;
             *CPUID = CurrentCPUID;
         }
     }
@@ -50,7 +50,7 @@ STATIC BOOLEAN LoadBalancerFindTargetCPU(UINT32 *CPUID)
 {
     UINT32 CPUCount;
     UINT32 CurrentCPUID;
-    UINT32 Count;
+    UINT32 count;
     UINT32 MinCount;
 
     if (CPUID == NULL)
@@ -70,11 +70,11 @@ STATIC BOOLEAN LoadBalancerFindTargetCPU(UINT32 *CPUID)
 
     for (CurrentCPUID = 0; CurrentCPUID < CPUCount; CurrentCPUID++)
     {
-        Count = LBPWRRGetCPUAssignedTaskCount(CurrentCPUID);
+        count = LBPWRRGetCPUAssignedTaskCount(CurrentCPUID);
 
-        if (Count < MinCount)
+        if (count < MinCount)
         {
-            MinCount = Count;
+            MinCount = count;
             *CPUID = CurrentCPUID;
         }
     }

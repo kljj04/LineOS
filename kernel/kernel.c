@@ -2,10 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include "debug/panic.h"
-
 #include <render/TrueType/print.h>
-
 #include <multicore/SMP.h>
 #include <render/TrueType/TrueTypeEngine.h>
 #include <render/GPU/VirtIOGPU.h>
@@ -22,93 +19,37 @@
 #include <timer/TSC.h>
 #include <PCI/PCI.h>
 
-#define SMP_TEST_TASK_COUNT 1
-#define TEST_BUSY_WAIT      50000000ULL
-#define TASK_BAND_HEIGHT    118
-#define TEST_TASK_COUNT     10
+#define TEST_SAMPLE_MLS 500ULL
+#define TEST_SLEEP_MLS  50ULL
 
-STATIC VOLATILE BOOLEAN SchedulerReady = FALSE;
-STATIC VOLATILE BOOLEAN DelayedTaskVAdded = FALSE;
-STATIC VOLATILE BOOLEAN DelayedTaskWAdded = FALSE;
-STATIC TASK            *DelayedTaskV = NULL;
-STATIC TASK            *DelayedTaskW = NULL;
-STATIC VOLATILE UINT64  TaskCounters[TEST_TASK_COUNT];
-STATIC VOLATILE UINT32  TaskCPUs[TEST_TASK_COUNT];
-STATIC VOLATILE BOOLEAN TaskEnabled[TEST_TASK_COUNT];
-STATIC VOLATILE UINT64  ChaosCounter = 0;
-STATIC UINT32           ChaosSeed = 0xC0FFEEU;
+STATIC VOLATILE BOOLEAN SchedulerReady;
+STATIC BOOLEAN          SchedulerInitialized;
+STATIC BOOLEAN          TestRuntimeChecked;
+STATIC TASK            *TestWorkers[SMP_MAX_CPUS];
+STATIC TASK            *TestSleeper;
+STATIC UINT32           TestCPUCount;
+STATIC UINT32           TestWorkerCount;
+STATIC UINT32           TestIdleCPUID;
+STATIC UINT32           TestFailures;
+STATIC UINT32           TestPage;
+STATIC UINT64           TestStartTSC;
+STATIC UINTN            TestCPUUsages[SMP_MAX_CPUS];
+STATIC VOLATILE UINT64  TestWorkerTicks[SMP_MAX_CPUS];
+STATIC VOLATILE UINT64  TestCPUWork[SMP_MAX_CPUS];
+STATIC VOLATILE UINT64  TestWakeCount;
+STATIC VOLATILE UINT32  TestWorkerFaults;
 
-STATIC CONST CHAR16 *TaskLabels[TEST_TASK_COUNT] = {
-    L"A", L"B", L"C", L"D", L"E", L"F", L"G", L"H", L"V", L"W",
-};
-
-STATIC CONST UINT32 TaskColors[TEST_TASK_COUNT] = {
-    0x005BFF,
-    0xFF1F1F,
-    0x00E040,
-    0xFFB000,
-    0xA020F0,
-    0x00C8D7,
-    0xFF5FA2,
-    0x708090,
-    0x191970,
-    0x303030,
-};
-
-STATIC CONST UINT32 TaskForegrounds[TEST_TASK_COUNT] = {
-    0xFFFFFF,
-    0xFFFFFF,
-    0x000000,
-    0x000000,
-    0xFFFFFF,
-    0x000000,
-    0x000000,
-    0xFFFFFF,
-    0xFFFFFF,
-    0xFFFFFF,
-};
-
-STATIC CONST UINT8 TaskPriorities[TEST_TASK_COUNT] = {
-    0, 1, 2, 3, 4, 5, 2, 4, 0, 5,
-};
-
-STATIC VOID BusyWait(UINT64 Count)
+STATIC BOOLEAN TestCheck(BOOLEAN result, CONST char *name)
 {
-    VOLATILE UINT64 Index;
+    DebugWrite(result ? "PASS " : "FAIL ");
+    DebugWriteLine(name);
 
-    for (Index = 0; Index < Count; Index++)
+    if (!result)
     {
-        ASM("pause");
+        TestFailures++;
     }
-}
 
-STATIC VOID DrawTaskBand(UINT32 Index, UINT32 Y, BOOLEAN Active)
-{
-    UINT32 Background;
-    UINT32 Foreground;
-    UINT32 CPUID;
-    CONST CHAR16 *State;
-
-    Active = Active && TaskEnabled[Index];
-    Background = Active ? TaskColors[Index] : 0x202020;
-    Foreground = Active ? TaskForegrounds[Index] : 0x707070;
-    State = Active ? L"ON" : L"OFF";
-    CPUID = TaskCPUs[Index];
-
-    FillRect(0, Y, VirtIOGPUGetFrameBufferWidth(), TASK_BAND_HEIGHT - 4, Background);
-    KPrint(
-        L"%s  count=%llu  cpu=%u  prio=%u  %s",
-        48,
-        Y + 84,
-        Foreground,
-        58,
-        PRETENDARD,
-        TaskLabels[Index],
-        TaskCounters[Index],
-        CPUID,
-        (UINT32) TaskPriorities[Index],
-        State
-    );
+    return result;
 }
 
 VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
@@ -148,217 +89,268 @@ VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
 
     VirtIOInputInit();
 
-    LBPWRRInit();
+    SchedulerInitialized = LBPWRRInit();
 }
 
-STATIC VOID RunCounterTask(UINT32 Index, UINT64 Wait)
+STATIC VOID TestWorkerTask(VOID)
 {
+    TASK   *task;
+    UINT32  WorkerIndex;
+    UINT32  index;
+    UINT32  CPUID;
+
+    task = LBPWRRGetCurrentTask();
+    WorkerIndex = TestWorkerCount;
+
+    for (index = 0; index < TestWorkerCount; index++)
+    {
+        if (TestWorkers[index] == task)
+        {
+            WorkerIndex = index;
+            break;
+        }
+    }
+
+    if (WorkerIndex == TestWorkerCount)
+    {
+        __atomic_fetch_add(&TestWorkerFaults, 1, __ATOMIC_RELAXED);
+
+        while (TRUE)
+        {
+            LBPWRRYield();
+        }
+    }
+
     while (TRUE)
     {
-        TaskCPUs[Index] = SMPGetCurrentCPUID();
+        CPUID = SMPGetCurrentCPUID();
 
-        if (TaskEnabled[Index])
+        if (CPUID >= TestCPUCount || LBPWRRGetCurrentTask() != task)
         {
-            TaskCounters[Index]++;
+            __atomic_fetch_add(&TestWorkerFaults, 1, __ATOMIC_RELAXED);
+        }
+        else
+        {
+            TestCPUWork[CPUID]++;
         }
 
-        BusyWait(Wait);
+        TestWorkerTicks[WorkerIndex]++;
+
+        if (task == TestSleeper)
+        {
+            TaskSleepMls(TEST_SLEEP_MLS);
+            TestWakeCount++;
+        }
+        else
+        {
+            for (index = 0; index < 100000; index++)
+            {
+                PAUSE();
+            }
+        }
 
         LBPWRRYield();
     }
 }
 
-VOID TestTaskA(VOID)
+STATIC VOID TestMonitorTask(VOID)
 {
-    RunCounterTask(0, TEST_BUSY_WAIT);
-}
+    UINT64 SampleTicks;
+    UINT64 LastSampleTSC;
+    UINT64 now;
+    UINT32 CPUID;
+    UINT32 rows;
+    UINT32 row;
+    UINT32 FirstCPUID;
+    UINTN  usage;
 
-VOID TestTaskB(VOID)
-{
-    RunCounterTask(1, TEST_BUSY_WAIT / 2);
-}
-
-VOID TestTaskC(VOID)
-{
-    RunCounterTask(2, TEST_BUSY_WAIT / 3);
-}
-
-VOID TestTaskD(VOID)
-{
-    RunCounterTask(3, TEST_BUSY_WAIT / 4);
-}
-
-VOID TestTaskE(VOID)
-{
-    RunCounterTask(4, TEST_BUSY_WAIT / 5);
-}
-
-VOID TestTaskF(VOID)
-{
-    RunCounterTask(5, TEST_BUSY_WAIT / 6);
-}
-
-VOID TestTaskG(VOID)
-{
-    RunCounterTask(6, TEST_BUSY_WAIT / 7);
-}
-
-VOID TestTaskH(VOID)
-{
-    RunCounterTask(7, TEST_BUSY_WAIT / 8);
-}
-
-VOID TestTaskV(VOID)
-{
-    RunCounterTask(8, TEST_BUSY_WAIT / 2);
-}
-
-VOID TestTaskW(VOID)
-{
-    RunCounterTask(9, TEST_BUSY_WAIT / 9);
-}
-
-VOID TestTaskRender(VOID)
-{
-    UINT32 Index;
+    SampleTicks = (UINT64) (((UINT128) TSCGetFrequency() * TEST_SAMPLE_MLS) / 1000ULL);
+    LastSampleTSC = RDTSC();
 
     while (TRUE)
     {
-        for (Index = 0; Index < 8; Index++)
+        now = RDTSC();
+
+        if (now - LastSampleTSC < SampleTicks)
         {
-            DrawTaskBand(Index, Index * TASK_BAND_HEIGHT, TRUE);
-        }
-
-        DrawTaskBand(8, 8 * TASK_BAND_HEIGHT, DelayedTaskVAdded);
-        DrawTaskBand(9, 9 * TASK_BAND_HEIGHT, DelayedTaskWAdded);
-
-        VirtIOGPUFlush();
-        BusyWait(TEST_BUSY_WAIT / 2);
-        LBPWRRYield();
-    }
-}
-
-STATIC UINT32 ChaosRandom(VOID)
-{
-    ChaosSeed = ChaosSeed * 1664525U + 1013904223U;
-
-    return ChaosSeed;
-}
-
-VOID TestTaskAddDelayed(VOID)
-{
-    TaskSleepMls(1000);
-
-    if (!DelayedTaskVAdded && DelayedTaskV != NULL)
-    {
-        DelayedTaskVAdded = TRUE;
-        TaskEnabled[8] = TRUE;
-        LBPWRRAddTask(DelayedTaskV);
-    }
-
-    TaskSleepMls(800);
-
-    if (!DelayedTaskWAdded && DelayedTaskW != NULL)
-    {
-        DelayedTaskWAdded = TRUE;
-        TaskEnabled[9] = TRUE;
-        LBPWRRAddTask(DelayedTaskW);
-    }
-
-    while (TRUE)
-    {
-        UINT32 Index;
-
-        TaskSleepMls(350);
-
-        Index = ChaosRandom() % TEST_TASK_COUNT;
-
-        if ((Index == 8 && !DelayedTaskVAdded) || (Index == 9 && !DelayedTaskWAdded))
-        {
+            LBPWRRYield();
             continue;
         }
 
-        TaskEnabled[Index] = !TaskEnabled[Index];
-        ChaosCounter++;
+        LastSampleTSC = now;
 
+        for (CPUID = 0; CPUID < TestCPUCount; CPUID++)
+        {
+            TestCPUUsages[CPUID] = LBPWRRGetCPUUsage(CPUID);
+        }
+
+        if (!TestRuntimeChecked && (UINT128) (now - TestStartTSC) >= (UINT128) TSCGetFrequency() * 3ULL)
+        {
+            for (CPUID = 0; CPUID < TestWorkerCount; CPUID++)
+            {
+                TestCheck(TestWorkerTicks[CPUID] != 0, "worker made progress");
+            }
+
+            for (CPUID = 0; CPUID < TestCPUCount; CPUID++)
+            {
+                usage = TestCPUUsages[CPUID];
+                TestCheck(usage <= 100, "CPU usage range");
+
+                if (CPUID == TestIdleCPUID && TestCPUCount > 1)
+                {
+                    TestCheck(usage == 0, "idle CPU usage");
+                }
+                else if (LBPWRRGetCPUAssignedTaskCount(CPUID) != 0)
+                {
+                    TestCheck(usage != 0, "active CPU usage");
+                }
+            }
+
+            TestCheck(TestWakeCount != 0, "sleeping task woke");
+            TestCheck(TestWorkerFaults == 0, "worker stayed on its current CPU");
+            TestRuntimeChecked = TRUE;
+        }
+
+        rows = VirtIOGPUGetFrameBufferHeight();
+        rows = rows > 210 ? (rows - 210) / 32 : 1;
+
+        if (rows > TestCPUCount)
+        {
+            rows = TestCPUCount;
+        }
+
+        FirstCPUID = (TestPage * rows) % TestCPUCount;
+        TestPage++;
+
+        FillScreen(0x101010);
+        KPrint(L"LBPWRR / CPU USAGE TEST", 48, 56, 0xFFFFFF, 30, JETBRAINS_MONO);
+        KPrint(L"CPUs %u  tasks %llu  fails %u  wake %llu", 48, 100, 0xC8CDD4, 22, JETBRAINS_MONO, TestCPUCount, (UINT64) TaskGetCount(), TestFailures, TestWakeCount);
+        KPrint(L"CPU   load   tasks   work", 48, 145, 0x86A6CC, 20, JETBRAINS_MONO);
+
+        for (row = 0; row < rows; row++)
+        {
+            CPUID = (FirstCPUID + row) % TestCPUCount;
+            usage = TestCPUUsages[CPUID];
+            KPrint(L"CPU %u  %llu%%  tasks %u  work %llu", 48, 178 + row * 32, usage == 0 ? 0x9AA0AA : 0x55E6A5, 21, JETBRAINS_MONO, CPUID, (UINT64) usage, LBPWRRGetCPUAssignedTaskCount(CPUID), TestCPUWork[CPUID]);
+        }
+
+        VirtIOGPUFlush();
         LBPWRRYield();
     }
+}
+
+STATIC BOOLEAN TestSetup(VOID)
+{
+    TASK   *MonitorTask;
+    TASK   *task;
+    UINT32  index;
+    UINT32  TargetCPUID;
+
+    if (!TestCheck(SchedulerInitialized, "LBPWRRInit"))
+    {
+        return FALSE;
+    }
+
+    if (!TestCheck(TSCGetFrequency() != 0, "TSC calibrated"))
+    {
+        return FALSE;
+    }
+
+    TestCPUCount = SMPGetCPUCount();
+
+    if (TestCPUCount == 0)
+    {
+        TestCPUCount = 1;
+    }
+
+    if (TestCPUCount > SMP_MAX_CPUS)
+    {
+        TestCPUCount = SMP_MAX_CPUS;
+    }
+
+    TestWorkerCount = TestCPUCount > 1 ? TestCPUCount - 1 : 1;
+    TestCheck(LBPWRRGetCurrentTask() == NULL, "no current task before start");
+    TestCheck(LBPWRRTick(NULL) == 0, "null interrupt frame");
+    TestCheck(!LBPWRRAddTask(NULL), "null task rejected");
+    TestCheck(!LBPWRRMoveTask(NULL, 0), "null move rejected");
+    TestCheck(!LBPWRRNotifyTaskChanged(NULL), "null change rejected");
+    TestCheck(LBPWRRGetTaskFromCPU(TestCPUCount) == NULL, "invalid CPU task lookup");
+    TestCheck(LBPWRRGetCPUAssignedTaskCount(TestCPUCount) == 0, "invalid CPU task count");
+    TestCheck(LBPWRRGetCPUUsage(TestCPUCount) == 0, "invalid CPU usage");
+    TestCheck(TaskCreate(NULL) == NULL, "null entry rejected");
+
+    MonitorTask = TaskCreate(TestMonitorTask);
+
+    if (!TestCheck(MonitorTask != NULL, "monitor created"))
+    {
+        return FALSE;
+    }
+
+    if (!TestCheck(LBPWRRAddTask(MonitorTask), "monitor added"))
+    {
+        return FALSE;
+    }
+
+    TestCheck(TaskGetByPID(MonitorTask->PID) == MonitorTask, "PID lookup");
+    TestCheck(TaskSetPriority(MonitorTask, 5), "monitor priority changed");
+    TestCheck(!TaskSetPriority(MonitorTask, 6), "invalid priority rejected");
+    TestCheck(LBPWRRNotifyTaskChanged(MonitorTask), "chunk rebuild requested");
+
+    for (index = 0; index < TestWorkerCount; index++)
+    {
+        task = TaskCreate(TestWorkerTask);
+
+        if (!TestCheck(task != NULL, "worker created"))
+        {
+            return FALSE;
+        }
+
+        TestWorkers[index] = task;
+
+        if (!TestCheck(LBPWRRAddTask(task), "worker added"))
+        {
+            return FALSE;
+        }
+
+        TestCheck(TaskSetPriority(task, (UINT8) (index % 6)), "worker priority changed");
+    }
+
+    TestSleeper = TestWorkers[0];
+
+    if (TestCPUCount > 1)
+    {
+        TestIdleCPUID = TestSleeper->CPUID;
+        TargetCPUID = TestCPUCount > 2 ? TestCPUCount - 1 : 0;
+
+        if (!TestCheck(LBPWRRMoveTask(TestSleeper, TargetCPUID), "task migrated"))
+        {
+            return FALSE;
+        }
+
+        TestCheck(LBPWRRGetCPUAssignedTaskCount(TestIdleCPUID) == 0, "source CPU became idle");
+        TestCheck(LBPWRRGetTaskFromCPU(TargetCPUID) != NULL, "target CPU has task");
+        TestCheck(!LBPWRRMoveTask(TestSleeper, TargetCPUID), "same CPU move rejected");
+        TestCheck(!LBPWRRMoveTask(TestSleeper, TestCPUCount), "invalid CPU move rejected");
+    }
+
+    TestCheck(TaskGetCount() == TestWorkerCount + 1, "task count");
+    TestStartTSC = RDTSC();
+
+    return TRUE;
 }
 
 VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
 {
-    TASK *TaskA;
-    TASK *TaskB;
-    TASK *TaskC;
-    TASK *TaskD;
-    TASK *TaskE;
-    TASK *TaskF;
-    TASK *TaskG;
-    TASK *TaskH;
-    TASK *TaskV;
-    TASK *TaskW;
-    TASK *TaskAddDelayed;
-    TASK *TaskRender;
-
     InitKernel(BootInfo);
 
-    TaskA = TaskCreate(TestTaskA);
-    TaskB = TaskCreate(TestTaskB);
-    TaskC = TaskCreate(TestTaskC);
-    TaskD = TaskCreate(TestTaskD);
-    TaskE = TaskCreate(TestTaskE);
-    TaskF = TaskCreate(TestTaskF);
-    TaskG = TaskCreate(TestTaskG);
-    TaskH = TaskCreate(TestTaskH);
-    TaskV = TaskCreate(TestTaskV);
-    TaskW = TaskCreate(TestTaskW);
-    TaskAddDelayed = TaskCreate(TestTaskAddDelayed);
-    TaskRender = TaskCreate(TestTaskRender);
-
-    if (TaskA == NULL || TaskB == NULL || TaskC == NULL || TaskD == NULL || TaskE == NULL || TaskF == NULL || TaskG == NULL || TaskH == NULL || TaskV == NULL || TaskW == NULL || TaskAddDelayed == NULL || TaskRender == NULL)
+    if (!TestSetup())
     {
-        while (TRUE)
-        {
-            HLTONCE();
-        }
+        HLT();
     }
 
-    TaskSetPriority(TaskA, TaskPriorities[0]);
-    TaskSetPriority(TaskB, TaskPriorities[1]);
-    TaskSetPriority(TaskC, TaskPriorities[2]);
-    TaskSetPriority(TaskD, TaskPriorities[3]);
-    TaskSetPriority(TaskE, TaskPriorities[4]);
-    TaskSetPriority(TaskF, TaskPriorities[5]);
-    TaskSetPriority(TaskG, TaskPriorities[6]);
-    TaskSetPriority(TaskH, TaskPriorities[7]);
-    TaskSetPriority(TaskV, TaskPriorities[8]);
-    TaskSetPriority(TaskW, TaskPriorities[9]);
-    TaskSetPriority(TaskAddDelayed, 0);
-    TaskSetPriority(TaskRender, 0);
-
-    DelayedTaskV = TaskV;
-    DelayedTaskW = TaskW;
-
-    for (UINT32 Index = 0; Index < TEST_TASK_COUNT; Index++)
-    {
-        TaskCPUs[Index] = UINT32_MAX;
-        TaskEnabled[Index] = Index < 8;
-    }
-
-    LBPWRRAddTask(TaskA);
-    LBPWRRAddTask(TaskE);
-    LBPWRRAddTask(TaskB);
-    LBPWRRAddTask(TaskF);
-    LBPWRRAddTask(TaskC);
-    LBPWRRAddTask(TaskG);
-    LBPWRRAddTask(TaskD);
-    LBPWRRAddTask(TaskH);
-    LBPWRRAddTask(TaskAddDelayed);
-    LBPWRRAddTask(TaskRender);
     CompilerBarrier();
 
     SchedulerReady = TRUE;
-
     CompilerBarrier();
 
     LBPWRRStart();
@@ -386,6 +378,8 @@ VOID APMain(UINT32 CPUID)
         HLT();
     }
 
+    TSCDeadlineInit(0x40);
+
     if (CPU != NULL)
     {
         CPU->Online = TRUE;
@@ -399,9 +393,7 @@ VOID APMain(UINT32 CPUID)
 
     CompilerBarrier();
 
-    while (TRUE)
-    {
-        LBPWRRJoin();
-        PAUSE();
-    }
+    LBPWRRJoin();
+
+    HLT();
 }
