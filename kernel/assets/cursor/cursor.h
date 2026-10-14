@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <lineos/typeinfo.h>
+#include <LineOS/TypeInfo.h>
 
 #define CURSOR_WIDTH  24
 #define CURSOR_HEIGHT 24

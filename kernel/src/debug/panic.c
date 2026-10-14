@@ -3,10 +3,10 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <debug/panic.h>
-#include <render/gpu/virtio_gpu.h>
-#include <render/truetype/print.h>
-#include <render/truetype/truetype_engine.h>
-#include <arch/x86_64/cpu.h>
+#include <render/GPU/VirtIOGPU.h>
+#include <render/TrueType/print.h>
+#include <render/TrueType/TrueTypeEngine.h>
+#include <arch/AMD64/CPU.h>
 #include <debug/debug.h>
 
 #define PANIC_BACKGROUND             0x0B1020

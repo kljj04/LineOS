@@ -4,11 +4,11 @@
 
 #include <Uefi.h>
 #include <Library/UefiLib.h>
-#include <acpi.h>
-#include <elf.h>
-#include <gop.h>
-#include <handoff.h>
-#include <lineosuefi.h>
+#include <ACPI.h>
+#include <ELF.h>
+#include <GOP.h>
+#include <HandOff.h>
+#include <LineOSUEFI.h>
 #include <memory.h>
 
 EFI_STATUS EFIAPI EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)

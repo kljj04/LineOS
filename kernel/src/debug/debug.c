@@ -3,7 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <debug/debug.h>
-#include <arch/x86_64/cpu.h>
+#include <arch/AMD64/CPU.h>
 
 #define DEBUG_PORT 0xE9
 
@@ -132,9 +132,9 @@ VOID DebugDumpDescriptorState(VOID)
 {
     DEBUG_DESCRIPTOR_REGISTER GDTR;
     DEBUG_DESCRIPTOR_REGISTER IDTR;
-    UINT16 Cs;
-    UINT16 Ss;
-    UINT64 *GDT;
+    UINT16                    Cs;
+    UINT16                    Ss;
+    UINT64                   *GDT;
 
     ASM("sgdt %0" : "=m"(GDTR));
     ASM("sidt %0" : "=m"(IDTR));

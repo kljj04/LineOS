@@ -4,7 +4,7 @@
 
 #include <Uefi.h>
 #include <Library/UefiBootServicesTableLib.h>
-#include <lineosuefi.h>
+#include <LineOSUEFI.h>
 #include <memory.h>
 
 LINEOS_MEMORY_MAP MemoryMap;

@@ -3,7 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <runtime/compiler.h>
-#include <lineos/typeinfo.h>
+#include <LineOS/TypeInfo.h>
 
 UINT128 __udivti3(UINT128 dividend, UINT128 divisor)
 {

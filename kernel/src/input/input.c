@@ -2,11 +2,11 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <arch/x86_64/cpu.h>
-#include <arch/x86_64/spinlock.h>
+#include <arch/AMD64/CPU.h>
+#include <arch/AMD64/SpinLock.h>
 #include <cursor/cursor.h>
-#include <input/virtio_input.h>
-#include <render/gpu/virtio_gpu.h>
+#include <input/VirtIOInput.h>
+#include <render/GPU/VirtIOGPU.h>
 #include <input/input.h>
 
 #define INPUT_CURSOR_REDRAW_SIZE 64
