@@ -2,8 +2,8 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <arch/x86_64/spinlock.h>
-#include <lineos/bootinfo.h>
+#include <arch/AMD64/SpinLock.h>
+#include <LineOS/BootInfo.h>
 #include <memory/memory.h>
 
 #define PAGE_SIZE                 4096ULL

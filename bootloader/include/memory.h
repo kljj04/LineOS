@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <lineos/bootinfo.h>
+#include <LineOS/BootInfo.h>
 
 BOOLEAN MemoryInit(VOID);
 BOOLEAN ExitBootServices(VOID);

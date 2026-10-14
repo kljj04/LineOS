@@ -1,35 +1,30 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # run.sh
 # LineOS Project
 # Copyright (C) 2026 LineOS Developer kljj04
 
-set -e
+set -Eeuo pipefail
 
-CYAN="\033[36m"
-YELLOW="\033[33m"
-GREEN="\033[32m"
-RED="\033[31m"
-MAGENTA="\033[35m"
-RESET="\033[0m"
+BaseDir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
-BaseDir="$(pwd)"
 RAM="4G"
-LogFile="qemu.log"
 QEMU="qemu-system-x86_64"
 Accel="kvm"
 CPU="host"
-CPUCount="1"
+CPUCount="16"
 CPUFlags="+tsc-deadline,+invtsc,+rdtscp,+arat,+fsgsbase,+pdpe1gb"
 
 ImgFile="${BaseDir}/LineOS/LineOS.img"
 ImgSize="8G"
-EFISizeMiB="300"
+EFISizeMiB=300
 MountDir="/tmp/lineos_img_mount"
 
 OVMF_CODE="${BaseDir}/uefi/OVMF_CODE.fd"
 OVMF_VARS="${BaseDir}/uefi/OVMF_VARS.fd"
-LogPath="${BaseDir}/logs/${LogFile}"
+
+LogPath="${BaseDir}/logs/qemu.log"
 DebugConLogPath="${BaseDir}/logs/debugcon.log"
+
 BootFile="${BaseDir}/LineOS/EFI/BOOT/BOOTX64.EFI"
 KernelFile="${BaseDir}/LineOS/KERNEL/LINEOS_KERNEL.ELF"
 
@@ -38,151 +33,277 @@ InputA="virtio-keyboard-pci"
 InputB="virtio-tablet-pci"
 Machine="q35"
 VGA="none"
-DisplayConfig="gtk"
+DisplayConfig="${LINEOS_DISPLAY:-gtk}"
 GraphicsResInput="QHD"
 
-case "$GraphicsResInput" in
-    "HD")     GraphicsWidth="1280"; GraphicsHeight="720" ;;
-    "FHD")    GraphicsWidth="1920"; GraphicsHeight="1080" ;;
-    "FHD+")   GraphicsWidth="2240"; GraphicsHeight="1260" ;;
-    "QHD")    GraphicsWidth="2560"; GraphicsHeight="1440" ;;
-    "UHD")    GraphicsWidth="3840"; GraphicsHeight="2160" ;;
-    "CUSTOM") GraphicsWidth="2560"; GraphicsHeight="1400" ;;
-    *)
-        echo -e "${RED}[-] Unknown resolution: ${GraphicsResInput}${RESET}"
-        exit 1
-        ;;
-esac
-
-GraphicsResolution="${GraphicsWidth}x${GraphicsHeight}"
-VideoDevice="virtio-gpu-pci,xres=${GraphicsWidth},yres=${GraphicsHeight},hostmem=1G"
-BlkDevice="virtio-blk-pci,drive=lineos_disk,bootindex=0"
 Network="none"
 DebugOption="guest_errors,cpu_reset"
 
-trap 'DismountImg true' EXIT INT TERM
+CYAN=$'\033[36m'
+YELLOW=$'\033[33m'
+GREEN=$'\033[32m'
+RED=$'\033[31m'
+MAGENTA=$'\033[35m'
+RESET=$'\033[0m'
+
+if [[ ! -t 1 ]]; then
+    CYAN=""
+    YELLOW=""
+    GREEN=""
+    RED=""
+    MAGENTA=""
+    RESET=""
+fi
+
+Print() {
+    local Color="$1"
+    local Tag="$2"
+    shift 2
+
+    printf '%s[%s]%s %s\n' \
+        "$Color" "$Tag" "$RESET" "$*"
+}
+
+Info() {
+    Print "$CYAN" "*" "$*"
+}
+
+Success() {
+    Print "$GREEN" "*" "$*"
+}
+
+Error() {
+    Print "$RED" "-" "$*" >&2
+}
 
 RequireCommand() {
-    local Command="$1"
-    if ! command -v "$Command" &>/dev/null; then
-        echo -e "${RED}    [-] $Command not found.${RESET}"
+    if ! command -v "$1" >/dev/null 2>&1; then
+        Error "Command not found: $1"
         return 1
     fi
 }
 
-DismountImg() {
-    local Silent="$1"
+LoopDev=""
+Mounted=false
 
-    if mountpoint -q "$MountDir" 2>/dev/null; then
-        sudo umount -l "$MountDir" 2>/dev/null
-        [ "$Silent" != "true" ] && echo -e "${CYAN}    [*] Image unmounted.${RESET}"
+Cleanup() {
+    local Status=$?
+    trap - EXIT
+
+    if [[ "$Mounted" == true ]]; then
+        sudo umount "$MountDir" || true
+        Mounted=false
     fi
 
-    if [ -f "$ImgFile" ]; then
-        local LoopDevs
-        LoopDevs=$(losetup -j "$ImgFile" | cut -d: -f1)
-        for dev in $LoopDevs; do
-            sudo losetup -d "$dev" 2>/dev/null
-        done
+    if [[ -n "$LoopDev" ]]; then
+        sudo losetup -d "$LoopDev" || true
+        LoopDev=""
     fi
 
-    sudo rm -rf "$MountDir"
+    if (( Status != 0 )); then
+        Error "Builder exited with status $Status."
+    fi
+
+    exit "$Status"
+}
+
+trap Cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+SetupGraphics() {
+    case "$GraphicsResInput" in
+        HD)
+            GraphicsWidth=1280
+            GraphicsHeight=720
+            ;;
+        FHD)
+            GraphicsWidth=1920
+            GraphicsHeight=1080
+            ;;
+        FHD+)
+            GraphicsWidth=2240
+            GraphicsHeight=1260
+            ;;
+        QHD)
+            GraphicsWidth=2560
+            GraphicsHeight=1440
+            ;;
+        UHD)
+            GraphicsWidth=3840
+            GraphicsHeight=2160
+            ;;
+        CUSTOM)
+            GraphicsWidth=2560
+            GraphicsHeight=1400
+            ;;
+        *)
+            Error "Unknown resolution: $GraphicsResInput"
+            return 1
+            ;;
+    esac
+
+    GraphicsResolution="${GraphicsWidth}x${GraphicsHeight}"
+    VideoDevice="virtio-gpu-pci,xres=${GraphicsWidth},yres=${GraphicsHeight},hostmem=1G"
+}
+
+AttachImage() {
+    LoopDev="$(sudo losetup -P -f --show "$ImgFile")"
+
+    if [[ -z "$LoopDev" ]]; then
+        Error "Failed to attach disk image."
+        return 1
+    fi
+
+    sudo partprobe "$LoopDev" 2>/dev/null || true
+    udevadm settle 2>/dev/null || true
+
+    if [[ ! -b "${LoopDev}p1" || ! -b "${LoopDev}p2" ]]; then
+        Error "Image partitions not found."
+        return 1
+    fi
+}
+
+DetachImage() {
+    if [[ "$Mounted" == true ]]; then
+        sudo umount "$MountDir"
+        Mounted=false
+        Print "$CYAN" "UMNT" "EFI partition"
+    fi
+
+    if [[ -n "$LoopDev" ]]; then
+        sudo losetup -d "$LoopDev"
+        LoopDev=""
+    fi
 }
 
 CreateImg() {
-    [ -f "$ImgFile" ] && return 0
+    if [[ -f "$ImgFile" ]]; then
+        Print "$GREEN" "IMG" "Existing image found."
+        return 0
+    fi
 
-    RequireCommand qemu-img || return 1
-    RequireCommand parted   || return 1
-    RequireCommand mkfs.vfat || return 1
-    RequireCommand mkfs.ext2 || return 1
-    RequireCommand losetup  || return 1
+    RequireCommand qemu-img
+    RequireCommand parted
+    RequireCommand mkfs.vfat
+    RequireCommand mkfs.ext2
+    RequireCommand losetup
 
     mkdir -p "$(dirname "$ImgFile")"
 
-    echo -e "${CYAN}    [*] Create raw image.${RESET}"
-    qemu-img create -f raw "$ImgFile" "$ImgSize" >/dev/null 2>&1 || return 1
+    Print "$CYAN" "IMG" "Creating ${ImgSize} raw image..."
+    qemu-img create -f raw "$ImgFile" "$ImgSize" >/dev/null
 
-    echo -e "${CYAN}    [*] Partition image.${RESET}"
+    Print "$YELLOW" "GPT" "Creating partition table..."
     sudo parted -s "$ImgFile" \
         mklabel gpt \
         mkpart EFI fat32 1MiB "$((EFISizeMiB + 1))MiB" \
         set 1 esp on \
-        mkpart LineOS "$((EFISizeMiB + 1))MiB" 100% >/dev/null 2>&1 || return 1
+        mkpart LineOS "$((EFISizeMiB + 1))MiB" 100%
 
-    local LoopDev
-    LoopDev=$(sudo losetup -P -f --show "$ImgFile" 2>/dev/null)
-    if [ -z "$LoopDev" ]; then
-        echo -e "${RED}    [-] Failed to setup loop device.${RESET}"
-        return 1
-    fi
+    AttachImage
 
-    sleep 0.2
+    Print "$YELLOW" "FS" "Formatting EFI as FAT32..."
+    sudo mkfs.vfat -F 32 -n LINEOS_EFI "${LoopDev}p1" >/dev/null
 
-    if [ ! -b "${LoopDev}p1" ] || [ ! -b "${LoopDev}p2" ]; then
-        echo -e "${RED}    [-] Partitions not found on $LoopDev.${RESET}"
-        sudo losetup -d "$LoopDev" 2>/dev/null
-        return 1
-    fi
+    Print "$YELLOW" "FS" "Formatting root as EXT2..."
+    sudo mkfs.ext2 -F -L LINEOS_ROOT "${LoopDev}p2" >/dev/null
 
-    sudo mkfs.vfat -F 32 -n LINEOS_EFI "${LoopDev}p1" >/dev/null 2>&1
-    sudo mkfs.ext2 -F -L LINEOS_ROOT "${LoopDev}p2" >/dev/null 2>&1
-    sudo losetup -d "$LoopDev" 2>/dev/null
-
-    echo -e "${CYAN}    [*] Image ready.${RESET}"
-    return 0
+    DetachImage
+    Success "Disk image created."
 }
 
 CopyImg() {
-    CreateImg || return 1
+    Info "Image"
 
-    sudo rm -rf "$MountDir"
+    CreateImg
+
+    RequireCommand mountpoint
+    RequireCommand mount
+
+    if mountpoint -q "$MountDir"; then
+        Error "Mount directory is already in use: $MountDir"
+        return 1
+    fi
+
     mkdir -p "$MountDir"
+    AttachImage
 
-    local LoopDev
-    LoopDev=$(sudo losetup -P -f --show "$ImgFile" 2>/dev/null)
-    if [ -z "$LoopDev" ]; then
-        echo -e "${RED}    [-] Failed to setup loop device.${RESET}"
-        return 1
-    fi
+    Print "$CYAN" "MNT" "Mounting EFI partition..."
+    sudo mount "${LoopDev}p1" "$MountDir"
+    Mounted=true
 
-    sleep 0.2
+    sudo mkdir -p \
+        "${MountDir}/EFI/BOOT" \
+        "${MountDir}/KERNEL"
 
-    local TargetPart="${LoopDev}p1"
-    [ ! -b "$TargetPart" ] && TargetPart="$LoopDev"
+    Print "$CYAN" "CP" "BOOTX64.EFI"
+    sudo cp "$BootFile" \
+        "${MountDir}/EFI/BOOT/BOOTX64.EFI"
 
-    if ! sudo mount "$TargetPart" "$MountDir" 2>/dev/null; then
-        echo -e "${RED}    [-] Mount failed on $LoopDev${RESET}"
-        sudo losetup -d "$LoopDev" 2>/dev/null
-        return 1
-    fi
+    Print "$CYAN" "CP" "LINEOS_KERNEL.ELF"
+    sudo cp "$KernelFile" \
+        "${MountDir}/KERNEL/LINEOS_KERNEL.ELF"
 
-    echo -e "${CYAN}    [*] Image mounted.${RESET}"
-
-    sudo mkdir -p "${MountDir}/EFI/BOOT" "${MountDir}/KERNEL"
-    sudo rm -f "${MountDir}/EFI/BOOT/BOOTX64.EFI" "${MountDir}/KERNEL/LINEOS_KERNEL.ELF" 2>/dev/null
-
-    sudo cp -f "$BootFile" "${MountDir}/EFI/BOOT/BOOTX64.EFI"
-    sudo cp -f "$KernelFile" "${MountDir}/KERNEL/LINEOS_KERNEL.ELF"
     sync
+    DetachImage
 
-    echo -e "${CYAN}    [*] Copy complete.${RESET}"
-    sudo umount -l "$MountDir" 2>/dev/null
-    sudo losetup -d "$LoopDev" 2>/dev/null
-    echo -e "${CYAN}    [*] Image unmounted.${RESET}"
-    return 0
+    Success "Image ready."
+}
+
+ResolveOVMF() {
+    if [[ ! -f "$OVMF_CODE" ]]; then
+        for Candidate in \
+            /usr/share/OVMF/OVMF_CODE_4M.fd \
+            /usr/share/OVMF/OVMF_CODE.fd
+        do
+            if [[ -f "$Candidate" ]]; then
+                OVMF_CODE="$Candidate"
+                break
+            fi
+        done
+    fi
+
+    if [[ ! -f "$OVMF_VARS" ]]; then
+        local Template=""
+
+        for Candidate in \
+            /usr/share/OVMF/OVMF_VARS_4M.fd \
+            /usr/share/OVMF/OVMF_VARS.fd
+        do
+            if [[ -f "$Candidate" ]]; then
+                Template="$Candidate"
+                break
+            fi
+        done
+
+        if [[ -z "$Template" ]]; then
+            Error "OVMF variables template not found."
+            return 1
+        fi
+
+        mkdir -p "$(dirname "$OVMF_VARS")"
+        cp "$Template" "$OVMF_VARS"
+    fi
+
+    if [[ ! -f "$OVMF_CODE" ]]; then
+        Error "OVMF firmware not found."
+        return 1
+    fi
 }
 
 StartQEMU() {
-    mkdir -p "${BaseDir}/LineOS" "${BaseDir}/logs"
-    rm -f "$DebugConLogPath"
-    RequireCommand "$QEMU" || return 1
+    Info "QEMU"
 
-    echo -e "${CYAN}    [*] QEMU start...${RESET}"
+    RequireCommand "$QEMU"
+    ResolveOVMF
 
-    if [ ! -f "$OVMF_VARS" ]; then
-        OVMF_VARS="/usr/share/OVMF/OVMF_VARS.fd"
-    fi
+    mkdir -p "${BaseDir}/logs"
+
+    Print "$CYAN" "VM" "Machine: $Machine"
+    Print "$CYAN" "VM" "CPU: $CPU ($CPUCount vCPUs)"
+    Print "$CYAN" "VM" "Memory: $RAM"
+    Print "$CYAN" "VM" "Display: $DisplayConfig ($GraphicsResolution)"
 
     local QEMU_ARGS=(
         -rtc "$RTC"
@@ -198,49 +319,64 @@ StartQEMU() {
         -vga "$VGA"
         -device "$VideoDevice"
         -drive "file=$ImgFile,format=raw,id=lineos_disk,if=none"
-        -device "$BlkDevice"
+        -device "virtio-blk-pci,drive=lineos_disk,bootindex=0"
         -fw_cfg "name=opt/org.tianocore/GraphicsResolution,string=$GraphicsResolution"
         -no-reboot
+        -no-shutdown
         -d "$DebugOption"
         -D "$LogPath"
         -debugcon "file:$DebugConLogPath"
         -global "isa-debugcon.iobase=0xe9"
         -m "$RAM"
         -display "$DisplayConfig"
-        -no-shutdown
     )
 
-    "$QEMU" "${QEMU_ARGS[@]}" 2>/dev/null || true
+    rm -f "$LogPath" "$DebugConLogPath"
 
-    echo -e "${GREEN}    [*] Done.${RESET}"
+    Print "$MAGENTA" "VM" "Starting QEMU..."
+
+    local Status=0
+    "$QEMU" "${QEMU_ARGS[@]}" || Status=$?
+
+    if [[ -f "$LogPath" ]] &&
+       grep -Eiq 'triple fault|cpu_reset' "$LogPath"; then
+        Error "CPU reset or triple fault detected."
+        return 1
+    fi
+
+    if (( Status != 0 )); then
+        Error "QEMU exited with status $Status."
+        return "$Status"
+    fi
+
+    Success "QEMU stopped."
 }
 
-# --- Main Logic ---
-DismountImg true
-echo -e "${YELLOW}LineOS Builder v2.7.0 (Linux Native Raw)${RESET}"
+Main() {
+    cd "$BaseDir"
 
-echo -e "${CYAN}[*] make:${RESET}"
-if ! make; then
-    echo -e "${RED}    [-] make failed.${RESET}"
-    exit 1
-fi
-echo -e "${CYAN}━━━End of make━━━${RESET}"
+    SetupGraphics
 
-echo -e "${CYAN}[*] img:${RESET}"
-if ! CopyImg; then
-    exit 1
-fi
-echo -e "${CYAN}━━━End of img━━━${RESET}"
+    printf '%sLineOS Builder v2.8.0%s\n' "$YELLOW" "$RESET"
+    printf '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'
 
-echo -e "${CYAN}[*] run:${RESET}"
-StartQEMU
+    Info "Build"
 
-if [ -f "$LogPath" ]; then
-    if grep -E -i -q "cpu_reset|triple fault" "$LogPath"; then
-        echo -e "${RED}    [!!] Triple Fault.${RESET}"
-        exit 1
-    fi
-fi
+    RequireCommand make
+    RequireCommand nproc
 
-echo -e "${CYAN}━━━End of run━━━${RESET}"
-echo -e "${MAGENTA}[*] Exit.${RESET}"
+    make -j"$(nproc)"
+
+    Success "Build complete."
+    printf '\n'
+
+    CopyImg
+    printf '\n'
+
+    StartQEMU
+    printf '\n'
+
+    Print "$MAGENTA" "*" "Exit."
+}
+
+Main "$@"

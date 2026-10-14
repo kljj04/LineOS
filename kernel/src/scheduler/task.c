@@ -3,15 +3,17 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <scheduler/task.h>
-#include <scheduler/lbpwrr_types.h>
-#include <arch/x86_64/cpu.h>
+#include <scheduler/LBPWRR.h>
+#include <scheduler/LBPWRRTypes.h>
+#include <arch/AMD64/CPU.h>
 #include <debug/debug.h>
 #include <memory/memory.h>
+#include <timer/TSC.h>
 
-STATIC TASK TaskPool[LBPWRR_MAX_TASKS];
+STATIC TASK    TaskPool[LBPWRR_MAX_TASKS];
 STATIC BOOLEAN TaskUsed[LBPWRR_MAX_TASKS];
 
-STATIC UINTN TaskCount;
+STATIC UINTN  TaskCount;
 STATIC UINT16 NextPID;
 
 STATIC BOOLEAN TaskGetIndex(TASK *task, UINTN *Index)
@@ -146,13 +148,13 @@ STATIC VOID InitTaskContext(TASK *task, VOID (*entry)(VOID))
 {
     KMemSet(&task->Context, 0, sizeof(TASK_CONTEXT));
 
-    task->Context.RIP = (UINT64)entry;
+    task->Context.RIP = (UINT64) entry;
     task->Context.CS = 0x18;
     task->Context.RFLAGS = 0x202;
     task->Context.RSP = task->InitialRSP;
     task->Context.SS = 0x10;
 
-    task->RSP = (UINT64)&task->Context;
+    task->RSP = (UINT64) &task->Context;
 }
 
 BOOLEAN TaskInit(VOID)
@@ -191,7 +193,7 @@ TASK *TaskCreate(VOID (*entry)(VOID))
     task->Priority = 3;
     task->Weight = PToW(task->Priority);
 
-    task->StackBase = (UINT64)KAllocPages(TASK_STACK_PAGES);
+    task->StackBase = (UINT64) KAllocPages(TASK_STACK_PAGES);
 
     if (task->StackBase == 0)
     {
@@ -224,7 +226,32 @@ BOOLEAN TaskSetPriority(TASK *task, UINT8 priority)
     task->Weight = PToW(task->Priority);
     task->Modified = TRUE;
 
+    LBPWRRNotifyTaskChanged(task);
+
     return TRUE;
+}
+
+VOID TaskSleepMls(UINT64 milliseconds)
+{
+    TASK   *task;
+    UINT64 Ticks;
+
+    task = LBPWRRGetCurrentTask();
+
+    if (task == NULL)
+    {
+        SleepMls(milliseconds);
+        return;
+    }
+
+    Ticks = (UINT64) (((UINT128) TSCGetFrequency() * milliseconds) / 1000ULL);
+
+    task->WakeDeadlineTSC = RDTSC() + Ticks;
+    task->State = TASK_SLEEPING;
+    task->Modified = TRUE;
+
+    LBPWRRNotifyTaskChanged(task);
+    LBPWRRYield();
 }
 
 BOOLEAN TaskDestroy(TASK *task)
@@ -241,15 +268,14 @@ BOOLEAN TaskDestroy(TASK *task)
         return FALSE;
     }
 
-    if (task->State != TASK_TERMINATED &&
-        task->State != TASK_KILLED)
+    if (task->State != TASK_TERMINATED && task->State != TASK_KILLED)
     {
         return FALSE;
     }
 
     if (task->StackBase != 0)
     {
-        KMemFreePages((VOID *)task->StackBase, TASK_STACK_PAGES);
+        KMemFreePages((VOID *) task->StackBase, TASK_STACK_PAGES);
     }
 
     TaskFreeSlot(task);
@@ -271,6 +297,8 @@ VOID TaskKill(TASK *task)
 
     task->State = TASK_KILLED;
     task->Modified = TRUE;
+
+    LBPWRRNotifyTaskChanged(task);
 }
 
 VOID TaskTerminate(TASK *task)
@@ -282,6 +310,8 @@ VOID TaskTerminate(TASK *task)
 
     task->State = TASK_TERMINATED;
     task->Modified = TRUE;
+
+    LBPWRRNotifyTaskChanged(task);
 }
 
 TASK *TaskGetByPID(UINT16 PID)
