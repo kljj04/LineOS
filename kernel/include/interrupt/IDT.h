@@ -1,4 +1,4 @@
-// kernel/include/interrupt/idt.h
+// kernel/include/interrupt/IDT.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

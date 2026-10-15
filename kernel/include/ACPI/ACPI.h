@@ -1,4 +1,4 @@
-// kernel/include/acpi/acpi.h
+// kernel/include/ACPI/ACPI.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

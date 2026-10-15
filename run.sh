@@ -37,7 +37,7 @@ DisplayConfig="${LINEOS_DISPLAY:-gtk}"
 GraphicsResInput="QHD"
 
 Network="none"
-DebugOption="guest_errors,cpu_reset"
+DebugOption="int,guest_errors,cpu_reset,unimp"
 
 CYAN=$'\033[36m'
 YELLOW=$'\033[33m'

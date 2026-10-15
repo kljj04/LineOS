@@ -1,4 +1,4 @@
-// common/lineos/bootinfo.h
+// common/LineOS/BootInfo.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

@@ -1,4 +1,4 @@
-// bootloader/src/gop.c
+// bootloader/src/GOP.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

@@ -1,4 +1,4 @@
-// kernel/include/arch/x86_64/spinlock.h
+// kernel/include/arch/AMD64/SpinLock.h
 // LineOS
 // Project
 // Copyright

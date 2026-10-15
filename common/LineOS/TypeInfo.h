@@ -1,4 +1,4 @@
-// common/lineos/typeinfo.h
+// common/LineOS/TypeInfo.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

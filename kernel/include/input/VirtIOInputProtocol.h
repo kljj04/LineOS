@@ -1,4 +1,4 @@
-// kernel/include/input/virtio_input_protocol.h
+// kernel/include/input/VirtIOInputProtocol.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
