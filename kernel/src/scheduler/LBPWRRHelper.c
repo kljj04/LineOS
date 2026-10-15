@@ -55,7 +55,6 @@ BOOLEAN LBPWRRWakeSleepingTasks(LBPWRR_RUNQUEUE *RunQueue)
     {
         RunQueue->Generation++;
         RunQueue->RebuildPending = TRUE;
-        LBPWRRRebuildChunk(RunQueue);
     }
 
     return WokeTask;

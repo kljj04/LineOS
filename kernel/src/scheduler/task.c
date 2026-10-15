@@ -16,6 +16,45 @@ STATIC BOOLEAN TaskUsed[LBPWRR_MAX_TASKS];
 STATIC UINTN  TaskCount;
 STATIC UINT16 NextPID;
 
+STATIC NORETURN VOID TaskExit(VOID)
+{
+    TASK *task;
+
+    task = LBPWRRGetCurrentTask();
+
+    if (task != NULL)
+    {
+        TaskTerminate(task);
+    }
+
+    for (;;)
+    {
+        LBPWRRYield();
+    }
+}
+
+STATIC NORETURN VOID TaskIdle(VOID)
+{
+    for (;;)
+    {
+        ASM("sti; hlt" ::: "memory");
+    }
+}
+
+TASK *TaskCreateIdle(VOID)
+{
+    TASK *task;
+
+    task = TaskCreate(TaskIdle);
+
+    if (task != NULL)
+    {
+        task->Idle = TRUE;
+    }
+
+    return task;
+}
+
 STATIC BOOLEAN TaskGetIndex(TASK *task, UINTN *TaskIndex)
 {
     UINTN index;
@@ -146,7 +185,13 @@ STATIC VOID TaskFreeSlot(TASK *task)
 
 STATIC VOID InitTaskContext(TASK *task, VOID (*entry)(VOID))
 {
+    UINT64 *ReturnAddress;
+
     KMemSet(&task->Context, 0, sizeof(TASK_CONTEXT));
+
+    ReturnAddress = (UINT64 *) task->InitialRSP - 1;
+    *ReturnAddress = (UINT64) TaskExit;
+    task->InitialRSP = (UINT64) ReturnAddress;
 
     task->Context.RIP = (UINT64) entry;
     task->Context.CS = 0x18;
@@ -193,7 +238,7 @@ TASK *TaskCreate(VOID (*entry)(VOID))
     task->Priority = 3;
     task->Weight = PToW(task->Priority);
 
-    task->StackBase = (UINT64) KAllocPages(TASK_STACK_PAGES);
+    task->StackBase = (UINT64) KAllocPagesBelow(TASK_STACK_PAGES, TASK_STACK_ADDRESS_LIMIT);
 
     if (task->StackBase == 0)
     {
@@ -209,6 +254,8 @@ TASK *TaskCreate(VOID (*entry)(VOID))
     InitTaskContext(task, entry);
 
     task->Modified = FALSE;
+    task->Idle = FALSE;
+    task->Scheduled = FALSE;
 
     TaskCount++;
 
@@ -226,7 +273,10 @@ BOOLEAN TaskSetPriority(TASK *task, UINT8 priority)
     task->Weight = PToW(task->Priority);
     task->Modified = TRUE;
 
-    LBPWRRNotifyTaskChanged(task);
+    if (task->Scheduled && !LBPWRRNotifyTaskChanged(task))
+    {
+        return FALSE;
+    }
 
     return TRUE;
 }
@@ -269,6 +319,11 @@ BOOLEAN TaskDestroy(TASK *task)
     }
 
     if (task->State != TASK_TERMINATED && task->State != TASK_KILLED)
+    {
+        return FALSE;
+    }
+
+    if (task->Scheduled && !LBPWRRRemoveTask(task))
     {
         return FALSE;
     }

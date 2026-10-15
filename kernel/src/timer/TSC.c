@@ -81,6 +81,13 @@ BOOLEAN TSCDeadlineInit(UINT8 vector)
 
     LAPICSetTSCDeadlineTimer(vector);
 
+    if (TSCFrequency == 0)
+    {
+        return FALSE;
+    }
+
+    TSCSetDeadline(RDTSC() + TSCFrequency / 200);
+
     return TRUE;
 }
 

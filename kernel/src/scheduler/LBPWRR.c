@@ -1,3 +1,4 @@
+
 // kernel/src/scheduler/LBPWRR.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
@@ -5,12 +6,13 @@
 #include <scheduler/LBPWRR.h>
 #include <scheduler/LBPWRRChunk.h>
 #include <scheduler/LBPWRRRunQueue.h>
-#include <scheduler/LBPWRRLoadRate.h>
 #include <scheduler/LBPWRRHelper.h>
 #include <scheduler/task.h>
 #include <multicore/SMP.h>
 
 EXTERN VOID LBPWRRRestoreContext(UINT64 RSP) NORETURN;
+
+STATIC TASK *IdleTasks[SMP_MAX_CPUS];
 
 BOOLEAN LBPWRRInit(VOID)
 {
@@ -35,12 +37,23 @@ BOOLEAN LBPWRRInit(VOID)
 
     LBPWRRInitRunQueues(CPUCount);
 
+    for (UINT32 CPUID = 0; CPUID < CPUCount; CPUID++)
+    {
+        IdleTasks[CPUID] = TaskCreateIdle();
+
+        if (IdleTasks[CPUID] == NULL || !LBPWRRAddTask(IdleTasks[CPUID]))
+        {
+            return FALSE;
+        }
+    }
+
     return TRUE;
 }
 
 VOID LBPWRRStart(VOID)
 {
     UINT32           CPUID;
+    UINT32           index;
     LBPWRR_RUNQUEUE *RunQueue;
     TASK            *task;
     UINT64           flags;
@@ -49,26 +62,50 @@ VOID LBPWRRStart(VOID)
 
     if (CPUID >= LBPWRRGetActiveCPUCount())
     {
-        CPUID = 0;
+        return;
     }
 
     RunQueue = LBPWRRGetRunQueue(CPUID);
     flags = SpinLockAcquireIRQSave(&RunQueue->Lock);
 
-    LBPWRRFlushRebuild(RunQueue, LBPWRRGetCurrentTaskFromCPU(CPUID));
+    LBPWRRFlushRebuild(RunQueue, NULL);
 
-    if (RunQueue->Chunk.Count == 0)
+    task = NULL;
+
+    for (index = 0; index < RunQueue->Chunk.Count; index++)
     {
-        SpinLockReleaseIRQRestore(&RunQueue->Lock, flags);
-        return;
+        TASK *Candidate;
+
+        Candidate = RunQueue->Chunk.Tasks[index];
+
+        if (Candidate == NULL || Candidate->State != TASK_READY || Candidate->Idle)
+        {
+            continue;
+        }
+
+        task = Candidate;
+        RunQueue->CurrentIndex = index;
+        break;
     }
 
-    if (RunQueue->CurrentIndex >= RunQueue->Chunk.Count)
+    if (task == NULL)
     {
-        RunQueue->CurrentIndex = 0;
-    }
+        for (index = 0; index < RunQueue->Chunk.Count; index++)
+        {
+            TASK *Candidate;
 
-    task = RunQueue->Chunk.Tasks[RunQueue->CurrentIndex];
+            Candidate = RunQueue->Chunk.Tasks[index];
+
+            if (Candidate == NULL || Candidate->State != TASK_READY || !Candidate->Idle)
+            {
+                continue;
+            }
+
+            task = Candidate;
+            RunQueue->CurrentIndex = index;
+            break;
+        }
+    }
 
     if (task == NULL)
     {
@@ -109,9 +146,12 @@ VOID LBPWRRYield(VOID)
 UINT64 LBPWRRTick(INTERRUPT_FRAME *frame)
 {
     UINT32           CPUID;
+    UINT32           index;
+    UINT32           StartIndex;
     LBPWRR_RUNQUEUE *RunQueue;
     TASK            *CurrentTask;
     TASK            *NextTask;
+    TASK            *Candidate;
     UINT64           flags;
     UINT64           NextRSP;
 
@@ -129,10 +169,13 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *frame)
 
     RunQueue = LBPWRRGetRunQueue(CPUID);
     flags = SpinLockAcquireIRQSave(&RunQueue->Lock);
+
     CurrentTask = LBPWRRGetCurrentTaskFromCPU(CPUID);
 
-    LBPWRRAccountCPUTime(CPUID, CurrentTask != NULL);
-    LBPWRRWakeSleepingTasks(RunQueue);
+    if (LBPWRRWakeSleepingTasks(RunQueue))
+    {
+        LBPWRRRebuildChunk(RunQueue);
+    }
 
     if (CurrentTask != NULL)
     {
@@ -146,25 +189,76 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *frame)
 
     LBPWRRFlushRebuild(RunQueue, CurrentTask);
 
-    if (RunQueue->Chunk.Count == 0)
+    NextTask = NULL;
+
+    if (RunQueue->Chunk.Count > 0)
     {
-        LBPWRRSetCurrentTask(CPUID, NULL);
-        SpinLockReleaseIRQRestore(&RunQueue->Lock, flags);
-        return (UINT64) frame;
+        StartIndex = RunQueue->CurrentIndex;
+
+        if (StartIndex >= RunQueue->Chunk.Count)
+        {
+            StartIndex = 0;
+        }
+
+        for (index = 0; index < RunQueue->Chunk.Count; index++)
+        {
+            UINT32 CandidateIndex;
+
+            if (CurrentTask == NULL)
+            {
+                CandidateIndex = (StartIndex + index) % RunQueue->Chunk.Count;
+            }
+            else
+            {
+                CandidateIndex = (StartIndex + index + 1) % RunQueue->Chunk.Count;
+            }
+
+            Candidate = RunQueue->Chunk.Tasks[CandidateIndex];
+
+            if (Candidate == NULL || Candidate->State != TASK_READY || Candidate->Idle)
+            {
+                continue;
+            }
+
+            NextTask = Candidate;
+            RunQueue->CurrentIndex = CandidateIndex;
+            break;
+        }
     }
 
-    RunQueue->CurrentIndex++;
-
-    if (RunQueue->CurrentIndex >= RunQueue->Chunk.Count)
+    if (NextTask == NULL && RunQueue->Chunk.Count > 0)
     {
-        RunQueue->CurrentIndex = 0;
-    }
+        for (index = 0; index < RunQueue->Chunk.Count; index++)
+        {
+            UINT32 CandidateIndex;
 
-    NextTask = RunQueue->Chunk.Tasks[RunQueue->CurrentIndex];
+            CandidateIndex = (StartIndex + index) % RunQueue->Chunk.Count;
+            Candidate = RunQueue->Chunk.Tasks[CandidateIndex];
+
+            if (Candidate == NULL || Candidate->State != TASK_READY || !Candidate->Idle)
+            {
+                continue;
+            }
+
+            NextTask = Candidate;
+            RunQueue->CurrentIndex = CandidateIndex;
+            break;
+        }
+    }
 
     if (NextTask == NULL)
     {
+        if (CurrentTask != NULL && CurrentTask->State == TASK_READY)
+        {
+            CurrentTask->State = TASK_RUNNING;
+
+            SpinLockReleaseIRQRestore(&RunQueue->Lock, flags);
+
+            return (UINT64) frame;
+        }
+
         SpinLockReleaseIRQRestore(&RunQueue->Lock, flags);
+
         return (UINT64) frame;
     }
 
