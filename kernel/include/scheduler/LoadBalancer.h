@@ -1,4 +1,4 @@
-// kernel/include/scheduler/loadbalancer.h
+// kernel/include/scheduler/LoadBalancer.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

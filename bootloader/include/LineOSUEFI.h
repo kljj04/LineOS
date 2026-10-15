@@ -1,4 +1,4 @@
-// bootloader/include/lineosuefi.h
+// bootloader/include/LineOSUEFI.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

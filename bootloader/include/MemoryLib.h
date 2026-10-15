@@ -1,4 +1,4 @@
-// bootloader/include/memorylib.h
+// bootloader/include/MemoryLib.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

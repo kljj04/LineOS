@@ -1,4 +1,4 @@
-// kernel/include/render/truetype/truetype.h
+// kernel/include/render/TrueType/TrueType.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 // Original from stb_truetype.h

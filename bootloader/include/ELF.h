@@ -1,4 +1,4 @@
-// bootloader/include/elf.h
+// bootloader/include/ELF.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

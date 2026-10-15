@@ -1,4 +1,4 @@
-// kernel/include/render/truetype/font_assets.h
+// kernel/include/render/TrueType/FontAssets.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

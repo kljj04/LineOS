@@ -1,4 +1,4 @@
-// kernel/src/timer/hpet.c
+// kernel/src/timer/HPET.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

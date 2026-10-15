@@ -1,4 +1,4 @@
-// kernel/src/multicore/smp.c
+// kernel/src/multicore/SMP.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

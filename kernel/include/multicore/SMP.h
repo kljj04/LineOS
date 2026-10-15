@@ -1,4 +1,4 @@
-// kernel/include/multicore/smp.h
+// kernel/include/multicore/SMP.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

@@ -1,4 +1,4 @@
-// kernel/src/arch/x86_64/cpu.c
+// kernel/src/arch/AMD64/CPU.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

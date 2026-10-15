@@ -1,4 +1,4 @@
-// kernel/include/render/gpu/virtio_gpu.h
+// kernel/include/render/GPU/VirtIOGPU.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

@@ -1,4 +1,4 @@
-// bootloader/include/handoff.h
+// bootloader/include/HandOff.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
