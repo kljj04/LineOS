@@ -9,6 +9,7 @@
 
 BOOLEAN TaskInit(VOID);
 TASK   *TaskCreate(VOID (*entry)(VOID));
+TASK   *TaskCreateIdle(VOID);
 BOOLEAN TaskSetPriority(TASK *task, UINT8 priority);
 VOID    TaskSleepMls(UINT64 milliseconds);
 VOID    TaskKill(TASK *task);

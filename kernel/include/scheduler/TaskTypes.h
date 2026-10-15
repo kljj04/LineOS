@@ -97,4 +97,6 @@ typedef struct TASK
     UINT64       WakeDeadlineTSC;
     TASK_SIGNAL  Signal;
     BOOLEAN      Modified;
+    BOOLEAN      Idle;
+    BOOLEAN      Scheduled;
 } TASK;

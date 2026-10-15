@@ -5,6 +5,7 @@
 #include <interrupt/IDT.h>
 
 #include "debug/debug.h"
+#include "timer/TSC.h"
 
 #include <scheduler/LBPWRR.h>
 #include <interrupt/APIC.h>
@@ -104,9 +105,15 @@ UINT64 SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *frame)
 
     if (frame->Vector == 64)
     {
+        UINT64 NextRSP;
+
+        TSCSetDeadline(RDTSC() + TSCGetFrequency() / 200);
+
+        NextRSP = LBPWRRTick(frame);
+
         LAPICEOI();
 
-        return (UINT64) frame;
+        return NextRSP;
     }
 
     if (frame->Vector == 65)

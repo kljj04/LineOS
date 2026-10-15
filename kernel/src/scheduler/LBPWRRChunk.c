@@ -1,3 +1,4 @@
+
 // kernel/src/scheduler/LBPWRRChunk.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
@@ -22,6 +23,11 @@ STATIC BOOLEAN LBPWRRBuildChunkInto(LBPWRR_RUNQUEUE *RunQueue, CHUNK *chunk)
         return FALSE;
     }
 
+    if (RunQueue->RunnableCount > LBPWRR_MAX_TASKS)
+    {
+        return FALSE;
+    }
+
     TotalWeight = 0;
 
     for (index = 0; index < RunQueue->RunnableCount; index++)
@@ -40,7 +46,7 @@ STATIC BOOLEAN LBPWRRBuildChunkInto(LBPWRR_RUNQUEUE *RunQueue, CHUNK *chunk)
             continue;
         }
 
-        if (TotalWeight + weight > CHUNK_MAX_COUNT)
+        if (weight > CHUNK_MAX_COUNT - TotalWeight)
         {
             return FALSE;
         }
@@ -51,7 +57,6 @@ STATIC BOOLEAN LBPWRRBuildChunkInto(LBPWRR_RUNQUEUE *RunQueue, CHUNK *chunk)
     if (TotalWeight == 0)
     {
         chunk->Count = 0;
-
         return TRUE;
     }
 
@@ -59,7 +64,7 @@ STATIC BOOLEAN LBPWRRBuildChunkInto(LBPWRR_RUNQUEUE *RunQueue, CHUNK *chunk)
 
     for (ChunkIndex = 0; ChunkIndex < TotalWeight; ChunkIndex++)
     {
-        SelectedIndex = 0;
+        SelectedIndex = LBPWRR_MAX_TASKS;
         SelectedScore = 0;
 
         for (index = 0; index < RunQueue->RunnableCount; index++)
@@ -80,11 +85,16 @@ STATIC BOOLEAN LBPWRRBuildChunkInto(LBPWRR_RUNQUEUE *RunQueue, CHUNK *chunk)
 
             scores[index] += (INT32) weight;
 
-            if (scores[index] > SelectedScore)
+            if (SelectedIndex == LBPWRR_MAX_TASKS || scores[index] > SelectedScore)
             {
                 SelectedScore = scores[index];
                 SelectedIndex = index;
             }
+        }
+
+        if (SelectedIndex == LBPWRR_MAX_TASKS)
+        {
+            return FALSE;
         }
 
         chunk->Tasks[ChunkIndex] = RunQueue->Runnable[SelectedIndex];
@@ -99,6 +109,11 @@ STATIC BOOLEAN LBPWRRBuildChunkInto(LBPWRR_RUNQUEUE *RunQueue, CHUNK *chunk)
 
 BOOLEAN LBPWRRBuildChunk(LBPWRR_RUNQUEUE *RunQueue)
 {
+    if (RunQueue == NULL)
+    {
+        return FALSE;
+    }
+
     if (!LBPWRRBuildChunkInto(RunQueue, &RunQueue->Chunk))
     {
         return FALSE;
@@ -112,46 +127,72 @@ BOOLEAN LBPWRRBuildChunk(LBPWRR_RUNQUEUE *RunQueue)
 STATIC BOOLEAN CheckRebuildPending(LBPWRR_RUNQUEUE *RunQueue)
 {
     UINT32 index;
-    UINT32 count;
+    TASK  *task;
 
     if (RunQueue == NULL)
     {
         return FALSE;
     }
 
-    count = RunQueue->RunnableCount;
-
-    if (RunQueue->UnrunnableCount > count)
+    if (RunQueue->RebuildPending)
     {
-        count = RunQueue->UnrunnableCount;
+        return TRUE;
     }
 
-    for (index = 0; index < count; index++)
+    if (RunQueue->RunnableCount > LBPWRR_MAX_TASKS || RunQueue->UnrunnableCount > LBPWRR_MAX_TASKS)
     {
-        if ((index < RunQueue->RunnableCount && RunQueue->Runnable[index]->Modified) || (index < RunQueue->UnrunnableCount && RunQueue->Unrunnable[index]->Modified))
+        return FALSE;
+    }
+
+    for (index = 0; index < RunQueue->RunnableCount; index++)
+    {
+        task = RunQueue->Runnable[index];
+
+        if (task != NULL && task->Modified)
         {
             RunQueue->RebuildPending = TRUE;
-            break;
+            return TRUE;
         }
     }
 
-    return RunQueue->RebuildPending;
+    for (index = 0; index < RunQueue->UnrunnableCount; index++)
+    {
+        task = RunQueue->Unrunnable[index];
+
+        if (task != NULL && task->Modified)
+        {
+            RunQueue->RebuildPending = TRUE;
+            return TRUE;
+        }
+    }
+
+    return FALSE;
 }
 
 BOOLEAN LBPWRRRebuildChunk(LBPWRR_RUNQUEUE *RunQueue)
 {
     UINT32 index;
-    UINT32 count;
     UINT64 BuildGeneration;
+    TASK  *task;
 
-    if (CheckRebuildPending(RunQueue) == FALSE)
+    if (RunQueue == NULL)
     {
         return FALSE;
     }
 
+    if (RunQueue->RunnableCount > LBPWRR_MAX_TASKS || RunQueue->UnrunnableCount > LBPWRR_MAX_TASKS)
+    {
+        return FALSE;
+    }
+
+    if (!CheckRebuildPending(RunQueue))
+    {
+        return RunQueue->FlushReady;
+    }
+
     if (RunQueue->RebuildRunning)
     {
-        return TRUE;
+        return FALSE;
     }
 
     RunQueue->RebuildRunning = TRUE;
@@ -160,8 +201,17 @@ BOOLEAN LBPWRRRebuildChunk(LBPWRR_RUNQUEUE *RunQueue)
     if (!LBPWRRBuildChunkInto(RunQueue, &RunQueue->BuildChunk))
     {
         RunQueue->FlushReady = FALSE;
-        RunQueue->RebuildRunning = FALSE;
         RunQueue->RebuildPending = TRUE;
+        RunQueue->RebuildRunning = FALSE;
+
+        return FALSE;
+    }
+
+    if (BuildGeneration != RunQueue->Generation)
+    {
+        RunQueue->FlushReady = FALSE;
+        RunQueue->RebuildPending = TRUE;
+        RunQueue->RebuildRunning = FALSE;
 
         return FALSE;
     }
@@ -171,23 +221,23 @@ BOOLEAN LBPWRRRebuildChunk(LBPWRR_RUNQUEUE *RunQueue)
     RunQueue->RebuildPending = FALSE;
     RunQueue->RebuildRunning = FALSE;
 
-    count = RunQueue->RunnableCount;
-
-    if (RunQueue->UnrunnableCount > count)
+    for (index = 0; index < RunQueue->RunnableCount; index++)
     {
-        count = RunQueue->UnrunnableCount;
+        task = RunQueue->Runnable[index];
+
+        if (task != NULL)
+        {
+            task->Modified = FALSE;
+        }
     }
 
-    for (index = 0; index < count; index++)
+    for (index = 0; index < RunQueue->UnrunnableCount; index++)
     {
-        if (index < RunQueue->RunnableCount && RunQueue->Runnable[index] != NULL)
-        {
-            RunQueue->Runnable[index]->Modified = FALSE;
-        }
+        task = RunQueue->Unrunnable[index];
 
-        if (index < RunQueue->UnrunnableCount && RunQueue->Unrunnable[index] != NULL)
+        if (task != NULL)
         {
-            RunQueue->Unrunnable[index]->Modified = FALSE;
+            task->Modified = FALSE;
         }
     }
 
@@ -198,6 +248,9 @@ VOID LBPWRRFlushRebuild(LBPWRR_RUNQUEUE *RunQueue, TASK *CurrentTask)
 {
     UINT32 index;
     UINT32 OldIndex;
+    UINT32 BestIndex;
+    UINT32 BestDistance;
+    UINT32 Distance;
 
     if (RunQueue == NULL || !RunQueue->FlushReady)
     {
@@ -208,12 +261,20 @@ VOID LBPWRRFlushRebuild(LBPWRR_RUNQUEUE *RunQueue, TASK *CurrentTask)
     {
         RunQueue->FlushReady = FALSE;
         RunQueue->RebuildPending = TRUE;
-        LBPWRRRebuildChunk(RunQueue);
 
-        return;
+        if (!LBPWRRRebuildChunk(RunQueue))
+        {
+            return;
+        }
+
+        if (!RunQueue->FlushReady || RunQueue->BuildGeneration != RunQueue->Generation)
+        {
+            return;
+        }
     }
 
     OldIndex = RunQueue->CurrentIndex;
+
     RunQueue->Chunk = RunQueue->BuildChunk;
     RunQueue->FlushReady = FALSE;
 
@@ -225,22 +286,38 @@ VOID LBPWRRFlushRebuild(LBPWRR_RUNQUEUE *RunQueue, TASK *CurrentTask)
 
     if (CurrentTask != NULL)
     {
+        BestIndex = RunQueue->Chunk.Count;
+        BestDistance = RunQueue->Chunk.Count;
+
         for (index = 0; index < RunQueue->Chunk.Count; index++)
         {
-            if (RunQueue->Chunk.Tasks[index] == CurrentTask)
+            if (RunQueue->Chunk.Tasks[index] != CurrentTask)
             {
-                RunQueue->CurrentIndex = index;
-                return;
+                continue;
             }
+
+            if (index >= OldIndex)
+            {
+                Distance = index - OldIndex;
+            }
+            else
+            {
+                Distance = RunQueue->Chunk.Count - OldIndex + index;
+            }
+
+            if (Distance < BestDistance)
+            {
+                BestDistance = Distance;
+                BestIndex = index;
+            }
+        }
+
+        if (BestIndex < RunQueue->Chunk.Count)
+        {
+            RunQueue->CurrentIndex = BestIndex;
+            return;
         }
     }
 
-    if (OldIndex >= RunQueue->Chunk.Count)
-    {
-        RunQueue->CurrentIndex = 0;
-    }
-    else
-    {
-        RunQueue->CurrentIndex = OldIndex;
-    }
+    RunQueue->CurrentIndex = OldIndex % RunQueue->Chunk.Count;
 }
