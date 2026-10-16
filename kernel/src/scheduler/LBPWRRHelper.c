@@ -45,16 +45,15 @@ BOOLEAN LBPWRRWakeSleepingTasks(LBPWRR_RUNQUEUE *RunQueue)
             continue;
         }
 
+        if (!LBPWRRModifyChunk(RunQueue, task, task->Weight))
+        {
+            continue;
+        }
+
         task->WakeDeadlineTSC = 0;
         task->State = TASK_READY;
-        task->Modified = TRUE;
+        task->Modified = FALSE;
         WokeTask = TRUE;
-    }
-
-    if (WokeTask)
-    {
-        RunQueue->Generation++;
-        RunQueue->RebuildPending = TRUE;
     }
 
     return WokeTask;

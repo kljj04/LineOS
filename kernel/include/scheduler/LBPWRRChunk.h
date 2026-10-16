@@ -7,5 +7,4 @@
 #include <scheduler/LBPWRRTypes.h>
 
 BOOLEAN LBPWRRBuildChunk(LBPWRR_RUNQUEUE *RunQueue);
-BOOLEAN LBPWRRRebuildChunk(LBPWRR_RUNQUEUE *RunQueue);
-VOID    LBPWRRFlushRebuild(LBPWRR_RUNQUEUE *RunQueue, TASK *CurrentTask);
+BOOLEAN LBPWRRModifyChunk(LBPWRR_RUNQUEUE *RunQueue, TASK *task, UINT8 priority);

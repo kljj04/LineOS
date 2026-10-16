@@ -76,14 +76,14 @@ STATIC BOOLEAN TaskGetIndex(TASK *task, UINTN *TaskIndex)
     return FALSE;
 }
 
-STATIC UINT8 PToW(UINT8 priority)
+STATIC UINT8 PToW(UINT8 Priority)
 {
-    if (priority > 5)
+    if (Priority < 1 || Priority > 6)
     {
         return 0;
     }
 
-    return 6 - priority;
+    return Priority;
 }
 
 STATIC TASK *TaskAllocate(VOID)
@@ -264,7 +264,7 @@ TASK *TaskCreate(VOID (*entry)(VOID))
 
 BOOLEAN TaskSetPriority(TASK *task, UINT8 priority)
 {
-    if (task == NULL || priority > 5)
+    if (task == NULL || priority < 1 || priority > 6)
     {
         return FALSE;
     }
@@ -283,7 +283,7 @@ BOOLEAN TaskSetPriority(TASK *task, UINT8 priority)
 
 VOID TaskSleepMls(UINT64 milliseconds)
 {
-    TASK   *task;
+    TASK  *task;
     UINT64 ticks;
 
     task = LBPWRRGetCurrentTask();

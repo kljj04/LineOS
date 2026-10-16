@@ -56,7 +56,7 @@ SMP bring-up has been tested with 16 virtual CPUs under QEMU.
 - SMP bring-up tested with 16 QEMU vCPUs
 - Maximum CPU table size currently set to 256 CPUs
 
-Current SMP support is bring-up only. Application Processors currently enter `APMain()` and remain idle after reporting themselves online.
+After reporting themselves online, Application Processors enter `APMain()` and join the LBPWRR scheduler. Each CPU begins with its own idle task and can run work assigned to its local run queue.
 
 ### Memory Management
 
@@ -86,14 +86,22 @@ Current SMP support is bring-up only. Application Processors currently enter `AP
 
 ### Scheduling
 
-- Primary Round Robin (PRR) scheduler
-- Kernel task creation
-- Timer-driven scheduling
+- LBPWRR (Load-Balanced Primary Weighted Round Robin) scheduler
+- Per-CPU run queues and current-task tracking
+- Per-CPU idle tasks
+- Weighted runnable chunks with priorities 1 through 6
+- Least-loaded CPU selection when adding a task
+- Timer-driven scheduling through the TSC Deadline Timer
 - Explicit task yield support
+- Sleeping task wake-up based on TSC deadlines
+- Task termination, removal from the run queue, and destruction
+- Ready-task migration with ordered dual-run-queue locking
 
-The current PRR scheduler predates full SMP scheduling support.
+`LBPWRRStart()` selects a local runnable task and restores its saved interrupt frame. It arms a new TSC deadline immediately before the first context restore so a BSP that reached the scheduler with interrupts disabled still receives its first timer interrupt after task entry.
 
-The planned scheduler architecture is **LBPWRR (Load-Balanced Primary Weighted Round Robin)**, with SMP-aware scheduling and load balancing across online processors.
+The timer interrupt saves the current task frame, updates task state, selects the next local task from the weighted chunk, and returns that task's saved frame to the common ISR restore path. Non-idle tasks are preferred; the local idle task is used only when no non-idle task is ready.
+
+The scheduler is experimental. CPU affinity, blocking beyond timed sleep, fairness measurement, and broader SMP subsystem hardening remain future work.
 
 ### PCI and VirtIO
 
@@ -176,6 +184,8 @@ From the project root:
 ./run.sh
 ```
 
+The launcher uses `sudo` for loop-device attachment, partition mounting, and copying the EFI boot files into the raw disk image. An interactive `sudo` password or equivalent local permission is required.
+
 The current Linux launcher:
 
 1. Builds the bootloader and kernel.
@@ -197,7 +207,7 @@ The current default QEMU configuration uses:
 - VirtIO tablet
 - VirtIO block device
 
-Runtime logs are written under `logs/`.
+Runtime logs are written under `logs/`. `qemu.log` contains QEMU diagnostics, and `debugcon.log` is reserved for panic and exception output. The normal scheduler stress workload does not write progress messages to the debug console.
 
 ## Font Rendering
 
@@ -233,39 +243,28 @@ Important boot metadata includes:
 
 The kernel image and other reserved regions must remain unavailable to the physical allocator.
 
-## Scheduler Roadmap
+## Scheduler Notes
 
-The existing scheduler is **PRR (Primary Round Robin)**.
+LBPWRR uses a fixed-capacity per-CPU runnable list and a weighted chunk. A task's priority maps directly to a weight from 1 through 6; each task appears in the chunk according to that weight. Adding a task selects the CPU with the smallest runnable count, then updates that CPU's chunk while holding its run-queue lock.
 
-PRR provides the initial kernel task and context-switching infrastructure, but it was designed before SMP bring-up.
+Task state changes update the corresponding weighted chunk. Sleeping, terminated, and killed tasks do not remain runnable. A task must be removed from scheduler ownership before its task storage and stack are destroyed.
 
-The next scheduler is planned as:
+Migration is intentionally limited to scheduled `TASK_READY` tasks that are not the current task on their source CPU. It acquires the two run-queue locks in CPU-index order and updates both the runnable lists and weighted chunks atomically with respect to those locks.
 
-**LBPWRR — Load-Balanced Primary Weighted Round Robin**
+## Scheduler Stress Workload
 
-The goal is to extend scheduling across the processors brought online by the SMP subsystem.
+The default kernel entry starts a scheduler stress workload after kernel initialization. Its on-screen monitor reports the current phase, worker counters, sleep and yield activity, task churn progress, migration results, and a failure mask.
 
-Planned work includes:
-
-- Per-CPU scheduler state
-- SMP-aware run queues
-- Weighted task scheduling
-- Load balancing
-- Task migration
-- CPU affinity infrastructure
-- SMP-aware timer scheduling
-- Idle tasks for APs
-- Scheduler synchronization
+The workload exercises timer preemption, timed sleep and wake-up, explicit yield, creation and termination of 32 short-lived tasks, priority changes, ready-task migration, task killing, task termination, and the idle-only transition. It is a runtime regression workload rather than a proof of scheduler correctness on all hardware or CPU counts.
 
 ## Planned Work
 
 Near-term:
 
-- LBPWRR multicore scheduler
-- Per-CPU scheduler infrastructure
-- Load balancing across online CPUs
 - SMP synchronization cleanup
 - SMP-safe VirtIO and kernel subsystems
+- Scheduler fairness and stress regression coverage
+- CPU affinity and broader task blocking support
 - EXT2 filesystem implementation
 - VirtIO block driver integration
 - Kernel console
