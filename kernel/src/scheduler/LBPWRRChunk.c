@@ -7,317 +7,279 @@
 #include <scheduler/LBPWRRHelper.h>
 #include <memory/memory.h>
 
-STATIC BOOLEAN LBPWRRBuildChunkInto(LBPWRR_RUNQUEUE *RunQueue, CHUNK *chunk)
+STATIC BOOLEAN ChunkInsert(LBPWRR_RUNQUEUE *RunQueue, TASK *task, UINT8 weight)
 {
-    INT32  scores[LBPWRR_MAX_TASKS];
-    UINT32 TotalWeight;
+    CHUNK *chunk;
+    UINT32 OldCount;
+    UINT32 NewCount;
+    UINT32 ReadIndex;
+    UINT32 OldCurrentIndex;
+    UINT32 NewCurrentIndex;
     UINT32 index;
-    UINT32 ChunkIndex;
-    UINT32 SelectedIndex;
-    INT32  SelectedScore;
-    UINT32 weight;
-    TASK  *task;
 
-    if (RunQueue == NULL || chunk == NULL)
+    if (RunQueue == NULL || task == NULL || weight == 0 || weight > 6)
     {
         return FALSE;
     }
 
-    if (RunQueue->RunnableCount > LBPWRR_MAX_TASKS)
+    chunk = &RunQueue->Chunk;
+    OldCount = chunk->Count;
+
+    if (OldCount > CHUNK_MAX_COUNT || weight > CHUNK_MAX_COUNT - OldCount)
     {
         return FALSE;
     }
 
-    TotalWeight = 0;
-
-    for (index = 0; index < RunQueue->RunnableCount; index++)
+    if (OldCount != 0 && RunQueue->CurrentIndex >= OldCount)
     {
-        task = RunQueue->Runnable[index];
+        return FALSE;
+    }
 
-        if (!LBPWRRTaskIsRunnable(task))
+    NewCount = OldCount + weight;
+    ReadIndex = OldCount;
+    OldCurrentIndex = RunQueue->CurrentIndex;
+    NewCurrentIndex = 0;
+
+    for (index = NewCount; index > 0; index--)
+    {
+        UINT32 position = index - 1;
+        UINT32 target = (UINT32) ((UINT64) (position + 1) * weight / NewCount);
+        UINT32 previous = (UINT32) ((UINT64) position * weight / NewCount);
+
+        if (target != previous)
+        {
+            chunk->Tasks[position] = task;
+        }
+        else
+        {
+            ReadIndex--;
+
+            chunk->Tasks[position] = chunk->Tasks[ReadIndex];
+
+            if (ReadIndex == OldCurrentIndex)
+            {
+                NewCurrentIndex = position;
+            }
+        }
+    }
+
+    chunk->Count = NewCount;
+    RunQueue->CurrentIndex = NewCurrentIndex;
+
+    return TRUE;
+}
+
+STATIC BOOLEAN ChunkRemove(LBPWRR_RUNQUEUE *RunQueue, TASK *task)
+{
+    CHUNK  *chunk;
+    UINT32  OldCount;
+    UINT32  ReadIndex;
+    UINT32  WriteIndex;
+    UINT32  CurrentIndex;
+    UINT32  NewCurrentIndex;
+    BOOLEAN FoundBefore;
+
+    if (RunQueue == NULL || task == NULL)
+    {
+        return FALSE;
+    }
+
+    chunk = &RunQueue->Chunk;
+    OldCount = chunk->Count;
+
+    if (OldCount > CHUNK_MAX_COUNT)
+    {
+        return FALSE;
+    }
+
+    if (OldCount != 0 && RunQueue->CurrentIndex >= OldCount)
+    {
+        return FALSE;
+    }
+
+    WriteIndex = 0;
+    CurrentIndex = RunQueue->CurrentIndex;
+    NewCurrentIndex = 0;
+    FoundBefore = FALSE;
+
+    for (ReadIndex = 0; ReadIndex < OldCount; ReadIndex++)
+    {
+        if (chunk->Tasks[ReadIndex] == task)
         {
             continue;
         }
 
-        weight = task->Weight;
-
-        if (weight == 0)
+        if (ReadIndex <= CurrentIndex)
         {
-            continue;
+            NewCurrentIndex = WriteIndex;
+            FoundBefore = TRUE;
         }
 
-        if (weight > CHUNK_MAX_COUNT - TotalWeight)
-        {
-            return FALSE;
-        }
-
-        TotalWeight += weight;
+        chunk->Tasks[WriteIndex++] = chunk->Tasks[ReadIndex];
     }
 
-    if (TotalWeight == 0)
+    for (ReadIndex = WriteIndex; ReadIndex < OldCount; ReadIndex++)
     {
-        chunk->Count = 0;
-        return TRUE;
+        chunk->Tasks[ReadIndex] = NULL;
     }
 
-    KMemSet(scores, 0, sizeof(scores));
+    chunk->Count = WriteIndex;
 
-    for (ChunkIndex = 0; ChunkIndex < TotalWeight; ChunkIndex++)
-    {
-        SelectedIndex = LBPWRR_MAX_TASKS;
-        SelectedScore = 0;
-
-        for (index = 0; index < RunQueue->RunnableCount; index++)
-        {
-            task = RunQueue->Runnable[index];
-
-            if (!LBPWRRTaskIsRunnable(task))
-            {
-                continue;
-            }
-
-            weight = task->Weight;
-
-            if (weight == 0)
-            {
-                continue;
-            }
-
-            scores[index] += (INT32) weight;
-
-            if (SelectedIndex == LBPWRR_MAX_TASKS || scores[index] > SelectedScore)
-            {
-                SelectedScore = scores[index];
-                SelectedIndex = index;
-            }
-        }
-
-        if (SelectedIndex == LBPWRR_MAX_TASKS)
-        {
-            return FALSE;
-        }
-
-        chunk->Tasks[ChunkIndex] = RunQueue->Runnable[SelectedIndex];
-
-        scores[SelectedIndex] -= (INT32) TotalWeight;
-    }
-
-    chunk->Count = TotalWeight;
-
-    return TRUE;
-}
-
-BOOLEAN LBPWRRBuildChunk(LBPWRR_RUNQUEUE *RunQueue)
-{
-    if (RunQueue == NULL)
-    {
-        return FALSE;
-    }
-
-    if (!LBPWRRBuildChunkInto(RunQueue, &RunQueue->Chunk))
-    {
-        return FALSE;
-    }
-
-    RunQueue->CurrentIndex = 0;
-
-    return TRUE;
-}
-
-STATIC BOOLEAN CheckRebuildPending(LBPWRR_RUNQUEUE *RunQueue)
-{
-    UINT32 index;
-    TASK  *task;
-
-    if (RunQueue == NULL)
-    {
-        return FALSE;
-    }
-
-    if (RunQueue->RebuildPending)
-    {
-        return TRUE;
-    }
-
-    if (RunQueue->RunnableCount > LBPWRR_MAX_TASKS || RunQueue->UnrunnableCount > LBPWRR_MAX_TASKS)
-    {
-        return FALSE;
-    }
-
-    for (index = 0; index < RunQueue->RunnableCount; index++)
-    {
-        task = RunQueue->Runnable[index];
-
-        if (task != NULL && task->Modified)
-        {
-            RunQueue->RebuildPending = TRUE;
-            return TRUE;
-        }
-    }
-
-    for (index = 0; index < RunQueue->UnrunnableCount; index++)
-    {
-        task = RunQueue->Unrunnable[index];
-
-        if (task != NULL && task->Modified)
-        {
-            RunQueue->RebuildPending = TRUE;
-            return TRUE;
-        }
-    }
-
-    return FALSE;
-}
-
-BOOLEAN LBPWRRRebuildChunk(LBPWRR_RUNQUEUE *RunQueue)
-{
-    UINT32 index;
-    UINT64 BuildGeneration;
-    TASK  *task;
-
-    if (RunQueue == NULL)
-    {
-        return FALSE;
-    }
-
-    if (RunQueue->RunnableCount > LBPWRR_MAX_TASKS || RunQueue->UnrunnableCount > LBPWRR_MAX_TASKS)
-    {
-        return FALSE;
-    }
-
-    if (!CheckRebuildPending(RunQueue))
-    {
-        return RunQueue->FlushReady;
-    }
-
-    if (RunQueue->RebuildRunning)
-    {
-        return FALSE;
-    }
-
-    RunQueue->RebuildRunning = TRUE;
-    BuildGeneration = RunQueue->Generation;
-
-    if (!LBPWRRBuildChunkInto(RunQueue, &RunQueue->BuildChunk))
-    {
-        RunQueue->FlushReady = FALSE;
-        RunQueue->RebuildPending = TRUE;
-        RunQueue->RebuildRunning = FALSE;
-
-        return FALSE;
-    }
-
-    if (BuildGeneration != RunQueue->Generation)
-    {
-        RunQueue->FlushReady = FALSE;
-        RunQueue->RebuildPending = TRUE;
-        RunQueue->RebuildRunning = FALSE;
-
-        return FALSE;
-    }
-
-    RunQueue->BuildGeneration = BuildGeneration;
-    RunQueue->FlushReady = TRUE;
-    RunQueue->RebuildPending = FALSE;
-    RunQueue->RebuildRunning = FALSE;
-
-    for (index = 0; index < RunQueue->RunnableCount; index++)
-    {
-        task = RunQueue->Runnable[index];
-
-        if (task != NULL)
-        {
-            task->Modified = FALSE;
-        }
-    }
-
-    for (index = 0; index < RunQueue->UnrunnableCount; index++)
-    {
-        task = RunQueue->Unrunnable[index];
-
-        if (task != NULL)
-        {
-            task->Modified = FALSE;
-        }
-    }
-
-    return TRUE;
-}
-
-VOID LBPWRRFlushRebuild(LBPWRR_RUNQUEUE *RunQueue, TASK *CurrentTask)
-{
-    UINT32 index;
-    UINT32 OldIndex;
-    UINT32 BestIndex;
-    UINT32 BestDistance;
-    UINT32 Distance;
-
-    if (RunQueue == NULL || !RunQueue->FlushReady)
-    {
-        return;
-    }
-
-    if (RunQueue->BuildGeneration != RunQueue->Generation)
-    {
-        RunQueue->FlushReady = FALSE;
-        RunQueue->RebuildPending = TRUE;
-
-        if (!LBPWRRRebuildChunk(RunQueue))
-        {
-            return;
-        }
-
-        if (!RunQueue->FlushReady || RunQueue->BuildGeneration != RunQueue->Generation)
-        {
-            return;
-        }
-    }
-
-    OldIndex = RunQueue->CurrentIndex;
-
-    RunQueue->Chunk = RunQueue->BuildChunk;
-    RunQueue->FlushReady = FALSE;
-
-    if (RunQueue->Chunk.Count == 0)
+    if (WriteIndex == 0)
     {
         RunQueue->CurrentIndex = 0;
-        return;
+    }
+    else if (FoundBefore)
+    {
+        RunQueue->CurrentIndex = NewCurrentIndex;
+    }
+    else
+    {
+        RunQueue->CurrentIndex = WriteIndex - 1;
     }
 
-    if (CurrentTask != NULL)
-    {
-        BestIndex = RunQueue->Chunk.Count;
-        BestDistance = RunQueue->Chunk.Count;
+    return TRUE;
+}
 
-        for (index = 0; index < RunQueue->Chunk.Count; index++)
+STATIC BOOLEAN ChunkUpdate(LBPWRR_RUNQUEUE *RunQueue, TASK *task, UINT8 weight)
+{
+    CHUNK  *chunk;
+    UINT32  OldCount;
+    UINT32  OldWeight;
+    UINT32  ReadIndex;
+    UINT32  WriteIndex;
+    UINT32  CurrentIndex;
+    UINT32  NewCurrentIndex;
+    UINT32  SeenCount;
+    UINT32  target;
+    UINT32  previous;
+    BOOLEAN FoundBefore;
+
+    if (RunQueue == NULL || task == NULL || weight == 0 || weight > 6)
+    {
+        return FALSE;
+    }
+
+    chunk = &RunQueue->Chunk;
+    OldCount = chunk->Count;
+
+    if (OldCount > CHUNK_MAX_COUNT)
+    {
+        return FALSE;
+    }
+
+    if (OldCount != 0 && RunQueue->CurrentIndex >= OldCount)
+    {
+        return FALSE;
+    }
+
+    OldWeight = 0;
+
+    for (ReadIndex = 0; ReadIndex < OldCount; ReadIndex++)
+    {
+        if (chunk->Tasks[ReadIndex] == task)
         {
-            if (RunQueue->Chunk.Tasks[index] != CurrentTask)
+            OldWeight++;
+        }
+    }
+
+    if (OldWeight == weight)
+    {
+        return TRUE;
+    }
+
+    if (OldWeight < weight)
+    {
+        return ChunkInsert(RunQueue, task, weight - OldWeight);
+    }
+
+    WriteIndex = 0;
+    SeenCount = 0;
+    CurrentIndex = RunQueue->CurrentIndex;
+    NewCurrentIndex = 0;
+    FoundBefore = FALSE;
+
+    for (ReadIndex = 0; ReadIndex < OldCount; ReadIndex++)
+    {
+        if (chunk->Tasks[ReadIndex] == task)
+        {
+            target = (SeenCount + 1) * weight / OldWeight;
+            previous = SeenCount * weight / OldWeight;
+            SeenCount++;
+
+            if (target == previous)
             {
                 continue;
             }
-
-            if (index >= OldIndex)
-            {
-                Distance = index - OldIndex;
-            }
-            else
-            {
-                Distance = RunQueue->Chunk.Count - OldIndex + index;
-            }
-
-            if (Distance < BestDistance)
-            {
-                BestDistance = Distance;
-                BestIndex = index;
-            }
         }
 
-        if (BestIndex < RunQueue->Chunk.Count)
+        if (ReadIndex <= CurrentIndex)
         {
-            RunQueue->CurrentIndex = BestIndex;
-            return;
+            NewCurrentIndex = WriteIndex;
+            FoundBefore = TRUE;
+        }
+
+        chunk->Tasks[WriteIndex++] = chunk->Tasks[ReadIndex];
+    }
+
+    for (ReadIndex = WriteIndex; ReadIndex < OldCount; ReadIndex++)
+    {
+        chunk->Tasks[ReadIndex] = NULL;
+    }
+
+    chunk->Count = WriteIndex;
+
+    if (WriteIndex == 0)
+    {
+        RunQueue->CurrentIndex = 0;
+    }
+    else if (FoundBefore)
+    {
+        RunQueue->CurrentIndex = NewCurrentIndex;
+    }
+    else
+    {
+        RunQueue->CurrentIndex = WriteIndex - 1;
+    }
+
+    return TRUE;
+}
+
+BOOLEAN LBPWRRModifyChunk(LBPWRR_RUNQUEUE *RunQueue, TASK *task, UINT8 priority)
+{
+    UINT32  index;
+    BOOLEAN exists;
+
+    if (RunQueue == NULL || task == NULL || priority > 6)
+    {
+        return FALSE;
+    }
+
+    if (RunQueue->Chunk.Count > CHUNK_MAX_COUNT)
+    {
+        return FALSE;
+    }
+
+    if (priority == 0)
+    {
+        return ChunkRemove(RunQueue, task);
+    }
+
+    exists = FALSE;
+
+    for (index = 0; index < RunQueue->Chunk.Count; index++)
+    {
+        if (RunQueue->Chunk.Tasks[index] == task)
+        {
+            exists = TRUE;
+            break;
         }
     }
 
-    RunQueue->CurrentIndex = OldIndex % RunQueue->Chunk.Count;
+    if (!exists)
+    {
+        return ChunkInsert(RunQueue, task, priority);
+    }
+
+    return ChunkUpdate(RunQueue, task, priority);
 }

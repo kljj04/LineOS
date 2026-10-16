@@ -1,3 +1,4 @@
+
 // kernel/kernel.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
@@ -11,7 +12,6 @@
 #include <scheduler/LBPWRR.h>
 #include <scheduler/task.h>
 #include <arch/AMD64/CPU.h>
-#include <debug/debug.h>
 #include <LineOS/BootInfo.h>
 #include <interrupt/APIC.h>
 #include <interrupt/IDT.h>
@@ -49,28 +49,29 @@ STATIC VOLATILE UINT64 TestYieldCount;
 STATIC VOLATILE UINT64 TestKillCount;
 STATIC VOLATILE UINT64 TestTerminateCount;
 STATIC VOLATILE UINT64 TestCoreCounters[SMP_MAX_CPUS];
+STATIC VOLATILE UINT64 TestChurnEntered;
 
-STATIC VOLATILE UINT32 TestPhase;
-STATIC VOLATILE UINT32 TestErrors;
-STATIC VOLATILE UINT32 TestMigrationSuccess;
-STATIC VOLATILE UINT32 TestMigrationFailure;
-STATIC VOLATILE UINT32 TestFailureMask;
-STATIC VOLATILE UINT32 TestChurnCreated;
-STATIC VOLATILE UINT32 TestChurnCompleted;
+STATIC VOLATILE UINT32  TestPhase;
+STATIC VOLATILE UINT32  TestErrors;
+STATIC VOLATILE UINT32  TestMigrationSuccess;
+STATIC VOLATILE UINT32  TestMigrationFailure;
+STATIC VOLATILE UINT32  TestFailureMask;
+STATIC VOLATILE UINT32  TestChurnCreated;
+STATIC VOLATILE UINT32  TestChurnCompleted;
 STATIC VOLATILE BOOLEAN TestCompleted;
 
-STATIC VOID TestSetPhase(UINT32 Phase)
+STATIC VOID TestSetPhase(UINT32 Phase, CONST char *Name)
 {
     TestPhase = Phase;
-    OUTB(0xE9, '0' + (UINT8) Phase);
+
+    (VOID) Name;
 }
 
 STATIC VOID TestFail(UINT32 Failure, UINT8 Marker)
 {
     TestErrors++;
     TestFailureMask |= Failure;
-    OUTB(0xE9, '!');
-    OUTB(0xE9, Marker);
+    (VOID) Marker;
 }
 
 STATIC VOID TestCountWorker(UINT32 WorkerIndex)
@@ -78,6 +79,7 @@ STATIC VOID TestCountWorker(UINT32 WorkerIndex)
     UINT32 CPUID;
 
     CPUID = SMPGetCurrentCPUID();
+
     TestCounters[WorkerIndex]++;
 
     if (CPUID < SMP_MAX_CPUS)
@@ -90,25 +92,30 @@ STATIC VOID TestMonitor(VOID)
 {
     for (;;)
     {
-        FillRect(24, 24, 760, 330, 0x101010);
-        KPrint(L"LineOS scheduler stress test", 40, 58, 0xFFFFFF, 24, PRETENDARD);
-        KPrint(L"phase=%u  errors=%u  complete=%u", 40, 94, 0xB0C8FF, 16, JETBRAINS_MONO,
-               TestPhase, TestErrors, TestCompleted ? 1 : 0);
-        KPrint(L"workers=%llu %llu %llu %llu", 40, 124, 0xD0D0D0, 15, JETBRAINS_MONO,
-               TestCounters[0], TestCounters[1], TestCounters[2], TestCounters[3]);
-        KPrint(L"sleep=%llu  yield=%llu", 40, 154, 0xD0D0D0, 15, JETBRAINS_MONO,
-               TestSleepCount, TestYieldCount);
-        KPrint(L"kill=%llu  terminate=%llu", 40, 184, 0xD0D0D0, 15, JETBRAINS_MONO,
-               TestKillCount, TestTerminateCount);
-        KPrint(L"migration ok=%u  failed=%u", 40, 214, 0xD0D0D0, 15, JETBRAINS_MONO,
-               TestMigrationSuccess, TestMigrationFailure);
-        KPrint(L"churn=%u/%u  core=%llu %llu %llu %llu", 40, 244, 0xD0D0D0, 15, JETBRAINS_MONO,
-               TestChurnCompleted, TestChurnCreated, TestCoreCounters[0], TestCoreCounters[1],
-               TestCoreCounters[2], TestCoreCounters[3]);
-        KPrint(L"failure-mask=%u", 40, 274, 0xFFB0B0, 15, JETBRAINS_MONO, TestFailureMask);
-        KPrint(TestCompleted ? (TestErrors == 0 ? L"RESULT: PASS" : L"RESULT: FAIL") : L"RESULT: RUNNING",
-               40, 310, TestCompleted && TestErrors == 0 ? 0x80FF80 : TestCompleted ? 0xFF8080 : 0xFFD080,
-               20, PRETENDARD);
+        FillRect(20, 20, 1400, 680, 0x101010);
+
+        KPrint(L"LineOS Scheduler Stress Test", 40, 76, 0xFFFFFF, 38, PRETENDARD);
+
+        KPrint(L"Phase: %u   Errors: %u   Complete: %u", 40, 130, 0xB0C8FF, 26, JETBRAINS_MONO, TestPhase, TestErrors, TestCompleted ? 1 : 0);
+
+        KPrint(L"Worker 0: %llu   Worker 1: %llu", 40, 184, 0xD0D0D0, 24, JETBRAINS_MONO, TestCounters[0], TestCounters[1]);
+
+        KPrint(L"Worker 2: %llu   Worker 3: %llu", 40, 230, 0xD0D0D0, 24, JETBRAINS_MONO, TestCounters[2], TestCounters[3]);
+
+        KPrint(L"Sleep: %llu   Yield: %llu", 40, 284, 0xD0D0D0, 24, JETBRAINS_MONO, TestSleepCount, TestYieldCount);
+
+        KPrint(L"Kill: %llu   Terminate: %llu", 40, 330, 0xD0D0D0, 24, JETBRAINS_MONO, TestKillCount, TestTerminateCount);
+
+        KPrint(L"Migration OK: %u   Failed: %u", 40, 384, 0xD0D0D0, 24, JETBRAINS_MONO, TestMigrationSuccess, TestMigrationFailure);
+
+        KPrint(L"Churn: %u / %u   Entered: %llu", 40, 430, 0xD0D0D0, 24, JETBRAINS_MONO, TestChurnCompleted, TestChurnCreated, TestChurnEntered);
+
+        KPrint(L"CPU counters: %llu %llu %llu %llu", 40, 484, 0xD0D0D0, 23, JETBRAINS_MONO, TestCoreCounters[0], TestCoreCounters[1], TestCoreCounters[2], TestCoreCounters[3]);
+
+        KPrint(L"Failure mask: 0x%X", 40, 538, 0xFFB0B0, 25, JETBRAINS_MONO, TestFailureMask);
+
+        KPrint(TestCompleted ? (TestErrors == 0 ? L"RESULT: PASS" : L"RESULT: FAIL") : L"RESULT: RUNNING", 40, 620, TestCompleted && TestErrors == 0 ? 0x80FF80 : TestCompleted ? 0xFF8080 : 0xFFD080, 36, PRETENDARD);
+
         VirtIOGPUFlush();
         TaskSleepMls(250);
     }
@@ -148,6 +155,7 @@ STATIC VOID TestWorker3(VOID)
 
 STATIC VOID TestChurnWorker(VOID)
 {
+    TestChurnEntered++;
 }
 
 STATIC BOOLEAN TestWaitForChurnCompletion(VOID)
@@ -166,8 +174,7 @@ STATIC BOOLEAN TestWaitForChurnCompletion(VOID)
                 continue;
             }
 
-            if (TestChurnTasks[Index]->State == TASK_TERMINATED ||
-                TestChurnTasks[Index]->State == TASK_KILLED)
+            if (TestChurnTasks[Index]->State == TASK_TERMINATED || TestChurnTasks[Index]->State == TASK_KILLED)
             {
                 TestChurnCompleted++;
             }
@@ -258,19 +265,20 @@ STATIC VOID TestTerminateWorker(VOID)
 
 STATIC VOID TestController(VOID)
 {
-    UINT32 Index;
-    UINT32 CPUCount;
-    UINT32 TargetCPU;
-    UINT64 Previous[TEST_WORKER_COUNT];
-    UINT64 PreviousSleep;
-    UINT64 PreviousYield;
-    UINT64 PreviousKill;
-    UINT64 PreviousTerminate;
+    UINT32  Index;
+    UINT32  CPUCount;
+    UINT32  TargetCPU;
+    UINT64  Previous[TEST_WORKER_COUNT];
+    UINT64  PreviousSleep;
+    UINT64  PreviousYield;
+    UINT64  PreviousKill;
+    UINT64  PreviousTerminate;
+    TASK   *Task;
+    BOOLEAN Success;
 
     CPUCount = LBPWRRGetActiveCPUCount();
 
-    // Phase 1: Timer preemption.
-    TestSetPhase(1);
+    TestSetPhase(1, "TIMER PREEMPTION");
 
     for (Index = 0; Index < TEST_WORKER_COUNT; Index++)
     {
@@ -281,76 +289,89 @@ STATIC VOID TestController(VOID)
 
     for (Index = 0; Index < TEST_WORKER_COUNT; Index++)
     {
-        if (TestCounters[Index] == Previous[Index])
+        Success = TestCounters[Index] != Previous[Index];
+
+        if (!Success)
         {
             TestFail(TEST_FAIL_PREEMPT, 'P');
         }
     }
 
-    // Phase 2: Sleep/Wake.
-    TestSetPhase(2);
+    TestSetPhase(2, "SLEEP AND WAKE");
+
     PreviousSleep = TestSleepCount;
 
     TaskSleepMls(TEST_WAIT_MS);
 
-    if (TestSleepCount <= PreviousSleep)
+    Success = TestSleepCount > PreviousSleep;
+
+    if (!Success)
     {
         TestFail(TEST_FAIL_SLEEP, 'S');
     }
 
-    // Phase 3: Yield.
-    TestSetPhase(3);
+    TestSetPhase(3, "VOLUNTARY YIELD");
+
     PreviousYield = TestYieldCount;
 
     TaskSleepMls(TEST_WAIT_MS);
 
-    if (TestYieldCount <= PreviousYield)
+    Success = TestYieldCount > PreviousYield;
+
+    if (!Success)
     {
         TestFail(TEST_FAIL_YIELD, 'Y');
     }
 
-    // Phase 4: Repeated create, exit, remove and destroy.
-    TestSetPhase(4);
+    TestSetPhase(4, "TASK CHURN");
 
     for (Index = 0; Index < TEST_CHURN_COUNT; Index++)
     {
-        TestChurnTasks[Index] = TaskCreate(TestChurnWorker);
+        Task = TaskCreate(TestChurnWorker);
+        TestChurnTasks[Index] = Task;
 
-        if (TestChurnTasks[Index] == NULL || !LBPWRRAddTask(TestChurnTasks[Index]))
+        if (Task == NULL)
         {
             TestFail(TEST_FAIL_CHURN_CREATE, 'C');
 
-            if (TestChurnTasks[Index] != NULL)
-            {
-                TaskTerminate(TestChurnTasks[Index]);
-                TaskDestroy(TestChurnTasks[Index]);
-                TestChurnTasks[Index] = NULL;
-            }
+            continue;
         }
-        else
+
+        if (!LBPWRRAddTask(Task))
         {
-            TestChurnCreated++;
+            TestFail(TEST_FAIL_CHURN_CREATE, 'C');
+
+            TaskTerminate(Task);
+            TaskDestroy(Task);
+            TestChurnTasks[Index] = NULL;
+
+            continue;
         }
+
+        TestChurnCreated++;
     }
 
-    if (!TestWaitForChurnCompletion())
+    Success = TestWaitForChurnCompletion();
+
+    if (!Success)
     {
         TestFail(TEST_FAIL_CHURN_RUN, 'R');
     }
 
-    if (!TestDestroyChurnTasks())
+    Success = TestDestroyChurnTasks();
+
+    if (!Success)
     {
         TestFail(TEST_FAIL_CHURN_DESTROY, 'D');
     }
 
-    // Phase 5: Priority changes.
-    TestSetPhase(5);
+    TestSetPhase(5, "PRIORITY CHANGES");
 
     for (Index = 0; Index < TEST_WORKER_COUNT; Index++)
     {
-        if (!TaskSetPriority(
-            TestWorkers[Index],
-            (UINT8) Index))
+        Success = TaskSetPriority(TestWorkers[Index], (UINT8) (Index + 1));
+
+        if (!Success)
         {
             TestFail(TEST_FAIL_PRIORITY, 'Q');
         }
@@ -358,14 +379,13 @@ STATIC VOID TestController(VOID)
 
     TaskSleepMls(TEST_WAIT_MS);
 
-    // Phase 6: Reverse priorities.
-    TestSetPhase(6);
+    TestSetPhase(6, "REVERSE PRIORITIES");
 
     for (Index = 0; Index < TEST_WORKER_COUNT; Index++)
     {
-        if (!TaskSetPriority(
-            TestWorkers[Index],
-            (UINT8) (5 - Index)))
+        Success = TaskSetPriority(TestWorkers[Index], (UINT8) (5 - Index));
+
+        if (!Success)
         {
             TestFail(TEST_FAIL_PRIORITY, 'q');
         }
@@ -373,20 +393,17 @@ STATIC VOID TestController(VOID)
 
     TaskSleepMls(TEST_WAIT_MS);
 
-    // Phase 7: CPU migration.
-    TestSetPhase(7);
+    TestSetPhase(7, "CPU MIGRATION");
 
     if (CPUCount > 1)
     {
         for (Index = 0; Index < TEST_WORKER_COUNT; Index++)
         {
-            TargetCPU =
-                (TestWorkers[Index]->CPUID + 1)
-                % CPUCount;
+            Task = TestWorkers[Index];
 
-            if (LBPWRRMoveTask(
-                TestWorkers[Index],
-                TargetCPU))
+            TargetCPU = (Task->CPUID + 1) % CPUCount;
+
+            if (LBPWRRMoveTask(Task, TargetCPU))
             {
                 TestMigrationSuccess++;
             }
@@ -399,59 +416,71 @@ STATIC VOID TestController(VOID)
 
     TaskSleepMls(TEST_WAIT_MS);
 
-    // Phase 8: Kill.
-    TestSetPhase(8);
+    TestSetPhase(8, "TASK KILL");
+
     TaskKill(TestKillTask);
+
     TaskSleepMls(500);
 
     PreviousKill = TestKillCount;
+
     TaskSleepMls(500);
 
-    if (TestKillCount != PreviousKill)
+    Success = TestKillCount == PreviousKill;
+
+    if (!Success)
     {
         TestFail(TEST_FAIL_KILL, 'K');
     }
 
-    // Phase 9: Terminate.
-    TestSetPhase(9);
+    TestSetPhase(9, "TASK TERMINATION");
+
     TaskTerminate(TestTerminateTask);
+
     TaskSleepMls(500);
 
     PreviousTerminate = TestTerminateCount;
+
     TaskSleepMls(500);
 
-    if (TestTerminateCount != PreviousTerminate)
+    Success = TestTerminateCount == PreviousTerminate;
+
+    if (!Success)
     {
         TestFail(TEST_FAIL_TERMINATE, 'T');
     }
 
-    // Phase 10: Terminate workers.
-    TestSetPhase(10);
+    TestSetPhase(10, "STOP WORKERS");
 
     for (Index = 0; Index < TEST_WORKER_COUNT; Index++)
     {
-        TaskTerminate(TestWorkers[Index]);
+        Task = TestWorkers[Index];
+
+        TaskTerminate(Task);
     }
 
     TaskSleepMls(500);
 
-    // Phase 11: Stop remaining tasks.
-    TestSetPhase(11);
+    TestSetPhase(11, "STOP AUXILIARY TASKS");
+
     TaskKill(TestSleepTask);
+
     TaskKill(TestYieldTask);
+
     TaskSleepMls(500);
 
-    // Phase 12: Idle-only transition.
-    TestSetPhase(12);
+    TestSetPhase(12, "IDLE TRANSITION");
+
     TestCompleted = TRUE;
 
     TaskTerminate(LBPWRRGetCurrentTask());
+
     LBPWRRYield();
 
-    // A terminated task must never resume.
     for (;;)
     {
         TestFail(TEST_FAIL_TERMINATE, 'X');
+
         LBPWRRYield();
     }
 }
@@ -473,9 +502,7 @@ VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
 
     GPU = VirtIOGPUGetInfo();
 
-    VirtIOGPUCreateFrameBuffer(
-        GPU->DisplayInfo.Displays[0].Rect.Width,
-        GPU->DisplayInfo.Displays[0].Rect.Height);
+    VirtIOGPUCreateFrameBuffer(GPU->DisplayInfo.Displays[0].Rect.Width, GPU->DisplayInfo.Displays[0].Rect.Height);
 
     FillScreen(0x101010);
     VirtIOGPUFlush();
@@ -505,61 +532,71 @@ VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
     }
 
     VirtIOInputInit();
+}
 
+STATIC TASK *TestCreateTask(CONST char *Name, VOID (*Entry)(VOID), UINT8 Priority)
+{
+    TASK *Task;
+
+    (VOID) Name;
+
+    Task = TaskCreate(Entry);
+
+    if (Task == NULL)
+    {
+        HLT();
+    }
+
+    if (!TaskSetPriority(Task, Priority))
+    {
+        HLT();
+    }
+
+    if (!LBPWRRAddTask(Task))
+    {
+        HLT();
+    }
+
+    return Task;
 }
 
 VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
 {
-    TASK *Task;
-
     InitKernel(BootInfo);
 
-    KPrint(L"Initializing scheduler stress test...", 40, 330,
-           0xFFFFFF, 18, PRETENDARD);
+    KPrint(L"Initializing scheduler stress test...", 40, 740, 0xFFFFFF, 26, PRETENDARD);
+
     VirtIOGPUFlush();
 
-    Task = TaskCreate(TestWorker0);
-    TestWorkers[0] = Task;
-    if (Task == NULL || !TaskSetPriority(Task, 0) || !LBPWRRAddTask(Task)) HLT();
-    Task = TaskCreate(TestWorker1);
-    TestWorkers[1] = Task;
-    if (Task == NULL || !TaskSetPriority(Task, 1) || !LBPWRRAddTask(Task)) HLT();
-    Task = TaskCreate(TestWorker2);
-    TestWorkers[2] = Task;
-    if (Task == NULL || !TaskSetPriority(Task, 3) || !LBPWRRAddTask(Task)) HLT();
-    Task = TaskCreate(TestWorker3);
-    TestWorkers[3] = Task;
-    if (Task == NULL || !TaskSetPriority(Task, 5) || !LBPWRRAddTask(Task)) HLT();
-    Task = TaskCreate(TestSleeper);
-    TestSleepTask = Task;
-    if (Task == NULL || !TaskSetPriority(Task, 3) || !LBPWRRAddTask(Task)) HLT();
-    Task = TaskCreate(TestYielder);
-    TestYieldTask = Task;
-    if (Task == NULL || !TaskSetPriority(Task, 3) || !LBPWRRAddTask(Task)) HLT();
-    Task = TaskCreate(TestKillWorker);
-    TestKillTask = Task;
-    if (Task == NULL || !TaskSetPriority(Task, 3) || !LBPWRRAddTask(Task)) HLT();
-    Task = TaskCreate(TestTerminateWorker);
-    TestTerminateTask = Task;
-    if (Task == NULL || !TaskSetPriority(Task, 3) || !LBPWRRAddTask(Task)) HLT();
-    Task = TaskCreate(TestController);
-    TestControllerTask = Task;
-    if (Task == NULL || !TaskSetPriority(Task, 3) || !LBPWRRAddTask(Task)) HLT();
-    Task = TaskCreate(TestMonitor);
-    TestMonitorTask = Task;
-    if (Task == NULL || !TaskSetPriority(Task, 0) || !LBPWRRAddTask(Task)) HLT();
+    TestWorkers[0] = TestCreateTask("WORKER 0", TestWorker0, 6);
 
-    KPrint(L"BEFORE START", 40, 370,
-       0x80FF80, 18, PRETENDARD);
+    TestWorkers[1] = TestCreateTask("WORKER 1", TestWorker1, 5);
+
+    TestWorkers[2] = TestCreateTask("WORKER 2", TestWorker2, 3);
+
+    TestWorkers[3] = TestCreateTask("WORKER 3", TestWorker3, 1);
+
+    TestSleepTask = TestCreateTask("SLEEPER", TestSleeper, 3);
+
+    TestYieldTask = TestCreateTask("YIELDER", TestYielder, 3);
+
+    TestKillTask = TestCreateTask("KILL WORKER", TestKillWorker, 3);
+
+    TestTerminateTask = TestCreateTask("TERMINATE WORKER", TestTerminateWorker, 3);
+
+    TestControllerTask = TestCreateTask("CONTROLLER", TestController, 3);
+
+    TestMonitorTask = TestCreateTask("MONITOR", TestMonitor, 6);
+
+    KPrint(L"BEFORE START", 40, 790, 0x80FF80, 28, PRETENDARD);
+
     VirtIOGPUFlush();
 
     LBPWRRStart();
 
-    KPrint(L"AFTER START", 40, 410,
-           0xFF8080, 18, PRETENDARD);
-    VirtIOGPUFlush();
+    KPrint(L"AFTER START", 40, 840, 0xFF8080, 28, PRETENDARD);
 
-    HLT();
+    VirtIOGPUFlush();
 
     HLT();
 }
