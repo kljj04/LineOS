@@ -57,6 +57,8 @@ typedef struct
     UINT32                    MSIXTableOffset;
     UINT16                    MSIXTableSize;
     VOLATILE VOID            *MSIXTable;
+    UINT32                    NegotiatedFeaturesLow;
+    UINT32                    NegotiatedFeaturesHigh;
 } VIRTIO_PCI_DEVICE;
 
 BOOLEAN       VirtIOPCIInitDevice(VIRTIO_PCI_DEVICE *VirtIODevice, PCI_DEVICE *Device);
@@ -65,3 +67,4 @@ VOID          VirtIOPCIReadyDevice(VIRTIO_PCI_DEVICE *VirtIODevice);
 BOOLEAN       VirtIOPCIEnableQueueMSIX(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 QueueIndex, UINT8 Vector);
 VOID          VirtIOPCINotifyQueue(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 QueueIndex);
 CONST CHAR16 *VirtIOPCIGetLastError(VOID);
+BOOLEAN       VirtIOPCIStartDeviceWithFeatures(VIRTIO_PCI_DEVICE *VirtIODevice, UINT32 FeaturesLow, UINT32 FeaturesHigh);

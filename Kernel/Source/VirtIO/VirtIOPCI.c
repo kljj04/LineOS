@@ -295,9 +295,14 @@ BOOLEAN VirtIOPCIInitDevice(VIRTIO_PCI_DEVICE *VirtIODevice, PCI_DEVICE *Device)
     return TRUE;
 }
 
-BOOLEAN VirtIOPCIStartDevice(VIRTIO_PCI_DEVICE *VirtIODevice)
+
+BOOLEAN VirtIOPCIStartDeviceWithFeatures(VIRTIO_PCI_DEVICE *VirtIODevice, UINT32 FeaturesLow, UINT32 FeaturesHigh)
 {
     VIRTIO_PCI_COMMON_CONFIG *CommonConfig;
+    UINT32 OfferedFeaturesLow;
+    UINT32 OfferedFeaturesHigh;
+    UINT32 AcceptedFeaturesLow;
+    UINT32 AcceptedFeaturesHigh;
 
     if (VirtIODevice == NULL || VirtIODevice->CommonConfig == NULL)
     {
@@ -306,29 +311,55 @@ BOOLEAN VirtIOPCIStartDevice(VIRTIO_PCI_DEVICE *VirtIODevice)
     }
 
     CommonConfig = VirtIODevice->CommonConfig;
-
     CommonConfig->DeviceStatus = 0;
-
     CommonConfig->DeviceStatus = VIRTIO_STATUS_ACKNOWLEDGE;
     CommonConfig->DeviceStatus |= VIRTIO_STATUS_DRIVER;
 
+    CommonConfig->DeviceFeatureSelect = 0;
+    OfferedFeaturesLow = CommonConfig->DeviceFeature;
+
+    CommonConfig->DeviceFeatureSelect = 1;
+    OfferedFeaturesHigh = CommonConfig->DeviceFeature;
+
+    if ((OfferedFeaturesHigh & (1U << 0)) == 0)
+    {
+        CommonConfig->DeviceStatus |= VIRTIO_STATUS_FAILED;
+        LastError = L"virtio version 1 unsupported";
+        return FALSE;
+    }
+
+    AcceptedFeaturesLow = FeaturesLow & OfferedFeaturesLow;
+    AcceptedFeaturesHigh = (FeaturesHigh & OfferedFeaturesHigh) | (1U << 0);
+
     CommonConfig->DriverFeatureSelect = 0;
-    CommonConfig->DriverFeature = 0;
+    CommonConfig->DriverFeature = AcceptedFeaturesLow;
 
     CommonConfig->DriverFeatureSelect = 1;
-    CommonConfig->DriverFeature = 1U << (VIRTIO_F_VERSION_1 - 32);
+    CommonConfig->DriverFeature = AcceptedFeaturesHigh;
+
+    ASM("" ::: "memory");
 
     CommonConfig->DeviceStatus |= VIRTIO_STATUS_FEATURES_OK;
 
     if ((CommonConfig->DeviceStatus & VIRTIO_STATUS_FEATURES_OK) == 0)
     {
+        CommonConfig->DeviceStatus |= VIRTIO_STATUS_FAILED;
         LastError = L"virtio features rejected";
         return FALSE;
     }
 
+    VirtIODevice->NegotiatedFeaturesLow = AcceptedFeaturesLow;
+    VirtIODevice->NegotiatedFeaturesHigh = AcceptedFeaturesHigh;
+
     LastError = L"ok";
     return TRUE;
 }
+
+BOOLEAN VirtIOPCIStartDevice(VIRTIO_PCI_DEVICE *VirtIODevice)
+{
+    return VirtIOPCIStartDeviceWithFeatures(VirtIODevice, 0, 0);
+}
+
 
 VOID VirtIOPCIReadyDevice(VIRTIO_PCI_DEVICE *VirtIODevice)
 {
