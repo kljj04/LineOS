@@ -5,7 +5,7 @@
 
 #include <scheduler/LBPWRRChunk.h>
 #include <scheduler/LBPWRRHelper.h>
-#include <memory/memory.h>
+#include <memory/PMM.h>
 
 STATIC BOOLEAN ChunkInsert(LBPWRR_RUNQUEUE *RunQueue, TASK *task, UINT8 weight)
 {

@@ -3,13 +3,13 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <scheduler/LBPWRR.h>
-
+#include <debug/panic.h>
 #include <scheduler/LBPWRRChunk.h>
 #include <scheduler/LBPWRRRunQueue.h>
 #include <scheduler/LBPWRRHelper.h>
 #include <scheduler/task.h>
 #include <multicore/SMP.h>
-#include <memory/memory.h>
+#include <memory/PMM.h>
 #include <timer/TSC.h>
 #include <arch/AMD64/CPU.h>
 
@@ -264,9 +264,16 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *frame)
             NextRSP = (UINT64) frame;
         }
         else
-        {
-            NextRSP = (UINT64) frame;
-        }
+            {
+                if (CurrentTask != NULL &&
+                    CurrentTask->State != TASK_RUNNING &&
+                    CurrentTask->State != TASK_READY)
+                {
+                    Panic(L"LBPWRR: No runnable task");
+                }
+
+                NextRSP = (UINT64) frame;
+            }
     }
     else
     {

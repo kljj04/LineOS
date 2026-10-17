@@ -5,7 +5,7 @@
 #include <ACPI/ACPI.h>
 #include <arch/AMD64/CPU.h>
 #include <interrupt/APIC.h>
-#include <memory/memory.h>
+#include <memory/PMM.h>
 #include <multicore/SMP.h>
 #include <timer/TSC.h>
 

@@ -5,7 +5,7 @@
 #pragma once
 
 #include <LineOS/TypeInfo.h>
-#include <memory/memory.h>
+#include <memory/PMM.h>
 
 INT32   KFloor(FLOAT64 Value);
 INT32   KCeil(FLOAT64 Value);

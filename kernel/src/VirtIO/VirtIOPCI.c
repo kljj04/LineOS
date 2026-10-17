@@ -2,7 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <memory/memory.h>
+#include <memory/PMM.h>
 #include <PCI/PCI.h>
 #include <interrupt/APIC.h>
 #include <VirtIO/VirtIOPCI.h>

@@ -3,7 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <input/VirtIOInput.h>
-#include <memory/memory.h>
+#include <memory/PMM.h>
 #include <PCI/PCI.h>
 #include <arch/AMD64/SpinLock.h>
 #include <VirtIO/VirtIOPCI.h>
