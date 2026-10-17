@@ -102,12 +102,12 @@ VOID GDTInitCurrentCPU(VOID)
 
 UINT64 RDTSC()
 {
-    UINT32 low;
-    UINT32 high;
+    UINT32 Low;
+    UINT32 High;
 
-    ASM("rdtsc" : "=a"(low), "=d"(high));
+    ASM("rdtsc" : "=a"(Low), "=d"(High));
 
-    return ((UINT64) high << 32) | low;
+    return ((UINT64) High << 32) | Low;
 }
 
 UINT8 INB(UINT16 Port)
@@ -149,25 +149,25 @@ VOID OUTL(UINT16 Port, UINT32 Value)
     ASM("outl %0, %w1" : : "a"(Value), "Nd"(Port));
 }
 
-VOID CPUID(UINT32 leaf, UINT32 subleaf, UINT32 *eax, UINT32 *ebx, UINT32 *ecx, UINT32 *edx)
+VOID CPUID(UINT32 Leaf, UINT32 Subleaf, UINT32 *EAX, UINT32 *EBX, UINT32 *ECX, UINT32 *EDX)
 {
-    ASM("cpuid" : "=a"(*eax), "=b"(*ebx), "=c"(*ecx), "=d"(*edx) : "a"(leaf), "c"(subleaf));
+    ASM("cpuid" : "=a"(*EAX), "=b"(*EBX), "=c"(*ECX), "=d"(*EDX) : "a"(Leaf), "c"(Subleaf));
 }
 
-UINT64 ReadMSR(UINT32 msr)
+UINT64 ReadMSR(UINT32 MSR)
 {
-    UINT32 low;
-    UINT32 high;
+    UINT32 Low;
+    UINT32 High;
 
-    ASM("rdmsr" : "=a"(low), "=d"(high) : "c"(msr));
+    ASM("rdmsr" : "=a"(Low), "=d"(High) : "c"(MSR));
 
-    return ((UINT64) high << 32) | low;
+    return ((UINT64) High << 32) | Low;
 }
 
-VOID WriteMSR(UINT32 msr, UINT64 value)
+VOID WriteMSR(UINT32 MSR, UINT64 Value)
 {
-    UINT32 low = (UINT32) value;
-    UINT32 high = (UINT32) (value >> 32);
+    UINT32 Low = (UINT32) Value;
+    UINT32 High = (UINT32) (Value >> 32);
 
-    ASM("wrmsr" : : "c"(msr), "a"(low), "d"(high));
+    ASM("wrmsr" : : "c"(MSR), "a"(Low), "d"(High));
 }

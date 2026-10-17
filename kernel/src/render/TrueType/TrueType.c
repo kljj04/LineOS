@@ -9,208 +9,208 @@
 #define LINEOS_MAX_OVERSAMPLE 8
 typedef INT32 TestOversamplePow2[(LINEOS_MAX_OVERSAMPLE & (LINEOS_MAX_OVERSAMPLE - 1)) == 0 ? 1 : -1];
 #define LINEOS_NOTUSED(v) (VOID) sizeof(v)
-STATIC UINT8 BufGet8(BUFFER *b)
+STATIC UINT8 BufGet8(BUFFER *B)
 {
-    if (b->Cursor >= b->Size)
+    if (B->Cursor >= B->Size)
         return 0;
-    return b->Data[b->Cursor++];
+    return B->Data[B->Cursor++];
 }
-STATIC UINT8 BufPeek8(BUFFER *b)
+STATIC UINT8 BufPeek8(BUFFER *B)
 {
-    if (b->Cursor >= b->Size)
+    if (B->Cursor >= B->Size)
         return 0;
-    return b->Data[b->Cursor];
+    return B->Data[B->Cursor];
 }
-STATIC VOID BufSeek(BUFFER *b, INT32 o)
+STATIC VOID BufSeek(BUFFER *B, INT32 O)
 {
-    KAssert(!(o > b->Size || o < 0));
-    b->Cursor = (o > b->Size || o < 0) ? b->Size : o;
+    KAssert(!(O > B->Size || O < 0));
+    B->Cursor = (O > B->Size || O < 0) ? B->Size : O;
 }
-STATIC VOID BufSkip(BUFFER *b, INT32 o)
+STATIC VOID BufSkip(BUFFER *B, INT32 O)
 {
-    BufSeek(b, b->Cursor + o);
+    BufSeek(B, B->Cursor + O);
 }
-STATIC UINT32 BufGet(BUFFER *b, INT32 n)
+STATIC UINT32 BufGet(BUFFER *B, INT32 N)
 {
-    UINT32 v = 0;
-    INT32  i;
-    KAssert(n >= 1 && n <= 4);
-    for (i = 0; i < n; i++)
-        v = (v << 8) | BufGet8(b);
-    return v;
+    UINT32 V = 0;
+    INT32  I;
+    KAssert(N >= 1 && N <= 4);
+    for (I = 0; I < N; I++)
+        V = (V << 8) | BufGet8(B);
+    return V;
 }
-STATIC BUFFER NewBuf(CONST VOID *p, UINTN size)
+STATIC BUFFER NewBuf(CONST VOID *P, UINTN Size)
 {
-    BUFFER r;
-    KAssert(size < 0x40000000);
-    r.Data = (UINT8 *) p;
-    r.Size = (INT32) size;
-    r.Cursor = 0;
-    return r;
+    BUFFER R;
+    KAssert(Size < 0x40000000);
+    R.Data = (UINT8 *) P;
+    R.Size = (INT32) Size;
+    R.Cursor = 0;
+    return R;
 }
 #define BUF_GET16(b) BufGet((b), 2)
 #define BUF_GET32(b) BufGet((b), 4)
-STATIC BUFFER BufRange(CONST BUFFER *b, INT32 o, INT32 s)
+STATIC BUFFER BufRange(CONST BUFFER *B, INT32 O, INT32 S)
 {
-    BUFFER r = NewBuf(NULL, 0);
-    if (o < 0 || s < 0 || o > b->Size || s > b->Size - o)
-        return r;
-    r.Data = b->Data + o;
-    r.Size = s;
-    return r;
+    BUFFER R = NewBuf(NULL, 0);
+    if (O < 0 || S < 0 || O > B->Size || S > B->Size - O)
+        return R;
+    R.Data = B->Data + O;
+    R.Size = S;
+    return R;
 }
-STATIC BUFFER CffGetIndex(BUFFER *b)
+STATIC BUFFER CffGetIndex(BUFFER *B)
 {
-    INT32 count, start, offsize;
-    start = b->Cursor;
-    count = BUF_GET16(b);
-    if (count)
+    INT32 Count, Start, Offsize;
+    Start = B->Cursor;
+    Count = BUF_GET16(B);
+    if (Count)
     {
-        offsize = BufGet8(b);
-        KAssert(offsize >= 1 && offsize <= 4);
-        BufSkip(b, offsize * count);
-        BufSkip(b, BufGet(b, offsize) - 1);
+        Offsize = BufGet8(B);
+        KAssert(Offsize >= 1 && Offsize <= 4);
+        BufSkip(B, Offsize * Count);
+        BufSkip(B, BufGet(B, Offsize) - 1);
     }
-    return BufRange(b, start, b->Cursor - start);
+    return BufRange(B, Start, B->Cursor - Start);
 }
-STATIC UINT32 CffInt(BUFFER *b)
+STATIC UINT32 CffInt(BUFFER *B)
 {
-    INT32 b0 = BufGet8(b);
-    if (b0 >= 32 && b0 <= 246)
-        return b0 - 139;
-    else if (b0 >= 247 && b0 <= 250)
-        return (b0 - 247) * 256 + BufGet8(b) + 108;
-    else if (b0 >= 251 && b0 <= 254)
-        return -(b0 - 251) * 256 - BufGet8(b) - 108;
-    else if (b0 == 28)
-        return BUF_GET16(b);
-    else if (b0 == 29)
-        return BUF_GET32(b);
+    INT32 B0 = BufGet8(B);
+    if (B0 >= 32 && B0 <= 246)
+        return B0 - 139;
+    else if (B0 >= 247 && B0 <= 250)
+        return (B0 - 247) * 256 + BufGet8(B) + 108;
+    else if (B0 >= 251 && B0 <= 254)
+        return -(B0 - 251) * 256 - BufGet8(B) - 108;
+    else if (B0 == 28)
+        return BUF_GET16(B);
+    else if (B0 == 29)
+        return BUF_GET32(B);
     KAssert(0);
     return 0;
 }
-STATIC VOID CffSkipOperand(BUFFER *b)
+STATIC VOID CffSkipOperand(BUFFER *B)
 {
-    INT32 v, b0 = BufPeek8(b);
-    KAssert(b0 >= 28);
-    if (b0 == 30)
+    INT32 V, B0 = BufPeek8(B);
+    KAssert(B0 >= 28);
+    if (B0 == 30)
     {
-        BufSkip(b, 1);
-        while (b->Cursor < b->Size)
+        BufSkip(B, 1);
+        while (B->Cursor < B->Size)
         {
-            v = BufGet8(b);
-            if ((v & 0xF) == 0xF || (v >> 4) == 0xF)
+            V = BufGet8(B);
+            if ((V & 0xF) == 0xF || (V >> 4) == 0xF)
                 break;
         }
     }
     else
     {
-        CffInt(b);
+        CffInt(B);
     }
 }
-STATIC BUFFER DictGet(BUFFER *b, INT32 key)
+STATIC BUFFER DictGet(BUFFER *B, INT32 Key)
 {
-    BufSeek(b, 0);
-    while (b->Cursor < b->Size)
+    BufSeek(B, 0);
+    while (B->Cursor < B->Size)
     {
-        INT32 start = b->Cursor, end, op;
-        while (BufPeek8(b) >= 28)
-            CffSkipOperand(b);
-        end = b->Cursor;
-        op = BufGet8(b);
-        if (op == 12)
-            op = BufGet8(b) | 0x100;
-        if (op == key)
-            return BufRange(b, start, end - start);
+        INT32 Start = B->Cursor, End, Op;
+        while (BufPeek8(B) >= 28)
+            CffSkipOperand(B);
+        End = B->Cursor;
+        Op = BufGet8(B);
+        if (Op == 12)
+            Op = BufGet8(B) | 0x100;
+        if (Op == Key)
+            return BufRange(B, Start, End - Start);
     }
-    return BufRange(b, 0, 0);
+    return BufRange(B, 0, 0);
 }
-STATIC VOID DictGetInts(BUFFER *b, INT32 key, INT32 outcount, UINT32 *out)
+STATIC VOID DictGetInts(BUFFER *B, INT32 Key, INT32 Outcount, UINT32 *Out)
 {
-    INT32  i;
-    BUFFER operands = DictGet(b, key);
-    for (i = 0; i < outcount && operands.Cursor < operands.Size; i++)
-        out[i] = CffInt(&operands);
+    INT32  I;
+    BUFFER Operands = DictGet(B, Key);
+    for (I = 0; I < Outcount && Operands.Cursor < Operands.Size; I++)
+        Out[I] = CffInt(&Operands);
 }
-STATIC INT32 CffIndexCount(BUFFER *b)
+STATIC INT32 CffIndexCount(BUFFER *B)
 {
-    BufSeek(b, 0);
-    return BUF_GET16(b);
+    BufSeek(B, 0);
+    return BUF_GET16(B);
 }
-STATIC BUFFER CffIndexGet(BUFFER b, INT32 i)
+STATIC BUFFER CffIndexGet(BUFFER B, INT32 I)
 {
-    INT32 count, offsize, start, end;
-    BufSeek(&b, 0);
-    count = BUF_GET16(&b);
-    offsize = BufGet8(&b);
-    KAssert(i >= 0 && i < count);
-    KAssert(offsize >= 1 && offsize <= 4);
-    BufSkip(&b, i * offsize);
-    start = BufGet(&b, offsize);
-    end = BufGet(&b, offsize);
-    return BufRange(&b, 2 + (count + 1) * offsize + start, end - start);
+    INT32 Count, Offsize, Start, End;
+    BufSeek(&B, 0);
+    Count = BUF_GET16(&B);
+    Offsize = BufGet8(&B);
+    KAssert(I >= 0 && I < Count);
+    KAssert(Offsize >= 1 && Offsize <= 4);
+    BufSkip(&B, I * Offsize);
+    Start = BufGet(&B, Offsize);
+    End = BufGet(&B, Offsize);
+    return BufRange(&B, 2 + (Count + 1) * Offsize + Start, End - Start);
 }
 #define TT_BYTE(p)  (*(UINT8 *) (p))
 #define TT_CHAR(p)  (*(INT8 *) (p))
 #define TT_FIXED(p) TTLONG(p)
-STATIC UINT16 TTUSHORT(UINT8 *p)
+STATIC UINT16 TTUSHORT(UINT8 *P)
 {
-    return p[0] * 256 + p[1];
+    return P[0] * 256 + P[1];
 }
-STATIC INT16 TTSHORT(UINT8 *p)
+STATIC INT16 TTSHORT(UINT8 *P)
 {
-    return p[0] * 256 + p[1];
+    return P[0] * 256 + P[1];
 }
-STATIC UINT32 TTULONG(UINT8 *p)
+STATIC UINT32 TTULONG(UINT8 *P)
 {
-    return (p[0] << 24) + (p[1] << 16) + (p[2] << 8) + p[3];
+    return (P[0] << 24) + (P[1] << 16) + (P[2] << 8) + P[3];
 }
-STATIC INT32 TTLONG(UINT8 *p)
+STATIC INT32 TTLONG(UINT8 *P)
 {
-    return (p[0] << 24) + (p[1] << 16) + (p[2] << 8) + p[3];
+    return (P[0] << 24) + (P[1] << 16) + (P[2] << 8) + P[3];
 }
 #define TAG4(p, c0, c1, c2, c3) ((p)[0] == (c0) && (p)[1] == (c1) && (p)[2] == (c2) && (p)[3] == (c3))
 #define TAG(p, str)             TAG4(p, str[0], str[1], str[2], str[3])
-STATIC INT32 Isfont(UINT8 *font)
+STATIC INT32 Isfont(UINT8 *Font)
 {
-    if (TAG4(font, '1', 0, 0, 0))
+    if (TAG4(Font, '1', 0, 0, 0))
         return 1;
-    if (TAG(font, "typ1"))
+    if (TAG(Font, "typ1"))
         return 1;
-    if (TAG(font, "OTTO"))
+    if (TAG(Font, "OTTO"))
         return 1;
-    if (TAG4(font, 0, 1, 0, 0))
+    if (TAG4(Font, 0, 1, 0, 0))
         return 1;
-    if (TAG(font, "true"))
+    if (TAG(Font, "true"))
         return 1;
     return 0;
 }
-STATIC UINT32 FindTable(UINT8 *data, UINT32 fontstart, CONST VOID *TagName)
+STATIC UINT32 FindTable(UINT8 *Data, UINT32 Fontstart, CONST VOID *TagName)
 {
-    CONST UINT8 *tag = (CONST UINT8 *) TagName;
-    INT32        NumTables = TTUSHORT(data + fontstart + 4);
-    UINT32       tabledir = fontstart + 12;
-    INT32        i;
-    for (i = 0; i < NumTables; ++i)
+    CONST UINT8 *Tag = (CONST UINT8 *) TagName;
+    INT32        NumTables = TTUSHORT(Data + Fontstart + 4);
+    UINT32       Tabledir = Fontstart + 12;
+    INT32        I;
+    for (I = 0; I < NumTables; ++I)
     {
-        UINT32 loc = tabledir + 16 * i;
-        if (TAG(data + loc + 0, tag))
-            return TTULONG(data + loc + 8);
+        UINT32 Loc = Tabledir + 16 * I;
+        if (TAG(Data + Loc + 0, Tag))
+            return TTULONG(Data + Loc + 8);
     }
     return 0;
 }
-STATIC INT32 GetFontOffsetForIndexInternal(UINT8 *FontCollection, INT32 index)
+STATIC INT32 GetFontOffsetForIndexInternal(UINT8 *FontCollection, INT32 Index)
 {
     if (Isfont(FontCollection))
-        return index == 0 ? 0 : -1;
+        return Index == 0 ? 0 : -1;
     if (TAG(FontCollection, "ttcf"))
     {
         if (TTULONG(FontCollection + 4) == 0x00010000 || TTULONG(FontCollection + 4) == 0x00020000)
         {
-            INT32 n = TTLONG(FontCollection + 8);
-            if (index >= n)
+            INT32 N = TTLONG(FontCollection + 8);
+            if (Index >= N)
                 return -1;
-            return TTULONG(FontCollection + 12 + index * 4);
+            return TTULONG(FontCollection + 12 + Index * 4);
         }
     }
     return -1;
@@ -228,211 +228,211 @@ STATIC INT32 GetNumberOfFontsInternal(UINT8 *FontCollection)
     }
     return 0;
 }
-STATIC BUFFER GetSubrs(BUFFER cff, BUFFER fontdict)
+STATIC BUFFER GetSubrs(BUFFER Cff, BUFFER Fontdict)
 {
-    UINT32 subrsoff = 0, PrivateLoc[2] = {0, 0};
-    BUFFER pdict;
-    DictGetInts(&fontdict, 18, 2, PrivateLoc);
+    UINT32 Subrsoff = 0, PrivateLoc[2] = {0, 0};
+    BUFFER Pdict;
+    DictGetInts(&Fontdict, 18, 2, PrivateLoc);
     if (!PrivateLoc[1] || !PrivateLoc[0])
         return NewBuf(NULL, 0);
-    pdict = BufRange(&cff, PrivateLoc[1], PrivateLoc[0]);
-    DictGetInts(&pdict, 19, 1, &subrsoff);
-    if (!subrsoff)
+    Pdict = BufRange(&Cff, PrivateLoc[1], PrivateLoc[0]);
+    DictGetInts(&Pdict, 19, 1, &Subrsoff);
+    if (!Subrsoff)
         return NewBuf(NULL, 0);
-    BufSeek(&cff, PrivateLoc[1] + subrsoff);
-    return CffGetIndex(&cff);
+    BufSeek(&Cff, PrivateLoc[1] + Subrsoff);
+    return CffGetIndex(&Cff);
 }
-STATIC INT32 GetSVG(FONT_INFO *info)
+STATIC INT32 GetSVG(FONT_INFO *Info)
 {
-    UINT32 t;
-    if (info->Svg < 0)
+    UINT32 T;
+    if (Info->Svg < 0)
     {
-        t = FindTable(info->Data, info->FontStart, "SVG ");
-        if (t)
+        T = FindTable(Info->Data, Info->FontStart, "SVG ");
+        if (T)
         {
-            UINT32 offset = TTULONG(info->Data + t + 2);
-            info->Svg = t + offset;
+            UINT32 Offset = TTULONG(Info->Data + T + 2);
+            Info->Svg = T + Offset;
         }
         else
         {
-            info->Svg = 0;
+            Info->Svg = 0;
         }
     }
-    return info->Svg;
+    return Info->Svg;
 }
-STATIC INT32 InitFontInternal(FONT_INFO *info, UINT8 *data, INT32 fontstart)
+STATIC INT32 InitFontInternal(FONT_INFO *Info, UINT8 *Data, INT32 Fontstart)
 {
-    UINT32 cmap, t;
-    INT32  i, NumTables;
-    info->Data = data;
-    info->FontStart = fontstart;
-    info->CFF = NewBuf(NULL, 0);
-    cmap = FindTable(data, fontstart, "cmap");
-    info->Loca = FindTable(data, fontstart, "loca");
-    info->Head = FindTable(data, fontstart, "head");
-    info->Glyf = FindTable(data, fontstart, "glyf");
-    info->Hhea = FindTable(data, fontstart, "hhea");
-    info->Hmtx = FindTable(data, fontstart, "hmtx");
-    info->Kern = FindTable(data, fontstart, "kern");
-    info->GPOS = FindTable(data, fontstart, "GPOS");
-    if (!cmap || !info->Head || !info->Hhea || !info->Hmtx)
+    UINT32 Cmap, T;
+    INT32  I, NumTables;
+    Info->Data = Data;
+    Info->FontStart = Fontstart;
+    Info->CFF = NewBuf(NULL, 0);
+    Cmap = FindTable(Data, Fontstart, "cmap");
+    Info->Loca = FindTable(Data, Fontstart, "loca");
+    Info->Head = FindTable(Data, Fontstart, "head");
+    Info->Glyf = FindTable(Data, Fontstart, "glyf");
+    Info->Hhea = FindTable(Data, Fontstart, "hhea");
+    Info->Hmtx = FindTable(Data, Fontstart, "hmtx");
+    Info->Kern = FindTable(Data, Fontstart, "kern");
+    Info->GPOS = FindTable(Data, Fontstart, "GPOS");
+    if (!Cmap || !Info->Head || !Info->Hhea || !Info->Hmtx)
         return 0;
-    if (info->Glyf)
+    if (Info->Glyf)
     {
-        if (!info->Loca)
+        if (!Info->Loca)
             return 0;
     }
     else
     {
-        BUFFER b, topdict, topdictidx;
-        UINT32 cstype = 2, charstrings = 0, fdarrayoff = 0, fdselectoff = 0;
-        UINT32 cff;
-        cff = FindTable(data, fontstart, "CFF ");
-        if (!cff)
+        BUFFER B, Topdict, Topdictidx;
+        UINT32 Cstype = 2, Charstrings = 0, Fdarrayoff = 0, Fdselectoff = 0;
+        UINT32 Cff;
+        Cff = FindTable(Data, Fontstart, "CFF ");
+        if (!Cff)
             return 0;
-        info->FontDicts = NewBuf(NULL, 0);
-        info->FdSelect = NewBuf(NULL, 0);
-        info->CFF = NewBuf(data + cff, 512 * 1024 * 1024);
-        b = info->CFF;
-        BufSkip(&b, 2);
-        BufSeek(&b, BufGet8(&b));
-        CffGetIndex(&b);
-        topdictidx = CffGetIndex(&b);
-        topdict = CffIndexGet(topdictidx, 0);
-        CffGetIndex(&b);
-        info->GSubrs = CffGetIndex(&b);
-        DictGetInts(&topdict, 17, 1, &charstrings);
-        DictGetInts(&topdict, 0x100 | 6, 1, &cstype);
-        DictGetInts(&topdict, 0x100 | 36, 1, &fdarrayoff);
-        DictGetInts(&topdict, 0x100 | 37, 1, &fdselectoff);
-        info->Subrs = GetSubrs(b, topdict);
-        if (cstype != 2)
+        Info->FontDicts = NewBuf(NULL, 0);
+        Info->FdSelect = NewBuf(NULL, 0);
+        Info->CFF = NewBuf(Data + Cff, 512 * 1024 * 1024);
+        B = Info->CFF;
+        BufSkip(&B, 2);
+        BufSeek(&B, BufGet8(&B));
+        CffGetIndex(&B);
+        Topdictidx = CffGetIndex(&B);
+        Topdict = CffIndexGet(Topdictidx, 0);
+        CffGetIndex(&B);
+        Info->GSubrs = CffGetIndex(&B);
+        DictGetInts(&Topdict, 17, 1, &Charstrings);
+        DictGetInts(&Topdict, 0x100 | 6, 1, &Cstype);
+        DictGetInts(&Topdict, 0x100 | 36, 1, &Fdarrayoff);
+        DictGetInts(&Topdict, 0x100 | 37, 1, &Fdselectoff);
+        Info->Subrs = GetSubrs(B, Topdict);
+        if (Cstype != 2)
             return 0;
-        if (charstrings == 0)
+        if (Charstrings == 0)
             return 0;
-        if (fdarrayoff)
+        if (Fdarrayoff)
         {
-            if (!fdselectoff)
+            if (!Fdselectoff)
                 return 0;
-            BufSeek(&b, fdarrayoff);
-            info->FontDicts = CffGetIndex(&b);
-            info->FdSelect = BufRange(&b, fdselectoff, b.Size - fdselectoff);
+            BufSeek(&B, Fdarrayoff);
+            Info->FontDicts = CffGetIndex(&B);
+            Info->FdSelect = BufRange(&B, Fdselectoff, B.Size - Fdselectoff);
         }
-        BufSeek(&b, charstrings);
-        info->CharStrings = CffGetIndex(&b);
+        BufSeek(&B, Charstrings);
+        Info->CharStrings = CffGetIndex(&B);
     }
-    t = FindTable(data, fontstart, "maxp");
-    if (t)
-        info->NumGlyphs = TTUSHORT(data + t + 4);
+    T = FindTable(Data, Fontstart, "maxp");
+    if (T)
+        Info->NumGlyphs = TTUSHORT(Data + T + 4);
     else
-        info->NumGlyphs = 0xffff;
-    info->Svg = -1;
-    NumTables = TTUSHORT(data + cmap + 2);
-    info->IndexMap = 0;
-    for (i = 0; i < NumTables; ++i)
+        Info->NumGlyphs = 0xffff;
+    Info->Svg = -1;
+    NumTables = TTUSHORT(Data + Cmap + 2);
+    Info->IndexMap = 0;
+    for (I = 0; I < NumTables; ++I)
     {
-        UINT32 EncodingRecord = cmap + 4 + 8 * i;
-        switch (TTUSHORT(data + EncodingRecord))
+        UINT32 EncodingRecord = Cmap + 4 + 8 * I;
+        switch (TTUSHORT(Data + EncodingRecord))
         {
         case 3:
-            switch (TTUSHORT(data + EncodingRecord + 2))
+            switch (TTUSHORT(Data + EncodingRecord + 2))
             {
             case 1:
             case 10:
-                info->IndexMap = cmap + TTULONG(data + EncodingRecord + 4);
+                Info->IndexMap = Cmap + TTULONG(Data + EncodingRecord + 4);
                 break;
             }
             break;
         case 0:
-            info->IndexMap = cmap + TTULONG(data + EncodingRecord + 4);
+            Info->IndexMap = Cmap + TTULONG(Data + EncodingRecord + 4);
             break;
         }
     }
-    if (info->IndexMap == 0)
+    if (Info->IndexMap == 0)
         return 0;
-    info->IndexToLocFormat = TTUSHORT(data + info->Head + 50);
+    Info->IndexToLocFormat = TTUSHORT(Data + Info->Head + 50);
     return 1;
 }
-EXTERN INT32 FindGlyphIndex(CONST FONT_INFO *info, INT32 UnicodeCodepoint)
+EXTERN INT32 FindGlyphIndex(CONST FONT_INFO *Info, INT32 UnicodeCodepoint)
 {
-    UINT8 *data = info->Data;
-    UINT32 IndexMap = info->IndexMap;
-    UINT16 format = TTUSHORT(data + IndexMap + 0);
-    if (format == 0)
+    UINT8 *Data = Info->Data;
+    UINT32 IndexMap = Info->IndexMap;
+    UINT16 Format = TTUSHORT(Data + IndexMap + 0);
+    if (Format == 0)
     {
-        INT32 bytes = TTUSHORT(data + IndexMap + 2);
-        if (UnicodeCodepoint < bytes - 6)
-            return TT_BYTE(data + IndexMap + 6 + UnicodeCodepoint);
+        INT32 Bytes = TTUSHORT(Data + IndexMap + 2);
+        if (UnicodeCodepoint < Bytes - 6)
+            return TT_BYTE(Data + IndexMap + 6 + UnicodeCodepoint);
         return 0;
     }
-    else if (format == 6)
+    else if (Format == 6)
     {
-        UINT32 first = TTUSHORT(data + IndexMap + 6);
-        UINT32 count = TTUSHORT(data + IndexMap + 8);
-        if ((UINT32) UnicodeCodepoint >= first && (UINT32) UnicodeCodepoint < first + count)
-            return TTUSHORT(data + IndexMap + 10 + (UnicodeCodepoint - first) * 2);
+        UINT32 First = TTUSHORT(Data + IndexMap + 6);
+        UINT32 Count = TTUSHORT(Data + IndexMap + 8);
+        if ((UINT32) UnicodeCodepoint >= First && (UINT32) UnicodeCodepoint < First + Count)
+            return TTUSHORT(Data + IndexMap + 10 + (UnicodeCodepoint - First) * 2);
         return 0;
     }
-    else if (format == 2)
+    else if (Format == 2)
     {
         KAssert(0);
         return 0;
     }
-    else if (format == 4)
+    else if (Format == 4)
     {
-        UINT16 segcount = TTUSHORT(data + IndexMap + 6) >> 1;
-        UINT16 SearchRange = TTUSHORT(data + IndexMap + 8) >> 1;
-        UINT16 EntrySelector = TTUSHORT(data + IndexMap + 10);
-        UINT16 RangeShift = TTUSHORT(data + IndexMap + 12) >> 1;
+        UINT16 Segcount = TTUSHORT(Data + IndexMap + 6) >> 1;
+        UINT16 SearchRange = TTUSHORT(Data + IndexMap + 8) >> 1;
+        UINT16 EntrySelector = TTUSHORT(Data + IndexMap + 10);
+        UINT16 RangeShift = TTUSHORT(Data + IndexMap + 12) >> 1;
         UINT32 EndCount = IndexMap + 14;
-        UINT32 search = EndCount;
+        UINT32 Search = EndCount;
         if (UnicodeCodepoint > 0xffff)
             return 0;
-        if (UnicodeCodepoint >= TTUSHORT(data + search + RangeShift * 2))
-            search += RangeShift * 2;
-        search -= 2;
+        if (UnicodeCodepoint >= TTUSHORT(Data + Search + RangeShift * 2))
+            Search += RangeShift * 2;
+        Search -= 2;
         while (EntrySelector)
         {
-            UINT16 end;
+            UINT16 End;
             SearchRange >>= 1;
-            end = TTUSHORT(data + search + SearchRange * 2);
-            if (UnicodeCodepoint > end)
-                search += SearchRange * 2;
+            End = TTUSHORT(Data + Search + SearchRange * 2);
+            if (UnicodeCodepoint > End)
+                Search += SearchRange * 2;
             --EntrySelector;
         }
-        search += 2;
+        Search += 2;
         {
-            UINT16 offset, start, last;
-            UINT16 item = (UINT16) ((search - EndCount) >> 1);
-            start = TTUSHORT(data + IndexMap + 14 + segcount * 2 + 2 + 2 * item);
-            last = TTUSHORT(data + EndCount + 2 * item);
-            if (UnicodeCodepoint < start || UnicodeCodepoint > last)
+            UINT16 Offset, Start, Last;
+            UINT16 Item = (UINT16) ((Search - EndCount) >> 1);
+            Start = TTUSHORT(Data + IndexMap + 14 + Segcount * 2 + 2 + 2 * Item);
+            Last = TTUSHORT(Data + EndCount + 2 * Item);
+            if (UnicodeCodepoint < Start || UnicodeCodepoint > Last)
                 return 0;
-            offset = TTUSHORT(data + IndexMap + 14 + segcount * 6 + 2 + 2 * item);
-            if (offset == 0)
-                return (UINT16) (UnicodeCodepoint + TTSHORT(data + IndexMap + 14 + segcount * 4 + 2 + 2 * item));
-            return TTUSHORT(data + offset + (UnicodeCodepoint - start) * 2 + IndexMap + 14 + segcount * 6 + 2 + 2 * item);
+            Offset = TTUSHORT(Data + IndexMap + 14 + Segcount * 6 + 2 + 2 * Item);
+            if (Offset == 0)
+                return (UINT16) (UnicodeCodepoint + TTSHORT(Data + IndexMap + 14 + Segcount * 4 + 2 + 2 * Item));
+            return TTUSHORT(Data + Offset + (UnicodeCodepoint - Start) * 2 + IndexMap + 14 + Segcount * 6 + 2 + 2 * Item);
         }
     }
-    else if (format == 12 || format == 13)
+    else if (Format == 12 || Format == 13)
     {
-        UINT32 ngroups = TTULONG(data + IndexMap + 12);
-        INT32  low, high;
-        low = 0;
-        high = (INT32) ngroups;
-        while (low < high)
+        UINT32 Ngroups = TTULONG(Data + IndexMap + 12);
+        INT32  Low, High;
+        Low = 0;
+        High = (INT32) Ngroups;
+        while (Low < High)
         {
-            INT32  mid = low + ((high - low) >> 1);
-            UINT32 StartChar = TTULONG(data + IndexMap + 16 + mid * 12);
-            UINT32 EndChar = TTULONG(data + IndexMap + 16 + mid * 12 + 4);
+            INT32  Mid = Low + ((High - Low) >> 1);
+            UINT32 StartChar = TTULONG(Data + IndexMap + 16 + Mid * 12);
+            UINT32 EndChar = TTULONG(Data + IndexMap + 16 + Mid * 12 + 4);
             if ((UINT32) UnicodeCodepoint < StartChar)
-                high = mid;
+                High = Mid;
             else if ((UINT32) UnicodeCodepoint > EndChar)
-                low = mid + 1;
+                Low = Mid + 1;
             else
             {
-                UINT32 StartGlyph = TTULONG(data + IndexMap + 16 + mid * 12 + 8);
-                if (format == 12)
+                UINT32 StartGlyph = TTULONG(Data + IndexMap + 16 + Mid * 12 + 8);
+                if (Format == 12)
                     return StartGlyph + UnicodeCodepoint - StartChar;
                 else
                     return StartGlyph;
@@ -443,338 +443,338 @@ EXTERN INT32 FindGlyphIndex(CONST FONT_INFO *info, INT32 UnicodeCodepoint)
     KAssert(0);
     return 0;
 }
-EXTERN INT32 GetCodepointShape(CONST FONT_INFO *info, INT32 UnicodeCodepoint, VERTEX **vertices)
+EXTERN INT32 GetCodepointShape(CONST FONT_INFO *Info, INT32 UnicodeCodepoint, VERTEX **Vertices)
 {
-    return GetGlyphShape(info, FindGlyphIndex(info, UnicodeCodepoint), vertices);
+    return GetGlyphShape(Info, FindGlyphIndex(Info, UnicodeCodepoint), Vertices);
 }
-STATIC VOID Setvertex(VERTEX *v, UINT8 type, INT32 x, INT32 y, INT32 cx, INT32 cy)
+STATIC VOID Setvertex(VERTEX *V, UINT8 Type, INT32 X, INT32 Y, INT32 Cx, INT32 Cy)
 {
-    v->Type = type;
-    v->X = (INT16) x;
-    v->Y = (INT16) y;
-    v->Cx = (INT16) cx;
-    v->Cy = (INT16) cy;
+    V->Type = Type;
+    V->X = (INT16) X;
+    V->Y = (INT16) Y;
+    V->Cx = (INT16) Cx;
+    V->Cy = (INT16) Cy;
 }
-STATIC INT32 GetGlyfOffset(CONST FONT_INFO *info, INT32 GlyphIndex)
+STATIC INT32 GetGlyfOffset(CONST FONT_INFO *Info, INT32 GlyphIndex)
 {
-    INT32 g1, g2;
-    KAssert(!info->CFF.Size);
-    if (GlyphIndex >= info->NumGlyphs)
+    INT32 G1, G2;
+    KAssert(!Info->CFF.Size);
+    if (GlyphIndex >= Info->NumGlyphs)
         return -1;
-    if (info->IndexToLocFormat >= 2)
+    if (Info->IndexToLocFormat >= 2)
         return -1;
-    if (info->IndexToLocFormat == 0)
+    if (Info->IndexToLocFormat == 0)
     {
-        g1 = info->Glyf + TTUSHORT(info->Data + info->Loca + GlyphIndex * 2) * 2;
-        g2 = info->Glyf + TTUSHORT(info->Data + info->Loca + GlyphIndex * 2 + 2) * 2;
+        G1 = Info->Glyf + TTUSHORT(Info->Data + Info->Loca + GlyphIndex * 2) * 2;
+        G2 = Info->Glyf + TTUSHORT(Info->Data + Info->Loca + GlyphIndex * 2 + 2) * 2;
     }
     else
     {
-        g1 = info->Glyf + TTULONG(info->Data + info->Loca + GlyphIndex * 4);
-        g2 = info->Glyf + TTULONG(info->Data + info->Loca + GlyphIndex * 4 + 4);
+        G1 = Info->Glyf + TTULONG(Info->Data + Info->Loca + GlyphIndex * 4);
+        G2 = Info->Glyf + TTULONG(Info->Data + Info->Loca + GlyphIndex * 4 + 4);
     }
-    return g1 == g2 ? -1 : g1;
+    return G1 == G2 ? -1 : G1;
 }
-STATIC INT32 GetGlyphInfoT2(CONST FONT_INFO *info, INT32 GlyphIndex, INT32 *x0, INT32 *y0, INT32 *x1, INT32 *y1);
-EXTERN INT32 GetGlyphBox(CONST FONT_INFO *info, INT32 GlyphIndex, INT32 *x0, INT32 *y0, INT32 *x1, INT32 *y1)
+STATIC INT32 GetGlyphInfoT2(CONST FONT_INFO *Info, INT32 GlyphIndex, INT32 *X0, INT32 *Y0, INT32 *X1, INT32 *Y1);
+EXTERN INT32 GetGlyphBox(CONST FONT_INFO *Info, INT32 GlyphIndex, INT32 *X0, INT32 *Y0, INT32 *X1, INT32 *Y1)
 {
-    if (info->CFF.Size)
+    if (Info->CFF.Size)
     {
-        GetGlyphInfoT2(info, GlyphIndex, x0, y0, x1, y1);
+        GetGlyphInfoT2(Info, GlyphIndex, X0, Y0, X1, Y1);
     }
     else
     {
-        INT32 g = GetGlyfOffset(info, GlyphIndex);
-        if (g < 0)
+        INT32 G = GetGlyfOffset(Info, GlyphIndex);
+        if (G < 0)
             return 0;
-        if (x0)
-            *x0 = TTSHORT(info->Data + g + 2);
-        if (y0)
-            *y0 = TTSHORT(info->Data + g + 4);
-        if (x1)
-            *x1 = TTSHORT(info->Data + g + 6);
-        if (y1)
-            *y1 = TTSHORT(info->Data + g + 8);
+        if (X0)
+            *X0 = TTSHORT(Info->Data + G + 2);
+        if (Y0)
+            *Y0 = TTSHORT(Info->Data + G + 4);
+        if (X1)
+            *X1 = TTSHORT(Info->Data + G + 6);
+        if (Y1)
+            *Y1 = TTSHORT(Info->Data + G + 8);
     }
     return 1;
 }
-EXTERN INT32 GetCodepointBox(CONST FONT_INFO *info, INT32 codepoint, INT32 *x0, INT32 *y0, INT32 *x1, INT32 *y1)
+EXTERN INT32 GetCodepointBox(CONST FONT_INFO *Info, INT32 Codepoint, INT32 *X0, INT32 *Y0, INT32 *X1, INT32 *Y1)
 {
-    return GetGlyphBox(info, FindGlyphIndex(info, codepoint), x0, y0, x1, y1);
+    return GetGlyphBox(Info, FindGlyphIndex(Info, Codepoint), X0, Y0, X1, Y1);
 }
-EXTERN INT32 IsGlyphEmpty(CONST FONT_INFO *info, INT32 GlyphIndex)
+EXTERN INT32 IsGlyphEmpty(CONST FONT_INFO *Info, INT32 GlyphIndex)
 {
     INT16 NumberOfContours;
-    INT32 g;
-    if (info->CFF.Size)
-        return GetGlyphInfoT2(info, GlyphIndex, NULL, NULL, NULL, NULL) == 0;
-    g = GetGlyfOffset(info, GlyphIndex);
-    if (g < 0)
+    INT32 G;
+    if (Info->CFF.Size)
+        return GetGlyphInfoT2(Info, GlyphIndex, NULL, NULL, NULL, NULL) == 0;
+    G = GetGlyfOffset(Info, GlyphIndex);
+    if (G < 0)
         return 1;
-    NumberOfContours = TTSHORT(info->Data + g);
+    NumberOfContours = TTSHORT(Info->Data + G);
     return NumberOfContours == 0;
 }
-STATIC INT32 CloseShape(VERTEX *vertices, INT32 NumVertices, INT32 WasOff, INT32 StartOff, INT32 sx, INT32 sy, INT32 scx, INT32 scy, INT32 cx, INT32 cy)
+STATIC INT32 CloseShape(VERTEX *Vertices, INT32 NumVertices, INT32 WasOff, INT32 StartOff, INT32 Sx, INT32 Sy, INT32 Scx, INT32 Scy, INT32 Cx, INT32 Cy)
 {
     if (StartOff)
     {
         if (WasOff)
-            Setvertex(&vertices[NumVertices++], LINEOS_VCURVE, (cx + scx) >> 1, (cy + scy) >> 1, cx, cy);
-        Setvertex(&vertices[NumVertices++], LINEOS_VCURVE, sx, sy, scx, scy);
+            Setvertex(&Vertices[NumVertices++], LINEOS_VCURVE, (Cx + Scx) >> 1, (Cy + Scy) >> 1, Cx, Cy);
+        Setvertex(&Vertices[NumVertices++], LINEOS_VCURVE, Sx, Sy, Scx, Scy);
     }
     else
     {
         if (WasOff)
-            Setvertex(&vertices[NumVertices++], LINEOS_VCURVE, sx, sy, cx, cy);
+            Setvertex(&Vertices[NumVertices++], LINEOS_VCURVE, Sx, Sy, Cx, Cy);
         else
-            Setvertex(&vertices[NumVertices++], LINEOS_VLINE, sx, sy, 0, 0);
+            Setvertex(&Vertices[NumVertices++], LINEOS_VLINE, Sx, Sy, 0, 0);
     }
     return NumVertices;
 }
-STATIC INT32 GetGlyphShapeTT(CONST FONT_INFO *info, INT32 GlyphIndex, VERTEX **pvertices)
+STATIC INT32 GetGlyphShapeTT(CONST FONT_INFO *Info, INT32 GlyphIndex, VERTEX **Pvertices)
 {
     INT16   NumberOfContours;
     UINT8  *EndPtsOfContours;
-    UINT8  *data = info->Data;
-    VERTEX *vertices = 0;
+    UINT8  *Data = Info->Data;
+    VERTEX *Vertices = 0;
     INT32   NumVertices = 0;
-    INT32   g = GetGlyfOffset(info, GlyphIndex);
-    *pvertices = NULL;
-    if (g < 0)
+    INT32   G = GetGlyfOffset(Info, GlyphIndex);
+    *Pvertices = NULL;
+    if (G < 0)
         return 0;
-    NumberOfContours = TTSHORT(data + g);
+    NumberOfContours = TTSHORT(Data + G);
     if (NumberOfContours > 0)
     {
-        UINT8  flags = 0, flagcount;
-        INT32  ins, i, j = 0, m, n, NextMove, WasOff = 0, off, StartOff = 0;
-        INT32  x, y, cx, cy, sx, sy, scx, scy;
-        UINT8 *points;
-        EndPtsOfContours = (data + g + 10);
-        ins = TTUSHORT(data + g + 10 + NumberOfContours * 2);
-        points = data + g + 10 + NumberOfContours * 2 + 2 + ins;
-        n = 1 + TTUSHORT(EndPtsOfContours + NumberOfContours * 2 - 2);
-        m = n + 2 * NumberOfContours;
-        vertices = (VERTEX *) KTTFAlloc(m * sizeof(vertices[0]), info->UserData);
-        if (vertices == 0)
+        UINT8  Flags = 0, Flagcount;
+        INT32  Ins, I, J = 0, M, N, NextMove, WasOff = 0, Off, StartOff = 0;
+        INT32  X, Y, Cx, Cy, Sx, Sy, Scx, Scy;
+        UINT8 *Points;
+        EndPtsOfContours = (Data + G + 10);
+        Ins = TTUSHORT(Data + G + 10 + NumberOfContours * 2);
+        Points = Data + G + 10 + NumberOfContours * 2 + 2 + Ins;
+        N = 1 + TTUSHORT(EndPtsOfContours + NumberOfContours * 2 - 2);
+        M = N + 2 * NumberOfContours;
+        Vertices = (VERTEX *) KTTFAlloc(M * sizeof(Vertices[0]), Info->UserData);
+        if (Vertices == 0)
             return 0;
         NextMove = 0;
-        flagcount = 0;
-        off = m - n;
-        for (i = 0; i < n; ++i)
+        Flagcount = 0;
+        Off = M - N;
+        for (I = 0; I < N; ++I)
         {
-            if (flagcount == 0)
+            if (Flagcount == 0)
             {
-                flags = *points++;
-                if (flags & 8)
-                    flagcount = *points++;
+                Flags = *Points++;
+                if (Flags & 8)
+                    Flagcount = *Points++;
             }
             else
-                --flagcount;
-            vertices[off + i].Type = flags;
+                --Flagcount;
+            Vertices[Off + I].Type = Flags;
         }
-        x = 0;
-        for (i = 0; i < n; ++i)
+        X = 0;
+        for (I = 0; I < N; ++I)
         {
-            flags = vertices[off + i].Type;
-            if (flags & 2)
+            Flags = Vertices[Off + I].Type;
+            if (Flags & 2)
             {
-                INT16 dx = *points++;
-                x += (flags & 16) ? dx : -dx;
+                INT16 Dx = *Points++;
+                X += (Flags & 16) ? Dx : -Dx;
             }
             else
             {
-                if (!(flags & 16))
+                if (!(Flags & 16))
                 {
-                    x = x + (INT16) (points[0] * 256 + points[1]);
-                    points += 2;
+                    X = X + (INT16) (Points[0] * 256 + Points[1]);
+                    Points += 2;
                 }
             }
-            vertices[off + i].X = (INT16) x;
+            Vertices[Off + I].X = (INT16) X;
         }
-        y = 0;
-        for (i = 0; i < n; ++i)
+        Y = 0;
+        for (I = 0; I < N; ++I)
         {
-            flags = vertices[off + i].Type;
-            if (flags & 4)
+            Flags = Vertices[Off + I].Type;
+            if (Flags & 4)
             {
-                INT16 dy = *points++;
-                y += (flags & 32) ? dy : -dy;
+                INT16 Dy = *Points++;
+                Y += (Flags & 32) ? Dy : -Dy;
             }
             else
             {
-                if (!(flags & 32))
+                if (!(Flags & 32))
                 {
-                    y = y + (INT16) (points[0] * 256 + points[1]);
-                    points += 2;
+                    Y = Y + (INT16) (Points[0] * 256 + Points[1]);
+                    Points += 2;
                 }
             }
-            vertices[off + i].Y = (INT16) y;
+            Vertices[Off + I].Y = (INT16) Y;
         }
         NumVertices = 0;
-        sx = sy = cx = cy = scx = scy = 0;
-        for (i = 0; i < n; ++i)
+        Sx = Sy = Cx = Cy = Scx = Scy = 0;
+        for (I = 0; I < N; ++I)
         {
-            flags = vertices[off + i].Type;
-            x = (INT16) vertices[off + i].X;
-            y = (INT16) vertices[off + i].Y;
-            if (NextMove == i)
+            Flags = Vertices[Off + I].Type;
+            X = (INT16) Vertices[Off + I].X;
+            Y = (INT16) Vertices[Off + I].Y;
+            if (NextMove == I)
             {
-                if (i != 0)
-                    NumVertices = CloseShape(vertices, NumVertices, WasOff, StartOff, sx, sy, scx, scy, cx, cy);
-                StartOff = !(flags & 1);
+                if (I != 0)
+                    NumVertices = CloseShape(Vertices, NumVertices, WasOff, StartOff, Sx, Sy, Scx, Scy, Cx, Cy);
+                StartOff = !(Flags & 1);
                 if (StartOff)
                 {
-                    scx = x;
-                    scy = y;
-                    if (!(vertices[off + i + 1].Type & 1))
+                    Scx = X;
+                    Scy = Y;
+                    if (!(Vertices[Off + I + 1].Type & 1))
                     {
-                        sx = (x + (INT32) vertices[off + i + 1].X) >> 1;
-                        sy = (y + (INT32) vertices[off + i + 1].Y) >> 1;
+                        Sx = (X + (INT32) Vertices[Off + I + 1].X) >> 1;
+                        Sy = (Y + (INT32) Vertices[Off + I + 1].Y) >> 1;
                     }
                     else
                     {
-                        sx = (INT32) vertices[off + i + 1].X;
-                        sy = (INT32) vertices[off + i + 1].Y;
-                        ++i;
+                        Sx = (INT32) Vertices[Off + I + 1].X;
+                        Sy = (INT32) Vertices[Off + I + 1].Y;
+                        ++I;
                     }
                 }
                 else
                 {
-                    sx = x;
-                    sy = y;
+                    Sx = X;
+                    Sy = Y;
                 }
-                Setvertex(&vertices[NumVertices++], LINEOS_VMOVE, sx, sy, 0, 0);
+                Setvertex(&Vertices[NumVertices++], LINEOS_VMOVE, Sx, Sy, 0, 0);
                 WasOff = 0;
-                NextMove = 1 + TTUSHORT(EndPtsOfContours + j * 2);
-                ++j;
+                NextMove = 1 + TTUSHORT(EndPtsOfContours + J * 2);
+                ++J;
             }
             else
             {
-                if (!(flags & 1))
+                if (!(Flags & 1))
                 {
                     if (WasOff)
-                        Setvertex(&vertices[NumVertices++], LINEOS_VCURVE, (cx + x) >> 1, (cy + y) >> 1, cx, cy);
-                    cx = x;
-                    cy = y;
+                        Setvertex(&Vertices[NumVertices++], LINEOS_VCURVE, (Cx + X) >> 1, (Cy + Y) >> 1, Cx, Cy);
+                    Cx = X;
+                    Cy = Y;
                     WasOff = 1;
                 }
                 else
                 {
                     if (WasOff)
-                        Setvertex(&vertices[NumVertices++], LINEOS_VCURVE, x, y, cx, cy);
+                        Setvertex(&Vertices[NumVertices++], LINEOS_VCURVE, X, Y, Cx, Cy);
                     else
-                        Setvertex(&vertices[NumVertices++], LINEOS_VLINE, x, y, 0, 0);
+                        Setvertex(&Vertices[NumVertices++], LINEOS_VLINE, X, Y, 0, 0);
                     WasOff = 0;
                 }
             }
         }
-        NumVertices = CloseShape(vertices, NumVertices, WasOff, StartOff, sx, sy, scx, scy, cx, cy);
+        NumVertices = CloseShape(Vertices, NumVertices, WasOff, StartOff, Sx, Sy, Scx, Scy, Cx, Cy);
     }
     else if (NumberOfContours < 0)
     {
-        INT32  more = 1;
-        UINT8 *comp = data + g + 10;
+        INT32  More = 1;
+        UINT8 *Comp = Data + G + 10;
         NumVertices = 0;
-        vertices = 0;
-        while (more)
+        Vertices = 0;
+        while (More)
         {
-            UINT16  flags, gidx;
-            INT32   CompNumVerts = 0, i;
-            VERTEX *CompVerts = 0, *tmp = 0;
-            FLOAT32 mtx[6] = {1, 0, 0, 1, 0, 0}, m, n;
-            flags = TTSHORT(comp);
-            comp += 2;
-            gidx = TTSHORT(comp);
-            comp += 2;
-            if (flags & 2)
+            UINT16  Flags, Gidx;
+            INT32   CompNumVerts = 0, I;
+            VERTEX *CompVerts = 0, *Tmp = 0;
+            FLOAT32 Mtx[6] = {1, 0, 0, 1, 0, 0}, M, N;
+            Flags = TTSHORT(Comp);
+            Comp += 2;
+            Gidx = TTSHORT(Comp);
+            Comp += 2;
+            if (Flags & 2)
             {
-                if (flags & 1)
+                if (Flags & 1)
                 {
-                    mtx[4] = TTSHORT(comp);
-                    comp += 2;
-                    mtx[5] = TTSHORT(comp);
-                    comp += 2;
+                    Mtx[4] = TTSHORT(Comp);
+                    Comp += 2;
+                    Mtx[5] = TTSHORT(Comp);
+                    Comp += 2;
                 }
                 else
                 {
-                    mtx[4] = TT_CHAR(comp);
-                    comp += 1;
-                    mtx[5] = TT_CHAR(comp);
-                    comp += 1;
+                    Mtx[4] = TT_CHAR(Comp);
+                    Comp += 1;
+                    Mtx[5] = TT_CHAR(Comp);
+                    Comp += 1;
                 }
             }
             else
             {
                 KAssert(0);
             }
-            if (flags & (1 << 3))
+            if (Flags & (1 << 3))
             {
-                mtx[0] = mtx[3] = TTSHORT(comp) / 16384.0f;
-                comp += 2;
-                mtx[1] = mtx[2] = 0;
+                Mtx[0] = Mtx[3] = TTSHORT(Comp) / 16384.0f;
+                Comp += 2;
+                Mtx[1] = Mtx[2] = 0;
             }
-            else if (flags & (1 << 6))
+            else if (Flags & (1 << 6))
             {
-                mtx[0] = TTSHORT(comp) / 16384.0f;
-                comp += 2;
-                mtx[1] = mtx[2] = 0;
-                mtx[3] = TTSHORT(comp) / 16384.0f;
-                comp += 2;
+                Mtx[0] = TTSHORT(Comp) / 16384.0f;
+                Comp += 2;
+                Mtx[1] = Mtx[2] = 0;
+                Mtx[3] = TTSHORT(Comp) / 16384.0f;
+                Comp += 2;
             }
-            else if (flags & (1 << 7))
+            else if (Flags & (1 << 7))
             {
-                mtx[0] = TTSHORT(comp) / 16384.0f;
-                comp += 2;
-                mtx[1] = TTSHORT(comp) / 16384.0f;
-                comp += 2;
-                mtx[2] = TTSHORT(comp) / 16384.0f;
-                comp += 2;
-                mtx[3] = TTSHORT(comp) / 16384.0f;
-                comp += 2;
+                Mtx[0] = TTSHORT(Comp) / 16384.0f;
+                Comp += 2;
+                Mtx[1] = TTSHORT(Comp) / 16384.0f;
+                Comp += 2;
+                Mtx[2] = TTSHORT(Comp) / 16384.0f;
+                Comp += 2;
+                Mtx[3] = TTSHORT(Comp) / 16384.0f;
+                Comp += 2;
             }
-            m = (FLOAT32) KSqrt(mtx[0] * mtx[0] + mtx[1] * mtx[1]);
-            n = (FLOAT32) KSqrt(mtx[2] * mtx[2] + mtx[3] * mtx[3]);
-            CompNumVerts = GetGlyphShape(info, gidx, &CompVerts);
+            M = (FLOAT32) KSqrt(Mtx[0] * Mtx[0] + Mtx[1] * Mtx[1]);
+            N = (FLOAT32) KSqrt(Mtx[2] * Mtx[2] + Mtx[3] * Mtx[3]);
+            CompNumVerts = GetGlyphShape(Info, Gidx, &CompVerts);
             if (CompNumVerts > 0)
             {
-                for (i = 0; i < CompNumVerts; ++i)
+                for (I = 0; I < CompNumVerts; ++I)
                 {
-                    VERTEX     *v = &CompVerts[i];
-                    VERTEX_TYPE x, y;
-                    x = v->X;
-                    y = v->Y;
-                    v->X = (VERTEX_TYPE) (m * (mtx[0] * x + mtx[2] * y + mtx[4]));
-                    v->Y = (VERTEX_TYPE) (n * (mtx[1] * x + mtx[3] * y + mtx[5]));
-                    x = v->Cx;
-                    y = v->Cy;
-                    v->Cx = (VERTEX_TYPE) (m * (mtx[0] * x + mtx[2] * y + mtx[4]));
-                    v->Cy = (VERTEX_TYPE) (n * (mtx[1] * x + mtx[3] * y + mtx[5]));
+                    VERTEX     *V = &CompVerts[I];
+                    VERTEX_TYPE X, Y;
+                    X = V->X;
+                    Y = V->Y;
+                    V->X = (VERTEX_TYPE) (M * (Mtx[0] * X + Mtx[2] * Y + Mtx[4]));
+                    V->Y = (VERTEX_TYPE) (N * (Mtx[1] * X + Mtx[3] * Y + Mtx[5]));
+                    X = V->Cx;
+                    Y = V->Cy;
+                    V->Cx = (VERTEX_TYPE) (M * (Mtx[0] * X + Mtx[2] * Y + Mtx[4]));
+                    V->Cy = (VERTEX_TYPE) (N * (Mtx[1] * X + Mtx[3] * Y + Mtx[5]));
                 }
-                tmp = (VERTEX *) KTTFAlloc((NumVertices + CompNumVerts) * sizeof(VERTEX), info->UserData);
-                if (!tmp)
+                Tmp = (VERTEX *) KTTFAlloc((NumVertices + CompNumVerts) * sizeof(VERTEX), Info->UserData);
+                if (!Tmp)
                 {
-                    if (vertices)
-                        KTTFFree(vertices, info->UserData);
+                    if (Vertices)
+                        KTTFFree(Vertices, Info->UserData);
                     if (CompVerts)
-                        KTTFFree(CompVerts, info->UserData);
+                        KTTFFree(CompVerts, Info->UserData);
                     return 0;
                 }
-                if (NumVertices > 0 && vertices)
-                    KMemCpy(tmp, vertices, NumVertices * sizeof(VERTEX));
-                KMemCpy(tmp + NumVertices, CompVerts, CompNumVerts * sizeof(VERTEX));
-                if (vertices)
-                    KTTFFree(vertices, info->UserData);
-                vertices = tmp;
-                KTTFFree(CompVerts, info->UserData);
+                if (NumVertices > 0 && Vertices)
+                    KMemCpy(Tmp, Vertices, NumVertices * sizeof(VERTEX));
+                KMemCpy(Tmp + NumVertices, CompVerts, CompNumVerts * sizeof(VERTEX));
+                if (Vertices)
+                    KTTFFree(Vertices, Info->UserData);
+                Vertices = Tmp;
+                KTTFFree(CompVerts, Info->UserData);
                 NumVertices += CompNumVerts;
             }
-            more = flags & (1 << 5);
+            More = Flags & (1 << 5);
         }
     }
     else
     {
     }
-    *pvertices = vertices;
+    *Pvertices = Vertices;
     return NumVertices;
 }
 typedef struct
@@ -791,349 +791,349 @@ typedef struct
     {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
         bounds, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, 0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             \
     }
-STATIC VOID TrackVertex(CS_CONTEXT *c, INT32 x, INT32 y)
+STATIC VOID TrackVertex(CS_CONTEXT *C, INT32 X, INT32 Y)
 {
-    if (x > c->MaxX || !c->started)
-        c->MaxX = x;
-    if (y > c->MaxY || !c->started)
-        c->MaxY = y;
-    if (x < c->MinX || !c->started)
-        c->MinX = x;
-    if (y < c->MinY || !c->started)
-        c->MinY = y;
-    c->started = 1;
+    if (X > C->MaxX || !C->started)
+        C->MaxX = X;
+    if (Y > C->MaxY || !C->started)
+        C->MaxY = Y;
+    if (X < C->MinX || !C->started)
+        C->MinX = X;
+    if (Y < C->MinY || !C->started)
+        C->MinY = Y;
+    C->started = 1;
 }
-STATIC VOID CsctxV(CS_CONTEXT *c, UINT8 type, INT32 x, INT32 y, INT32 cx, INT32 cy, INT32 cx1, INT32 cy1)
+STATIC VOID CsctxV(CS_CONTEXT *C, UINT8 Type, INT32 X, INT32 Y, INT32 Cx, INT32 Cy, INT32 Cx1, INT32 Cy1)
 {
-    if (c->bounds)
+    if (C->bounds)
     {
-        TrackVertex(c, x, y);
-        if (type == LINEOS_VCUBIC)
+        TrackVertex(C, X, Y);
+        if (Type == LINEOS_VCUBIC)
         {
-            TrackVertex(c, cx, cy);
-            TrackVertex(c, cx1, cy1);
+            TrackVertex(C, Cx, Cy);
+            TrackVertex(C, Cx1, Cy1);
         }
     }
     else
     {
-        Setvertex(&c->pvertices[c->NumVertices], type, x, y, cx, cy);
-        c->pvertices[c->NumVertices].Cx1 = (INT16) cx1;
-        c->pvertices[c->NumVertices].Cy1 = (INT16) cy1;
+        Setvertex(&C->pvertices[C->NumVertices], Type, X, Y, Cx, Cy);
+        C->pvertices[C->NumVertices].Cx1 = (INT16) Cx1;
+        C->pvertices[C->NumVertices].Cy1 = (INT16) Cy1;
     }
-    c->NumVertices++;
+    C->NumVertices++;
 }
-STATIC VOID CsctxCloseShape(CS_CONTEXT *ctx)
+STATIC VOID CsctxCloseShape(CS_CONTEXT *Ctx)
 {
-    if (ctx->FirstX != ctx->x || ctx->FirstY != ctx->y)
-        CsctxV(ctx, LINEOS_VLINE, (INT32) ctx->FirstX, (INT32) ctx->FirstY, 0, 0, 0, 0);
+    if (Ctx->FirstX != Ctx->x || Ctx->FirstY != Ctx->y)
+        CsctxV(Ctx, LINEOS_VLINE, (INT32) Ctx->FirstX, (INT32) Ctx->FirstY, 0, 0, 0, 0);
 }
-STATIC VOID CsctxRmoveTo(CS_CONTEXT *ctx, FLOAT32 dx, FLOAT32 dy)
+STATIC VOID CsctxRmoveTo(CS_CONTEXT *Ctx, FLOAT32 Dx, FLOAT32 Dy)
 {
-    CsctxCloseShape(ctx);
-    ctx->FirstX = ctx->x = ctx->x + dx;
-    ctx->FirstY = ctx->y = ctx->y + dy;
-    CsctxV(ctx, LINEOS_VMOVE, (INT32) ctx->x, (INT32) ctx->y, 0, 0, 0, 0);
+    CsctxCloseShape(Ctx);
+    Ctx->FirstX = Ctx->x = Ctx->x + Dx;
+    Ctx->FirstY = Ctx->y = Ctx->y + Dy;
+    CsctxV(Ctx, LINEOS_VMOVE, (INT32) Ctx->x, (INT32) Ctx->y, 0, 0, 0, 0);
 }
-STATIC VOID CsctxRlineTo(CS_CONTEXT *ctx, FLOAT32 dx, FLOAT32 dy)
+STATIC VOID CsctxRlineTo(CS_CONTEXT *Ctx, FLOAT32 Dx, FLOAT32 Dy)
 {
-    ctx->x += dx;
-    ctx->y += dy;
-    CsctxV(ctx, LINEOS_VLINE, (INT32) ctx->x, (INT32) ctx->y, 0, 0, 0, 0);
+    Ctx->x += Dx;
+    Ctx->y += Dy;
+    CsctxV(Ctx, LINEOS_VLINE, (INT32) Ctx->x, (INT32) Ctx->y, 0, 0, 0, 0);
 }
-STATIC VOID CsctxRccurveTo(CS_CONTEXT *ctx, FLOAT32 dx1, FLOAT32 dy1, FLOAT32 dx2, FLOAT32 dy2, FLOAT32 dx3, FLOAT32 dy3)
+STATIC VOID CsctxRccurveTo(CS_CONTEXT *Ctx, FLOAT32 Dx1, FLOAT32 Dy1, FLOAT32 Dx2, FLOAT32 Dy2, FLOAT32 Dx3, FLOAT32 Dy3)
 {
-    FLOAT32 cx1 = ctx->x + dx1;
-    FLOAT32 cy1 = ctx->y + dy1;
-    FLOAT32 cx2 = cx1 + dx2;
-    FLOAT32 cy2 = cy1 + dy2;
-    ctx->x = cx2 + dx3;
-    ctx->y = cy2 + dy3;
-    CsctxV(ctx, LINEOS_VCUBIC, (INT32) ctx->x, (INT32) ctx->y, (INT32) cx1, (INT32) cy1, (INT32) cx2, (INT32) cy2);
+    FLOAT32 Cx1 = Ctx->x + Dx1;
+    FLOAT32 Cy1 = Ctx->y + Dy1;
+    FLOAT32 Cx2 = Cx1 + Dx2;
+    FLOAT32 Cy2 = Cy1 + Dy2;
+    Ctx->x = Cx2 + Dx3;
+    Ctx->y = Cy2 + Dy3;
+    CsctxV(Ctx, LINEOS_VCUBIC, (INT32) Ctx->x, (INT32) Ctx->y, (INT32) Cx1, (INT32) Cy1, (INT32) Cx2, (INT32) Cy2);
 }
-STATIC BUFFER GetSubr(BUFFER idx, INT32 n)
+STATIC BUFFER GetSubr(BUFFER Idx, INT32 N)
 {
-    INT32 count = CffIndexCount(&idx);
-    INT32 bias = 107;
-    if (count >= 33900)
-        bias = 32768;
-    else if (count >= 1240)
-        bias = 1131;
-    n += bias;
-    if (n < 0 || n >= count)
+    INT32 Count = CffIndexCount(&Idx);
+    INT32 Bias = 107;
+    if (Count >= 33900)
+        Bias = 32768;
+    else if (Count >= 1240)
+        Bias = 1131;
+    N += Bias;
+    if (N < 0 || N >= Count)
         return NewBuf(NULL, 0);
-    return CffIndexGet(idx, n);
+    return CffIndexGet(Idx, N);
 }
-STATIC BUFFER CidGetGlyphSubrs(CONST FONT_INFO *info, INT32 GlyphIndex)
+STATIC BUFFER CidGetGlyphSubrs(CONST FONT_INFO *Info, INT32 GlyphIndex)
 {
-    BUFFER fdselect = info->FdSelect;
-    INT32  nranges, start, end, v, fmt, fdselector = -1, i;
-    BufSeek(&fdselect, 0);
-    fmt = BufGet8(&fdselect);
-    if (fmt == 0)
+    BUFFER Fdselect = Info->FdSelect;
+    INT32  Nranges, Start, End, V, Fmt, Fdselector = -1, I;
+    BufSeek(&Fdselect, 0);
+    Fmt = BufGet8(&Fdselect);
+    if (Fmt == 0)
     {
-        BufSkip(&fdselect, GlyphIndex);
-        fdselector = BufGet8(&fdselect);
+        BufSkip(&Fdselect, GlyphIndex);
+        Fdselector = BufGet8(&Fdselect);
     }
-    else if (fmt == 3)
+    else if (Fmt == 3)
     {
-        nranges = BUF_GET16(&fdselect);
-        start = BUF_GET16(&fdselect);
-        for (i = 0; i < nranges; i++)
+        Nranges = BUF_GET16(&Fdselect);
+        Start = BUF_GET16(&Fdselect);
+        for (I = 0; I < Nranges; I++)
         {
-            v = BufGet8(&fdselect);
-            end = BUF_GET16(&fdselect);
-            if (GlyphIndex >= start && GlyphIndex < end)
+            V = BufGet8(&Fdselect);
+            End = BUF_GET16(&Fdselect);
+            if (GlyphIndex >= Start && GlyphIndex < End)
             {
-                fdselector = v;
+                Fdselector = V;
                 break;
             }
-            start = end;
+            Start = End;
         }
     }
-    if (fdselector == -1)
+    if (Fdselector == -1)
         NewBuf(NULL, 0);
-    return GetSubrs(info->CFF, CffIndexGet(info->FontDicts, fdselector));
+    return GetSubrs(Info->CFF, CffIndexGet(Info->FontDicts, Fdselector));
 }
-STATIC INT32 RunCharstring(CONST FONT_INFO *info, INT32 GlyphIndex, CS_CONTEXT *c)
+STATIC INT32 RunCharstring(CONST FONT_INFO *Info, INT32 GlyphIndex, CS_CONTEXT *C)
 {
-    INT32   InHeader = 1, maskbits = 0, SubrStackHeight = 0, sp = 0, v, i, b0;
+    INT32   InHeader = 1, Maskbits = 0, SubrStackHeight = 0, Sp = 0, V, I, B0;
     INT32   HasSubrs = 0, ClearStack;
-    FLOAT32 s[48];
-    BUFFER  SubrStack[10], subrs = info->Subrs, b;
-    FLOAT32 f;
+    FLOAT32 S[48];
+    BUFFER  SubrStack[10], Subrs = Info->Subrs, B;
+    FLOAT32 F;
 #define LINEOS_CSERR(s) (0)
-    b = CffIndexGet(info->CharStrings, GlyphIndex);
-    while (b.Cursor < b.Size)
+    B = CffIndexGet(Info->CharStrings, GlyphIndex);
+    while (B.Cursor < B.Size)
     {
-        i = 0;
+        I = 0;
         ClearStack = 1;
-        b0 = BufGet8(&b);
-        switch (b0)
+        B0 = BufGet8(&B);
+        switch (B0)
         {
         case 0x13:
         case 0x14:
             if (InHeader)
-                maskbits += (sp / 2);
+                Maskbits += (Sp / 2);
             InHeader = 0;
-            BufSkip(&b, (maskbits + 7) / 8);
+            BufSkip(&B, (Maskbits + 7) / 8);
             break;
         case 0X01:
         case 0x03:
         case 0X12:
         case 0x17:
-            maskbits += (sp / 2);
+            Maskbits += (Sp / 2);
             break;
         case 0x15:
             InHeader = 0;
-            if (sp < 2)
+            if (Sp < 2)
                 return LINEOS_CSERR("rmoveto stack");
-            CsctxRmoveTo(c, s[sp - 2], s[sp - 1]);
+            CsctxRmoveTo(C, S[Sp - 2], S[Sp - 1]);
             break;
         case 0x04:
             InHeader = 0;
-            if (sp < 1)
+            if (Sp < 1)
                 return LINEOS_CSERR("vmoveto stack");
-            CsctxRmoveTo(c, 0, s[sp - 1]);
+            CsctxRmoveTo(C, 0, S[Sp - 1]);
             break;
         case 0x16:
             InHeader = 0;
-            if (sp < 1)
+            if (Sp < 1)
                 return LINEOS_CSERR("hmoveto stack");
-            CsctxRmoveTo(c, s[sp - 1], 0);
+            CsctxRmoveTo(C, S[Sp - 1], 0);
             break;
         case 0x05:
-            if (sp < 2)
+            if (Sp < 2)
                 return LINEOS_CSERR("rlineto stack");
-            for (; i + 1 < sp; i += 2)
-                CsctxRlineTo(c, s[i], s[i + 1]);
+            for (; I + 1 < Sp; I += 2)
+                CsctxRlineTo(C, S[I], S[I + 1]);
             break;
         case 0x07:
-            if (sp < 1)
+            if (Sp < 1)
                 return LINEOS_CSERR("vlineto stack");
             goto vlineto;
         case 0x06:
-            if (sp < 1)
+            if (Sp < 1)
                 return LINEOS_CSERR("hlineto stack");
             for (;;)
             {
-                if (i >= sp)
+                if (I >= Sp)
                     break;
-                CsctxRlineTo(c, s[i], 0);
-                i++;
+                CsctxRlineTo(C, S[I], 0);
+                I++;
             vlineto:
-                if (i >= sp)
+                if (I >= Sp)
                     break;
-                CsctxRlineTo(c, 0, s[i]);
-                i++;
+                CsctxRlineTo(C, 0, S[I]);
+                I++;
             }
             break;
         case 0x1F:
-            if (sp < 4)
+            if (Sp < 4)
                 return LINEOS_CSERR("hvcurveto stack");
             goto hvcurveto;
         case 0x1E:
-            if (sp < 4)
+            if (Sp < 4)
                 return LINEOS_CSERR("vhcurveto stack");
             for (;;)
             {
-                if (i + 3 >= sp)
+                if (I + 3 >= Sp)
                     break;
-                CsctxRccurveTo(c, 0, s[i], s[i + 1], s[i + 2], s[i + 3], (sp - i == 5) ? s[i + 4] : 0.0f);
-                i += 4;
+                CsctxRccurveTo(C, 0, S[I], S[I + 1], S[I + 2], S[I + 3], (Sp - I == 5) ? S[I + 4] : 0.0f);
+                I += 4;
             hvcurveto:
-                if (i + 3 >= sp)
+                if (I + 3 >= Sp)
                     break;
-                CsctxRccurveTo(c, s[i], 0, s[i + 1], s[i + 2], (sp - i == 5) ? s[i + 4] : 0.0f, s[i + 3]);
-                i += 4;
+                CsctxRccurveTo(C, S[I], 0, S[I + 1], S[I + 2], (Sp - I == 5) ? S[I + 4] : 0.0f, S[I + 3]);
+                I += 4;
             }
             break;
         case 0x08:
-            if (sp < 6)
+            if (Sp < 6)
                 return LINEOS_CSERR("rcurveline stack");
-            for (; i + 5 < sp; i += 6)
-                CsctxRccurveTo(c, s[i], s[i + 1], s[i + 2], s[i + 3], s[i + 4], s[i + 5]);
+            for (; I + 5 < Sp; I += 6)
+                CsctxRccurveTo(C, S[I], S[I + 1], S[I + 2], S[I + 3], S[I + 4], S[I + 5]);
             break;
         case 0x18:
-            if (sp < 8)
+            if (Sp < 8)
                 return LINEOS_CSERR("rcurveline stack");
-            for (; i + 5 < sp - 2; i += 6)
-                CsctxRccurveTo(c, s[i], s[i + 1], s[i + 2], s[i + 3], s[i + 4], s[i + 5]);
-            if (i + 1 >= sp)
+            for (; I + 5 < Sp - 2; I += 6)
+                CsctxRccurveTo(C, S[I], S[I + 1], S[I + 2], S[I + 3], S[I + 4], S[I + 5]);
+            if (I + 1 >= Sp)
                 return LINEOS_CSERR("rcurveline stack");
-            CsctxRlineTo(c, s[i], s[i + 1]);
+            CsctxRlineTo(C, S[I], S[I + 1]);
             break;
         case 0x19:
-            if (sp < 8)
+            if (Sp < 8)
                 return LINEOS_CSERR("rlinecurve stack");
-            for (; i + 1 < sp - 6; i += 2)
-                CsctxRlineTo(c, s[i], s[i + 1]);
-            if (i + 5 >= sp)
+            for (; I + 1 < Sp - 6; I += 2)
+                CsctxRlineTo(C, S[I], S[I + 1]);
+            if (I + 5 >= Sp)
                 return LINEOS_CSERR("rlinecurve stack");
-            CsctxRccurveTo(c, s[i], s[i + 1], s[i + 2], s[i + 3], s[i + 4], s[i + 5]);
+            CsctxRccurveTo(C, S[I], S[I + 1], S[I + 2], S[I + 3], S[I + 4], S[I + 5]);
             break;
         case 0x1A:
         case 0x1B:
-            if (sp < 4)
+            if (Sp < 4)
                 return LINEOS_CSERR("(vv|hh)curveto stack");
-            f = 0.0;
-            if (sp & 1)
+            F = 0.0;
+            if (Sp & 1)
             {
-                f = s[i];
-                i++;
+                F = S[I];
+                I++;
             }
-            for (; i + 3 < sp; i += 4)
+            for (; I + 3 < Sp; I += 4)
             {
-                if (b0 == 0x1B)
-                    CsctxRccurveTo(c, s[i], f, s[i + 1], s[i + 2], s[i + 3], 0.0);
+                if (B0 == 0x1B)
+                    CsctxRccurveTo(C, S[I], F, S[I + 1], S[I + 2], S[I + 3], 0.0);
                 else
-                    CsctxRccurveTo(c, f, s[i], s[i + 1], s[i + 2], 0.0, s[i + 3]);
-                f = 0.0;
+                    CsctxRccurveTo(C, F, S[I], S[I + 1], S[I + 2], 0.0, S[I + 3]);
+                F = 0.0;
             }
             break;
         case 0x0A:
             if (!HasSubrs)
             {
-                if (info->FdSelect.Size)
-                    subrs = CidGetGlyphSubrs(info, GlyphIndex);
+                if (Info->FdSelect.Size)
+                    Subrs = CidGetGlyphSubrs(Info, GlyphIndex);
                 HasSubrs = 1;
             }
         case 0x1D:
-            if (sp < 1)
+            if (Sp < 1)
                 return LINEOS_CSERR("call(g|)subr stack");
-            v = (INT32) s[--sp];
+            V = (INT32) S[--Sp];
             if (SubrStackHeight >= 10)
                 return LINEOS_CSERR("recursion limit");
-            SubrStack[SubrStackHeight++] = b;
-            b = GetSubr(b0 == 0x0A ? subrs : info->GSubrs, v);
-            if (b.Size == 0)
+            SubrStack[SubrStackHeight++] = B;
+            B = GetSubr(B0 == 0x0A ? Subrs : Info->GSubrs, V);
+            if (B.Size == 0)
                 return LINEOS_CSERR("subr not found");
-            b.Cursor = 0;
+            B.Cursor = 0;
             ClearStack = 0;
             break;
         case 0x0B:
             if (SubrStackHeight <= 0)
                 return LINEOS_CSERR("return outside subr");
-            b = SubrStack[--SubrStackHeight];
+            B = SubrStack[--SubrStackHeight];
             ClearStack = 0;
             break;
         case 0x0E:
-            CsctxCloseShape(c);
+            CsctxCloseShape(C);
             return 1;
         case 0x0C:
         {
-            FLOAT32 dx1, dx2, dx3, dx4, dx5, dx6, dy1, dy2, dy3, dy4, dy5, dy6;
-            FLOAT32 dx, dy;
-            INT32   b1 = BufGet8(&b);
-            switch (b1)
+            FLOAT32 Dx1, Dx2, Dx3, Dx4, Dx5, Dx6, Dy1, Dy2, Dy3, Dy4, Dy5, Dy6;
+            FLOAT32 Dx, Dy;
+            INT32   B1 = BufGet8(&B);
+            switch (B1)
             {
             case 0x22:
-                if (sp < 7)
+                if (Sp < 7)
                     return LINEOS_CSERR("hflex stack");
-                dx1 = s[0];
-                dx2 = s[1];
-                dy2 = s[2];
-                dx3 = s[3];
-                dx4 = s[4];
-                dx5 = s[5];
-                dx6 = s[6];
-                CsctxRccurveTo(c, dx1, 0, dx2, dy2, dx3, 0);
-                CsctxRccurveTo(c, dx4, 0, dx5, -dy2, dx6, 0);
+                Dx1 = S[0];
+                Dx2 = S[1];
+                Dy2 = S[2];
+                Dx3 = S[3];
+                Dx4 = S[4];
+                Dx5 = S[5];
+                Dx6 = S[6];
+                CsctxRccurveTo(C, Dx1, 0, Dx2, Dy2, Dx3, 0);
+                CsctxRccurveTo(C, Dx4, 0, Dx5, -Dy2, Dx6, 0);
                 break;
             case 0X23:
-                if (sp < 13)
+                if (Sp < 13)
                     return LINEOS_CSERR("flex stack");
-                dx1 = s[0];
-                dy1 = s[1];
-                dx2 = s[2];
-                dy2 = s[3];
-                dx3 = s[4];
-                dy3 = s[5];
-                dx4 = s[6];
-                dy4 = s[7];
-                dx5 = s[8];
-                dy5 = s[9];
-                dx6 = s[10];
-                dy6 = s[11];
-                CsctxRccurveTo(c, dx1, dy1, dx2, dy2, dx3, dy3);
-                CsctxRccurveTo(c, dx4, dy4, dx5, dy5, dx6, dy6);
+                Dx1 = S[0];
+                Dy1 = S[1];
+                Dx2 = S[2];
+                Dy2 = S[3];
+                Dx3 = S[4];
+                Dy3 = S[5];
+                Dx4 = S[6];
+                Dy4 = S[7];
+                Dx5 = S[8];
+                Dy5 = S[9];
+                Dx6 = S[10];
+                Dy6 = S[11];
+                CsctxRccurveTo(C, Dx1, Dy1, Dx2, Dy2, Dx3, Dy3);
+                CsctxRccurveTo(C, Dx4, Dy4, Dx5, Dy5, Dx6, Dy6);
                 break;
             case 0x24:
-                if (sp < 9)
+                if (Sp < 9)
                     return LINEOS_CSERR("hflex1 stack");
-                dx1 = s[0];
-                dy1 = s[1];
-                dx2 = s[2];
-                dy2 = s[3];
-                dx3 = s[4];
-                dx4 = s[5];
-                dx5 = s[6];
-                dy5 = s[7];
-                dx6 = s[8];
-                CsctxRccurveTo(c, dx1, dy1, dx2, dy2, dx3, 0);
-                CsctxRccurveTo(c, dx4, 0, dx5, dy5, dx6, -(dy1 + dy2 + dy5));
+                Dx1 = S[0];
+                Dy1 = S[1];
+                Dx2 = S[2];
+                Dy2 = S[3];
+                Dx3 = S[4];
+                Dx4 = S[5];
+                Dx5 = S[6];
+                Dy5 = S[7];
+                Dx6 = S[8];
+                CsctxRccurveTo(C, Dx1, Dy1, Dx2, Dy2, Dx3, 0);
+                CsctxRccurveTo(C, Dx4, 0, Dx5, Dy5, Dx6, -(Dy1 + Dy2 + Dy5));
                 break;
             case 0x25:
-                if (sp < 11)
+                if (Sp < 11)
                     return LINEOS_CSERR("flex1 stack");
-                dx1 = s[0];
-                dy1 = s[1];
-                dx2 = s[2];
-                dy2 = s[3];
-                dx3 = s[4];
-                dy3 = s[5];
-                dx4 = s[6];
-                dy4 = s[7];
-                dx5 = s[8];
-                dy5 = s[9];
-                dx6 = dy6 = s[10];
-                dx = dx1 + dx2 + dx3 + dx4 + dx5;
-                dy = dy1 + dy2 + dy3 + dy4 + dy5;
-                if (KFAbs(dx) > KFAbs(dy))
-                    dy6 = -dy;
+                Dx1 = S[0];
+                Dy1 = S[1];
+                Dx2 = S[2];
+                Dy2 = S[3];
+                Dx3 = S[4];
+                Dy3 = S[5];
+                Dx4 = S[6];
+                Dy4 = S[7];
+                Dx5 = S[8];
+                Dy5 = S[9];
+                Dx6 = Dy6 = S[10];
+                Dx = Dx1 + Dx2 + Dx3 + Dx4 + Dx5;
+                Dy = Dy1 + Dy2 + Dy3 + Dy4 + Dy5;
+                if (KFAbs(Dx) > KFAbs(Dy))
+                    Dy6 = -Dy;
                 else
-                    dx6 = -dx;
-                CsctxRccurveTo(c, dx1, dy1, dx2, dy2, dx3, dy3);
-                CsctxRccurveTo(c, dx4, dy4, dx5, dy5, dx6, dy6);
+                    Dx6 = -Dx;
+                CsctxRccurveTo(C, Dx1, Dy1, Dx2, Dy2, Dx3, Dy3);
+                CsctxRccurveTo(C, Dx4, Dy4, Dx5, Dy5, Dx6, Dy6);
                 break;
             default:
                 return LINEOS_CSERR("unimplemented");
@@ -1141,145 +1141,145 @@ STATIC INT32 RunCharstring(CONST FONT_INFO *info, INT32 GlyphIndex, CS_CONTEXT *
         }
         break;
         default:
-            if (b0 != 255 && b0 != 28 && b0 < 32)
+            if (B0 != 255 && B0 != 28 && B0 < 32)
                 return LINEOS_CSERR("reserved operator");
-            if (b0 == 255)
+            if (B0 == 255)
             {
-                f = (FLOAT32) (INT32) BUF_GET32(&b) / 0x10000;
+                F = (FLOAT32) (INT32) BUF_GET32(&B) / 0x10000;
             }
             else
             {
-                BufSkip(&b, -1);
-                f = (FLOAT32) (INT16) CffInt(&b);
+                BufSkip(&B, -1);
+                F = (FLOAT32) (INT16) CffInt(&B);
             }
-            if (sp >= 48)
+            if (Sp >= 48)
                 return LINEOS_CSERR("push stack overflow");
-            s[sp++] = f;
+            S[Sp++] = F;
             ClearStack = 0;
             break;
         }
         if (ClearStack)
-            sp = 0;
+            Sp = 0;
     }
     return LINEOS_CSERR("no endchar");
 #undef LINEOS_CSERR
 }
-STATIC INT32 GetGlyphShapeT2(CONST FONT_INFO *info, INT32 GlyphIndex, VERTEX **pvertices)
+STATIC INT32 GetGlyphShapeT2(CONST FONT_INFO *Info, INT32 GlyphIndex, VERTEX **Pvertices)
 {
     CS_CONTEXT CountCtx = LINEOS_CSCTX_INIT(1);
     CS_CONTEXT OutputCtx = LINEOS_CSCTX_INIT(0);
-    if (RunCharstring(info, GlyphIndex, &CountCtx))
+    if (RunCharstring(Info, GlyphIndex, &CountCtx))
     {
-        *pvertices = (VERTEX *) KTTFAlloc(CountCtx.NumVertices * sizeof(VERTEX), info->UserData);
-        OutputCtx.pvertices = *pvertices;
-        if (RunCharstring(info, GlyphIndex, &OutputCtx))
+        *Pvertices = (VERTEX *) KTTFAlloc(CountCtx.NumVertices * sizeof(VERTEX), Info->UserData);
+        OutputCtx.pvertices = *Pvertices;
+        if (RunCharstring(Info, GlyphIndex, &OutputCtx))
         {
             KAssert(OutputCtx.NumVertices == CountCtx.NumVertices);
             return OutputCtx.NumVertices;
         }
     }
-    *pvertices = NULL;
+    *Pvertices = NULL;
     return 0;
 }
-STATIC INT32 GetGlyphInfoT2(CONST FONT_INFO *info, INT32 GlyphIndex, INT32 *x0, INT32 *y0, INT32 *x1, INT32 *y1)
+STATIC INT32 GetGlyphInfoT2(CONST FONT_INFO *Info, INT32 GlyphIndex, INT32 *X0, INT32 *Y0, INT32 *X1, INT32 *Y1)
 {
-    CS_CONTEXT c = LINEOS_CSCTX_INIT(1);
-    INT32      r = RunCharstring(info, GlyphIndex, &c);
-    if (x0)
-        *x0 = r ? c.MinX : 0;
-    if (y0)
-        *y0 = r ? c.MinY : 0;
-    if (x1)
-        *x1 = r ? c.MaxX : 0;
-    if (y1)
-        *y1 = r ? c.MaxY : 0;
-    return r ? c.NumVertices : 0;
+    CS_CONTEXT C = LINEOS_CSCTX_INIT(1);
+    INT32      R = RunCharstring(Info, GlyphIndex, &C);
+    if (X0)
+        *X0 = R ? C.MinX : 0;
+    if (Y0)
+        *Y0 = R ? C.MinY : 0;
+    if (X1)
+        *X1 = R ? C.MaxX : 0;
+    if (Y1)
+        *Y1 = R ? C.MaxY : 0;
+    return R ? C.NumVertices : 0;
 }
-EXTERN INT32 GetGlyphShape(CONST FONT_INFO *info, INT32 GlyphIndex, VERTEX **pvertices)
+EXTERN INT32 GetGlyphShape(CONST FONT_INFO *Info, INT32 GlyphIndex, VERTEX **Pvertices)
 {
-    if (!info->CFF.Size)
-        return GetGlyphShapeTT(info, GlyphIndex, pvertices);
+    if (!Info->CFF.Size)
+        return GetGlyphShapeTT(Info, GlyphIndex, Pvertices);
     else
-        return GetGlyphShapeT2(info, GlyphIndex, pvertices);
+        return GetGlyphShapeT2(Info, GlyphIndex, Pvertices);
 }
-EXTERN VOID GetGlyphHMetrics(CONST FONT_INFO *info, INT32 GlyphIndex, INT32 *AdvanceWidth, INT32 *LeftSideBearing)
+EXTERN VOID GetGlyphHMetrics(CONST FONT_INFO *Info, INT32 GlyphIndex, INT32 *AdvanceWidth, INT32 *LeftSideBearing)
 {
-    UINT16 NumOfLongHorMetrics = TTUSHORT(info->Data + info->Hhea + 34);
+    UINT16 NumOfLongHorMetrics = TTUSHORT(Info->Data + Info->Hhea + 34);
     if (GlyphIndex < NumOfLongHorMetrics)
     {
         if (AdvanceWidth)
-            *AdvanceWidth = TTSHORT(info->Data + info->Hmtx + 4 * GlyphIndex);
+            *AdvanceWidth = TTSHORT(Info->Data + Info->Hmtx + 4 * GlyphIndex);
         if (LeftSideBearing)
-            *LeftSideBearing = TTSHORT(info->Data + info->Hmtx + 4 * GlyphIndex + 2);
+            *LeftSideBearing = TTSHORT(Info->Data + Info->Hmtx + 4 * GlyphIndex + 2);
     }
     else
     {
         if (AdvanceWidth)
-            *AdvanceWidth = TTSHORT(info->Data + info->Hmtx + 4 * (NumOfLongHorMetrics - 1));
+            *AdvanceWidth = TTSHORT(Info->Data + Info->Hmtx + 4 * (NumOfLongHorMetrics - 1));
         if (LeftSideBearing)
-            *LeftSideBearing = TTSHORT(info->Data + info->Hmtx + 4 * NumOfLongHorMetrics + 2 * (GlyphIndex - NumOfLongHorMetrics));
+            *LeftSideBearing = TTSHORT(Info->Data + Info->Hmtx + 4 * NumOfLongHorMetrics + 2 * (GlyphIndex - NumOfLongHorMetrics));
     }
 }
-EXTERN INT32 GetKerningTableLength(CONST FONT_INFO *info)
+EXTERN INT32 GetKerningTableLength(CONST FONT_INFO *Info)
 {
-    UINT8 *data = info->Data + info->Kern;
-    if (!info->Kern)
+    UINT8 *Data = Info->Data + Info->Kern;
+    if (!Info->Kern)
         return 0;
-    if (TTUSHORT(data + 2) < 1)
+    if (TTUSHORT(Data + 2) < 1)
         return 0;
-    if (TTUSHORT(data + 8) != 1)
+    if (TTUSHORT(Data + 8) != 1)
         return 0;
-    return TTUSHORT(data + 10);
+    return TTUSHORT(Data + 10);
 }
-EXTERN INT32 GetKerningTable(CONST FONT_INFO *info, KERNING_ENTRY *table, INT32 TableLength)
+EXTERN INT32 GetKerningTable(CONST FONT_INFO *Info, KERNING_ENTRY *Table, INT32 TableLength)
 {
-    UINT8 *data = info->Data + info->Kern;
-    INT32  k, length;
-    if (!info->Kern)
+    UINT8 *Data = Info->Data + Info->Kern;
+    INT32  K, Length;
+    if (!Info->Kern)
         return 0;
-    if (TTUSHORT(data + 2) < 1)
+    if (TTUSHORT(Data + 2) < 1)
         return 0;
-    if (TTUSHORT(data + 8) != 1)
+    if (TTUSHORT(Data + 8) != 1)
         return 0;
-    length = TTUSHORT(data + 10);
-    if (TableLength < length)
-        length = TableLength;
-    for (k = 0; k < length; k++)
+    Length = TTUSHORT(Data + 10);
+    if (TableLength < Length)
+        Length = TableLength;
+    for (K = 0; K < Length; K++)
     {
-        table[k].Glyph1 = TTUSHORT(data + 18 + (k * 6));
-        table[k].Glyph2 = TTUSHORT(data + 20 + (k * 6));
-        table[k].Advance = TTSHORT(data + 22 + (k * 6));
+        Table[K].Glyph1 = TTUSHORT(Data + 18 + (K * 6));
+        Table[K].Glyph2 = TTUSHORT(Data + 20 + (K * 6));
+        Table[K].Advance = TTSHORT(Data + 22 + (K * 6));
     }
-    return length;
+    return Length;
 }
-STATIC INT32 GetGlyphKernInfoAdvance(CONST FONT_INFO *info, INT32 glyph1, INT32 glyph2)
+STATIC INT32 GetGlyphKernInfoAdvance(CONST FONT_INFO *Info, INT32 Glyph1, INT32 Glyph2)
 {
-    UINT8 *data = info->Data + info->Kern;
-    UINT32 needle, straw;
-    INT32  l, r, m;
-    if (!info->Kern)
+    UINT8 *Data = Info->Data + Info->Kern;
+    UINT32 Needle, Straw;
+    INT32  L, R, M;
+    if (!Info->Kern)
         return 0;
-    if (TTUSHORT(data + 2) < 1)
+    if (TTUSHORT(Data + 2) < 1)
         return 0;
-    if (TTUSHORT(data + 8) != 1)
+    if (TTUSHORT(Data + 8) != 1)
         return 0;
-    l = 0;
-    r = TTUSHORT(data + 10) - 1;
-    needle = glyph1 << 16 | glyph2;
-    while (l <= r)
+    L = 0;
+    R = TTUSHORT(Data + 10) - 1;
+    Needle = Glyph1 << 16 | Glyph2;
+    while (L <= R)
     {
-        m = (l + r) >> 1;
-        straw = TTULONG(data + 18 + (m * 6));
-        if (needle < straw)
-            r = m - 1;
-        else if (needle > straw)
-            l = m + 1;
+        M = (L + R) >> 1;
+        Straw = TTULONG(Data + 18 + (M * 6));
+        if (Needle < Straw)
+            R = M - 1;
+        else if (Needle > Straw)
+            L = M + 1;
         else
-            return TTSHORT(data + 22 + (m * 6));
+            return TTSHORT(Data + 22 + (M * 6));
     }
     return 0;
 }
-STATIC INT32 GetCoverageIndex(UINT8 *CoverageTable, INT32 glyph)
+STATIC INT32 GetCoverageIndex(UINT8 *CoverageTable, INT32 Glyph)
 {
     UINT16 CoverageFormat = TTUSHORT(CoverageTable);
     switch (CoverageFormat)
@@ -1287,22 +1287,22 @@ STATIC INT32 GetCoverageIndex(UINT8 *CoverageTable, INT32 glyph)
     case 1:
     {
         UINT16 GlyphCount = TTUSHORT(CoverageTable + 2);
-        INT32  l = 0, r = GlyphCount - 1, m;
-        INT32  straw, needle = glyph;
-        while (l <= r)
+        INT32  L = 0, R = GlyphCount - 1, M;
+        INT32  Straw, Needle = Glyph;
+        while (L <= R)
         {
             UINT8 *GlyphArray = CoverageTable + 4;
             UINT16 GlyphID;
-            m = (l + r) >> 1;
-            GlyphID = TTUSHORT(GlyphArray + 2 * m);
-            straw = GlyphID;
-            if (needle < straw)
-                r = m - 1;
-            else if (needle > straw)
-                l = m + 1;
+            M = (L + R) >> 1;
+            GlyphID = TTUSHORT(GlyphArray + 2 * M);
+            Straw = GlyphID;
+            if (Needle < Straw)
+                R = M - 1;
+            else if (Needle > Straw)
+                L = M + 1;
             else
             {
-                return m;
+                return M;
             }
         }
         break;
@@ -1311,23 +1311,23 @@ STATIC INT32 GetCoverageIndex(UINT8 *CoverageTable, INT32 glyph)
     {
         UINT16 RangeCount = TTUSHORT(CoverageTable + 2);
         UINT8 *RangeArray = CoverageTable + 4;
-        INT32  l = 0, r = RangeCount - 1, m;
-        INT32  StrawStart, StrawEnd, needle = glyph;
-        while (l <= r)
+        INT32  L = 0, R = RangeCount - 1, M;
+        INT32  StrawStart, StrawEnd, Needle = Glyph;
+        while (L <= R)
         {
             UINT8 *RangeRecord;
-            m = (l + r) >> 1;
-            RangeRecord = RangeArray + 6 * m;
+            M = (L + R) >> 1;
+            RangeRecord = RangeArray + 6 * M;
             StrawStart = TTUSHORT(RangeRecord);
             StrawEnd = TTUSHORT(RangeRecord + 2);
-            if (needle < StrawStart)
-                r = m - 1;
-            else if (needle > StrawEnd)
-                l = m + 1;
+            if (Needle < StrawStart)
+                R = M - 1;
+            else if (Needle > StrawEnd)
+                L = M + 1;
             else
             {
                 UINT16 StartCoverageIndex = TTUSHORT(RangeRecord + 4);
-                return StartCoverageIndex + glyph - StrawStart;
+                return StartCoverageIndex + Glyph - StrawStart;
             }
         }
         break;
@@ -1337,7 +1337,7 @@ STATIC INT32 GetCoverageIndex(UINT8 *CoverageTable, INT32 glyph)
     }
     return -1;
 }
-STATIC INT32 GetGlyphClass(UINT8 *ClassDefTable, INT32 glyph)
+STATIC INT32 GetGlyphClass(UINT8 *ClassDefTable, INT32 Glyph)
 {
     UINT16 ClassDefFormat = TTUSHORT(ClassDefTable);
     switch (ClassDefFormat)
@@ -1347,27 +1347,27 @@ STATIC INT32 GetGlyphClass(UINT8 *ClassDefTable, INT32 glyph)
         UINT16 StartGlyphID = TTUSHORT(ClassDefTable + 2);
         UINT16 GlyphCount = TTUSHORT(ClassDefTable + 4);
         UINT8 *ClassDef1ValueArray = ClassDefTable + 6;
-        if (glyph >= StartGlyphID && glyph < StartGlyphID + GlyphCount)
-            return (INT32) TTUSHORT(ClassDef1ValueArray + 2 * (glyph - StartGlyphID));
+        if (Glyph >= StartGlyphID && Glyph < StartGlyphID + GlyphCount)
+            return (INT32) TTUSHORT(ClassDef1ValueArray + 2 * (Glyph - StartGlyphID));
         break;
     }
     case 2:
     {
         UINT16 ClassRangeCount = TTUSHORT(ClassDefTable + 2);
         UINT8 *ClassRangeRecords = ClassDefTable + 4;
-        INT32  l = 0, r = ClassRangeCount - 1, m;
-        INT32  StrawStart, StrawEnd, needle = glyph;
-        while (l <= r)
+        INT32  L = 0, R = ClassRangeCount - 1, M;
+        INT32  StrawStart, StrawEnd, Needle = Glyph;
+        while (L <= R)
         {
             UINT8 *ClassRangeRecord;
-            m = (l + r) >> 1;
-            ClassRangeRecord = ClassRangeRecords + 6 * m;
+            M = (L + R) >> 1;
+            ClassRangeRecord = ClassRangeRecords + 6 * M;
             StrawStart = TTUSHORT(ClassRangeRecord);
             StrawEnd = TTUSHORT(ClassRangeRecord + 2);
-            if (needle < StrawStart)
-                r = m - 1;
-            else if (needle > StrawEnd)
-                l = m + 1;
+            if (Needle < StrawStart)
+                R = M - 1;
+            else if (Needle > StrawEnd)
+                L = M + 1;
             else
                 return (INT32) TTUSHORT(ClassRangeRecord + 4);
         }
@@ -1379,74 +1379,74 @@ STATIC INT32 GetGlyphClass(UINT8 *ClassDefTable, INT32 glyph)
     return 0;
 }
 #define LINEOS_GPOS_TODO_ASSERT(x)
-STATIC INT32 GetGlyphGPOSInfoAdvance(CONST FONT_INFO *info, INT32 glyph1, INT32 glyph2)
+STATIC INT32 GetGlyphGPOSInfoAdvance(CONST FONT_INFO *Info, INT32 Glyph1, INT32 Glyph2)
 {
     UINT16 LookupListOffset;
     UINT8 *LookupList;
     UINT16 LookupCount;
-    UINT8 *data;
-    INT32  i, sti;
-    if (!info->GPOS)
+    UINT8 *Data;
+    INT32  I, Sti;
+    if (!Info->GPOS)
         return 0;
-    data = info->Data + info->GPOS;
-    if (TTUSHORT(data + 0) != 1)
+    Data = Info->Data + Info->GPOS;
+    if (TTUSHORT(Data + 0) != 1)
         return 0;
-    if (TTUSHORT(data + 2) != 0)
+    if (TTUSHORT(Data + 2) != 0)
         return 0;
-    LookupListOffset = TTUSHORT(data + 8);
-    LookupList = data + LookupListOffset;
+    LookupListOffset = TTUSHORT(Data + 8);
+    LookupList = Data + LookupListOffset;
     LookupCount = TTUSHORT(LookupList);
-    for (i = 0; i < LookupCount; ++i)
+    for (I = 0; I < LookupCount; ++I)
     {
-        UINT16 LookupOffset = TTUSHORT(LookupList + 2 + 2 * i);
+        UINT16 LookupOffset = TTUSHORT(LookupList + 2 + 2 * I);
         UINT8 *LookupTable = LookupList + LookupOffset;
         UINT16 LookupType = TTUSHORT(LookupTable);
         UINT16 SubTableCount = TTUSHORT(LookupTable + 4);
         UINT8 *SubTableOffsets = LookupTable + 6;
         if (LookupType != 2)
             continue;
-        for (sti = 0; sti < SubTableCount; sti++)
+        for (Sti = 0; Sti < SubTableCount; Sti++)
         {
-            UINT16 SubtableOffset = TTUSHORT(SubTableOffsets + 2 * sti);
-            UINT8 *table = LookupTable + SubtableOffset;
-            UINT16 PosFormat = TTUSHORT(table);
-            UINT16 CoverageOffset = TTUSHORT(table + 2);
-            INT32  CoverageIndex = GetCoverageIndex(table + CoverageOffset, glyph1);
+            UINT16 SubtableOffset = TTUSHORT(SubTableOffsets + 2 * Sti);
+            UINT8 *Table = LookupTable + SubtableOffset;
+            UINT16 PosFormat = TTUSHORT(Table);
+            UINT16 CoverageOffset = TTUSHORT(Table + 2);
+            INT32  CoverageIndex = GetCoverageIndex(Table + CoverageOffset, Glyph1);
             if (CoverageIndex == -1)
                 continue;
             switch (PosFormat)
             {
             case 1:
             {
-                INT32  l, r, m;
-                INT32  straw, needle;
-                UINT16 ValueFormat1 = TTUSHORT(table + 4);
-                UINT16 ValueFormat2 = TTUSHORT(table + 6);
+                INT32  L, R, M;
+                INT32  Straw, Needle;
+                UINT16 ValueFormat1 = TTUSHORT(Table + 4);
+                UINT16 ValueFormat2 = TTUSHORT(Table + 6);
                 if (ValueFormat1 == 4 && ValueFormat2 == 0)
                 {
                     INT32  ValueRecordPairSizeInBytes = 2;
-                    UINT16 PairSetCount = TTUSHORT(table + 8);
-                    UINT16 PairPosOffset = TTUSHORT(table + 10 + 2 * CoverageIndex);
-                    UINT8 *PairValueTable = table + PairPosOffset;
+                    UINT16 PairSetCount = TTUSHORT(Table + 8);
+                    UINT16 PairPosOffset = TTUSHORT(Table + 10 + 2 * CoverageIndex);
+                    UINT8 *PairValueTable = Table + PairPosOffset;
                     UINT16 PairValueCount = TTUSHORT(PairValueTable);
                     UINT8 *PairValueArray = PairValueTable + 2;
                     if (CoverageIndex >= PairSetCount)
                         return 0;
-                    needle = glyph2;
-                    r = PairValueCount - 1;
-                    l = 0;
-                    while (l <= r)
+                    Needle = Glyph2;
+                    R = PairValueCount - 1;
+                    L = 0;
+                    while (L <= R)
                     {
                         UINT16 SecondGlyph;
                         UINT8 *PairValue;
-                        m = (l + r) >> 1;
-                        PairValue = PairValueArray + (2 + ValueRecordPairSizeInBytes) * m;
+                        M = (L + R) >> 1;
+                        PairValue = PairValueArray + (2 + ValueRecordPairSizeInBytes) * M;
                         SecondGlyph = TTUSHORT(PairValue);
-                        straw = SecondGlyph;
-                        if (needle < straw)
-                            r = m - 1;
-                        else if (needle > straw)
-                            l = m + 1;
+                        Straw = SecondGlyph;
+                        if (Needle < Straw)
+                            R = M - 1;
+                        else if (Needle > Straw)
+                            L = M + 1;
                         else
                         {
                             INT16 XAdvance = TTSHORT(PairValue + 2);
@@ -1460,23 +1460,23 @@ STATIC INT32 GetGlyphGPOSInfoAdvance(CONST FONT_INFO *info, INT32 glyph1, INT32 
             }
             case 2:
             {
-                UINT16 ValueFormat1 = TTUSHORT(table + 4);
-                UINT16 ValueFormat2 = TTUSHORT(table + 6);
+                UINT16 ValueFormat1 = TTUSHORT(Table + 4);
+                UINT16 ValueFormat2 = TTUSHORT(Table + 6);
                 if (ValueFormat1 == 4 && ValueFormat2 == 0)
                 {
-                    UINT16 ClassDef1Offset = TTUSHORT(table + 8);
-                    UINT16 ClassDef2Offset = TTUSHORT(table + 10);
-                    INT32  Glyph1Class = GetGlyphClass(table + ClassDef1Offset, glyph1);
-                    INT32  Glyph2Class = GetGlyphClass(table + ClassDef2Offset, glyph2);
-                    UINT16 Class1Count = TTUSHORT(table + 12);
-                    UINT16 Class2Count = TTUSHORT(table + 14);
+                    UINT16 ClassDef1Offset = TTUSHORT(Table + 8);
+                    UINT16 ClassDef2Offset = TTUSHORT(Table + 10);
+                    INT32  Glyph1Class = GetGlyphClass(Table + ClassDef1Offset, Glyph1);
+                    INT32  Glyph2Class = GetGlyphClass(Table + ClassDef2Offset, Glyph2);
+                    UINT16 Class1Count = TTUSHORT(Table + 12);
+                    UINT16 Class2Count = TTUSHORT(Table + 14);
                     UINT8 *Class1Records, *Class2Records;
                     INT16  XAdvance;
                     if (Glyph1Class < 0 || Glyph1Class >= Class1Count)
                         return 0;
                     if (Glyph2Class < 0 || Glyph2Class >= Class2Count)
                         return 0;
-                    Class1Records = table + 16;
+                    Class1Records = Table + 16;
                     Class2Records = Class1Records + 2 * (Glyph1Class * Class2Count);
                     XAdvance = TTSHORT(Class2Records + 2 * Glyph2Class);
                     return XAdvance;
@@ -1492,93 +1492,93 @@ STATIC INT32 GetGlyphGPOSInfoAdvance(CONST FONT_INFO *info, INT32 glyph1, INT32 
     }
     return 0;
 }
-EXTERN INT32 GetGlyphKernAdvance(CONST FONT_INFO *info, INT32 g1, INT32 g2)
+EXTERN INT32 GetGlyphKernAdvance(CONST FONT_INFO *Info, INT32 G1, INT32 G2)
 {
     INT32 XAdvance = 0;
-    if (info->GPOS)
-        XAdvance += GetGlyphGPOSInfoAdvance(info, g1, g2);
-    else if (info->Kern)
-        XAdvance += GetGlyphKernInfoAdvance(info, g1, g2);
+    if (Info->GPOS)
+        XAdvance += GetGlyphGPOSInfoAdvance(Info, G1, G2);
+    else if (Info->Kern)
+        XAdvance += GetGlyphKernInfoAdvance(Info, G1, G2);
     return XAdvance;
 }
-EXTERN INT32 GetCodepointKernAdvance(CONST FONT_INFO *info, INT32 ch1, INT32 ch2)
+EXTERN INT32 GetCodepointKernAdvance(CONST FONT_INFO *Info, INT32 Ch1, INT32 Ch2)
 {
-    if (!info->Kern && !info->GPOS)
+    if (!Info->Kern && !Info->GPOS)
         return 0;
-    return GetGlyphKernAdvance(info, FindGlyphIndex(info, ch1), FindGlyphIndex(info, ch2));
+    return GetGlyphKernAdvance(Info, FindGlyphIndex(Info, Ch1), FindGlyphIndex(Info, Ch2));
 }
-EXTERN VOID GetCodepointHMetrics(CONST FONT_INFO *info, INT32 codepoint, INT32 *AdvanceWidth, INT32 *LeftSideBearing)
+EXTERN VOID GetCodepointHMetrics(CONST FONT_INFO *Info, INT32 Codepoint, INT32 *AdvanceWidth, INT32 *LeftSideBearing)
 {
-    GetGlyphHMetrics(info, FindGlyphIndex(info, codepoint), AdvanceWidth, LeftSideBearing);
+    GetGlyphHMetrics(Info, FindGlyphIndex(Info, Codepoint), AdvanceWidth, LeftSideBearing);
 }
-EXTERN VOID GetFontVMetrics(CONST FONT_INFO *info, INT32 *ascent, INT32 *descent, INT32 *LineGap)
+EXTERN VOID GetFontVMetrics(CONST FONT_INFO *Info, INT32 *Ascent, INT32 *Descent, INT32 *LineGap)
 {
-    if (ascent)
-        *ascent = TTSHORT(info->Data + info->Hhea + 4);
-    if (descent)
-        *descent = TTSHORT(info->Data + info->Hhea + 6);
+    if (Ascent)
+        *Ascent = TTSHORT(Info->Data + Info->Hhea + 4);
+    if (Descent)
+        *Descent = TTSHORT(Info->Data + Info->Hhea + 6);
     if (LineGap)
-        *LineGap = TTSHORT(info->Data + info->Hhea + 8);
+        *LineGap = TTSHORT(Info->Data + Info->Hhea + 8);
 }
-EXTERN INT32 GetFontVMetricsOS2(CONST FONT_INFO *info, INT32 *TypoAscent, INT32 *TypoDescent, INT32 *TypoLineGap)
+EXTERN INT32 GetFontVMetricsOS2(CONST FONT_INFO *Info, INT32 *TypoAscent, INT32 *TypoDescent, INT32 *TypoLineGap)
 {
-    INT32 tab = FindTable(info->Data, info->FontStart, "OS/2");
-    if (!tab)
+    INT32 Tab = FindTable(Info->Data, Info->FontStart, "OS/2");
+    if (!Tab)
         return 0;
     if (TypoAscent)
-        *TypoAscent = TTSHORT(info->Data + tab + 68);
+        *TypoAscent = TTSHORT(Info->Data + Tab + 68);
     if (TypoDescent)
-        *TypoDescent = TTSHORT(info->Data + tab + 70);
+        *TypoDescent = TTSHORT(Info->Data + Tab + 70);
     if (TypoLineGap)
-        *TypoLineGap = TTSHORT(info->Data + tab + 72);
+        *TypoLineGap = TTSHORT(Info->Data + Tab + 72);
     return 1;
 }
-EXTERN VOID GetFontBoundingBox(CONST FONT_INFO *info, INT32 *x0, INT32 *y0, INT32 *x1, INT32 *y1)
+EXTERN VOID GetFontBoundingBox(CONST FONT_INFO *Info, INT32 *X0, INT32 *Y0, INT32 *X1, INT32 *Y1)
 {
-    *x0 = TTSHORT(info->Data + info->Head + 36);
-    *y0 = TTSHORT(info->Data + info->Head + 38);
-    *x1 = TTSHORT(info->Data + info->Head + 40);
-    *y1 = TTSHORT(info->Data + info->Head + 42);
+    *X0 = TTSHORT(Info->Data + Info->Head + 36);
+    *Y0 = TTSHORT(Info->Data + Info->Head + 38);
+    *X1 = TTSHORT(Info->Data + Info->Head + 40);
+    *Y1 = TTSHORT(Info->Data + Info->Head + 42);
 }
-EXTERN FLOAT32 ScaleForPixelHeight(CONST FONT_INFO *info, FLOAT32 height)
+EXTERN FLOAT32 ScaleForPixelHeight(CONST FONT_INFO *Info, FLOAT32 Height)
 {
-    INT32 fheight = TTSHORT(info->Data + info->Hhea + 4) - TTSHORT(info->Data + info->Hhea + 6);
-    return (FLOAT32) height / fheight;
+    INT32 Fheight = TTSHORT(Info->Data + Info->Hhea + 4) - TTSHORT(Info->Data + Info->Hhea + 6);
+    return (FLOAT32) Height / Fheight;
 }
-EXTERN FLOAT32 ScaleForMappingEmToPixels(CONST FONT_INFO *info, FLOAT32 pixels)
+EXTERN FLOAT32 ScaleForMappingEmToPixels(CONST FONT_INFO *Info, FLOAT32 Pixels)
 {
-    INT32 UnitsPerEm = TTUSHORT(info->Data + info->Head + 18);
-    return pixels / UnitsPerEm;
+    INT32 UnitsPerEm = TTUSHORT(Info->Data + Info->Head + 18);
+    return Pixels / UnitsPerEm;
 }
-EXTERN VOID FreeShape(CONST FONT_INFO *info, VERTEX *v)
+EXTERN VOID FreeShape(CONST FONT_INFO *Info, VERTEX *V)
 {
-    KTTFFree(v, info->UserData);
+    KTTFFree(V, Info->UserData);
 }
-EXTERN UINT8 *FindSVGDoc(CONST FONT_INFO *info, INT32 gl)
+EXTERN UINT8 *FindSVGDoc(CONST FONT_INFO *Info, INT32 Gl)
 {
-    INT32  i;
-    UINT8 *data = info->Data;
-    UINT8 *SVGDocList = data + GetSVG((FONT_INFO *) info);
+    INT32  I;
+    UINT8 *Data = Info->Data;
+    UINT8 *SVGDocList = Data + GetSVG((FONT_INFO *) Info);
     INT32  NumEntries = TTUSHORT(SVGDocList);
     UINT8 *SVGDocs = SVGDocList + 2;
-    for (i = 0; i < NumEntries; i++)
+    for (I = 0; I < NumEntries; I++)
     {
-        UINT8 *SVGDoc = SVGDocs + (12 * i);
-        if ((gl >= TTUSHORT(SVGDoc)) && (gl <= TTUSHORT(SVGDoc + 2)))
+        UINT8 *SVGDoc = SVGDocs + (12 * I);
+        if ((Gl >= TTUSHORT(SVGDoc)) && (Gl <= TTUSHORT(SVGDoc + 2)))
             return SVGDoc;
     }
     return 0;
 }
-EXTERN INT32 GetGlyphSVG(CONST FONT_INFO *info, INT32 gl, CONST CHAR8 **svg)
+EXTERN INT32 GetGlyphSVG(CONST FONT_INFO *Info, INT32 Gl, CONST CHAR8 **Svg)
 {
-    UINT8 *data = info->Data;
+    UINT8 *Data = Info->Data;
     UINT8 *SVGDoc;
-    if (info->Svg == 0)
+    if (Info->Svg == 0)
         return 0;
-    SVGDoc = FindSVGDoc(info, gl);
+    SVGDoc = FindSVGDoc(Info, Gl);
     if (SVGDoc != NULL)
     {
-        *svg = (CHAR8 *) data + info->Svg + TTULONG(SVGDoc + 4);
+        *Svg = (CHAR8 *) Data + Info->Svg + TTULONG(SVGDoc + 4);
         return TTULONG(SVGDoc + 8);
     }
     else
@@ -1586,47 +1586,47 @@ EXTERN INT32 GetGlyphSVG(CONST FONT_INFO *info, INT32 gl, CONST CHAR8 **svg)
         return 0;
     }
 }
-EXTERN INT32 GetCodepointSVG(CONST FONT_INFO *info, INT32 UnicodeCodepoint, CONST CHAR8 **svg)
+EXTERN INT32 GetCodepointSVG(CONST FONT_INFO *Info, INT32 UnicodeCodepoint, CONST CHAR8 **Svg)
 {
-    return GetGlyphSVG(info, FindGlyphIndex(info, UnicodeCodepoint), svg);
+    return GetGlyphSVG(Info, FindGlyphIndex(Info, UnicodeCodepoint), Svg);
 }
-EXTERN VOID GetGlyphBitmapBoxSubpixel(CONST FONT_INFO *font, INT32 glyph, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 *ix0, INT32 *iy0, INT32 *ix1, INT32 *iy1)
+EXTERN VOID GetGlyphBitmapBoxSubpixel(CONST FONT_INFO *Font, INT32 Glyph, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 *Ix0, INT32 *Iy0, INT32 *Ix1, INT32 *Iy1)
 {
-    INT32 x0 = 0, y0 = 0, x1, y1;
-    if (!GetGlyphBox(font, glyph, &x0, &y0, &x1, &y1))
+    INT32 X0 = 0, Y0 = 0, X1, Y1;
+    if (!GetGlyphBox(Font, Glyph, &X0, &Y0, &X1, &Y1))
     {
-        if (ix0)
-            *ix0 = 0;
-        if (iy0)
-            *iy0 = 0;
-        if (ix1)
-            *ix1 = 0;
-        if (iy1)
-            *iy1 = 0;
+        if (Ix0)
+            *Ix0 = 0;
+        if (Iy0)
+            *Iy0 = 0;
+        if (Ix1)
+            *Ix1 = 0;
+        if (Iy1)
+            *Iy1 = 0;
     }
     else
     {
-        if (ix0)
-            *ix0 = KFloor(x0 * ScaleX + ShiftX);
-        if (iy0)
-            *iy0 = KFloor(-y1 * ScaleY + ShiftY);
-        if (ix1)
-            *ix1 = KCeil(x1 * ScaleX + ShiftX);
-        if (iy1)
-            *iy1 = KCeil(-y0 * ScaleY + ShiftY);
+        if (Ix0)
+            *Ix0 = KFloor(X0 * ScaleX + ShiftX);
+        if (Iy0)
+            *Iy0 = KFloor(-Y1 * ScaleY + ShiftY);
+        if (Ix1)
+            *Ix1 = KCeil(X1 * ScaleX + ShiftX);
+        if (Iy1)
+            *Iy1 = KCeil(-Y0 * ScaleY + ShiftY);
     }
 }
-EXTERN VOID GetGlyphBitmapBox(CONST FONT_INFO *font, INT32 glyph, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 *ix0, INT32 *iy0, INT32 *ix1, INT32 *iy1)
+EXTERN VOID GetGlyphBitmapBox(CONST FONT_INFO *Font, INT32 Glyph, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 *Ix0, INT32 *Iy0, INT32 *Ix1, INT32 *Iy1)
 {
-    GetGlyphBitmapBoxSubpixel(font, glyph, ScaleX, ScaleY, 0.0f, 0.0f, ix0, iy0, ix1, iy1);
+    GetGlyphBitmapBoxSubpixel(Font, Glyph, ScaleX, ScaleY, 0.0f, 0.0f, Ix0, Iy0, Ix1, Iy1);
 }
-EXTERN VOID GetCodepointBitmapBoxSubpixel(CONST FONT_INFO *font, INT32 codepoint, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 *ix0, INT32 *iy0, INT32 *ix1, INT32 *iy1)
+EXTERN VOID GetCodepointBitmapBoxSubpixel(CONST FONT_INFO *Font, INT32 Codepoint, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 *Ix0, INT32 *Iy0, INT32 *Ix1, INT32 *Iy1)
 {
-    GetGlyphBitmapBoxSubpixel(font, FindGlyphIndex(font, codepoint), ScaleX, ScaleY, ShiftX, ShiftY, ix0, iy0, ix1, iy1);
+    GetGlyphBitmapBoxSubpixel(Font, FindGlyphIndex(Font, Codepoint), ScaleX, ScaleY, ShiftX, ShiftY, Ix0, Iy0, Ix1, Iy1);
 }
-EXTERN VOID GetCodepointBitmapBox(CONST FONT_INFO *font, INT32 codepoint, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 *ix0, INT32 *iy0, INT32 *ix1, INT32 *iy1)
+EXTERN VOID GetCodepointBitmapBox(CONST FONT_INFO *Font, INT32 Codepoint, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 *Ix0, INT32 *Iy0, INT32 *Ix1, INT32 *Iy1)
 {
-    GetCodepointBitmapBoxSubpixel(font, codepoint, ScaleX, ScaleY, 0.0f, 0.0f, ix0, iy0, ix1, iy1);
+    GetCodepointBitmapBoxSubpixel(Font, Codepoint, ScaleX, ScaleY, 0.0f, 0.0f, Ix0, Iy0, Ix1, Iy1);
 }
 typedef struct HHEAP_CHUNK
 {
@@ -1638,43 +1638,43 @@ typedef struct HHEAP
     VOID               *FirstFree;
     INT32               NumRemainingInHeadChunk;
 } HHEAP;
-STATIC VOID *HheapAlloc(HHEAP *hh, UINTN size, VOID *userdata)
+STATIC VOID *HheapAlloc(HHEAP *Hh, UINTN Size, VOID *Userdata)
 {
-    if (hh->FirstFree)
+    if (Hh->FirstFree)
     {
-        VOID *p = hh->FirstFree;
-        hh->FirstFree = *(VOID **) p;
-        return p;
+        VOID *P = Hh->FirstFree;
+        Hh->FirstFree = *(VOID **) P;
+        return P;
     }
     else
     {
-        if (hh->NumRemainingInHeadChunk == 0)
+        if (Hh->NumRemainingInHeadChunk == 0)
         {
-            INT32        count = (size < 32 ? 2000 : size < 128 ? 800 : 100);
-            HHEAP_CHUNK *c = (HHEAP_CHUNK *) KTTFAlloc(sizeof(HHEAP_CHUNK) + size * count, userdata);
-            if (c == NULL)
+            INT32        Count = (Size < 32 ? 2000 : Size < 128 ? 800 : 100);
+            HHEAP_CHUNK *C = (HHEAP_CHUNK *) KTTFAlloc(sizeof(HHEAP_CHUNK) + Size * Count, Userdata);
+            if (C == NULL)
                 return NULL;
-            c->next = hh->head;
-            hh->head = c;
-            hh->NumRemainingInHeadChunk = count;
+            C->next = Hh->head;
+            Hh->head = C;
+            Hh->NumRemainingInHeadChunk = Count;
         }
-        --hh->NumRemainingInHeadChunk;
-        return (CHAR8 *) (hh->head) + sizeof(HHEAP_CHUNK) + size * hh->NumRemainingInHeadChunk;
+        --Hh->NumRemainingInHeadChunk;
+        return (CHAR8 *) (Hh->head) + sizeof(HHEAP_CHUNK) + Size * Hh->NumRemainingInHeadChunk;
     }
 }
-STATIC VOID HheapFree(HHEAP *hh, VOID *p)
+STATIC VOID HheapFree(HHEAP *Hh, VOID *P)
 {
-    *(VOID **) p = hh->FirstFree;
-    hh->FirstFree = p;
+    *(VOID **) P = Hh->FirstFree;
+    Hh->FirstFree = P;
 }
-STATIC VOID HheapCleanup(HHEAP *hh, VOID *userdata)
+STATIC VOID HheapCleanup(HHEAP *Hh, VOID *Userdata)
 {
-    HHEAP_CHUNK *c = hh->head;
-    while (c)
+    HHEAP_CHUNK *C = Hh->head;
+    while (C)
     {
-        HHEAP_CHUNK *n = c->next;
-        KTTFFree(c, userdata);
-        c = n;
+        HHEAP_CHUNK *N = C->next;
+        KTTFFree(C, Userdata);
+        C = N;
     }
 }
 typedef struct EDGE
@@ -1690,738 +1690,738 @@ typedef struct ACTIVE_EDGE
     FLOAT32             sy;
     FLOAT32             ey;
 } ACTIVE_EDGE;
-STATIC ACTIVE_EDGE *NewActive(HHEAP *hh, EDGE *e, INT32 OffX, FLOAT32 StartPoint, VOID *userdata)
+STATIC ACTIVE_EDGE *NewActive(HHEAP *Hh, EDGE *E, INT32 OffX, FLOAT32 StartPoint, VOID *Userdata)
 {
-    ACTIVE_EDGE *z = (ACTIVE_EDGE *) HheapAlloc(hh, sizeof(*z), userdata);
-    FLOAT32      dxdy = (e->x1 - e->x0) / (e->y1 - e->y0);
-    KAssert(z != NULL);
-    if (!z)
-        return z;
-    z->fdx = dxdy;
-    z->fdy = dxdy != 0.0f ? (1.0f / dxdy) : 0.0f;
-    z->fx = e->x0 + dxdy * (StartPoint - e->y0);
-    z->fx -= OffX;
-    z->direction = e->invert ? 1.0f : -1.0f;
-    z->sy = e->y0;
-    z->ey = e->y1;
-    z->next = 0;
-    return z;
+    ACTIVE_EDGE *Z = (ACTIVE_EDGE *) HheapAlloc(Hh, sizeof(*Z), Userdata);
+    FLOAT32      Dxdy = (E->x1 - E->x0) / (E->y1 - E->y0);
+    KAssert(Z != NULL);
+    if (!Z)
+        return Z;
+    Z->fdx = Dxdy;
+    Z->fdy = Dxdy != 0.0f ? (1.0f / Dxdy) : 0.0f;
+    Z->fx = E->x0 + Dxdy * (StartPoint - E->y0);
+    Z->fx -= OffX;
+    Z->direction = E->invert ? 1.0f : -1.0f;
+    Z->sy = E->y0;
+    Z->ey = E->y1;
+    Z->next = 0;
+    return Z;
 }
-STATIC VOID HandleClippedEdge(FLOAT32 *scanline, INT32 x, ACTIVE_EDGE *e, FLOAT32 x0, FLOAT32 y0, FLOAT32 x1, FLOAT32 y1)
+STATIC VOID HandleClippedEdge(FLOAT32 *Scanline, INT32 X, ACTIVE_EDGE *E, FLOAT32 X0, FLOAT32 Y0, FLOAT32 X1, FLOAT32 Y1)
 {
-    if (y0 == y1)
+    if (Y0 == Y1)
         return;
-    KAssert(y0 < y1);
-    KAssert(e->sy <= e->ey);
-    if (y0 > e->ey)
+    KAssert(Y0 < Y1);
+    KAssert(E->sy <= E->ey);
+    if (Y0 > E->ey)
         return;
-    if (y1 < e->sy)
+    if (Y1 < E->sy)
         return;
-    if (y0 < e->sy)
+    if (Y0 < E->sy)
     {
-        x0 += (x1 - x0) * (e->sy - y0) / (y1 - y0);
-        y0 = e->sy;
+        X0 += (X1 - X0) * (E->sy - Y0) / (Y1 - Y0);
+        Y0 = E->sy;
     }
-    if (y1 > e->ey)
+    if (Y1 > E->ey)
     {
-        x1 += (x1 - x0) * (e->ey - y1) / (y1 - y0);
-        y1 = e->ey;
+        X1 += (X1 - X0) * (E->ey - Y1) / (Y1 - Y0);
+        Y1 = E->ey;
     }
-    if (x0 == x)
-        KAssert(x1 <= x + 1);
-    else if (x0 == x + 1)
-        KAssert(x1 >= x);
-    else if (x0 <= x)
-        KAssert(x1 <= x);
-    else if (x0 >= x + 1)
-        KAssert(x1 >= x + 1);
+    if (X0 == X)
+        KAssert(X1 <= X + 1);
+    else if (X0 == X + 1)
+        KAssert(X1 >= X);
+    else if (X0 <= X)
+        KAssert(X1 <= X);
+    else if (X0 >= X + 1)
+        KAssert(X1 >= X + 1);
     else
-        KAssert(x1 >= x && x1 <= x + 1);
-    if (x0 <= x && x1 <= x)
-        scanline[x] += e->direction * (y1 - y0);
-    else if (x0 >= x + 1 && x1 >= x + 1)
+        KAssert(X1 >= X && X1 <= X + 1);
+    if (X0 <= X && X1 <= X)
+        Scanline[X] += E->direction * (Y1 - Y0);
+    else if (X0 >= X + 1 && X1 >= X + 1)
         ;
     else
     {
-        KAssert(x0 >= x && x0 <= x + 1 && x1 >= x && x1 <= x + 1);
-        scanline[x] += e->direction * (y1 - y0) * (1 - ((x0 - x) + (x1 - x)) / 2);
+        KAssert(X0 >= X && X0 <= X + 1 && X1 >= X && X1 <= X + 1);
+        Scanline[X] += E->direction * (Y1 - Y0) * (1 - ((X0 - X) + (X1 - X)) / 2);
     }
 }
-STATIC FLOAT32 SizedTrapezoidArea(FLOAT32 height, FLOAT32 TopWidth, FLOAT32 BottomWidth)
+STATIC FLOAT32 SizedTrapezoidArea(FLOAT32 Height, FLOAT32 TopWidth, FLOAT32 BottomWidth)
 {
     KAssert(TopWidth >= 0);
     KAssert(BottomWidth >= 0);
-    return (TopWidth + BottomWidth) / 2.0f * height;
+    return (TopWidth + BottomWidth) / 2.0f * Height;
 }
-STATIC FLOAT32 PositionTrapezoidArea(FLOAT32 height, FLOAT32 Tx0, FLOAT32 Tx1, FLOAT32 bx0, FLOAT32 bx1)
+STATIC FLOAT32 PositionTrapezoidArea(FLOAT32 Height, FLOAT32 Tx0, FLOAT32 Tx1, FLOAT32 Bx0, FLOAT32 Bx1)
 {
-    return SizedTrapezoidArea(height, Tx1 - Tx0, bx1 - bx0);
+    return SizedTrapezoidArea(Height, Tx1 - Tx0, Bx1 - Bx0);
 }
-STATIC FLOAT32 SizedTriangleArea(FLOAT32 height, FLOAT32 width)
+STATIC FLOAT32 SizedTriangleArea(FLOAT32 Height, FLOAT32 Width)
 {
-    return height * width / 2;
+    return Height * Width / 2;
 }
-STATIC VOID FillActiveEdgesNew(FLOAT32 *scanline, FLOAT32 *ScanlineFill, INT32 len, ACTIVE_EDGE *e, FLOAT32 YTop)
+STATIC VOID FillActiveEdgesNew(FLOAT32 *Scanline, FLOAT32 *ScanlineFill, INT32 Len, ACTIVE_EDGE *E, FLOAT32 YTop)
 {
     FLOAT32 YBottom = YTop + 1;
-    while (e)
+    while (E)
     {
-        KAssert(e->ey >= YTop);
-        if (e->fdx == 0)
+        KAssert(E->ey >= YTop);
+        if (E->fdx == 0)
         {
-            FLOAT32 x0 = e->fx;
-            if (x0 < len)
+            FLOAT32 X0 = E->fx;
+            if (X0 < Len)
             {
-                if (x0 >= 0)
+                if (X0 >= 0)
                 {
-                    HandleClippedEdge(scanline, (INT32) x0, e, x0, YTop, x0, YBottom);
-                    HandleClippedEdge(ScanlineFill - 1, (INT32) x0 + 1, e, x0, YTop, x0, YBottom);
+                    HandleClippedEdge(Scanline, (INT32) X0, E, X0, YTop, X0, YBottom);
+                    HandleClippedEdge(ScanlineFill - 1, (INT32) X0 + 1, E, X0, YTop, X0, YBottom);
                 }
                 else
                 {
-                    HandleClippedEdge(ScanlineFill - 1, 0, e, x0, YTop, x0, YBottom);
+                    HandleClippedEdge(ScanlineFill - 1, 0, E, X0, YTop, X0, YBottom);
                 }
             }
         }
         else
         {
-            FLOAT32 x0 = e->fx;
-            FLOAT32 dx = e->fdx;
-            FLOAT32 xb = x0 + dx;
+            FLOAT32 X0 = E->fx;
+            FLOAT32 Dx = E->fdx;
+            FLOAT32 Xb = X0 + Dx;
             FLOAT32 XTop, XBottom;
             FLOAT32 Sy0, Sy1;
-            FLOAT32 dy = e->fdy;
-            KAssert(e->sy <= YBottom && e->ey >= YTop);
-            if (e->sy > YTop)
+            FLOAT32 Dy = E->fdy;
+            KAssert(E->sy <= YBottom && E->ey >= YTop);
+            if (E->sy > YTop)
             {
-                XTop = x0 + dx * (e->sy - YTop);
-                Sy0 = e->sy;
+                XTop = X0 + Dx * (E->sy - YTop);
+                Sy0 = E->sy;
             }
             else
             {
-                XTop = x0;
+                XTop = X0;
                 Sy0 = YTop;
             }
-            if (e->ey < YBottom)
+            if (E->ey < YBottom)
             {
-                XBottom = x0 + dx * (e->ey - YTop);
-                Sy1 = e->ey;
+                XBottom = X0 + Dx * (E->ey - YTop);
+                Sy1 = E->ey;
             }
             else
             {
-                XBottom = xb;
+                XBottom = Xb;
                 Sy1 = YBottom;
             }
-            if (XTop >= 0 && XBottom >= 0 && XTop < len && XBottom < len)
+            if (XTop >= 0 && XBottom >= 0 && XTop < Len && XBottom < Len)
             {
                 if ((INT32) XTop == (INT32) XBottom)
                 {
-                    FLOAT32 height;
-                    INT32   x = (INT32) XTop;
-                    height = (Sy1 - Sy0) * e->direction;
-                    KAssert(x >= 0 && x < len);
-                    scanline[x] += PositionTrapezoidArea(height, XTop, x + 1.0f, XBottom, x + 1.0f);
-                    ScanlineFill[x] += height;
+                    FLOAT32 Height;
+                    INT32   X = (INT32) XTop;
+                    Height = (Sy1 - Sy0) * E->direction;
+                    KAssert(X >= 0 && X < Len);
+                    Scanline[X] += PositionTrapezoidArea(Height, XTop, X + 1.0f, XBottom, X + 1.0f);
+                    ScanlineFill[X] += Height;
                 }
                 else
                 {
-                    INT32   x, x1, x2;
-                    FLOAT32 YCrossing, YFinal, step, sign, area;
+                    INT32   X, X1, X2;
+                    FLOAT32 YCrossing, YFinal, Step, Sign, Area;
                     if (XTop > XBottom)
                     {
-                        FLOAT32 t;
+                        FLOAT32 T;
                         Sy0 = YBottom - (Sy0 - YTop);
                         Sy1 = YBottom - (Sy1 - YTop);
-                        t = Sy0, Sy0 = Sy1, Sy1 = t;
-                        t = XBottom, XBottom = XTop, XTop = t;
-                        dx = -dx;
-                        dy = -dy;
-                        t = x0, x0 = xb, xb = t;
+                        T = Sy0, Sy0 = Sy1, Sy1 = T;
+                        T = XBottom, XBottom = XTop, XTop = T;
+                        Dx = -Dx;
+                        Dy = -Dy;
+                        T = X0, X0 = Xb, Xb = T;
                     }
-                    KAssert(dy >= 0);
-                    KAssert(dx >= 0);
-                    x1 = (INT32) XTop;
-                    x2 = (INT32) XBottom;
-                    YCrossing = YTop + dy * (x1 + 1 - x0);
-                    YFinal = YTop + dy * (x2 - x0);
+                    KAssert(Dy >= 0);
+                    KAssert(Dx >= 0);
+                    X1 = (INT32) XTop;
+                    X2 = (INT32) XBottom;
+                    YCrossing = YTop + Dy * (X1 + 1 - X0);
+                    YFinal = YTop + Dy * (X2 - X0);
                     if (YCrossing > YBottom)
                         YCrossing = YBottom;
-                    sign = e->direction;
-                    area = sign * (YCrossing - Sy0);
-                    scanline[x1] += SizedTriangleArea(area, x1 + 1 - XTop);
+                    Sign = E->direction;
+                    Area = Sign * (YCrossing - Sy0);
+                    Scanline[X1] += SizedTriangleArea(Area, X1 + 1 - XTop);
                     if (YFinal > YBottom)
                     {
                         YFinal = YBottom;
-                        dy = (YFinal - YCrossing) / (x2 - (x1 + 1));
+                        Dy = (YFinal - YCrossing) / (X2 - (X1 + 1));
                     }
-                    step = sign * dy * 1;
-                    for (x = x1 + 1; x < x2; ++x)
+                    Step = Sign * Dy * 1;
+                    for (X = X1 + 1; X < X2; ++X)
                     {
-                        scanline[x] += area + step / 2;
-                        area += step;
+                        Scanline[X] += Area + Step / 2;
+                        Area += Step;
                     }
-                    KAssert(KFAbs(area) <= 1.01f);
+                    KAssert(KFAbs(Area) <= 1.01f);
                     KAssert(Sy1 > YFinal - 0.01f);
-                    scanline[x2] += area + sign * PositionTrapezoidArea(Sy1 - YFinal, (FLOAT32) x2, x2 + 1.0f, XBottom, x2 + 1.0f);
-                    ScanlineFill[x2] += sign * (Sy1 - Sy0);
+                    Scanline[X2] += Area + Sign * PositionTrapezoidArea(Sy1 - YFinal, (FLOAT32) X2, X2 + 1.0f, XBottom, X2 + 1.0f);
+                    ScanlineFill[X2] += Sign * (Sy1 - Sy0);
                 }
             }
             else
             {
-                INT32 x;
-                for (x = 0; x < len; ++x)
+                INT32 X;
+                for (X = 0; X < Len; ++X)
                 {
-                    FLOAT32 y0 = YTop;
-                    FLOAT32 x1 = (FLOAT32) (x);
-                    FLOAT32 x2 = (FLOAT32) (x + 1);
-                    FLOAT32 x3 = xb;
-                    FLOAT32 y3 = YBottom;
-                    FLOAT32 y1 = (x - x0) / dx + YTop;
-                    FLOAT32 y2 = (x + 1 - x0) / dx + YTop;
-                    if (x0 < x1 && x3 > x2)
+                    FLOAT32 Y0 = YTop;
+                    FLOAT32 X1 = (FLOAT32) (X);
+                    FLOAT32 X2 = (FLOAT32) (X + 1);
+                    FLOAT32 X3 = Xb;
+                    FLOAT32 Y3 = YBottom;
+                    FLOAT32 Y1 = (X - X0) / Dx + YTop;
+                    FLOAT32 Y2 = (X + 1 - X0) / Dx + YTop;
+                    if (X0 < X1 && X3 > X2)
                     {
-                        HandleClippedEdge(scanline, x, e, x0, y0, x1, y1);
-                        HandleClippedEdge(scanline, x, e, x1, y1, x2, y2);
-                        HandleClippedEdge(scanline, x, e, x2, y2, x3, y3);
+                        HandleClippedEdge(Scanline, X, E, X0, Y0, X1, Y1);
+                        HandleClippedEdge(Scanline, X, E, X1, Y1, X2, Y2);
+                        HandleClippedEdge(Scanline, X, E, X2, Y2, X3, Y3);
                     }
-                    else if (x3 < x1 && x0 > x2)
+                    else if (X3 < X1 && X0 > X2)
                     {
-                        HandleClippedEdge(scanline, x, e, x0, y0, x2, y2);
-                        HandleClippedEdge(scanline, x, e, x2, y2, x1, y1);
-                        HandleClippedEdge(scanline, x, e, x1, y1, x3, y3);
+                        HandleClippedEdge(Scanline, X, E, X0, Y0, X2, Y2);
+                        HandleClippedEdge(Scanline, X, E, X2, Y2, X1, Y1);
+                        HandleClippedEdge(Scanline, X, E, X1, Y1, X3, Y3);
                     }
-                    else if (x0 < x1 && x3 > x1)
+                    else if (X0 < X1 && X3 > X1)
                     {
-                        HandleClippedEdge(scanline, x, e, x0, y0, x1, y1);
-                        HandleClippedEdge(scanline, x, e, x1, y1, x3, y3);
+                        HandleClippedEdge(Scanline, X, E, X0, Y0, X1, Y1);
+                        HandleClippedEdge(Scanline, X, E, X1, Y1, X3, Y3);
                     }
-                    else if (x3 < x1 && x0 > x1)
+                    else if (X3 < X1 && X0 > X1)
                     {
-                        HandleClippedEdge(scanline, x, e, x0, y0, x1, y1);
-                        HandleClippedEdge(scanline, x, e, x1, y1, x3, y3);
+                        HandleClippedEdge(Scanline, X, E, X0, Y0, X1, Y1);
+                        HandleClippedEdge(Scanline, X, E, X1, Y1, X3, Y3);
                     }
-                    else if (x0 < x2 && x3 > x2)
+                    else if (X0 < X2 && X3 > X2)
                     {
-                        HandleClippedEdge(scanline, x, e, x0, y0, x2, y2);
-                        HandleClippedEdge(scanline, x, e, x2, y2, x3, y3);
+                        HandleClippedEdge(Scanline, X, E, X0, Y0, X2, Y2);
+                        HandleClippedEdge(Scanline, X, E, X2, Y2, X3, Y3);
                     }
-                    else if (x3 < x2 && x0 > x2)
+                    else if (X3 < X2 && X0 > X2)
                     {
-                        HandleClippedEdge(scanline, x, e, x0, y0, x2, y2);
-                        HandleClippedEdge(scanline, x, e, x2, y2, x3, y3);
+                        HandleClippedEdge(Scanline, X, E, X0, Y0, X2, Y2);
+                        HandleClippedEdge(Scanline, X, E, X2, Y2, X3, Y3);
                     }
                     else
                     {
-                        HandleClippedEdge(scanline, x, e, x0, y0, x3, y3);
+                        HandleClippedEdge(Scanline, X, E, X0, Y0, X3, Y3);
                     }
                 }
             }
         }
-        e = e->next;
+        E = E->next;
     }
 }
-STATIC VOID RasterizeSortedEdges(BITMAP *result, EDGE *e, INT32 n, INT32 vsubsample, INT32 OffX, INT32 OffY, VOID *userdata)
+STATIC VOID RasterizeSortedEdges(BITMAP *Result, EDGE *E, INT32 N, INT32 Vsubsample, INT32 OffX, INT32 OffY, VOID *Userdata)
 {
-    HHEAP        hh = {0, 0, 0};
-    ACTIVE_EDGE *active = NULL;
-    INT32        y, j = 0, i;
-    FLOAT32      ScanlineData[129], *scanline, *Scanline2;
-    LINEOS_NOTUSED(vsubsample);
-    if (result->W > 64)
-        scanline = (FLOAT32 *) KTTFAlloc((result->W * 2 + 1) * sizeof(FLOAT32), userdata);
+    HHEAP        Hh = {0, 0, 0};
+    ACTIVE_EDGE *Active = NULL;
+    INT32        Y, J = 0, I;
+    FLOAT32      ScanlineData[129], *Scanline, *Scanline2;
+    LINEOS_NOTUSED(Vsubsample);
+    if (Result->W > 64)
+        Scanline = (FLOAT32 *) KTTFAlloc((Result->W * 2 + 1) * sizeof(FLOAT32), Userdata);
     else
-        scanline = ScanlineData;
-    Scanline2 = scanline + result->W;
-    y = OffY;
-    e[n].y0 = (FLOAT32) (OffY + result->H) + 1;
-    while (j < result->H)
+        Scanline = ScanlineData;
+    Scanline2 = Scanline + Result->W;
+    Y = OffY;
+    E[N].y0 = (FLOAT32) (OffY + Result->H) + 1;
+    while (J < Result->H)
     {
-        FLOAT32       ScanYTop = y + 0.0f;
-        FLOAT32       ScanYBottom = y + 1.0f;
-        ACTIVE_EDGE **step = &active;
-        KMemSet(scanline, 0, result->W * sizeof(scanline[0]));
-        KMemSet(Scanline2, 0, (result->W + 1) * sizeof(scanline[0]));
-        while (*step)
+        FLOAT32       ScanYTop = Y + 0.0f;
+        FLOAT32       ScanYBottom = Y + 1.0f;
+        ACTIVE_EDGE **Step = &Active;
+        KMemSet(Scanline, 0, Result->W * sizeof(Scanline[0]));
+        KMemSet(Scanline2, 0, (Result->W + 1) * sizeof(Scanline[0]));
+        while (*Step)
         {
-            ACTIVE_EDGE *z = *step;
-            if (z->ey <= ScanYTop)
+            ACTIVE_EDGE *Z = *Step;
+            if (Z->ey <= ScanYTop)
             {
-                *step = z->next;
-                KAssert(z->direction);
-                z->direction = 0;
-                HheapFree(&hh, z);
+                *Step = Z->next;
+                KAssert(Z->direction);
+                Z->direction = 0;
+                HheapFree(&Hh, Z);
             }
             else
             {
-                step = &((*step)->next);
+                Step = &((*Step)->next);
             }
         }
-        while (e->y0 <= ScanYBottom)
+        while (E->y0 <= ScanYBottom)
         {
-            if (e->y0 != e->y1)
+            if (E->y0 != E->y1)
             {
-                ACTIVE_EDGE *z = NewActive(&hh, e, OffX, ScanYTop, userdata);
-                if (z != NULL)
+                ACTIVE_EDGE *Z = NewActive(&Hh, E, OffX, ScanYTop, Userdata);
+                if (Z != NULL)
                 {
-                    if (j == 0 && OffY != 0)
+                    if (J == 0 && OffY != 0)
                     {
-                        if (z->ey < ScanYTop)
+                        if (Z->ey < ScanYTop)
                         {
-                            z->ey = ScanYTop;
+                            Z->ey = ScanYTop;
                         }
                     }
-                    KAssert(z->ey >= ScanYTop);
-                    z->next = active;
-                    active = z;
+                    KAssert(Z->ey >= ScanYTop);
+                    Z->next = Active;
+                    Active = Z;
                 }
             }
-            ++e;
+            ++E;
         }
-        if (active)
-            FillActiveEdgesNew(scanline, Scanline2 + 1, result->W, active, ScanYTop);
+        if (Active)
+            FillActiveEdgesNew(Scanline, Scanline2 + 1, Result->W, Active, ScanYTop);
         {
-            FLOAT32 sum = 0;
-            for (i = 0; i < result->W; ++i)
+            FLOAT32 Sum = 0;
+            for (I = 0; I < Result->W; ++I)
             {
-                FLOAT32 k;
-                INT32   m;
-                sum += Scanline2[i];
-                k = scanline[i] + sum;
-                k = (FLOAT32) KFAbs(k) * 255 + 0.5f;
-                m = (INT32) k;
-                if (m > 255)
-                    m = 255;
-                result->Pixels[j * result->Stride + i] = (UINT8) m;
+                FLOAT32 K;
+                INT32   M;
+                Sum += Scanline2[I];
+                K = Scanline[I] + Sum;
+                K = (FLOAT32) KFAbs(K) * 255 + 0.5f;
+                M = (INT32) K;
+                if (M > 255)
+                    M = 255;
+                Result->Pixels[J * Result->Stride + I] = (UINT8) M;
             }
         }
-        step = &active;
-        while (*step)
+        Step = &Active;
+        while (*Step)
         {
-            ACTIVE_EDGE *z = *step;
-            z->fx += z->fdx;
-            step = &((*step)->next);
+            ACTIVE_EDGE *Z = *Step;
+            Z->fx += Z->fdx;
+            Step = &((*Step)->next);
         }
-        ++y;
-        ++j;
+        ++Y;
+        ++J;
     }
-    HheapCleanup(&hh, userdata);
-    if (scanline != ScanlineData)
-        KTTFFree(scanline, userdata);
+    HheapCleanup(&Hh, Userdata);
+    if (Scanline != ScanlineData)
+        KTTFFree(Scanline, Userdata);
 }
 #define LINEOS_COMPARE(a, b) ((a)->y0 < (b)->y0)
-STATIC VOID SortEdgesInsSort(EDGE *p, INT32 n)
+STATIC VOID SortEdgesInsSort(EDGE *P, INT32 N)
 {
-    INT32 i, j;
-    for (i = 1; i < n; ++i)
+    INT32 I, J;
+    for (I = 1; I < N; ++I)
     {
-        EDGE t = p[i], *a = &t;
-        j = i;
-        while (j > 0)
+        EDGE T = P[I], *A = &T;
+        J = I;
+        while (J > 0)
         {
-            EDGE *b = &p[j - 1];
-            INT32 c = LINEOS_COMPARE(a, b);
-            if (!c)
+            EDGE *B = &P[J - 1];
+            INT32 C = LINEOS_COMPARE(A, B);
+            if (!C)
                 break;
-            p[j] = p[j - 1];
-            --j;
+            P[J] = P[J - 1];
+            --J;
         }
-        if (i != j)
-            p[j] = t;
+        if (I != J)
+            P[J] = T;
     }
 }
-STATIC VOID SortEdgesQuicksort(EDGE *p, INT32 n)
+STATIC VOID SortEdgesQuicksort(EDGE *P, INT32 N)
 {
-    while (n > 12)
+    while (N > 12)
     {
-        EDGE  t;
-        INT32 c01, c12, c, m, i, j;
-        m = n >> 1;
-        c01 = LINEOS_COMPARE(&p[0], &p[m]);
-        c12 = LINEOS_COMPARE(&p[m], &p[n - 1]);
-        if (c01 != c12)
+        EDGE  T;
+        INT32 C01, C12, C, M, I, J;
+        M = N >> 1;
+        C01 = LINEOS_COMPARE(&P[0], &P[M]);
+        C12 = LINEOS_COMPARE(&P[M], &P[N - 1]);
+        if (C01 != C12)
         {
-            INT32 z;
-            c = LINEOS_COMPARE(&p[0], &p[n - 1]);
-            z = (c == c12) ? 0 : n - 1;
-            t = p[z];
-            p[z] = p[m];
-            p[m] = t;
+            INT32 Z;
+            C = LINEOS_COMPARE(&P[0], &P[N - 1]);
+            Z = (C == C12) ? 0 : N - 1;
+            T = P[Z];
+            P[Z] = P[M];
+            P[M] = T;
         }
-        t = p[0];
-        p[0] = p[m];
-        p[m] = t;
-        i = 1;
-        j = n - 1;
+        T = P[0];
+        P[0] = P[M];
+        P[M] = T;
+        I = 1;
+        J = N - 1;
         for (;;)
         {
-            for (;; ++i)
+            for (;; ++I)
             {
-                if (!LINEOS_COMPARE(&p[i], &p[0]))
+                if (!LINEOS_COMPARE(&P[I], &P[0]))
                     break;
             }
-            for (;; --j)
+            for (;; --J)
             {
-                if (!LINEOS_COMPARE(&p[0], &p[j]))
+                if (!LINEOS_COMPARE(&P[0], &P[J]))
                     break;
             }
-            if (i >= j)
+            if (I >= J)
                 break;
-            t = p[i];
-            p[i] = p[j];
-            p[j] = t;
-            ++i;
-            --j;
+            T = P[I];
+            P[I] = P[J];
+            P[J] = T;
+            ++I;
+            --J;
         }
-        if (j < (n - i))
+        if (J < (N - I))
         {
-            SortEdgesQuicksort(p, j);
-            p = p + i;
-            n = n - i;
+            SortEdgesQuicksort(P, J);
+            P = P + I;
+            N = N - I;
         }
         else
         {
-            SortEdgesQuicksort(p + i, n - i);
-            n = j;
+            SortEdgesQuicksort(P + I, N - I);
+            N = J;
         }
     }
 }
-STATIC VOID SortEdges(EDGE *p, INT32 n)
+STATIC VOID SortEdges(EDGE *P, INT32 N)
 {
-    SortEdgesQuicksort(p, n);
-    SortEdgesInsSort(p, n);
+    SortEdgesQuicksort(P, N);
+    SortEdgesInsSort(P, N);
 }
 typedef struct
 {
     FLOAT32 x, y;
 } POINT;
-STATIC VOID RasterizeInternal(BITMAP *result, POINT *pts, INT32 *wcount, INT32 windings, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 OffX, INT32 OffY, INT32 invert, VOID *userdata)
+STATIC VOID RasterizeInternal(BITMAP *Result, POINT *Pts, INT32 *Wcount, INT32 Windings, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 OffX, INT32 OffY, INT32 Invert, VOID *Userdata)
 {
-    FLOAT32 YScaleInv = invert ? -ScaleY : ScaleY;
-    EDGE   *e;
-    INT32   n, i, j, k, m;
-    INT32   vsubsample = 1;
-    n = 0;
-    for (i = 0; i < windings; ++i)
-        n += wcount[i];
-    e = (EDGE *) KTTFAlloc(sizeof(*e) * (n + 1), userdata);
-    if (e == 0)
+    FLOAT32 YScaleInv = Invert ? -ScaleY : ScaleY;
+    EDGE   *E;
+    INT32   N, I, J, K, M;
+    INT32   Vsubsample = 1;
+    N = 0;
+    for (I = 0; I < Windings; ++I)
+        N += Wcount[I];
+    E = (EDGE *) KTTFAlloc(sizeof(*E) * (N + 1), Userdata);
+    if (E == 0)
         return;
-    n = 0;
-    m = 0;
-    for (i = 0; i < windings; ++i)
+    N = 0;
+    M = 0;
+    for (I = 0; I < Windings; ++I)
     {
-        POINT *p = pts + m;
-        m += wcount[i];
-        j = wcount[i] - 1;
-        for (k = 0; k < wcount[i]; j = k++)
+        POINT *P = Pts + M;
+        M += Wcount[I];
+        J = Wcount[I] - 1;
+        for (K = 0; K < Wcount[I]; J = K++)
         {
-            INT32 a = k, b = j;
-            if (p[j].y == p[k].y)
+            INT32 A = K, B = J;
+            if (P[J].y == P[K].y)
                 continue;
-            e[n].invert = 0;
-            if (invert ? p[j].y > p[k].y : p[j].y < p[k].y)
+            E[N].invert = 0;
+            if (Invert ? P[J].y > P[K].y : P[J].y < P[K].y)
             {
-                e[n].invert = 1;
-                a = j, b = k;
+                E[N].invert = 1;
+                A = J, B = K;
             }
-            e[n].x0 = p[a].x * ScaleX + ShiftX;
-            e[n].y0 = (p[a].y * YScaleInv + ShiftY) * vsubsample;
-            e[n].x1 = p[b].x * ScaleX + ShiftX;
-            e[n].y1 = (p[b].y * YScaleInv + ShiftY) * vsubsample;
-            ++n;
+            E[N].x0 = P[A].x * ScaleX + ShiftX;
+            E[N].y0 = (P[A].y * YScaleInv + ShiftY) * Vsubsample;
+            E[N].x1 = P[B].x * ScaleX + ShiftX;
+            E[N].y1 = (P[B].y * YScaleInv + ShiftY) * Vsubsample;
+            ++N;
         }
     }
-    SortEdges(e, n);
-    RasterizeSortedEdges(result, e, n, vsubsample, OffX, OffY, userdata);
-    KTTFFree(e, userdata);
+    SortEdges(E, N);
+    RasterizeSortedEdges(Result, E, N, Vsubsample, OffX, OffY, Userdata);
+    KTTFFree(E, Userdata);
 }
-STATIC VOID AddPoint(POINT *points, INT32 n, FLOAT32 x, FLOAT32 y)
+STATIC VOID AddPoint(POINT *Points, INT32 N, FLOAT32 X, FLOAT32 Y)
 {
-    if (!points)
+    if (!Points)
         return;
-    points[n].x = x;
-    points[n].y = y;
+    Points[N].x = X;
+    Points[N].y = Y;
 }
-STATIC INT32 TesselateCurve(POINT *points, INT32 *NumPoints, FLOAT32 x0, FLOAT32 y0, FLOAT32 x1, FLOAT32 y1, FLOAT32 x2, FLOAT32 y2, FLOAT32 ObjspaceFlatnessSquared, INT32 n)
+STATIC INT32 TesselateCurve(POINT *Points, INT32 *NumPoints, FLOAT32 X0, FLOAT32 Y0, FLOAT32 X1, FLOAT32 Y1, FLOAT32 X2, FLOAT32 Y2, FLOAT32 ObjspaceFlatnessSquared, INT32 N)
 {
-    FLOAT32 mx = (x0 + 2 * x1 + x2) / 4;
-    FLOAT32 my = (y0 + 2 * y1 + y2) / 4;
-    FLOAT32 dx = (x0 + x2) / 2 - mx;
-    FLOAT32 dy = (y0 + y2) / 2 - my;
-    if (n > 16)
+    FLOAT32 Mx = (X0 + 2 * X1 + X2) / 4;
+    FLOAT32 My = (Y0 + 2 * Y1 + Y2) / 4;
+    FLOAT32 Dx = (X0 + X2) / 2 - Mx;
+    FLOAT32 Dy = (Y0 + Y2) / 2 - My;
+    if (N > 16)
         return 1;
-    if (dx * dx + dy * dy > ObjspaceFlatnessSquared)
+    if (Dx * Dx + Dy * Dy > ObjspaceFlatnessSquared)
     {
-        TesselateCurve(points, NumPoints, x0, y0, (x0 + x1) / 2.0f, (y0 + y1) / 2.0f, mx, my, ObjspaceFlatnessSquared, n + 1);
-        TesselateCurve(points, NumPoints, mx, my, (x1 + x2) / 2.0f, (y1 + y2) / 2.0f, x2, y2, ObjspaceFlatnessSquared, n + 1);
+        TesselateCurve(Points, NumPoints, X0, Y0, (X0 + X1) / 2.0f, (Y0 + Y1) / 2.0f, Mx, My, ObjspaceFlatnessSquared, N + 1);
+        TesselateCurve(Points, NumPoints, Mx, My, (X1 + X2) / 2.0f, (Y1 + Y2) / 2.0f, X2, Y2, ObjspaceFlatnessSquared, N + 1);
     }
     else
     {
-        AddPoint(points, *NumPoints, x2, y2);
+        AddPoint(Points, *NumPoints, X2, Y2);
         *NumPoints = *NumPoints + 1;
     }
     return 1;
 }
-STATIC VOID TesselateCubic(POINT *points, INT32 *NumPoints, FLOAT32 x0, FLOAT32 y0, FLOAT32 x1, FLOAT32 y1, FLOAT32 x2, FLOAT32 y2, FLOAT32 x3, FLOAT32 y3, FLOAT32 ObjspaceFlatnessSquared, INT32 n)
+STATIC VOID TesselateCubic(POINT *Points, INT32 *NumPoints, FLOAT32 X0, FLOAT32 Y0, FLOAT32 X1, FLOAT32 Y1, FLOAT32 X2, FLOAT32 Y2, FLOAT32 X3, FLOAT32 Y3, FLOAT32 ObjspaceFlatnessSquared, INT32 N)
 {
-    FLOAT32 dx0 = x1 - x0;
-    FLOAT32 dy0 = y1 - y0;
-    FLOAT32 dx1 = x2 - x1;
-    FLOAT32 dy1 = y2 - y1;
-    FLOAT32 dx2 = x3 - x2;
-    FLOAT32 dy2 = y3 - y2;
-    FLOAT32 dx = x3 - x0;
-    FLOAT32 dy = y3 - y0;
-    FLOAT32 longlen = (FLOAT32) (KSqrt(dx0 * dx0 + dy0 * dy0) + KSqrt(dx1 * dx1 + dy1 * dy1) + KSqrt(dx2 * dx2 + dy2 * dy2));
-    FLOAT32 shortlen = (FLOAT32) KSqrt(dx * dx + dy * dy);
-    FLOAT32 FlatnessSquared = longlen * longlen - shortlen * shortlen;
-    if (n > 16)
+    FLOAT32 Dx0 = X1 - X0;
+    FLOAT32 Dy0 = Y1 - Y0;
+    FLOAT32 Dx1 = X2 - X1;
+    FLOAT32 Dy1 = Y2 - Y1;
+    FLOAT32 Dx2 = X3 - X2;
+    FLOAT32 Dy2 = Y3 - Y2;
+    FLOAT32 Dx = X3 - X0;
+    FLOAT32 Dy = Y3 - Y0;
+    FLOAT32 Longlen = (FLOAT32) (KSqrt(Dx0 * Dx0 + Dy0 * Dy0) + KSqrt(Dx1 * Dx1 + Dy1 * Dy1) + KSqrt(Dx2 * Dx2 + Dy2 * Dy2));
+    FLOAT32 Shortlen = (FLOAT32) KSqrt(Dx * Dx + Dy * Dy);
+    FLOAT32 FlatnessSquared = Longlen * Longlen - Shortlen * Shortlen;
+    if (N > 16)
         return;
     if (FlatnessSquared > ObjspaceFlatnessSquared)
     {
-        FLOAT32 X01 = (x0 + x1) / 2;
-        FLOAT32 Y01 = (y0 + y1) / 2;
-        FLOAT32 X12 = (x1 + x2) / 2;
-        FLOAT32 Y12 = (y1 + y2) / 2;
-        FLOAT32 X23 = (x2 + x3) / 2;
-        FLOAT32 Y23 = (y2 + y3) / 2;
-        FLOAT32 xa = (X01 + X12) / 2;
-        FLOAT32 ya = (Y01 + Y12) / 2;
-        FLOAT32 xb = (X12 + X23) / 2;
-        FLOAT32 yb = (Y12 + Y23) / 2;
-        FLOAT32 mx = (xa + xb) / 2;
-        FLOAT32 my = (ya + yb) / 2;
-        TesselateCubic(points, NumPoints, x0, y0, X01, Y01, xa, ya, mx, my, ObjspaceFlatnessSquared, n + 1);
-        TesselateCubic(points, NumPoints, mx, my, xb, yb, X23, Y23, x3, y3, ObjspaceFlatnessSquared, n + 1);
+        FLOAT32 X01 = (X0 + X1) / 2;
+        FLOAT32 Y01 = (Y0 + Y1) / 2;
+        FLOAT32 X12 = (X1 + X2) / 2;
+        FLOAT32 Y12 = (Y1 + Y2) / 2;
+        FLOAT32 X23 = (X2 + X3) / 2;
+        FLOAT32 Y23 = (Y2 + Y3) / 2;
+        FLOAT32 Xa = (X01 + X12) / 2;
+        FLOAT32 Ya = (Y01 + Y12) / 2;
+        FLOAT32 Xb = (X12 + X23) / 2;
+        FLOAT32 Yb = (Y12 + Y23) / 2;
+        FLOAT32 Mx = (Xa + Xb) / 2;
+        FLOAT32 My = (Ya + Yb) / 2;
+        TesselateCubic(Points, NumPoints, X0, Y0, X01, Y01, Xa, Ya, Mx, My, ObjspaceFlatnessSquared, N + 1);
+        TesselateCubic(Points, NumPoints, Mx, My, Xb, Yb, X23, Y23, X3, Y3, ObjspaceFlatnessSquared, N + 1);
     }
     else
     {
-        AddPoint(points, *NumPoints, x3, y3);
+        AddPoint(Points, *NumPoints, X3, Y3);
         *NumPoints = *NumPoints + 1;
     }
 }
-STATIC POINT *FlattenCurves(VERTEX *vertices, INT32 NumVerts, FLOAT32 ObjspaceFlatness, INT32 **ContourLengths, INT32 *NumContours, VOID *userdata)
+STATIC POINT *FlattenCurves(VERTEX *Vertices, INT32 NumVerts, FLOAT32 ObjspaceFlatness, INT32 **ContourLengths, INT32 *NumContours, VOID *Userdata)
 {
-    POINT  *points = 0;
+    POINT  *Points = 0;
     INT32   NumPoints = 0;
     FLOAT32 ObjspaceFlatnessSquared = ObjspaceFlatness * ObjspaceFlatness;
-    INT32   i, n = 0, start = 0, pass;
-    for (i = 0; i < NumVerts; ++i)
-        if (vertices[i].Type == LINEOS_VMOVE)
-            ++n;
-    *NumContours = n;
-    if (n == 0)
+    INT32   I, N = 0, Start = 0, Pass;
+    for (I = 0; I < NumVerts; ++I)
+        if (Vertices[I].Type == LINEOS_VMOVE)
+            ++N;
+    *NumContours = N;
+    if (N == 0)
         return 0;
-    *ContourLengths = (INT32 *) KTTFAlloc(sizeof(**ContourLengths) * n, userdata);
+    *ContourLengths = (INT32 *) KTTFAlloc(sizeof(**ContourLengths) * N, Userdata);
     if (*ContourLengths == 0)
     {
         *NumContours = 0;
         return 0;
     }
-    for (pass = 0; pass < 2; ++pass)
+    for (Pass = 0; Pass < 2; ++Pass)
     {
-        FLOAT32 x = 0, y = 0;
-        if (pass == 1)
+        FLOAT32 X = 0, Y = 0;
+        if (Pass == 1)
         {
-            points = (POINT *) KTTFAlloc(NumPoints * sizeof(points[0]), userdata);
-            if (points == NULL)
+            Points = (POINT *) KTTFAlloc(NumPoints * sizeof(Points[0]), Userdata);
+            if (Points == NULL)
                 goto error;
         }
         NumPoints = 0;
-        n = -1;
-        for (i = 0; i < NumVerts; ++i)
+        N = -1;
+        for (I = 0; I < NumVerts; ++I)
         {
-            switch (vertices[i].Type)
+            switch (Vertices[I].Type)
             {
             case LINEOS_VMOVE:
-                if (n >= 0)
-                    (*ContourLengths)[n] = NumPoints - start;
-                ++n;
-                start = NumPoints;
-                x = vertices[i].X, y = vertices[i].Y;
-                AddPoint(points, NumPoints++, x, y);
+                if (N >= 0)
+                    (*ContourLengths)[N] = NumPoints - Start;
+                ++N;
+                Start = NumPoints;
+                X = Vertices[I].X, Y = Vertices[I].Y;
+                AddPoint(Points, NumPoints++, X, Y);
                 break;
             case LINEOS_VLINE:
-                x = vertices[i].X, y = vertices[i].Y;
-                AddPoint(points, NumPoints++, x, y);
+                X = Vertices[I].X, Y = Vertices[I].Y;
+                AddPoint(Points, NumPoints++, X, Y);
                 break;
             case LINEOS_VCURVE:
-                TesselateCurve(points, &NumPoints, x, y, vertices[i].Cx, vertices[i].Cy, vertices[i].X, vertices[i].Y, ObjspaceFlatnessSquared, 0);
-                x = vertices[i].X, y = vertices[i].Y;
+                TesselateCurve(Points, &NumPoints, X, Y, Vertices[I].Cx, Vertices[I].Cy, Vertices[I].X, Vertices[I].Y, ObjspaceFlatnessSquared, 0);
+                X = Vertices[I].X, Y = Vertices[I].Y;
                 break;
             case LINEOS_VCUBIC:
-                TesselateCubic(points, &NumPoints, x, y, vertices[i].Cx, vertices[i].Cy, vertices[i].Cx1, vertices[i].Cy1, vertices[i].X, vertices[i].Y, ObjspaceFlatnessSquared, 0);
-                x = vertices[i].X, y = vertices[i].Y;
+                TesselateCubic(Points, &NumPoints, X, Y, Vertices[I].Cx, Vertices[I].Cy, Vertices[I].Cx1, Vertices[I].Cy1, Vertices[I].X, Vertices[I].Y, ObjspaceFlatnessSquared, 0);
+                X = Vertices[I].X, Y = Vertices[I].Y;
                 break;
             }
         }
-        (*ContourLengths)[n] = NumPoints - start;
+        (*ContourLengths)[N] = NumPoints - Start;
     }
-    return points;
+    return Points;
 error:
-    KTTFFree(points, userdata);
-    KTTFFree(*ContourLengths, userdata);
+    KTTFFree(Points, Userdata);
+    KTTFFree(*ContourLengths, Userdata);
     *ContourLengths = 0;
     *NumContours = 0;
     return NULL;
 }
-EXTERN VOID Rasterize(BITMAP *result, FLOAT32 FlatnessInPixels, VERTEX *vertices, INT32 NumVerts, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 XOff, INT32 YOff, INT32 invert, VOID *userdata)
+EXTERN VOID Rasterize(BITMAP *Result, FLOAT32 FlatnessInPixels, VERTEX *Vertices, INT32 NumVerts, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 XOff, INT32 YOff, INT32 Invert, VOID *Userdata)
 {
-    FLOAT32 scale = ScaleX > ScaleY ? ScaleY : ScaleX;
+    FLOAT32 Scale = ScaleX > ScaleY ? ScaleY : ScaleX;
     INT32   WindingCount = 0;
     INT32  *WindingLengths = NULL;
-    POINT  *windings = FlattenCurves(vertices, NumVerts, FlatnessInPixels / scale, &WindingLengths, &WindingCount, userdata);
-    if (windings)
+    POINT  *Windings = FlattenCurves(Vertices, NumVerts, FlatnessInPixels / Scale, &WindingLengths, &WindingCount, Userdata);
+    if (Windings)
     {
-        RasterizeInternal(result, windings, WindingLengths, WindingCount, ScaleX, ScaleY, ShiftX, ShiftY, XOff, YOff, invert, userdata);
-        KTTFFree(WindingLengths, userdata);
-        KTTFFree(windings, userdata);
+        RasterizeInternal(Result, Windings, WindingLengths, WindingCount, ScaleX, ScaleY, ShiftX, ShiftY, XOff, YOff, Invert, Userdata);
+        KTTFFree(WindingLengths, Userdata);
+        KTTFFree(Windings, Userdata);
     }
 }
-EXTERN VOID FreeBitmap(UINT8 *bitmap, VOID *userdata)
+EXTERN VOID FreeBitmap(UINT8 *Bitmap, VOID *Userdata)
 {
-    KTTFFree(bitmap, userdata);
+    KTTFFree(Bitmap, Userdata);
 }
-EXTERN UINT8 *GetGlyphBitmapSubpixel(CONST FONT_INFO *info, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 glyph, INT32 *width, INT32 *height, INT32 *xoff, INT32 *yoff)
+EXTERN UINT8 *GetGlyphBitmapSubpixel(CONST FONT_INFO *Info, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 Glyph, INT32 *Width, INT32 *Height, INT32 *Xoff, INT32 *Yoff)
 {
-    INT32   ix0, iy0, ix1, iy1;
-    BITMAP  gbm;
-    VERTEX *vertices;
-    INT32   NumVerts = GetGlyphShape(info, glyph, &vertices);
+    INT32   Ix0, Iy0, Ix1, Iy1;
+    BITMAP  Gbm;
+    VERTEX *Vertices;
+    INT32   NumVerts = GetGlyphShape(Info, Glyph, &Vertices);
     if (ScaleX == 0)
         ScaleX = ScaleY;
     if (ScaleY == 0)
     {
         if (ScaleX == 0)
         {
-            KTTFFree(vertices, info->UserData);
+            KTTFFree(Vertices, Info->UserData);
             return NULL;
         }
         ScaleY = ScaleX;
     }
-    GetGlyphBitmapBoxSubpixel(info, glyph, ScaleX, ScaleY, ShiftX, ShiftY, &ix0, &iy0, &ix1, &iy1);
-    gbm.W = (ix1 - ix0);
-    gbm.H = (iy1 - iy0);
-    gbm.Pixels = NULL;
-    if (width)
-        *width = gbm.W;
-    if (height)
-        *height = gbm.H;
-    if (xoff)
-        *xoff = ix0;
-    if (yoff)
-        *yoff = iy0;
-    if (gbm.W && gbm.H)
+    GetGlyphBitmapBoxSubpixel(Info, Glyph, ScaleX, ScaleY, ShiftX, ShiftY, &Ix0, &Iy0, &Ix1, &Iy1);
+    Gbm.W = (Ix1 - Ix0);
+    Gbm.H = (Iy1 - Iy0);
+    Gbm.Pixels = NULL;
+    if (Width)
+        *Width = Gbm.W;
+    if (Height)
+        *Height = Gbm.H;
+    if (Xoff)
+        *Xoff = Ix0;
+    if (Yoff)
+        *Yoff = Iy0;
+    if (Gbm.W && Gbm.H)
     {
-        gbm.Pixels = (UINT8 *) KTTFAlloc(gbm.W * gbm.H, info->UserData);
-        if (gbm.Pixels)
+        Gbm.Pixels = (UINT8 *) KTTFAlloc(Gbm.W * Gbm.H, Info->UserData);
+        if (Gbm.Pixels)
         {
-            gbm.Stride = gbm.W;
-            Rasterize(&gbm, 0.35f, vertices, NumVerts, ScaleX, ScaleY, ShiftX, ShiftY, ix0, iy0, 1, info->UserData);
+            Gbm.Stride = Gbm.W;
+            Rasterize(&Gbm, 0.35f, Vertices, NumVerts, ScaleX, ScaleY, ShiftX, ShiftY, Ix0, Iy0, 1, Info->UserData);
         }
     }
-    KTTFFree(vertices, info->UserData);
-    return gbm.Pixels;
+    KTTFFree(Vertices, Info->UserData);
+    return Gbm.Pixels;
 }
-EXTERN UINT8 *GetGlyphBitmap(CONST FONT_INFO *info, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 glyph, INT32 *width, INT32 *height, INT32 *xoff, INT32 *yoff)
+EXTERN UINT8 *GetGlyphBitmap(CONST FONT_INFO *Info, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 Glyph, INT32 *Width, INT32 *Height, INT32 *Xoff, INT32 *Yoff)
 {
-    return GetGlyphBitmapSubpixel(info, ScaleX, ScaleY, 0.0f, 0.0f, glyph, width, height, xoff, yoff);
+    return GetGlyphBitmapSubpixel(Info, ScaleX, ScaleY, 0.0f, 0.0f, Glyph, Width, Height, Xoff, Yoff);
 }
-EXTERN VOID MakeGlyphBitmapSubpixel(CONST FONT_INFO *info, UINT8 *output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 glyph)
+EXTERN VOID MakeGlyphBitmapSubpixel(CONST FONT_INFO *Info, UINT8 *Output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 Glyph)
 {
-    INT32   ix0, iy0;
-    VERTEX *vertices;
-    INT32   NumVerts = GetGlyphShape(info, glyph, &vertices);
-    BITMAP  gbm;
-    GetGlyphBitmapBoxSubpixel(info, glyph, ScaleX, ScaleY, ShiftX, ShiftY, &ix0, &iy0, 0, 0);
-    gbm.Pixels = output;
-    gbm.W = OutW;
-    gbm.H = OutH;
-    gbm.Stride = OutStride;
-    if (gbm.W && gbm.H)
-        Rasterize(&gbm, 0.35f, vertices, NumVerts, ScaleX, ScaleY, ShiftX, ShiftY, ix0, iy0, 1, info->UserData);
-    KTTFFree(vertices, info->UserData);
+    INT32   Ix0, Iy0;
+    VERTEX *Vertices;
+    INT32   NumVerts = GetGlyphShape(Info, Glyph, &Vertices);
+    BITMAP  Gbm;
+    GetGlyphBitmapBoxSubpixel(Info, Glyph, ScaleX, ScaleY, ShiftX, ShiftY, &Ix0, &Iy0, 0, 0);
+    Gbm.Pixels = Output;
+    Gbm.W = OutW;
+    Gbm.H = OutH;
+    Gbm.Stride = OutStride;
+    if (Gbm.W && Gbm.H)
+        Rasterize(&Gbm, 0.35f, Vertices, NumVerts, ScaleX, ScaleY, ShiftX, ShiftY, Ix0, Iy0, 1, Info->UserData);
+    KTTFFree(Vertices, Info->UserData);
 }
-EXTERN VOID MakeGlyphBitmap(CONST FONT_INFO *info, UINT8 *output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 glyph)
+EXTERN VOID MakeGlyphBitmap(CONST FONT_INFO *Info, UINT8 *Output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 Glyph)
 {
-    MakeGlyphBitmapSubpixel(info, output, OutW, OutH, OutStride, ScaleX, ScaleY, 0.0f, 0.0f, glyph);
+    MakeGlyphBitmapSubpixel(Info, Output, OutW, OutH, OutStride, ScaleX, ScaleY, 0.0f, 0.0f, Glyph);
 }
-EXTERN UINT8 *GetCodepointBitmapSubpixel(CONST FONT_INFO *info, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 codepoint, INT32 *width, INT32 *height, INT32 *xoff, INT32 *yoff)
+EXTERN UINT8 *GetCodepointBitmapSubpixel(CONST FONT_INFO *Info, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 Codepoint, INT32 *Width, INT32 *Height, INT32 *Xoff, INT32 *Yoff)
 {
-    return GetGlyphBitmapSubpixel(info, ScaleX, ScaleY, ShiftX, ShiftY, FindGlyphIndex(info, codepoint), width, height, xoff, yoff);
+    return GetGlyphBitmapSubpixel(Info, ScaleX, ScaleY, ShiftX, ShiftY, FindGlyphIndex(Info, Codepoint), Width, Height, Xoff, Yoff);
 }
-EXTERN VOID MakeCodepointBitmapSubpixelPrefilter(CONST FONT_INFO *info, UINT8 *output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 OversampleX, INT32 OversampleY, FLOAT32 *SubX, FLOAT32 *SubY, INT32 codepoint)
+EXTERN VOID MakeCodepointBitmapSubpixelPrefilter(CONST FONT_INFO *Info, UINT8 *Output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 OversampleX, INT32 OversampleY, FLOAT32 *SubX, FLOAT32 *SubY, INT32 Codepoint)
 {
-    MakeGlyphBitmapSubpixelPrefilter(info, output, OutW, OutH, OutStride, ScaleX, ScaleY, ShiftX, ShiftY, OversampleX, OversampleY, SubX, SubY, FindGlyphIndex(info, codepoint));
+    MakeGlyphBitmapSubpixelPrefilter(Info, Output, OutW, OutH, OutStride, ScaleX, ScaleY, ShiftX, ShiftY, OversampleX, OversampleY, SubX, SubY, FindGlyphIndex(Info, Codepoint));
 }
-EXTERN VOID MakeCodepointBitmapSubpixel(CONST FONT_INFO *info, UINT8 *output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 codepoint)
+EXTERN VOID MakeCodepointBitmapSubpixel(CONST FONT_INFO *Info, UINT8 *Output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 Codepoint)
 {
-    MakeGlyphBitmapSubpixel(info, output, OutW, OutH, OutStride, ScaleX, ScaleY, ShiftX, ShiftY, FindGlyphIndex(info, codepoint));
+    MakeGlyphBitmapSubpixel(Info, Output, OutW, OutH, OutStride, ScaleX, ScaleY, ShiftX, ShiftY, FindGlyphIndex(Info, Codepoint));
 }
-EXTERN UINT8 *GetCodepointBitmap(CONST FONT_INFO *info, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 codepoint, INT32 *width, INT32 *height, INT32 *xoff, INT32 *yoff)
+EXTERN UINT8 *GetCodepointBitmap(CONST FONT_INFO *Info, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 Codepoint, INT32 *Width, INT32 *Height, INT32 *Xoff, INT32 *Yoff)
 {
-    return GetCodepointBitmapSubpixel(info, ScaleX, ScaleY, 0.0f, 0.0f, codepoint, width, height, xoff, yoff);
+    return GetCodepointBitmapSubpixel(Info, ScaleX, ScaleY, 0.0f, 0.0f, Codepoint, Width, Height, Xoff, Yoff);
 }
-EXTERN VOID MakeCodepointBitmap(CONST FONT_INFO *info, UINT8 *output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 codepoint)
+EXTERN VOID MakeCodepointBitmap(CONST FONT_INFO *Info, UINT8 *Output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, INT32 Codepoint)
 {
-    MakeCodepointBitmapSubpixel(info, output, OutW, OutH, OutStride, ScaleX, ScaleY, 0.0f, 0.0f, codepoint);
+    MakeCodepointBitmapSubpixel(Info, Output, OutW, OutH, OutStride, ScaleX, ScaleY, 0.0f, 0.0f, Codepoint);
 }
-STATIC INT32 BakeFontBitmapInternal(UINT8 *data, INT32 offset, FLOAT32 PixelHeight, UINT8 *pixels, INT32 pw, INT32 ph, INT32 FirstChar, INT32 NumChars, BAKED_CHAR *chardata)
+STATIC INT32 BakeFontBitmapInternal(UINT8 *Data, INT32 Offset, FLOAT32 PixelHeight, UINT8 *Pixels, INT32 Pw, INT32 Ph, INT32 FirstChar, INT32 NumChars, BAKED_CHAR *Chardata)
 {
-    FLOAT32   scale;
-    INT32     x, y, BottomY, i;
-    FONT_INFO f;
-    f.UserData = NULL;
-    if (!InitFont(&f, data, offset))
+    FLOAT32   Scale;
+    INT32     X, Y, BottomY, I;
+    FONT_INFO F;
+    F.UserData = NULL;
+    if (!InitFont(&F, Data, Offset))
         return -1;
-    KMemSet(pixels, 0, pw * ph);
-    x = y = 1;
+    KMemSet(Pixels, 0, Pw * Ph);
+    X = Y = 1;
     BottomY = 1;
-    scale = ScaleForPixelHeight(&f, PixelHeight);
-    for (i = 0; i < NumChars; ++i)
+    Scale = ScaleForPixelHeight(&F, PixelHeight);
+    for (I = 0; I < NumChars; ++I)
     {
-        INT32 advance, lsb, x0, y0, x1, y1, gw, gh;
-        INT32 g = FindGlyphIndex(&f, FirstChar + i);
-        GetGlyphHMetrics(&f, g, &advance, &lsb);
-        GetGlyphBitmapBox(&f, g, scale, scale, &x0, &y0, &x1, &y1);
-        gw = x1 - x0;
-        gh = y1 - y0;
-        if (x + gw + 1 >= pw)
-            y = BottomY, x = 1;
-        if (y + gh + 1 >= ph)
-            return -i;
-        KAssert(x + gw < pw);
-        KAssert(y + gh < ph);
-        MakeGlyphBitmap(&f, pixels + x + y * pw, gw, gh, pw, scale, scale, g);
-        chardata[i].X0 = (INT16) x;
-        chardata[i].Y0 = (INT16) y;
-        chardata[i].X1 = (INT16) (x + gw);
-        chardata[i].Y1 = (INT16) (y + gh);
-        chardata[i].Xadvance = scale * advance;
-        chardata[i].Xoff = (FLOAT32) x0;
-        chardata[i].Yoff = (FLOAT32) y0;
-        x = x + gw + 1;
-        if (y + gh + 1 > BottomY)
-            BottomY = y + gh + 1;
+        INT32 Advance, Lsb, X0, Y0, X1, Y1, Gw, Gh;
+        INT32 G = FindGlyphIndex(&F, FirstChar + I);
+        GetGlyphHMetrics(&F, G, &Advance, &Lsb);
+        GetGlyphBitmapBox(&F, G, Scale, Scale, &X0, &Y0, &X1, &Y1);
+        Gw = X1 - X0;
+        Gh = Y1 - Y0;
+        if (X + Gw + 1 >= Pw)
+            Y = BottomY, X = 1;
+        if (Y + Gh + 1 >= Ph)
+            return -I;
+        KAssert(X + Gw < Pw);
+        KAssert(Y + Gh < Ph);
+        MakeGlyphBitmap(&F, Pixels + X + Y * Pw, Gw, Gh, Pw, Scale, Scale, G);
+        Chardata[I].X0 = (INT16) X;
+        Chardata[I].Y0 = (INT16) Y;
+        Chardata[I].X1 = (INT16) (X + Gw);
+        Chardata[I].Y1 = (INT16) (Y + Gh);
+        Chardata[I].Xadvance = Scale * Advance;
+        Chardata[I].Xoff = (FLOAT32) X0;
+        Chardata[I].Yoff = (FLOAT32) Y0;
+        X = X + Gw + 1;
+        if (Y + Gh + 1 > BottomY)
+            BottomY = Y + Gh + 1;
     }
     return BottomY;
 }
-EXTERN VOID GetBakedQuad(CONST BAKED_CHAR *chardata, INT32 pw, INT32 ph, INT32 CharIndex, FLOAT32 *xpos, FLOAT32 *ypos, ALIGNED_QUAD *q, INT32 OpenglFillrule)
+EXTERN VOID GetBakedQuad(CONST BAKED_CHAR *Chardata, INT32 Pw, INT32 Ph, INT32 CharIndex, FLOAT32 *Xpos, FLOAT32 *Ypos, ALIGNED_QUAD *Q, INT32 OpenglFillrule)
 {
     FLOAT32           D3DBias = OpenglFillrule ? 0 : -0.5f;
-    FLOAT32           ipw = 1.0f / pw, iph = 1.0f / ph;
-    CONST BAKED_CHAR *b = chardata + CharIndex;
-    INT32             RoundX = KFloor((*xpos + b->Xoff) + 0.5f);
-    INT32             RoundY = KFloor((*ypos + b->Yoff) + 0.5f);
-    q->X0 = RoundX + D3DBias;
-    q->Y0 = RoundY + D3DBias;
-    q->X1 = RoundX + b->X1 - b->X0 + D3DBias;
-    q->Y1 = RoundY + b->Y1 - b->Y0 + D3DBias;
-    q->S0 = b->X0 * ipw;
-    q->T0 = b->Y0 * iph;
-    q->S1 = b->X1 * ipw;
-    q->T1 = b->Y1 * iph;
-    *xpos += b->Xadvance;
+    FLOAT32           Ipw = 1.0f / Pw, Iph = 1.0f / Ph;
+    CONST BAKED_CHAR *B = Chardata + CharIndex;
+    INT32             RoundX = KFloor((*Xpos + B->Xoff) + 0.5f);
+    INT32             RoundY = KFloor((*Ypos + B->Yoff) + 0.5f);
+    Q->X0 = RoundX + D3DBias;
+    Q->Y0 = RoundY + D3DBias;
+    Q->X1 = RoundX + B->X1 - B->X0 + D3DBias;
+    Q->Y1 = RoundY + B->Y1 - B->Y0 + D3DBias;
+    Q->S0 = B->X0 * Ipw;
+    Q->T0 = B->Y0 * Iph;
+    Q->S1 = B->X1 * Ipw;
+    Q->T1 = B->Y1 * Iph;
+    *Xpos += B->Xadvance;
 }
 typedef INT32 STBRP_COORD;
 typedef struct
@@ -2438,463 +2438,463 @@ struct STBRP_RECT
     STBRP_COORD x, y;
     INT32       id, w, h, WasPacked;
 };
-STATIC VOID STBRPInitTarget(STBRP_CONTEXT *con, INT32 pw, INT32 ph, STBRP_NODE *nodes, INT32 NumNodes)
+STATIC VOID STBRPInitTarget(STBRP_CONTEXT *Con, INT32 Pw, INT32 Ph, STBRP_NODE *Nodes, INT32 NumNodes)
 {
-    con->width = pw;
-    con->height = ph;
-    con->x = 0;
-    con->y = 0;
-    con->BottomY = 0;
-    LINEOS_NOTUSED(nodes);
+    Con->width = Pw;
+    Con->height = Ph;
+    Con->x = 0;
+    Con->y = 0;
+    Con->BottomY = 0;
+    LINEOS_NOTUSED(Nodes);
     LINEOS_NOTUSED(NumNodes);
 }
-STATIC VOID STBRPPackRects(STBRP_CONTEXT *con, STBRP_RECT *rects, INT32 NumRects)
+STATIC VOID STBRPPackRects(STBRP_CONTEXT *Con, STBRP_RECT *Rects, INT32 NumRects)
 {
-    INT32 i;
-    for (i = 0; i < NumRects; ++i)
+    INT32 I;
+    for (I = 0; I < NumRects; ++I)
     {
-        if (con->x + rects[i].w > con->width)
+        if (Con->x + Rects[I].w > Con->width)
         {
-            con->x = 0;
-            con->y = con->BottomY;
+            Con->x = 0;
+            Con->y = Con->BottomY;
         }
-        if (con->y + rects[i].h > con->height)
+        if (Con->y + Rects[I].h > Con->height)
             break;
-        rects[i].x = con->x;
-        rects[i].y = con->y;
-        rects[i].WasPacked = 1;
-        con->x += rects[i].w;
-        if (con->y + rects[i].h > con->BottomY)
-            con->BottomY = con->y + rects[i].h;
+        Rects[I].x = Con->x;
+        Rects[I].y = Con->y;
+        Rects[I].WasPacked = 1;
+        Con->x += Rects[I].w;
+        if (Con->y + Rects[I].h > Con->BottomY)
+            Con->BottomY = Con->y + Rects[I].h;
     }
-    for (; i < NumRects; ++i)
-        rects[i].WasPacked = 0;
+    for (; I < NumRects; ++I)
+        Rects[I].WasPacked = 0;
 }
-EXTERN INT32 PackBegin(PACK_CONTEXT *spc, UINT8 *pixels, INT32 pw, INT32 ph, INT32 StrideInBytes, INT32 padding, VOID *AllocContext)
+EXTERN INT32 PackBegin(PACK_CONTEXT *Spc, UINT8 *Pixels, INT32 Pw, INT32 Ph, INT32 StrideInBytes, INT32 Padding, VOID *AllocContext)
 {
-    STBRP_CONTEXT *context = (STBRP_CONTEXT *) KTTFAlloc(sizeof(*context), AllocContext);
-    INT32          NumNodes = pw - padding;
-    STBRP_NODE    *nodes = (STBRP_NODE *) KTTFAlloc(sizeof(*nodes) * NumNodes, AllocContext);
-    if (context == NULL || nodes == NULL)
+    STBRP_CONTEXT *Context = (STBRP_CONTEXT *) KTTFAlloc(sizeof(*Context), AllocContext);
+    INT32          NumNodes = Pw - Padding;
+    STBRP_NODE    *Nodes = (STBRP_NODE *) KTTFAlloc(sizeof(*Nodes) * NumNodes, AllocContext);
+    if (Context == NULL || Nodes == NULL)
     {
-        if (context != NULL)
-            KTTFFree(context, AllocContext);
-        if (nodes != NULL)
-            KTTFFree(nodes, AllocContext);
+        if (Context != NULL)
+            KTTFFree(Context, AllocContext);
+        if (Nodes != NULL)
+            KTTFFree(Nodes, AllocContext);
         return 0;
     }
-    spc->UserAllocatorContext = AllocContext;
-    spc->Width = pw;
-    spc->Height = ph;
-    spc->Pixels = pixels;
-    spc->PackInfo = context;
-    spc->Nodes = nodes;
-    spc->Padding = padding;
-    spc->StrideInBytes = StrideInBytes != 0 ? StrideInBytes : pw;
-    spc->HOversample = 1;
-    spc->VOversample = 1;
-    spc->SkipMissing = 0;
-    STBRPInitTarget(context, pw - padding, ph - padding, nodes, NumNodes);
-    if (pixels)
-        KMemSet(pixels, 0, pw * ph);
+    Spc->UserAllocatorContext = AllocContext;
+    Spc->Width = Pw;
+    Spc->Height = Ph;
+    Spc->Pixels = Pixels;
+    Spc->PackInfo = Context;
+    Spc->Nodes = Nodes;
+    Spc->Padding = Padding;
+    Spc->StrideInBytes = StrideInBytes != 0 ? StrideInBytes : Pw;
+    Spc->HOversample = 1;
+    Spc->VOversample = 1;
+    Spc->SkipMissing = 0;
+    STBRPInitTarget(Context, Pw - Padding, Ph - Padding, Nodes, NumNodes);
+    if (Pixels)
+        KMemSet(Pixels, 0, Pw * Ph);
     return 1;
 }
-EXTERN VOID PackEnd(PACK_CONTEXT *spc)
+EXTERN VOID PackEnd(PACK_CONTEXT *Spc)
 {
-    KTTFFree(spc->Nodes, spc->UserAllocatorContext);
-    KTTFFree(spc->PackInfo, spc->UserAllocatorContext);
+    KTTFFree(Spc->Nodes, Spc->UserAllocatorContext);
+    KTTFFree(Spc->PackInfo, Spc->UserAllocatorContext);
 }
-EXTERN VOID PackSetOversampling(PACK_CONTEXT *spc, UINT32 HOversample, UINT32 VOversample)
+EXTERN VOID PackSetOversampling(PACK_CONTEXT *Spc, UINT32 HOversample, UINT32 VOversample)
 {
     KAssert(HOversample <= LINEOS_MAX_OVERSAMPLE);
     KAssert(VOversample <= LINEOS_MAX_OVERSAMPLE);
     if (HOversample <= LINEOS_MAX_OVERSAMPLE)
-        spc->HOversample = HOversample;
+        Spc->HOversample = HOversample;
     if (VOversample <= LINEOS_MAX_OVERSAMPLE)
-        spc->VOversample = VOversample;
+        Spc->VOversample = VOversample;
 }
-EXTERN VOID PackSetSkipMissingCodepoints(PACK_CONTEXT *spc, INT32 skip)
+EXTERN VOID PackSetSkipMissingCodepoints(PACK_CONTEXT *Spc, INT32 Skip)
 {
-    spc->SkipMissing = skip;
+    Spc->SkipMissing = Skip;
 }
 #define LINEOS_OVER_MASK (LINEOS_MAX_OVERSAMPLE - 1)
-STATIC VOID HPrefilter(UINT8 *pixels, INT32 w, INT32 h, INT32 StrideInBytes, UINT32 KernelWidth)
+STATIC VOID HPrefilter(UINT8 *Pixels, INT32 W, INT32 H, INT32 StrideInBytes, UINT32 KernelWidth)
 {
-    UINT8 buffer[LINEOS_MAX_OVERSAMPLE];
-    INT32 SafeW = w - KernelWidth;
-    INT32 j;
-    KMemSet(buffer, 0, LINEOS_MAX_OVERSAMPLE);
-    for (j = 0; j < h; ++j)
+    UINT8 Buffer[LINEOS_MAX_OVERSAMPLE];
+    INT32 SafeW = W - KernelWidth;
+    INT32 J;
+    KMemSet(Buffer, 0, LINEOS_MAX_OVERSAMPLE);
+    for (J = 0; J < H; ++J)
     {
-        INT32  i;
-        UINT32 total;
-        KMemSet(buffer, 0, KernelWidth);
-        total = 0;
+        INT32  I;
+        UINT32 Total;
+        KMemSet(Buffer, 0, KernelWidth);
+        Total = 0;
         switch (KernelWidth)
         {
         case 2:
-            for (i = 0; i <= SafeW; ++i)
+            for (I = 0; I <= SafeW; ++I)
             {
-                total += pixels[i] - buffer[i & LINEOS_OVER_MASK];
-                buffer[(i + KernelWidth) & LINEOS_OVER_MASK] = pixels[i];
-                pixels[i] = (UINT8) (total / 2);
+                Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
+                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
+                Pixels[I] = (UINT8) (Total / 2);
             }
             break;
         case 3:
-            for (i = 0; i <= SafeW; ++i)
+            for (I = 0; I <= SafeW; ++I)
             {
-                total += pixels[i] - buffer[i & LINEOS_OVER_MASK];
-                buffer[(i + KernelWidth) & LINEOS_OVER_MASK] = pixels[i];
-                pixels[i] = (UINT8) (total / 3);
+                Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
+                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
+                Pixels[I] = (UINT8) (Total / 3);
             }
             break;
         case 4:
-            for (i = 0; i <= SafeW; ++i)
+            for (I = 0; I <= SafeW; ++I)
             {
-                total += pixels[i] - buffer[i & LINEOS_OVER_MASK];
-                buffer[(i + KernelWidth) & LINEOS_OVER_MASK] = pixels[i];
-                pixels[i] = (UINT8) (total / 4);
+                Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
+                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
+                Pixels[I] = (UINT8) (Total / 4);
             }
             break;
         case 5:
-            for (i = 0; i <= SafeW; ++i)
+            for (I = 0; I <= SafeW; ++I)
             {
-                total += pixels[i] - buffer[i & LINEOS_OVER_MASK];
-                buffer[(i + KernelWidth) & LINEOS_OVER_MASK] = pixels[i];
-                pixels[i] = (UINT8) (total / 5);
+                Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
+                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
+                Pixels[I] = (UINT8) (Total / 5);
             }
             break;
         default:
-            for (i = 0; i <= SafeW; ++i)
+            for (I = 0; I <= SafeW; ++I)
             {
-                total += pixels[i] - buffer[i & LINEOS_OVER_MASK];
-                buffer[(i + KernelWidth) & LINEOS_OVER_MASK] = pixels[i];
-                pixels[i] = (UINT8) (total / KernelWidth);
+                Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
+                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
+                Pixels[I] = (UINT8) (Total / KernelWidth);
             }
             break;
         }
-        for (; i < w; ++i)
+        for (; I < W; ++I)
         {
-            KAssert(pixels[i] == 0);
-            total -= buffer[i & LINEOS_OVER_MASK];
-            pixels[i] = (UINT8) (total / KernelWidth);
+            KAssert(Pixels[I] == 0);
+            Total -= Buffer[I & LINEOS_OVER_MASK];
+            Pixels[I] = (UINT8) (Total / KernelWidth);
         }
-        pixels += StrideInBytes;
+        Pixels += StrideInBytes;
     }
 }
-STATIC VOID VPrefilter(UINT8 *pixels, INT32 w, INT32 h, INT32 StrideInBytes, UINT32 KernelWidth)
+STATIC VOID VPrefilter(UINT8 *Pixels, INT32 W, INT32 H, INT32 StrideInBytes, UINT32 KernelWidth)
 {
-    UINT8 buffer[LINEOS_MAX_OVERSAMPLE];
-    INT32 SafeH = h - KernelWidth;
-    INT32 j;
-    KMemSet(buffer, 0, LINEOS_MAX_OVERSAMPLE);
-    for (j = 0; j < w; ++j)
+    UINT8 Buffer[LINEOS_MAX_OVERSAMPLE];
+    INT32 SafeH = H - KernelWidth;
+    INT32 J;
+    KMemSet(Buffer, 0, LINEOS_MAX_OVERSAMPLE);
+    for (J = 0; J < W; ++J)
     {
-        INT32  i;
-        UINT32 total;
-        KMemSet(buffer, 0, KernelWidth);
-        total = 0;
+        INT32  I;
+        UINT32 Total;
+        KMemSet(Buffer, 0, KernelWidth);
+        Total = 0;
         switch (KernelWidth)
         {
         case 2:
-            for (i = 0; i <= SafeH; ++i)
+            for (I = 0; I <= SafeH; ++I)
             {
-                total += pixels[i * StrideInBytes] - buffer[i & LINEOS_OVER_MASK];
-                buffer[(i + KernelWidth) & LINEOS_OVER_MASK] = pixels[i * StrideInBytes];
-                pixels[i * StrideInBytes] = (UINT8) (total / 2);
+                Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
+                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
+                Pixels[I * StrideInBytes] = (UINT8) (Total / 2);
             }
             break;
         case 3:
-            for (i = 0; i <= SafeH; ++i)
+            for (I = 0; I <= SafeH; ++I)
             {
-                total += pixels[i * StrideInBytes] - buffer[i & LINEOS_OVER_MASK];
-                buffer[(i + KernelWidth) & LINEOS_OVER_MASK] = pixels[i * StrideInBytes];
-                pixels[i * StrideInBytes] = (UINT8) (total / 3);
+                Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
+                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
+                Pixels[I * StrideInBytes] = (UINT8) (Total / 3);
             }
             break;
         case 4:
-            for (i = 0; i <= SafeH; ++i)
+            for (I = 0; I <= SafeH; ++I)
             {
-                total += pixels[i * StrideInBytes] - buffer[i & LINEOS_OVER_MASK];
-                buffer[(i + KernelWidth) & LINEOS_OVER_MASK] = pixels[i * StrideInBytes];
-                pixels[i * StrideInBytes] = (UINT8) (total / 4);
+                Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
+                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
+                Pixels[I * StrideInBytes] = (UINT8) (Total / 4);
             }
             break;
         case 5:
-            for (i = 0; i <= SafeH; ++i)
+            for (I = 0; I <= SafeH; ++I)
             {
-                total += pixels[i * StrideInBytes] - buffer[i & LINEOS_OVER_MASK];
-                buffer[(i + KernelWidth) & LINEOS_OVER_MASK] = pixels[i * StrideInBytes];
-                pixels[i * StrideInBytes] = (UINT8) (total / 5);
+                Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
+                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
+                Pixels[I * StrideInBytes] = (UINT8) (Total / 5);
             }
             break;
         default:
-            for (i = 0; i <= SafeH; ++i)
+            for (I = 0; I <= SafeH; ++I)
             {
-                total += pixels[i * StrideInBytes] - buffer[i & LINEOS_OVER_MASK];
-                buffer[(i + KernelWidth) & LINEOS_OVER_MASK] = pixels[i * StrideInBytes];
-                pixels[i * StrideInBytes] = (UINT8) (total / KernelWidth);
+                Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
+                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
+                Pixels[I * StrideInBytes] = (UINT8) (Total / KernelWidth);
             }
             break;
         }
-        for (; i < h; ++i)
+        for (; I < H; ++I)
         {
-            KAssert(pixels[i * StrideInBytes] == 0);
-            total -= buffer[i & LINEOS_OVER_MASK];
-            pixels[i * StrideInBytes] = (UINT8) (total / KernelWidth);
+            KAssert(Pixels[I * StrideInBytes] == 0);
+            Total -= Buffer[I & LINEOS_OVER_MASK];
+            Pixels[I * StrideInBytes] = (UINT8) (Total / KernelWidth);
         }
-        pixels += 1;
+        Pixels += 1;
     }
 }
-STATIC FLOAT32 OversampleShift(INT32 oversample)
+STATIC FLOAT32 OversampleShift(INT32 Oversample)
 {
-    if (!oversample)
+    if (!Oversample)
         return 0.0f;
-    return (FLOAT32) - (oversample - 1) / (2.0f * (FLOAT32) oversample);
+    return (FLOAT32) - (Oversample - 1) / (2.0f * (FLOAT32) Oversample);
 }
-EXTERN INT32 PackFontRangesGatherRects(PACK_CONTEXT *spc, CONST FONT_INFO *info, PACK_RANGE *ranges, INT32 NumRanges, STBRP_RECT *rects)
+EXTERN INT32 PackFontRangesGatherRects(PACK_CONTEXT *Spc, CONST FONT_INFO *Info, PACK_RANGE *Ranges, INT32 NumRanges, STBRP_RECT *Rects)
 {
-    INT32 i, j, k;
+    INT32 I, J, K;
     INT32 MissingGlyphAdded = 0;
-    k = 0;
-    for (i = 0; i < NumRanges; ++i)
+    K = 0;
+    for (I = 0; I < NumRanges; ++I)
     {
-        FLOAT32 fh = ranges[i].FontSize;
-        FLOAT32 scale = fh > 0 ? ScaleForPixelHeight(info, fh) : ScaleForMappingEmToPixels(info, -fh);
-        ranges[i].HOversample = (UINT8) spc->HOversample;
-        ranges[i].VOversample = (UINT8) spc->VOversample;
-        for (j = 0; j < ranges[i].NumChars; ++j)
+        FLOAT32 Fh = Ranges[I].FontSize;
+        FLOAT32 Scale = Fh > 0 ? ScaleForPixelHeight(Info, Fh) : ScaleForMappingEmToPixels(Info, -Fh);
+        Ranges[I].HOversample = (UINT8) Spc->HOversample;
+        Ranges[I].VOversample = (UINT8) Spc->VOversample;
+        for (J = 0; J < Ranges[I].NumChars; ++J)
         {
-            INT32 x0, y0, x1, y1;
-            INT32 codepoint = ranges[i].ArrayOfUnicodeCodepoints == NULL ? ranges[i].FirstUnicodeCodepointInRange + j : ranges[i].ArrayOfUnicodeCodepoints[j];
-            INT32 glyph = FindGlyphIndex(info, codepoint);
-            if (glyph == 0 && (spc->SkipMissing || MissingGlyphAdded))
+            INT32 X0, Y0, X1, Y1;
+            INT32 Codepoint = Ranges[I].ArrayOfUnicodeCodepoints == NULL ? Ranges[I].FirstUnicodeCodepointInRange + J : Ranges[I].ArrayOfUnicodeCodepoints[J];
+            INT32 Glyph = FindGlyphIndex(Info, Codepoint);
+            if (Glyph == 0 && (Spc->SkipMissing || MissingGlyphAdded))
             {
-                rects[k].w = rects[k].h = 0;
+                Rects[K].w = Rects[K].h = 0;
             }
             else
             {
-                GetGlyphBitmapBoxSubpixel(info, glyph, scale * spc->HOversample, scale * spc->VOversample, 0, 0, &x0, &y0, &x1, &y1);
-                rects[k].w = (STBRP_COORD) (x1 - x0 + spc->Padding + spc->HOversample - 1);
-                rects[k].h = (STBRP_COORD) (y1 - y0 + spc->Padding + spc->VOversample - 1);
-                if (glyph == 0)
+                GetGlyphBitmapBoxSubpixel(Info, Glyph, Scale * Spc->HOversample, Scale * Spc->VOversample, 0, 0, &X0, &Y0, &X1, &Y1);
+                Rects[K].w = (STBRP_COORD) (X1 - X0 + Spc->Padding + Spc->HOversample - 1);
+                Rects[K].h = (STBRP_COORD) (Y1 - Y0 + Spc->Padding + Spc->VOversample - 1);
+                if (Glyph == 0)
                     MissingGlyphAdded = 1;
             }
-            ++k;
+            ++K;
         }
     }
-    return k;
+    return K;
 }
-EXTERN VOID MakeGlyphBitmapSubpixelPrefilter(CONST FONT_INFO *info, UINT8 *output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 PrefilterX, INT32 PrefilterY, FLOAT32 *SubX, FLOAT32 *SubY, INT32 glyph)
+EXTERN VOID MakeGlyphBitmapSubpixelPrefilter(CONST FONT_INFO *Info, UINT8 *Output, INT32 OutW, INT32 OutH, INT32 OutStride, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 PrefilterX, INT32 PrefilterY, FLOAT32 *SubX, FLOAT32 *SubY, INT32 Glyph)
 {
-    MakeGlyphBitmapSubpixel(info, output, OutW - (PrefilterX - 1), OutH - (PrefilterY - 1), OutStride, ScaleX, ScaleY, ShiftX, ShiftY, glyph);
+    MakeGlyphBitmapSubpixel(Info, Output, OutW - (PrefilterX - 1), OutH - (PrefilterY - 1), OutStride, ScaleX, ScaleY, ShiftX, ShiftY, Glyph);
     if (PrefilterX > 1)
-        HPrefilter(output, OutW, OutH, OutStride, PrefilterX);
+        HPrefilter(Output, OutW, OutH, OutStride, PrefilterX);
     if (PrefilterY > 1)
-        VPrefilter(output, OutW, OutH, OutStride, PrefilterY);
+        VPrefilter(Output, OutW, OutH, OutStride, PrefilterY);
     *SubX = OversampleShift(PrefilterX);
     *SubY = OversampleShift(PrefilterY);
 }
-EXTERN INT32 PackFontRangesRenderIntoRects(PACK_CONTEXT *spc, CONST FONT_INFO *info, PACK_RANGE *ranges, INT32 NumRanges, STBRP_RECT *rects)
+EXTERN INT32 PackFontRangesRenderIntoRects(PACK_CONTEXT *Spc, CONST FONT_INFO *Info, PACK_RANGE *Ranges, INT32 NumRanges, STBRP_RECT *Rects)
 {
-    INT32 i, j, k, MissingGlyph = -1, ReturnValue = 1;
-    INT32 OldHOver = spc->HOversample;
-    INT32 OldVOver = spc->VOversample;
-    k = 0;
-    for (i = 0; i < NumRanges; ++i)
+    INT32 I, J, K, MissingGlyph = -1, ReturnValue = 1;
+    INT32 OldHOver = Spc->HOversample;
+    INT32 OldVOver = Spc->VOversample;
+    K = 0;
+    for (I = 0; I < NumRanges; ++I)
     {
-        FLOAT32 fh = ranges[i].FontSize;
-        FLOAT32 scale = fh > 0 ? ScaleForPixelHeight(info, fh) : ScaleForMappingEmToPixels(info, -fh);
+        FLOAT32 Fh = Ranges[I].FontSize;
+        FLOAT32 Scale = Fh > 0 ? ScaleForPixelHeight(Info, Fh) : ScaleForMappingEmToPixels(Info, -Fh);
         FLOAT32 RecipH, RecipV, SubX, SubY;
-        spc->HOversample = ranges[i].HOversample;
-        spc->VOversample = ranges[i].VOversample;
-        RecipH = 1.0f / spc->HOversample;
-        RecipV = 1.0f / spc->VOversample;
-        SubX = OversampleShift(spc->HOversample);
-        SubY = OversampleShift(spc->VOversample);
-        for (j = 0; j < ranges[i].NumChars; ++j)
+        Spc->HOversample = Ranges[I].HOversample;
+        Spc->VOversample = Ranges[I].VOversample;
+        RecipH = 1.0f / Spc->HOversample;
+        RecipV = 1.0f / Spc->VOversample;
+        SubX = OversampleShift(Spc->HOversample);
+        SubY = OversampleShift(Spc->VOversample);
+        for (J = 0; J < Ranges[I].NumChars; ++J)
         {
-            STBRP_RECT *r = &rects[k];
-            if (r->WasPacked && r->w != 0 && r->h != 0)
+            STBRP_RECT *R = &Rects[K];
+            if (R->WasPacked && R->w != 0 && R->h != 0)
             {
-                PACKED_CHAR *bc = &ranges[i].ChardataForRange[j];
-                INT32        advance, lsb, x0, y0, x1, y1;
-                INT32        codepoint = ranges[i].ArrayOfUnicodeCodepoints == NULL ? ranges[i].FirstUnicodeCodepointInRange + j : ranges[i].ArrayOfUnicodeCodepoints[j];
-                INT32        glyph = FindGlyphIndex(info, codepoint);
-                STBRP_COORD  pad = (STBRP_COORD) spc->Padding;
-                r->x += pad;
-                r->y += pad;
-                r->w -= pad;
-                r->h -= pad;
-                GetGlyphHMetrics(info, glyph, &advance, &lsb);
-                GetGlyphBitmapBox(info, glyph, scale * spc->HOversample, scale * spc->VOversample, &x0, &y0, &x1, &y1);
-                MakeGlyphBitmapSubpixel(info, spc->Pixels + r->x + r->y * spc->StrideInBytes, r->w - spc->HOversample + 1, r->h - spc->VOversample + 1, spc->StrideInBytes, scale * spc->HOversample, scale * spc->VOversample, 0, 0, glyph);
-                if (spc->HOversample > 1)
-                    HPrefilter(spc->Pixels + r->x + r->y * spc->StrideInBytes, r->w, r->h, spc->StrideInBytes, spc->HOversample);
-                if (spc->VOversample > 1)
-                    VPrefilter(spc->Pixels + r->x + r->y * spc->StrideInBytes, r->w, r->h, spc->StrideInBytes, spc->VOversample);
-                bc->X0 = (INT16) r->x;
-                bc->Y0 = (INT16) r->y;
-                bc->X1 = (INT16) (r->x + r->w);
-                bc->Y1 = (INT16) (r->y + r->h);
-                bc->Xadvance = scale * advance;
-                bc->Xoff = (FLOAT32) x0 * RecipH + SubX;
-                bc->Yoff = (FLOAT32) y0 * RecipV + SubY;
-                bc->Xoff2 = (x0 + r->w) * RecipH + SubX;
-                bc->Yoff2 = (y0 + r->h) * RecipV + SubY;
-                if (glyph == 0)
-                    MissingGlyph = j;
+                PACKED_CHAR *Bc = &Ranges[I].ChardataForRange[J];
+                INT32        Advance, Lsb, X0, Y0, X1, Y1;
+                INT32        Codepoint = Ranges[I].ArrayOfUnicodeCodepoints == NULL ? Ranges[I].FirstUnicodeCodepointInRange + J : Ranges[I].ArrayOfUnicodeCodepoints[J];
+                INT32        Glyph = FindGlyphIndex(Info, Codepoint);
+                STBRP_COORD  Pad = (STBRP_COORD) Spc->Padding;
+                R->x += Pad;
+                R->y += Pad;
+                R->w -= Pad;
+                R->h -= Pad;
+                GetGlyphHMetrics(Info, Glyph, &Advance, &Lsb);
+                GetGlyphBitmapBox(Info, Glyph, Scale * Spc->HOversample, Scale * Spc->VOversample, &X0, &Y0, &X1, &Y1);
+                MakeGlyphBitmapSubpixel(Info, Spc->Pixels + R->x + R->y * Spc->StrideInBytes, R->w - Spc->HOversample + 1, R->h - Spc->VOversample + 1, Spc->StrideInBytes, Scale * Spc->HOversample, Scale * Spc->VOversample, 0, 0, Glyph);
+                if (Spc->HOversample > 1)
+                    HPrefilter(Spc->Pixels + R->x + R->y * Spc->StrideInBytes, R->w, R->h, Spc->StrideInBytes, Spc->HOversample);
+                if (Spc->VOversample > 1)
+                    VPrefilter(Spc->Pixels + R->x + R->y * Spc->StrideInBytes, R->w, R->h, Spc->StrideInBytes, Spc->VOversample);
+                Bc->X0 = (INT16) R->x;
+                Bc->Y0 = (INT16) R->y;
+                Bc->X1 = (INT16) (R->x + R->w);
+                Bc->Y1 = (INT16) (R->y + R->h);
+                Bc->Xadvance = Scale * Advance;
+                Bc->Xoff = (FLOAT32) X0 * RecipH + SubX;
+                Bc->Yoff = (FLOAT32) Y0 * RecipV + SubY;
+                Bc->Xoff2 = (X0 + R->w) * RecipH + SubX;
+                Bc->Yoff2 = (Y0 + R->h) * RecipV + SubY;
+                if (Glyph == 0)
+                    MissingGlyph = J;
             }
-            else if (spc->SkipMissing)
+            else if (Spc->SkipMissing)
             {
                 ReturnValue = 0;
             }
-            else if (r->WasPacked && r->w == 0 && r->h == 0 && MissingGlyph >= 0)
+            else if (R->WasPacked && R->w == 0 && R->h == 0 && MissingGlyph >= 0)
             {
-                ranges[i].ChardataForRange[j] = ranges[i].ChardataForRange[MissingGlyph];
+                Ranges[I].ChardataForRange[J] = Ranges[I].ChardataForRange[MissingGlyph];
             }
             else
             {
                 ReturnValue = 0;
             }
-            ++k;
+            ++K;
         }
     }
-    spc->HOversample = OldHOver;
-    spc->VOversample = OldVOver;
+    Spc->HOversample = OldHOver;
+    Spc->VOversample = OldVOver;
     return ReturnValue;
 }
-EXTERN VOID PackFontRangesPackRects(PACK_CONTEXT *spc, STBRP_RECT *rects, INT32 NumRects)
+EXTERN VOID PackFontRangesPackRects(PACK_CONTEXT *Spc, STBRP_RECT *Rects, INT32 NumRects)
 {
-    STBRPPackRects((STBRP_CONTEXT *) spc->PackInfo, rects, NumRects);
+    STBRPPackRects((STBRP_CONTEXT *) Spc->PackInfo, Rects, NumRects);
 }
-EXTERN INT32 PackFontRanges(PACK_CONTEXT *spc, CONST UINT8 *fontdata, INT32 FontIndex, PACK_RANGE *ranges, INT32 NumRanges)
+EXTERN INT32 PackFontRanges(PACK_CONTEXT *Spc, CONST UINT8 *Fontdata, INT32 FontIndex, PACK_RANGE *Ranges, INT32 NumRanges)
 {
-    FONT_INFO   info;
-    INT32       i, j, n, ReturnValue = 1;
-    STBRP_RECT *rects;
-    for (i = 0; i < NumRanges; ++i)
-        for (j = 0; j < ranges[i].NumChars; ++j)
-            ranges[i].ChardataForRange[j].X0 = ranges[i].ChardataForRange[j].Y0 = ranges[i].ChardataForRange[j].X1 = ranges[i].ChardataForRange[j].Y1 = 0;
-    n = 0;
-    for (i = 0; i < NumRanges; ++i)
-        n += ranges[i].NumChars;
-    rects = (STBRP_RECT *) KTTFAlloc(sizeof(*rects) * n, spc->UserAllocatorContext);
-    if (rects == NULL)
+    FONT_INFO   Info;
+    INT32       I, J, N, ReturnValue = 1;
+    STBRP_RECT *Rects;
+    for (I = 0; I < NumRanges; ++I)
+        for (J = 0; J < Ranges[I].NumChars; ++J)
+            Ranges[I].ChardataForRange[J].X0 = Ranges[I].ChardataForRange[J].Y0 = Ranges[I].ChardataForRange[J].X1 = Ranges[I].ChardataForRange[J].Y1 = 0;
+    N = 0;
+    for (I = 0; I < NumRanges; ++I)
+        N += Ranges[I].NumChars;
+    Rects = (STBRP_RECT *) KTTFAlloc(sizeof(*Rects) * N, Spc->UserAllocatorContext);
+    if (Rects == NULL)
         return 0;
-    info.UserData = spc->UserAllocatorContext;
-    InitFont(&info, fontdata, GetFontOffsetForIndex(fontdata, FontIndex));
-    n = PackFontRangesGatherRects(spc, &info, ranges, NumRanges, rects);
-    PackFontRangesPackRects(spc, rects, n);
-    ReturnValue = PackFontRangesRenderIntoRects(spc, &info, ranges, NumRanges, rects);
-    KTTFFree(rects, spc->UserAllocatorContext);
+    Info.UserData = Spc->UserAllocatorContext;
+    InitFont(&Info, Fontdata, GetFontOffsetForIndex(Fontdata, FontIndex));
+    N = PackFontRangesGatherRects(Spc, &Info, Ranges, NumRanges, Rects);
+    PackFontRangesPackRects(Spc, Rects, N);
+    ReturnValue = PackFontRangesRenderIntoRects(Spc, &Info, Ranges, NumRanges, Rects);
+    KTTFFree(Rects, Spc->UserAllocatorContext);
     return ReturnValue;
 }
-EXTERN INT32 PackFontRange(PACK_CONTEXT *spc, CONST UINT8 *fontdata, INT32 FontIndex, FLOAT32 FontSize, INT32 FirstUnicodeCodepointInRange, INT32 NumCharsInRange, PACKED_CHAR *ChardataForRange)
+EXTERN INT32 PackFontRange(PACK_CONTEXT *Spc, CONST UINT8 *Fontdata, INT32 FontIndex, FLOAT32 FontSize, INT32 FirstUnicodeCodepointInRange, INT32 NumCharsInRange, PACKED_CHAR *ChardataForRange)
 {
-    PACK_RANGE range;
-    range.FirstUnicodeCodepointInRange = FirstUnicodeCodepointInRange;
-    range.ArrayOfUnicodeCodepoints = NULL;
-    range.NumChars = NumCharsInRange;
-    range.ChardataForRange = ChardataForRange;
-    range.FontSize = FontSize;
-    return PackFontRanges(spc, fontdata, FontIndex, &range, 1);
+    PACK_RANGE Range;
+    Range.FirstUnicodeCodepointInRange = FirstUnicodeCodepointInRange;
+    Range.ArrayOfUnicodeCodepoints = NULL;
+    Range.NumChars = NumCharsInRange;
+    Range.ChardataForRange = ChardataForRange;
+    Range.FontSize = FontSize;
+    return PackFontRanges(Spc, Fontdata, FontIndex, &Range, 1);
 }
-EXTERN VOID GetScaledFontVMetrics(CONST UINT8 *fontdata, INT32 index, FLOAT32 size, FLOAT32 *ascent, FLOAT32 *descent, FLOAT32 *LineGap)
+EXTERN VOID GetScaledFontVMetrics(CONST UINT8 *Fontdata, INT32 Index, FLOAT32 Size, FLOAT32 *Ascent, FLOAT32 *Descent, FLOAT32 *LineGap)
 {
     INT32     IAscent, IDescent, ILineGap;
-    FLOAT32   scale;
-    FONT_INFO info;
-    InitFont(&info, fontdata, GetFontOffsetForIndex(fontdata, index));
-    scale = size > 0 ? ScaleForPixelHeight(&info, size) : ScaleForMappingEmToPixels(&info, -size);
-    GetFontVMetrics(&info, &IAscent, &IDescent, &ILineGap);
-    *ascent = (FLOAT32) IAscent * scale;
-    *descent = (FLOAT32) IDescent * scale;
-    *LineGap = (FLOAT32) ILineGap * scale;
+    FLOAT32   Scale;
+    FONT_INFO Info;
+    InitFont(&Info, Fontdata, GetFontOffsetForIndex(Fontdata, Index));
+    Scale = Size > 0 ? ScaleForPixelHeight(&Info, Size) : ScaleForMappingEmToPixels(&Info, -Size);
+    GetFontVMetrics(&Info, &IAscent, &IDescent, &ILineGap);
+    *Ascent = (FLOAT32) IAscent * Scale;
+    *Descent = (FLOAT32) IDescent * Scale;
+    *LineGap = (FLOAT32) ILineGap * Scale;
 }
-EXTERN VOID GetPackedQuad(CONST PACKED_CHAR *chardata, INT32 pw, INT32 ph, INT32 CharIndex, FLOAT32 *xpos, FLOAT32 *ypos, ALIGNED_QUAD *q, INT32 AlignToInteger)
+EXTERN VOID GetPackedQuad(CONST PACKED_CHAR *Chardata, INT32 Pw, INT32 Ph, INT32 CharIndex, FLOAT32 *Xpos, FLOAT32 *Ypos, ALIGNED_QUAD *Q, INT32 AlignToInteger)
 {
-    FLOAT32            ipw = 1.0f / pw, iph = 1.0f / ph;
-    CONST PACKED_CHAR *b = chardata + CharIndex;
+    FLOAT32            Ipw = 1.0f / Pw, Iph = 1.0f / Ph;
+    CONST PACKED_CHAR *B = Chardata + CharIndex;
     if (AlignToInteger)
     {
-        FLOAT32 x = (FLOAT32) KFloor((*xpos + b->Xoff) + 0.5f);
-        FLOAT32 y = (FLOAT32) KFloor((*ypos + b->Yoff) + 0.5f);
-        q->X0 = x;
-        q->Y0 = y;
-        q->X1 = x + b->Xoff2 - b->Xoff;
-        q->Y1 = y + b->Yoff2 - b->Yoff;
+        FLOAT32 X = (FLOAT32) KFloor((*Xpos + B->Xoff) + 0.5f);
+        FLOAT32 Y = (FLOAT32) KFloor((*Ypos + B->Yoff) + 0.5f);
+        Q->X0 = X;
+        Q->Y0 = Y;
+        Q->X1 = X + B->Xoff2 - B->Xoff;
+        Q->Y1 = Y + B->Yoff2 - B->Yoff;
     }
     else
     {
-        q->X0 = *xpos + b->Xoff;
-        q->Y0 = *ypos + b->Yoff;
-        q->X1 = *xpos + b->Xoff2;
-        q->Y1 = *ypos + b->Yoff2;
+        Q->X0 = *Xpos + B->Xoff;
+        Q->Y0 = *Ypos + B->Yoff;
+        Q->X1 = *Xpos + B->Xoff2;
+        Q->Y1 = *Ypos + B->Yoff2;
     }
-    q->S0 = b->X0 * ipw;
-    q->T0 = b->Y0 * iph;
-    q->S1 = b->X1 * ipw;
-    q->T1 = b->Y1 * iph;
-    *xpos += b->Xadvance;
+    Q->S0 = B->X0 * Ipw;
+    Q->T0 = B->Y0 * Iph;
+    Q->S1 = B->X1 * Ipw;
+    Q->T1 = B->Y1 * Iph;
+    *Xpos += B->Xadvance;
 }
 #define LINEOS_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define LINEOS_MAX(a, b) ((a) < (b) ? (b) : (a))
-STATIC INT32 RayIntersectBezier(FLOAT32 orig[2], FLOAT32 ray[2], FLOAT32 q0[2], FLOAT32 q1[2], FLOAT32 q2[2], FLOAT32 hits[2][2])
+STATIC INT32 RayIntersectBezier(FLOAT32 Orig[2], FLOAT32 Ray[2], FLOAT32 Q0[2], FLOAT32 Q1[2], FLOAT32 Q2[2], FLOAT32 Hits[2][2])
 {
-    FLOAT32 q0perp = q0[1] * ray[0] - q0[0] * ray[1];
-    FLOAT32 q1perp = q1[1] * ray[0] - q1[0] * ray[1];
-    FLOAT32 q2perp = q2[1] * ray[0] - q2[0] * ray[1];
-    FLOAT32 roperp = orig[1] * ray[0] - orig[0] * ray[1];
-    FLOAT32 a = q0perp - 2 * q1perp + q2perp;
-    FLOAT32 b = q1perp - q0perp;
-    FLOAT32 c = q0perp - roperp;
-    FLOAT32 s0 = 0., s1 = 0.;
+    FLOAT32 Q0perp = Q0[1] * Ray[0] - Q0[0] * Ray[1];
+    FLOAT32 Q1perp = Q1[1] * Ray[0] - Q1[0] * Ray[1];
+    FLOAT32 Q2perp = Q2[1] * Ray[0] - Q2[0] * Ray[1];
+    FLOAT32 Roperp = Orig[1] * Ray[0] - Orig[0] * Ray[1];
+    FLOAT32 A = Q0perp - 2 * Q1perp + Q2perp;
+    FLOAT32 B = Q1perp - Q0perp;
+    FLOAT32 C = Q0perp - Roperp;
+    FLOAT32 S0 = 0., S1 = 0.;
     INT32   NumS = 0;
-    if (a != 0.0)
+    if (A != 0.0)
     {
-        FLOAT32 discr = b * b - a * c;
-        if (discr > 0.0)
+        FLOAT32 Discr = B * B - A * C;
+        if (Discr > 0.0)
         {
-            FLOAT32 rcpna = -1 / a;
-            FLOAT32 d = (FLOAT32) KSqrt(discr);
-            s0 = (b + d) * rcpna;
-            s1 = (b - d) * rcpna;
-            if (s0 >= 0.0 && s0 <= 1.0)
+            FLOAT32 Rcpna = -1 / A;
+            FLOAT32 D = (FLOAT32) KSqrt(Discr);
+            S0 = (B + D) * Rcpna;
+            S1 = (B - D) * Rcpna;
+            if (S0 >= 0.0 && S0 <= 1.0)
                 NumS = 1;
-            if (d > 0.0 && s1 >= 0.0 && s1 <= 1.0)
+            if (D > 0.0 && S1 >= 0.0 && S1 <= 1.0)
             {
                 if (NumS == 0)
-                    s0 = s1;
+                    S0 = S1;
                 ++NumS;
             }
         }
     }
     else
     {
-        s0 = c / (-2 * b);
-        if (s0 >= 0.0 && s0 <= 1.0)
+        S0 = C / (-2 * B);
+        if (S0 >= 0.0 && S0 <= 1.0)
             NumS = 1;
     }
     if (NumS == 0)
         return 0;
     else
     {
-        FLOAT32 RcpLen2 = 1 / (ray[0] * ray[0] + ray[1] * ray[1]);
-        FLOAT32 RaynX = ray[0] * RcpLen2, RaynY = ray[1] * RcpLen2;
-        FLOAT32 q0d = q0[0] * RaynX + q0[1] * RaynY;
-        FLOAT32 q1d = q1[0] * RaynX + q1[1] * RaynY;
-        FLOAT32 q2d = q2[0] * RaynX + q2[1] * RaynY;
-        FLOAT32 rod = orig[0] * RaynX + orig[1] * RaynY;
-        FLOAT32 q10d = q1d - q0d;
-        FLOAT32 q20d = q2d - q0d;
-        FLOAT32 q0rd = q0d - rod;
-        hits[0][0] = q0rd + s0 * (2.0f - 2.0f * s0) * q10d + s0 * s0 * q20d;
-        hits[0][1] = a * s0 + b;
+        FLOAT32 RcpLen2 = 1 / (Ray[0] * Ray[0] + Ray[1] * Ray[1]);
+        FLOAT32 RaynX = Ray[0] * RcpLen2, RaynY = Ray[1] * RcpLen2;
+        FLOAT32 Q0d = Q0[0] * RaynX + Q0[1] * RaynY;
+        FLOAT32 Q1d = Q1[0] * RaynX + Q1[1] * RaynY;
+        FLOAT32 Q2d = Q2[0] * RaynX + Q2[1] * RaynY;
+        FLOAT32 Rod = Orig[0] * RaynX + Orig[1] * RaynY;
+        FLOAT32 Q10d = Q1d - Q0d;
+        FLOAT32 Q20d = Q2d - Q0d;
+        FLOAT32 Q0rd = Q0d - Rod;
+        Hits[0][0] = Q0rd + S0 * (2.0f - 2.0f * S0) * Q10d + S0 * S0 * Q20d;
+        Hits[0][1] = A * S0 + B;
         if (NumS > 1)
         {
-            hits[1][0] = q0rd + s1 * (2.0f - 2.0f * s1) * q10d + s1 * s1 * q20d;
-            hits[1][1] = a * s1 + b;
+            Hits[1][0] = Q0rd + S1 * (2.0f - 2.0f * S1) * Q10d + S1 * S1 * Q20d;
+            Hits[1][1] = A * S1 + B;
             return 2;
         }
         else
@@ -2903,325 +2903,325 @@ STATIC INT32 RayIntersectBezier(FLOAT32 orig[2], FLOAT32 ray[2], FLOAT32 q0[2], 
         }
     }
 }
-STATIC INT32 Equal(FLOAT32 *a, FLOAT32 *b)
+STATIC INT32 Equal(FLOAT32 *A, FLOAT32 *B)
 {
-    return (a[0] == b[0] && a[1] == b[1]);
+    return (A[0] == B[0] && A[1] == B[1]);
 }
-STATIC INT32 ComputeCrossingsX(FLOAT32 x, FLOAT32 y, INT32 nverts, VERTEX *verts)
+STATIC INT32 ComputeCrossingsX(FLOAT32 X, FLOAT32 Y, INT32 Nverts, VERTEX *Verts)
 {
-    INT32   i;
-    FLOAT32 orig[2], ray[2] = {1, 0};
+    INT32   I;
+    FLOAT32 Orig[2], Ray[2] = {1, 0};
     FLOAT32 YFrac;
-    INT32   winding = 0;
-    YFrac = (FLOAT32) KFMod(y, 1.0f);
+    INT32   Winding = 0;
+    YFrac = (FLOAT32) KFMod(Y, 1.0f);
     if (YFrac < 0.01f)
-        y += 0.01f;
+        Y += 0.01f;
     else if (YFrac > 0.99f)
-        y -= 0.01f;
-    orig[0] = x;
-    orig[1] = y;
-    for (i = 0; i < nverts; ++i)
+        Y -= 0.01f;
+    Orig[0] = X;
+    Orig[1] = Y;
+    for (I = 0; I < Nverts; ++I)
     {
-        if (verts[i].Type == LINEOS_VLINE)
+        if (Verts[I].Type == LINEOS_VLINE)
         {
-            INT32 x0 = (INT32) verts[i - 1].X, y0 = (INT32) verts[i - 1].Y;
-            INT32 x1 = (INT32) verts[i].X, y1 = (INT32) verts[i].Y;
-            if (y > LINEOS_MIN(y0, y1) && y < LINEOS_MAX(y0, y1) && x > LINEOS_MIN(x0, x1))
+            INT32 X0 = (INT32) Verts[I - 1].X, Y0 = (INT32) Verts[I - 1].Y;
+            INT32 X1 = (INT32) Verts[I].X, Y1 = (INT32) Verts[I].Y;
+            if (Y > LINEOS_MIN(Y0, Y1) && Y < LINEOS_MAX(Y0, Y1) && X > LINEOS_MIN(X0, X1))
             {
-                FLOAT32 XInter = (y - y0) / (y1 - y0) * (x1 - x0) + x0;
-                if (XInter < x)
-                    winding += (y0 < y1) ? 1 : -1;
+                FLOAT32 XInter = (Y - Y0) / (Y1 - Y0) * (X1 - X0) + X0;
+                if (XInter < X)
+                    Winding += (Y0 < Y1) ? 1 : -1;
             }
         }
-        if (verts[i].Type == LINEOS_VCURVE)
+        if (Verts[I].Type == LINEOS_VCURVE)
         {
-            INT32 x0 = (INT32) verts[i - 1].X, y0 = (INT32) verts[i - 1].Y;
-            INT32 x1 = (INT32) verts[i].Cx, y1 = (INT32) verts[i].Cy;
-            INT32 x2 = (INT32) verts[i].X, y2 = (INT32) verts[i].Y;
-            INT32 ax = LINEOS_MIN(x0, LINEOS_MIN(x1, x2)), ay = LINEOS_MIN(y0, LINEOS_MIN(y1, y2));
-            INT32 by = LINEOS_MAX(y0, LINEOS_MAX(y1, y2));
-            if (y > ay && y < by && x > ax)
+            INT32 X0 = (INT32) Verts[I - 1].X, Y0 = (INT32) Verts[I - 1].Y;
+            INT32 X1 = (INT32) Verts[I].Cx, Y1 = (INT32) Verts[I].Cy;
+            INT32 X2 = (INT32) Verts[I].X, Y2 = (INT32) Verts[I].Y;
+            INT32 Ax = LINEOS_MIN(X0, LINEOS_MIN(X1, X2)), Ay = LINEOS_MIN(Y0, LINEOS_MIN(Y1, Y2));
+            INT32 By = LINEOS_MAX(Y0, LINEOS_MAX(Y1, Y2));
+            if (Y > Ay && Y < By && X > Ax)
             {
-                FLOAT32 q0[2], q1[2], q2[2];
-                FLOAT32 hits[2][2];
-                q0[0] = (FLOAT32) x0;
-                q0[1] = (FLOAT32) y0;
-                q1[0] = (FLOAT32) x1;
-                q1[1] = (FLOAT32) y1;
-                q2[0] = (FLOAT32) x2;
-                q2[1] = (FLOAT32) y2;
-                if (Equal(q0, q1) || Equal(q1, q2))
+                FLOAT32 Q0[2], Q1[2], Q2[2];
+                FLOAT32 Hits[2][2];
+                Q0[0] = (FLOAT32) X0;
+                Q0[1] = (FLOAT32) Y0;
+                Q1[0] = (FLOAT32) X1;
+                Q1[1] = (FLOAT32) Y1;
+                Q2[0] = (FLOAT32) X2;
+                Q2[1] = (FLOAT32) Y2;
+                if (Equal(Q0, Q1) || Equal(Q1, Q2))
                 {
-                    x0 = (INT32) verts[i - 1].X;
-                    y0 = (INT32) verts[i - 1].Y;
-                    x1 = (INT32) verts[i].X;
-                    y1 = (INT32) verts[i].Y;
-                    if (y > LINEOS_MIN(y0, y1) && y < LINEOS_MAX(y0, y1) && x > LINEOS_MIN(x0, x1))
+                    X0 = (INT32) Verts[I - 1].X;
+                    Y0 = (INT32) Verts[I - 1].Y;
+                    X1 = (INT32) Verts[I].X;
+                    Y1 = (INT32) Verts[I].Y;
+                    if (Y > LINEOS_MIN(Y0, Y1) && Y < LINEOS_MAX(Y0, Y1) && X > LINEOS_MIN(X0, X1))
                     {
-                        FLOAT32 XInter = (y - y0) / (y1 - y0) * (x1 - x0) + x0;
-                        if (XInter < x)
-                            winding += (y0 < y1) ? 1 : -1;
+                        FLOAT32 XInter = (Y - Y0) / (Y1 - Y0) * (X1 - X0) + X0;
+                        if (XInter < X)
+                            Winding += (Y0 < Y1) ? 1 : -1;
                     }
                 }
                 else
                 {
-                    INT32 NumHits = RayIntersectBezier(orig, ray, q0, q1, q2, hits);
+                    INT32 NumHits = RayIntersectBezier(Orig, Ray, Q0, Q1, Q2, Hits);
                     if (NumHits >= 1)
-                        if (hits[0][0] < 0)
-                            winding += (hits[0][1] < 0 ? -1 : 1);
+                        if (Hits[0][0] < 0)
+                            Winding += (Hits[0][1] < 0 ? -1 : 1);
                     if (NumHits >= 2)
-                        if (hits[1][0] < 0)
-                            winding += (hits[1][1] < 0 ? -1 : 1);
+                        if (Hits[1][0] < 0)
+                            Winding += (Hits[1][1] < 0 ? -1 : 1);
                 }
             }
         }
     }
-    return winding;
+    return Winding;
 }
-STATIC FLOAT32 Cuberoot(FLOAT32 x)
+STATIC FLOAT32 Cuberoot(FLOAT32 X)
 {
-    if (x < 0)
-        return -(FLOAT32) KPow(-x, 1.0f / 3.0f);
+    if (X < 0)
+        return -(FLOAT32) KPow(-X, 1.0f / 3.0f);
     else
-        return (FLOAT32) KPow(x, 1.0f / 3.0f);
+        return (FLOAT32) KPow(X, 1.0f / 3.0f);
 }
-STATIC INT32 SolveCubic(FLOAT32 a, FLOAT32 b, FLOAT32 c, FLOAT32 *r)
+STATIC INT32 SolveCubic(FLOAT32 A, FLOAT32 B, FLOAT32 C, FLOAT32 *R)
 {
-    FLOAT32 s = -a / 3;
-    FLOAT32 p = b - a * a / 3;
-    FLOAT32 q = a * (2 * a * a - 9 * b) / 27 + c;
-    FLOAT32 p3 = p * p * p;
-    FLOAT32 d = q * q + 4 * p3 / 27;
-    if (d >= 0)
+    FLOAT32 S = -A / 3;
+    FLOAT32 P = B - A * A / 3;
+    FLOAT32 Q = A * (2 * A * A - 9 * B) / 27 + C;
+    FLOAT32 P3 = P * P * P;
+    FLOAT32 D = Q * Q + 4 * P3 / 27;
+    if (D >= 0)
     {
-        FLOAT32 z = (FLOAT32) KSqrt(d);
-        FLOAT32 u = (-q + z) / 2;
-        FLOAT32 v = (-q - z) / 2;
-        u = Cuberoot(u);
-        v = Cuberoot(v);
-        r[0] = s + u + v;
+        FLOAT32 Z = (FLOAT32) KSqrt(D);
+        FLOAT32 U = (-Q + Z) / 2;
+        FLOAT32 V = (-Q - Z) / 2;
+        U = Cuberoot(U);
+        V = Cuberoot(V);
+        R[0] = S + U + V;
         return 1;
     }
     else
     {
-        FLOAT32 u = (FLOAT32) KSqrt(-p / 3);
-        FLOAT32 v = (FLOAT32) KACos(-KSqrt(-27 / p3) * q / 2) / 3;
-        FLOAT32 m = (FLOAT32) KCos(v);
-        FLOAT32 n = (FLOAT32) KCos(v - 3.141592 / 2) * 1.732050808f;
-        r[0] = s + u * 2 * m;
-        r[1] = s - u * (m + n);
-        r[2] = s - u * (m - n);
+        FLOAT32 U = (FLOAT32) KSqrt(-P / 3);
+        FLOAT32 V = (FLOAT32) KACos(-KSqrt(-27 / P3) * Q / 2) / 3;
+        FLOAT32 M = (FLOAT32) KCos(V);
+        FLOAT32 N = (FLOAT32) KCos(V - 3.141592 / 2) * 1.732050808f;
+        R[0] = S + U * 2 * M;
+        R[1] = S - U * (M + N);
+        R[2] = S - U * (M - N);
         return 3;
     }
 }
-EXTERN UINT8 *GetGlyphSDF(CONST FONT_INFO *info, FLOAT32 scale, INT32 glyph, INT32 padding, UINT8 OnedgeValue, FLOAT32 PixelDistScale, INT32 *width, INT32 *height, INT32 *xoff, INT32 *yoff)
+EXTERN UINT8 *GetGlyphSDF(CONST FONT_INFO *Info, FLOAT32 Scale, INT32 Glyph, INT32 Padding, UINT8 OnedgeValue, FLOAT32 PixelDistScale, INT32 *Width, INT32 *Height, INT32 *Xoff, INT32 *Yoff)
 {
-    FLOAT32 ScaleX = scale, ScaleY = scale;
-    INT32   ix0, iy0, ix1, iy1;
-    INT32   w, h;
-    UINT8  *data;
-    if (scale == 0)
+    FLOAT32 ScaleX = Scale, ScaleY = Scale;
+    INT32   Ix0, Iy0, Ix1, Iy1;
+    INT32   W, H;
+    UINT8  *Data;
+    if (Scale == 0)
         return NULL;
-    GetGlyphBitmapBoxSubpixel(info, glyph, scale, scale, 0.0f, 0.0f, &ix0, &iy0, &ix1, &iy1);
-    if (ix0 == ix1 || iy0 == iy1)
+    GetGlyphBitmapBoxSubpixel(Info, Glyph, Scale, Scale, 0.0f, 0.0f, &Ix0, &Iy0, &Ix1, &Iy1);
+    if (Ix0 == Ix1 || Iy0 == Iy1)
         return NULL;
-    ix0 -= padding;
-    iy0 -= padding;
-    ix1 += padding;
-    iy1 += padding;
-    w = (ix1 - ix0);
-    h = (iy1 - iy0);
-    if (width)
-        *width = w;
-    if (height)
-        *height = h;
-    if (xoff)
-        *xoff = ix0;
-    if (yoff)
-        *yoff = iy0;
+    Ix0 -= Padding;
+    Iy0 -= Padding;
+    Ix1 += Padding;
+    Iy1 += Padding;
+    W = (Ix1 - Ix0);
+    H = (Iy1 - Iy0);
+    if (Width)
+        *Width = W;
+    if (Height)
+        *Height = H;
+    if (Xoff)
+        *Xoff = Ix0;
+    if (Yoff)
+        *Yoff = Iy0;
     ScaleY = -ScaleY;
     {
-        CONST FLOAT32 eps = 1. / 1024, Eps2 = eps * eps;
-        INT32         x, y, i, j;
-        FLOAT32      *precompute;
-        VERTEX       *verts;
-        INT32         NumVerts = GetGlyphShape(info, glyph, &verts);
-        data = (UINT8 *) KTTFAlloc(w * h, info->UserData);
-        precompute = (FLOAT32 *) KTTFAlloc(NumVerts * sizeof(FLOAT32), info->UserData);
-        for (i = 0, j = NumVerts - 1; i < NumVerts; j = i++)
+        CONST FLOAT32 Eps = 1. / 1024, Eps2 = Eps * Eps;
+        INT32         X, Y, I, J;
+        FLOAT32      *Precompute;
+        VERTEX       *Verts;
+        INT32         NumVerts = GetGlyphShape(Info, Glyph, &Verts);
+        Data = (UINT8 *) KTTFAlloc(W * H, Info->UserData);
+        Precompute = (FLOAT32 *) KTTFAlloc(NumVerts * sizeof(FLOAT32), Info->UserData);
+        for (I = 0, J = NumVerts - 1; I < NumVerts; J = I++)
         {
-            if (verts[i].Type == LINEOS_VLINE)
+            if (Verts[I].Type == LINEOS_VLINE)
             {
-                FLOAT32 x0 = verts[i].X * ScaleX, y0 = verts[i].Y * ScaleY;
-                FLOAT32 x1 = verts[j].X * ScaleX, y1 = verts[j].Y * ScaleY;
-                FLOAT32 dist = (FLOAT32) KSqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0));
-                precompute[i] = (dist < eps) ? 0.0f : 1.0f / dist;
+                FLOAT32 X0 = Verts[I].X * ScaleX, Y0 = Verts[I].Y * ScaleY;
+                FLOAT32 X1 = Verts[J].X * ScaleX, Y1 = Verts[J].Y * ScaleY;
+                FLOAT32 Dist = (FLOAT32) KSqrt((X1 - X0) * (X1 - X0) + (Y1 - Y0) * (Y1 - Y0));
+                Precompute[I] = (Dist < Eps) ? 0.0f : 1.0f / Dist;
             }
-            else if (verts[i].Type == LINEOS_VCURVE)
+            else if (Verts[I].Type == LINEOS_VCURVE)
             {
-                FLOAT32 x2 = verts[j].X * ScaleX, y2 = verts[j].Y * ScaleY;
-                FLOAT32 x1 = verts[i].Cx * ScaleX, y1 = verts[i].Cy * ScaleY;
-                FLOAT32 x0 = verts[i].X * ScaleX, y0 = verts[i].Y * ScaleY;
-                FLOAT32 bx = x0 - 2 * x1 + x2, by = y0 - 2 * y1 + y2;
-                FLOAT32 len2 = bx * bx + by * by;
-                if (len2 >= Eps2)
-                    precompute[i] = 1.0f / len2;
+                FLOAT32 X2 = Verts[J].X * ScaleX, Y2 = Verts[J].Y * ScaleY;
+                FLOAT32 X1 = Verts[I].Cx * ScaleX, Y1 = Verts[I].Cy * ScaleY;
+                FLOAT32 X0 = Verts[I].X * ScaleX, Y0 = Verts[I].Y * ScaleY;
+                FLOAT32 Bx = X0 - 2 * X1 + X2, By = Y0 - 2 * Y1 + Y2;
+                FLOAT32 Len2 = Bx * Bx + By * By;
+                if (Len2 >= Eps2)
+                    Precompute[I] = 1.0f / Len2;
                 else
-                    precompute[i] = 0.0f;
+                    Precompute[I] = 0.0f;
             }
             else
-                precompute[i] = 0.0f;
+                Precompute[I] = 0.0f;
         }
-        for (y = iy0; y < iy1; ++y)
+        for (Y = Iy0; Y < Iy1; ++Y)
         {
-            for (x = ix0; x < ix1; ++x)
+            for (X = Ix0; X < Ix1; ++X)
             {
-                FLOAT32 val;
+                FLOAT32 Val;
                 FLOAT32 MinDist = 999999.0f;
-                FLOAT32 sx = (FLOAT32) x + 0.5f;
-                FLOAT32 sy = (FLOAT32) y + 0.5f;
-                FLOAT32 XGspace = (sx / ScaleX);
-                FLOAT32 YGspace = (sy / ScaleY);
-                INT32   winding = ComputeCrossingsX(XGspace, YGspace, NumVerts, verts);
-                for (i = 0; i < NumVerts; ++i)
+                FLOAT32 Sx = (FLOAT32) X + 0.5f;
+                FLOAT32 Sy = (FLOAT32) Y + 0.5f;
+                FLOAT32 XGspace = (Sx / ScaleX);
+                FLOAT32 YGspace = (Sy / ScaleY);
+                INT32   Winding = ComputeCrossingsX(XGspace, YGspace, NumVerts, Verts);
+                for (I = 0; I < NumVerts; ++I)
                 {
-                    FLOAT32 x0 = verts[i].X * ScaleX, y0 = verts[i].Y * ScaleY;
-                    if (verts[i].Type == LINEOS_VLINE && precompute[i] != 0.0f)
+                    FLOAT32 X0 = Verts[I].X * ScaleX, Y0 = Verts[I].Y * ScaleY;
+                    if (Verts[I].Type == LINEOS_VLINE && Precompute[I] != 0.0f)
                     {
-                        FLOAT32 x1 = verts[i - 1].X * ScaleX, y1 = verts[i - 1].Y * ScaleY;
-                        FLOAT32 dist, dist2 = (x0 - sx) * (x0 - sx) + (y0 - sy) * (y0 - sy);
-                        if (dist2 < MinDist * MinDist)
-                            MinDist = (FLOAT32) KSqrt(dist2);
-                        dist = (FLOAT32) KFAbs((x1 - x0) * (y0 - sy) - (y1 - y0) * (x0 - sx)) * precompute[i];
-                        KAssert(i != 0);
-                        if (dist < MinDist)
+                        FLOAT32 X1 = Verts[I - 1].X * ScaleX, Y1 = Verts[I - 1].Y * ScaleY;
+                        FLOAT32 Dist, Dist2 = (X0 - Sx) * (X0 - Sx) + (Y0 - Sy) * (Y0 - Sy);
+                        if (Dist2 < MinDist * MinDist)
+                            MinDist = (FLOAT32) KSqrt(Dist2);
+                        Dist = (FLOAT32) KFAbs((X1 - X0) * (Y0 - Sy) - (Y1 - Y0) * (X0 - Sx)) * Precompute[I];
+                        KAssert(I != 0);
+                        if (Dist < MinDist)
                         {
-                            FLOAT32 dx = x1 - x0, dy = y1 - y0;
-                            FLOAT32 px = x0 - sx, py = y0 - sy;
-                            FLOAT32 t = -(px * dx + py * dy) / (dx * dx + dy * dy);
-                            if (t >= 0.0f && t <= 1.0f)
-                                MinDist = dist;
+                            FLOAT32 Dx = X1 - X0, Dy = Y1 - Y0;
+                            FLOAT32 Px = X0 - Sx, Py = Y0 - Sy;
+                            FLOAT32 T = -(Px * Dx + Py * Dy) / (Dx * Dx + Dy * Dy);
+                            if (T >= 0.0f && T <= 1.0f)
+                                MinDist = Dist;
                         }
                     }
-                    else if (verts[i].Type == LINEOS_VCURVE)
+                    else if (Verts[I].Type == LINEOS_VCURVE)
                     {
-                        FLOAT32 x2 = verts[i - 1].X * ScaleX, y2 = verts[i - 1].Y * ScaleY;
-                        FLOAT32 x1 = verts[i].Cx * ScaleX, y1 = verts[i].Cy * ScaleY;
-                        FLOAT32 BoxX0 = LINEOS_MIN(LINEOS_MIN(x0, x1), x2);
-                        FLOAT32 BoxY0 = LINEOS_MIN(LINEOS_MIN(y0, y1), y2);
-                        FLOAT32 BoxX1 = LINEOS_MAX(LINEOS_MAX(x0, x1), x2);
-                        FLOAT32 BoxY1 = LINEOS_MAX(LINEOS_MAX(y0, y1), y2);
-                        if (sx > BoxX0 - MinDist && sx < BoxX1 + MinDist && sy > BoxY0 - MinDist && sy < BoxY1 + MinDist)
+                        FLOAT32 X2 = Verts[I - 1].X * ScaleX, Y2 = Verts[I - 1].Y * ScaleY;
+                        FLOAT32 X1 = Verts[I].Cx * ScaleX, Y1 = Verts[I].Cy * ScaleY;
+                        FLOAT32 BoxX0 = LINEOS_MIN(LINEOS_MIN(X0, X1), X2);
+                        FLOAT32 BoxY0 = LINEOS_MIN(LINEOS_MIN(Y0, Y1), Y2);
+                        FLOAT32 BoxX1 = LINEOS_MAX(LINEOS_MAX(X0, X1), X2);
+                        FLOAT32 BoxY1 = LINEOS_MAX(LINEOS_MAX(Y0, Y1), Y2);
+                        if (Sx > BoxX0 - MinDist && Sx < BoxX1 + MinDist && Sy > BoxY0 - MinDist && Sy < BoxY1 + MinDist)
                         {
-                            INT32   num = 0;
-                            FLOAT32 ax = x1 - x0, ay = y1 - y0;
-                            FLOAT32 bx = x0 - 2 * x1 + x2, by = y0 - 2 * y1 + y2;
-                            FLOAT32 mx = x0 - sx, my = y0 - sy;
-                            FLOAT32 res[3] = {0.f, 0.f, 0.f};
-                            FLOAT32 px, py, t, it, dist2;
-                            FLOAT32 AInv = precompute[i];
+                            INT32   Num = 0;
+                            FLOAT32 Ax = X1 - X0, Ay = Y1 - Y0;
+                            FLOAT32 Bx = X0 - 2 * X1 + X2, By = Y0 - 2 * Y1 + Y2;
+                            FLOAT32 Mx = X0 - Sx, My = Y0 - Sy;
+                            FLOAT32 Res[3] = {0.f, 0.f, 0.f};
+                            FLOAT32 Px, Py, T, It, Dist2;
+                            FLOAT32 AInv = Precompute[I];
                             if (AInv == 0.0)
                             {
-                                FLOAT32 a = 3 * (ax * bx + ay * by);
-                                FLOAT32 b = 2 * (ax * ax + ay * ay) + (mx * bx + my * by);
-                                FLOAT32 c = mx * ax + my * ay;
-                                if (KFAbs(a) < Eps2)
+                                FLOAT32 A = 3 * (Ax * Bx + Ay * By);
+                                FLOAT32 B = 2 * (Ax * Ax + Ay * Ay) + (Mx * Bx + My * By);
+                                FLOAT32 C = Mx * Ax + My * Ay;
+                                if (KFAbs(A) < Eps2)
                                 {
-                                    if (KFAbs(b) >= Eps2)
+                                    if (KFAbs(B) >= Eps2)
                                     {
-                                        res[num++] = -c / b;
+                                        Res[Num++] = -C / B;
                                     }
                                 }
                                 else
                                 {
-                                    FLOAT32 discriminant = b * b - 4 * a * c;
-                                    if (discriminant < 0)
-                                        num = 0;
+                                    FLOAT32 Discriminant = B * B - 4 * A * C;
+                                    if (Discriminant < 0)
+                                        Num = 0;
                                     else
                                     {
-                                        FLOAT32 root = (FLOAT32) KSqrt(discriminant);
-                                        res[0] = (-b - root) / (2 * a);
-                                        res[1] = (-b + root) / (2 * a);
-                                        num = 2;
+                                        FLOAT32 Root = (FLOAT32) KSqrt(Discriminant);
+                                        Res[0] = (-B - Root) / (2 * A);
+                                        Res[1] = (-B + Root) / (2 * A);
+                                        Num = 2;
                                     }
                                 }
                             }
                             else
                             {
-                                FLOAT32 b = 3 * (ax * bx + ay * by) * AInv;
-                                FLOAT32 c = (2 * (ax * ax + ay * ay) + (mx * bx + my * by)) * AInv;
-                                FLOAT32 d = (mx * ax + my * ay) * AInv;
-                                num = SolveCubic(b, c, d, res);
+                                FLOAT32 B = 3 * (Ax * Bx + Ay * By) * AInv;
+                                FLOAT32 C = (2 * (Ax * Ax + Ay * Ay) + (Mx * Bx + My * By)) * AInv;
+                                FLOAT32 D = (Mx * Ax + My * Ay) * AInv;
+                                Num = SolveCubic(B, C, D, Res);
                             }
-                            dist2 = (x0 - sx) * (x0 - sx) + (y0 - sy) * (y0 - sy);
-                            if (dist2 < MinDist * MinDist)
-                                MinDist = (FLOAT32) KSqrt(dist2);
-                            if (num >= 1 && res[0] >= 0.0f && res[0] <= 1.0f)
+                            Dist2 = (X0 - Sx) * (X0 - Sx) + (Y0 - Sy) * (Y0 - Sy);
+                            if (Dist2 < MinDist * MinDist)
+                                MinDist = (FLOAT32) KSqrt(Dist2);
+                            if (Num >= 1 && Res[0] >= 0.0f && Res[0] <= 1.0f)
                             {
-                                t = res[0], it = 1.0f - t;
-                                px = it * it * x0 + 2 * t * it * x1 + t * t * x2;
-                                py = it * it * y0 + 2 * t * it * y1 + t * t * y2;
-                                dist2 = (px - sx) * (px - sx) + (py - sy) * (py - sy);
-                                if (dist2 < MinDist * MinDist)
-                                    MinDist = (FLOAT32) KSqrt(dist2);
+                                T = Res[0], It = 1.0f - T;
+                                Px = It * It * X0 + 2 * T * It * X1 + T * T * X2;
+                                Py = It * It * Y0 + 2 * T * It * Y1 + T * T * Y2;
+                                Dist2 = (Px - Sx) * (Px - Sx) + (Py - Sy) * (Py - Sy);
+                                if (Dist2 < MinDist * MinDist)
+                                    MinDist = (FLOAT32) KSqrt(Dist2);
                             }
-                            if (num >= 2 && res[1] >= 0.0f && res[1] <= 1.0f)
+                            if (Num >= 2 && Res[1] >= 0.0f && Res[1] <= 1.0f)
                             {
-                                t = res[1], it = 1.0f - t;
-                                px = it * it * x0 + 2 * t * it * x1 + t * t * x2;
-                                py = it * it * y0 + 2 * t * it * y1 + t * t * y2;
-                                dist2 = (px - sx) * (px - sx) + (py - sy) * (py - sy);
-                                if (dist2 < MinDist * MinDist)
-                                    MinDist = (FLOAT32) KSqrt(dist2);
+                                T = Res[1], It = 1.0f - T;
+                                Px = It * It * X0 + 2 * T * It * X1 + T * T * X2;
+                                Py = It * It * Y0 + 2 * T * It * Y1 + T * T * Y2;
+                                Dist2 = (Px - Sx) * (Px - Sx) + (Py - Sy) * (Py - Sy);
+                                if (Dist2 < MinDist * MinDist)
+                                    MinDist = (FLOAT32) KSqrt(Dist2);
                             }
-                            if (num >= 3 && res[2] >= 0.0f && res[2] <= 1.0f)
+                            if (Num >= 3 && Res[2] >= 0.0f && Res[2] <= 1.0f)
                             {
-                                t = res[2], it = 1.0f - t;
-                                px = it * it * x0 + 2 * t * it * x1 + t * t * x2;
-                                py = it * it * y0 + 2 * t * it * y1 + t * t * y2;
-                                dist2 = (px - sx) * (px - sx) + (py - sy) * (py - sy);
-                                if (dist2 < MinDist * MinDist)
-                                    MinDist = (FLOAT32) KSqrt(dist2);
+                                T = Res[2], It = 1.0f - T;
+                                Px = It * It * X0 + 2 * T * It * X1 + T * T * X2;
+                                Py = It * It * Y0 + 2 * T * It * Y1 + T * T * Y2;
+                                Dist2 = (Px - Sx) * (Px - Sx) + (Py - Sy) * (Py - Sy);
+                                if (Dist2 < MinDist * MinDist)
+                                    MinDist = (FLOAT32) KSqrt(Dist2);
                             }
                         }
                     }
                 }
-                if (winding == 0)
+                if (Winding == 0)
                     MinDist = -MinDist;
-                val = OnedgeValue + PixelDistScale * MinDist;
-                if (val < 0)
-                    val = 0;
-                else if (val > 255)
-                    val = 255;
-                data[(y - iy0) * w + (x - ix0)] = (UINT8) val;
+                Val = OnedgeValue + PixelDistScale * MinDist;
+                if (Val < 0)
+                    Val = 0;
+                else if (Val > 255)
+                    Val = 255;
+                Data[(Y - Iy0) * W + (X - Ix0)] = (UINT8) Val;
             }
         }
-        KTTFFree(precompute, info->UserData);
-        KTTFFree(verts, info->UserData);
+        KTTFFree(Precompute, Info->UserData);
+        KTTFFree(Verts, Info->UserData);
     }
-    return data;
+    return Data;
 }
-EXTERN UINT8 *GetCodepointSDF(CONST FONT_INFO *info, FLOAT32 scale, INT32 codepoint, INT32 padding, UINT8 OnedgeValue, FLOAT32 PixelDistScale, INT32 *width, INT32 *height, INT32 *xoff, INT32 *yoff)
+EXTERN UINT8 *GetCodepointSDF(CONST FONT_INFO *Info, FLOAT32 Scale, INT32 Codepoint, INT32 Padding, UINT8 OnedgeValue, FLOAT32 PixelDistScale, INT32 *Width, INT32 *Height, INT32 *Xoff, INT32 *Yoff)
 {
-    return GetGlyphSDF(info, scale, FindGlyphIndex(info, codepoint), padding, OnedgeValue, PixelDistScale, width, height, xoff, yoff);
+    return GetGlyphSDF(Info, Scale, FindGlyphIndex(Info, Codepoint), Padding, OnedgeValue, PixelDistScale, Width, Height, Xoff, Yoff);
 }
-EXTERN VOID FreeSDF(UINT8 *bitmap, VOID *userdata)
+EXTERN VOID FreeSDF(UINT8 *Bitmap, VOID *Userdata)
 {
-    KTTFFree(bitmap, userdata);
+    KTTFFree(Bitmap, Userdata);
 }
-EXTERN INT32 BakeFontBitmap(CONST UINT8 *data, INT32 offset, FLOAT32 PixelHeight, UINT8 *pixels, INT32 pw, INT32 ph, INT32 FirstChar, INT32 NumChars, BAKED_CHAR *chardata)
+EXTERN INT32 BakeFontBitmap(CONST UINT8 *Data, INT32 Offset, FLOAT32 PixelHeight, UINT8 *Pixels, INT32 Pw, INT32 Ph, INT32 FirstChar, INT32 NumChars, BAKED_CHAR *Chardata)
 {
-    return BakeFontBitmapInternal((UINT8 *) data, offset, PixelHeight, pixels, pw, ph, FirstChar, NumChars, chardata);
+    return BakeFontBitmapInternal((UINT8 *) Data, Offset, PixelHeight, Pixels, Pw, Ph, FirstChar, NumChars, Chardata);
 }
-EXTERN INT32 GetFontOffsetForIndex(CONST UINT8 *data, INT32 index)
+EXTERN INT32 GetFontOffsetForIndex(CONST UINT8 *Data, INT32 Index)
 {
-    return GetFontOffsetForIndexInternal((UINT8 *) data, index);
+    return GetFontOffsetForIndexInternal((UINT8 *) Data, Index);
 }
-EXTERN INT32 GetNumberOfFonts(CONST UINT8 *data)
+EXTERN INT32 GetNumberOfFonts(CONST UINT8 *Data)
 {
-    return GetNumberOfFontsInternal((UINT8 *) data);
+    return GetNumberOfFontsInternal((UINT8 *) Data);
 }
-EXTERN INT32 InitFont(FONT_INFO *info, CONST UINT8 *data, INT32 offset)
+EXTERN INT32 InitFont(FONT_INFO *Info, CONST UINT8 *Data, INT32 Offset)
 {
-    return InitFontInternal(info, (UINT8 *) data, offset);
+    return InitFontInternal(Info, (UINT8 *) Data, Offset);
 }

@@ -19,6 +19,8 @@
 #include <timer/HPET.h>
 #include <timer/TSC.h>
 #include <PCI/PCI.h>
+#include <debug/debug.h>
+#include <memory/VMM.h>
 
 STATIC VOID InputKeyboardTask(VOID)
 {
@@ -185,6 +187,47 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
     if (!LBPWRRAddTask(TestTask))
     {
         Panic(L"Failed to add input test task");
+    }
+
+    VOID *TestPage;
+    VOLATILE UINT64 *TestWords;
+    UINT64 PhysAddr;
+
+    TestPage = KAllocPages(1);
+
+    if (TestPage == NULL)
+    {
+        DebugWriteLine("[VMM] PMM allocation failed");
+    }
+    else
+    {
+        TestWords = (VOLATILE UINT64 *) TestPage;
+
+        TestWords[0] = 0x4C494E454F530001ULL;
+        TestWords[1] = 0x123456789ABCDEF0ULL;
+
+        if (TestWords[0] == 0x4C494E454F530001ULL &&
+            TestWords[1] == 0x123456789ABCDEF0ULL)
+        {
+            DebugWriteLine("[VMM] PMM read/write OK");
+        }
+
+        if (VMMTranslate((UINT64) TestPage, &PhysAddr))
+        {
+            DebugWriteLine("[VMM] PMM translation OK");
+            DebugWriteHex(PhysAddr);
+
+            if (PhysAddr == (UINT64) TestPage)
+            {
+                DebugWriteLine("[VMM] Identity mapping confirmed");
+            }
+        }
+        else
+        {
+            DebugWriteLine("[VMM] PMM translation failed");
+        }
+
+        KMemFreePages(TestPage, 1);
     }
 
     LBPWRRStart();

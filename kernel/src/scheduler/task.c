@@ -18,13 +18,13 @@ STATIC UINT16 NextPID;
 
 STATIC NORETURN VOID TaskExit(VOID)
 {
-    TASK *task;
+    TASK *Task;
 
-    task = LBPWRRGetCurrentTask();
+    Task = LBPWRRGetCurrentTask();
 
-    if (task != NULL)
+    if (Task != NULL)
     {
-        TaskTerminate(task);
+        TaskTerminate(Task);
     }
 
     for (;;)
@@ -43,32 +43,32 @@ STATIC NORETURN VOID TaskIdle(VOID)
 
 TASK *TaskCreateIdle(VOID)
 {
-    TASK *task;
+    TASK *Task;
 
-    task = TaskCreate(TaskIdle);
+    Task = TaskCreate(TaskIdle);
 
-    if (task != NULL)
+    if (Task != NULL)
     {
-        task->Idle = TRUE;
+        Task->Idle = TRUE;
     }
 
-    return task;
+    return Task;
 }
 
-STATIC BOOLEAN TaskGetIndex(TASK *task, UINTN *TaskIndex)
+STATIC BOOLEAN TaskGetIndex(TASK *Task, UINTN *TaskIndex)
 {
-    UINTN index;
+    UINTN Index;
 
-    if (task == NULL || TaskIndex == NULL)
+    if (Task == NULL || TaskIndex == NULL)
     {
         return FALSE;
     }
 
-    for (index = 0; index < LBPWRR_MAX_TASKS; index++)
+    for (Index = 0; Index < LBPWRR_MAX_TASKS; Index++)
     {
-        if (&TaskPool[index] == task)
+        if (&TaskPool[Index] == Task)
         {
-            *TaskIndex = index;
+            *TaskIndex = Index;
             return TRUE;
         }
     }
@@ -88,16 +88,16 @@ STATIC UINT8 PToW(UINT8 Priority)
 
 STATIC TASK *TaskAllocate(VOID)
 {
-    UINTN index;
+    UINTN Index;
 
-    for (index = 0; index < LBPWRR_MAX_TASKS; index++)
+    for (Index = 0; Index < LBPWRR_MAX_TASKS; Index++)
     {
-        if (!TaskUsed[index])
+        if (!TaskUsed[Index])
         {
-            TaskUsed[index] = TRUE;
-            KMemSet(&TaskPool[index], 0, sizeof(TASK));
+            TaskUsed[Index] = TRUE;
+            KMemSet(&TaskPool[Index], 0, sizeof(TASK));
 
-            return &TaskPool[index];
+            return &TaskPool[Index];
         }
     }
 
@@ -106,21 +106,21 @@ STATIC TASK *TaskAllocate(VOID)
 
 STATIC BOOLEAN TaskPIDUsed(UINT16 PID)
 {
-    UINTN index;
+    UINTN Index;
 
     if (PID == 0)
     {
         return TRUE;
     }
 
-    for (index = 0; index < LBPWRR_MAX_TASKS; index++)
+    for (Index = 0; Index < LBPWRR_MAX_TASKS; Index++)
     {
-        if (!TaskUsed[index])
+        if (!TaskUsed[Index])
         {
             continue;
         }
 
-        if (TaskPool[index].PID == PID)
+        if (TaskPool[Index].PID == PID)
         {
             return TRUE;
         }
@@ -131,75 +131,75 @@ STATIC BOOLEAN TaskPIDUsed(UINT16 PID)
 
 STATIC BOOLEAN TaskAllocatePID(UINT16 *PID)
 {
-    UINT32 retry;
-    UINT16 candidate;
+    UINT32 Retry;
+    UINT16 Candidate;
 
     if (PID == NULL)
     {
         return FALSE;
     }
 
-    candidate = NextPID;
+    Candidate = NextPID;
 
-    for (retry = 0; retry < 0xFFFF; retry++)
+    for (Retry = 0; Retry < 0xFFFF; Retry++)
     {
-        if (candidate == 0)
+        if (Candidate == 0)
         {
-            candidate = 1;
+            Candidate = 1;
         }
 
-        if (!TaskPIDUsed(candidate))
+        if (!TaskPIDUsed(Candidate))
         {
-            *PID = candidate;
+            *PID = Candidate;
 
-            candidate++;
+            Candidate++;
 
-            if (candidate == 0)
+            if (Candidate == 0)
             {
-                candidate = 1;
+                Candidate = 1;
             }
 
-            NextPID = candidate;
+            NextPID = Candidate;
 
             return TRUE;
         }
 
-        candidate++;
+        Candidate++;
     }
 
     return FALSE;
 }
 
-STATIC VOID TaskFreeSlot(TASK *task)
+STATIC VOID TaskFreeSlot(TASK *Task)
 {
-    UINTN index;
+    UINTN Index;
 
-    if (!TaskGetIndex(task, &index))
+    if (!TaskGetIndex(Task, &Index))
     {
         return;
     }
 
-    KMemSet(task, 0, sizeof(TASK));
-    TaskUsed[index] = FALSE;
+    KMemSet(Task, 0, sizeof(TASK));
+    TaskUsed[Index] = FALSE;
 }
 
-STATIC VOID InitTaskContext(TASK *task, VOID (*entry)(VOID))
+STATIC VOID InitTaskContext(TASK *Task, VOID (*Entry)(VOID))
 {
     UINT64 *ReturnAddress;
 
-    KMemSet(&task->Context, 0, sizeof(TASK_CONTEXT));
+    KMemSet(&Task->Context, 0, sizeof(TASK_CONTEXT));
 
-    ReturnAddress = (UINT64 *) task->InitialRSP - 1;
+    ReturnAddress = (UINT64 *) Task->InitialRSP - 1;
     *ReturnAddress = (UINT64) TaskExit;
-    task->InitialRSP = (UINT64) ReturnAddress;
+    Task->InitialRSP = (UINT64) ReturnAddress;
 
-    task->Context.RIP = (UINT64) entry;
-    task->Context.CS = 0x18;
-    task->Context.RFLAGS = 0x202;
-    task->Context.RSP = task->InitialRSP;
-    task->Context.SS = 0x10;
+    Task->Context.RIP = (UINT64) Entry;
+    Task->Context.CS = 0x18;
+    Task->Context.RFLAGS = 0x202;
+    Task->Context.RSP = Task->InitialRSP;
+    Task->Context.SS = 0x10;
 
-    task->RSP = (UINT64) &task->Context;
+    Task->RSP = (UINT64) &Task->Context;
 }
 
 BOOLEAN TaskInit(VOID)
@@ -213,67 +213,67 @@ BOOLEAN TaskInit(VOID)
     return TRUE;
 }
 
-TASK *TaskCreate(VOID (*entry)(VOID))
+TASK *TaskCreate(VOID (*Entry)(VOID))
 {
-    TASK *task;
+    TASK *Task;
 
-    if (entry == NULL)
+    if (Entry == NULL)
     {
         return NULL;
     }
 
-    task = TaskAllocate();
+    Task = TaskAllocate();
 
-    if (task == NULL)
+    if (Task == NULL)
     {
         return NULL;
     }
 
-    if (!TaskAllocatePID(&task->PID))
+    if (!TaskAllocatePID(&Task->PID))
     {
-        TaskFreeSlot(task);
+        TaskFreeSlot(Task);
         return NULL;
     }
 
-    task->Priority = 3;
-    task->Weight = PToW(task->Priority);
+    Task->Priority = 3;
+    Task->Weight = PToW(Task->Priority);
 
-    task->StackBase = (UINT64) KAllocPagesBelow(TASK_STACK_PAGES, TASK_STACK_ADDRESS_LIMIT);
+    Task->StackBase = (UINT64) KAllocPagesBelow(TASK_STACK_PAGES, TASK_STACK_ADDRESS_LIMIT);
 
-    if (task->StackBase == 0)
+    if (Task->StackBase == 0)
     {
-        TaskFreeSlot(task);
+        TaskFreeSlot(Task);
         return NULL;
     }
 
-    task->StackSize = TASK_STACK_PAGES * PAGE_SIZE;
-    task->InitialRSP = task->StackBase + task->StackSize;
+    Task->StackSize = TASK_STACK_PAGES * PAGE_SIZE;
+    Task->InitialRSP = Task->StackBase + Task->StackSize;
 
-    task->State = TASK_READY;
+    Task->State = TASK_READY;
 
-    InitTaskContext(task, entry);
+    InitTaskContext(Task, Entry);
 
-    task->Modified = FALSE;
-    task->Idle = FALSE;
-    task->Scheduled = FALSE;
+    Task->Modified = FALSE;
+    Task->Idle = FALSE;
+    Task->Scheduled = FALSE;
 
     TaskCount++;
 
-    return task;
+    return Task;
 }
 
-BOOLEAN TaskSetPriority(TASK *task, UINT8 priority)
+BOOLEAN TaskSetPriority(TASK *Task, UINT8 Priority)
 {
-    if (task == NULL || priority < 1 || priority > 6)
+    if (Task == NULL || Priority < 1 || Priority > 6)
     {
         return FALSE;
     }
 
-    task->Priority = priority;
-    task->Weight = PToW(task->Priority);
-    task->Modified = TRUE;
+    Task->Priority = Priority;
+    Task->Weight = PToW(Task->Priority);
+    Task->Modified = TRUE;
 
-    if (task->Scheduled && !LBPWRRNotifyTaskChanged(task))
+    if (Task->Scheduled && !LBPWRRNotifyTaskChanged(Task))
     {
         return FALSE;
     }
@@ -281,147 +281,147 @@ BOOLEAN TaskSetPriority(TASK *task, UINT8 priority)
     return TRUE;
 }
 
-VOID TaskSleepMls(UINT64 milliseconds)
+VOID TaskSleepMls(UINT64 Milliseconds)
 {
-    TASK  *task;
-    UINT64 ticks;
-    UINT64 frequency;
+    TASK  *Task;
+    UINT64 Ticks;
+    UINT64 Frequency;
 
-    task = LBPWRRGetCurrentTask();
+    Task = LBPWRRGetCurrentTask();
 
-    if (task == NULL)
+    if (Task == NULL)
     {
-        SleepMls(milliseconds);
+        SleepMls(Milliseconds);
         return;
     }
 
-    if (milliseconds == 0)
+    if (Milliseconds == 0)
     {
         LBPWRRYield();
         return;
     }
 
-    frequency = TSCGetFrequency();
+    Frequency = TSCGetFrequency();
 
-    if (frequency == 0)
+    if (Frequency == 0)
     {
         return;
     }
 
-    ticks = (UINT64) (((UINT128) frequency * milliseconds + 999ULL) / 1000ULL);
+    Ticks = (UINT64) (((UINT128) Frequency * Milliseconds + 999ULL) / 1000ULL);
 
-    task->WakeDeadlineTSC = RDTSC() + ticks;
-    task->State = TASK_SLEEPING;
-    task->Modified = TRUE;
+    Task->WakeDeadlineTSC = RDTSC() + Ticks;
+    Task->State = TASK_SLEEPING;
+    Task->Modified = TRUE;
 
-    LBPWRRNotifyTaskChanged(task);
+    LBPWRRNotifyTaskChanged(Task);
     LBPWRRYield();
 }
 
-VOID TaskSleepMis(UINT64 microseconds)
+VOID TaskSleepMis(UINT64 Microseconds)
 {
-    TASK  *task;
-    UINT64 ticks;
-    UINT64 frequency;
+    TASK  *Task;
+    UINT64 Ticks;
+    UINT64 Frequency;
 
-    task = LBPWRRGetCurrentTask();
+    Task = LBPWRRGetCurrentTask();
 
-    if (task == NULL)
+    if (Task == NULL)
     {
-        SleepMis(microseconds);
+        SleepMis(Microseconds);
         return;
     }
 
-    if (microseconds == 0)
+    if (Microseconds == 0)
     {
         LBPWRRYield();
         return;
     }
 
-    frequency = TSCGetFrequency();
+    Frequency = TSCGetFrequency();
 
-    if (frequency == 0)
+    if (Frequency == 0)
     {
         return;
     }
 
-    ticks = (UINT64) (((UINT128) frequency * microseconds + 999999ULL) / 1000000ULL);
+    Ticks = (UINT64) (((UINT128) Frequency * Microseconds + 999999ULL) / 1000000ULL);
 
-    task->WakeDeadlineTSC = RDTSC() + ticks;
-    task->State = TASK_SLEEPING;
-    task->Modified = TRUE;
+    Task->WakeDeadlineTSC = RDTSC() + Ticks;
+    Task->State = TASK_SLEEPING;
+    Task->Modified = TRUE;
 
-    LBPWRRNotifyTaskChanged(task);
+    LBPWRRNotifyTaskChanged(Task);
     LBPWRRYield();
 }
 
-VOID TaskSleepNs(UINT64 nanoseconds)
+VOID TaskSleepNs(UINT64 Nanoseconds)
 {
-    TASK  *task;
-    UINT64 ticks;
-    UINT64 frequency;
+    TASK  *Task;
+    UINT64 Ticks;
+    UINT64 Frequency;
 
-    task = LBPWRRGetCurrentTask();
+    Task = LBPWRRGetCurrentTask();
 
-    if (task == NULL)
+    if (Task == NULL)
     {
-        SleepNs(nanoseconds);
+        SleepNs(Nanoseconds);
         return;
     }
 
-    if (nanoseconds == 0)
+    if (Nanoseconds == 0)
     {
         LBPWRRYield();
         return;
     }
 
-    frequency = TSCGetFrequency();
+    Frequency = TSCGetFrequency();
 
-    if (frequency == 0)
+    if (Frequency == 0)
     {
         return;
     }
 
-    ticks = (UINT64) (((UINT128) frequency * nanoseconds + 999999999ULL) / 1000000000ULL);
+    Ticks = (UINT64) (((UINT128) Frequency * Nanoseconds + 999999999ULL) / 1000000000ULL);
 
-    task->WakeDeadlineTSC = RDTSC() + ticks;
-    task->State = TASK_SLEEPING;
-    task->Modified = TRUE;
+    Task->WakeDeadlineTSC = RDTSC() + Ticks;
+    Task->State = TASK_SLEEPING;
+    Task->Modified = TRUE;
 
-    LBPWRRNotifyTaskChanged(task);
+    LBPWRRNotifyTaskChanged(Task);
     LBPWRRYield();
 }
 
-BOOLEAN TaskDestroy(TASK *task)
+BOOLEAN TaskDestroy(TASK *Task)
 {
-    UINTN index;
+    UINTN Index;
 
-    if (task == NULL)
+    if (Task == NULL)
     {
         return FALSE;
     }
 
-    if (!TaskGetIndex(task, &index) || !TaskUsed[index])
+    if (!TaskGetIndex(Task, &Index) || !TaskUsed[Index])
     {
         return FALSE;
     }
 
-    if (task->State != TASK_TERMINATED && task->State != TASK_KILLED)
+    if (Task->State != TASK_TERMINATED && Task->State != TASK_KILLED)
     {
         return FALSE;
     }
 
-    if (task->Scheduled && !LBPWRRRemoveTask(task))
+    if (Task->Scheduled && !LBPWRRRemoveTask(Task))
     {
         return FALSE;
     }
 
-    if (task->StackBase != 0)
+    if (Task->StackBase != 0)
     {
-        KMemFreePages((VOID *) task->StackBase, TASK_STACK_PAGES);
+        KMemFreePages((VOID *) Task->StackBase, TASK_STACK_PAGES);
     }
 
-    TaskFreeSlot(task);
+    TaskFreeSlot(Task);
 
     if (TaskCount > 0)
     {
@@ -431,46 +431,46 @@ BOOLEAN TaskDestroy(TASK *task)
     return TRUE;
 }
 
-VOID TaskKill(TASK *task)
+VOID TaskKill(TASK *Task)
 {
-    if (task == NULL)
+    if (Task == NULL)
     {
         return;
     }
 
-    task->State = TASK_KILLED;
-    task->Modified = TRUE;
+    Task->State = TASK_KILLED;
+    Task->Modified = TRUE;
 
-    LBPWRRNotifyTaskChanged(task);
+    LBPWRRNotifyTaskChanged(Task);
 }
 
-VOID TaskTerminate(TASK *task)
+VOID TaskTerminate(TASK *Task)
 {
-    if (task == NULL)
+    if (Task == NULL)
     {
         return;
     }
 
-    task->State = TASK_TERMINATED;
-    task->Modified = TRUE;
+    Task->State = TASK_TERMINATED;
+    Task->Modified = TRUE;
 
-    LBPWRRNotifyTaskChanged(task);
+    LBPWRRNotifyTaskChanged(Task);
 }
 
 TASK *TaskGetByPID(UINT16 PID)
 {
-    UINTN index;
+    UINTN Index;
 
-    for (index = 0; index < LBPWRR_MAX_TASKS; index++)
+    for (Index = 0; Index < LBPWRR_MAX_TASKS; Index++)
     {
-        if (!TaskUsed[index])
+        if (!TaskUsed[Index])
         {
             continue;
         }
 
-        if (TaskPool[index].PID == PID)
+        if (TaskPool[Index].PID == PID)
         {
-            return &TaskPool[index];
+            return &TaskPool[Index];
         }
     }
 

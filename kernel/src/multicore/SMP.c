@@ -34,11 +34,11 @@ STATIC UINT64 SMPReadCR3(VOID)
     return CR3;
 }
 
-STATIC BOOLEAN SMPAddCPU(UINT32 APICID, BOOLEAN enabled)
+STATIC BOOLEAN SMPAddCPU(UINT32 APICID, BOOLEAN Enabled)
 {
     CPU_INFO *CPU;
 
-    if (!enabled || CPUCount >= SMP_MAX_CPUS)
+    if (!Enabled || CPUCount >= SMP_MAX_CPUS)
     {
         return FALSE;
     }
@@ -118,7 +118,7 @@ STATIC BOOLEAN SMPPrepareTrampoline(VOID)
 STATIC BOOLEAN SMPStartAP(CPU_INFO *CPU)
 {
     UINT64 StackTop;
-    UINT8  vector;
+    UINT8  Vector;
 
     if (CPU == NULL || CPU->BSP || !CPU->Enabled)
     {
@@ -147,7 +147,7 @@ STATIC BOOLEAN SMPStartAP(CPU_INFO *CPU)
     CPU->Online = FALSE;
     CompilerBarrier();
 
-    vector = (UINT8) (SMP_TRAMPOLINE_ADDRESS >> 12);
+    Vector = (UINT8) (SMP_TRAMPOLINE_ADDRESS >> 12);
 
     if (!LAPICSendINIT(CPU->APICID))
     {
@@ -156,19 +156,19 @@ STATIC BOOLEAN SMPStartAP(CPU_INFO *CPU)
 
     SleepMls(10);
 
-    if (!LAPICSendSIPI(CPU->APICID, vector))
+    if (!LAPICSendSIPI(CPU->APICID, Vector))
     {
         return FALSE;
     }
 
     SleepMls(1);
 
-    if (!LAPICSendSIPI(CPU->APICID, vector))
+    if (!LAPICSendSIPI(CPU->APICID, Vector))
     {
         return FALSE;
     }
 
-    for (UINT32 elapsed = 0; elapsed < SMP_AP_START_TIMEOUT_MS; elapsed++)
+    for (UINT32 Elapsed = 0; Elapsed < SMP_AP_START_TIMEOUT_MS; Elapsed++)
     {
         CompilerBarrier();
         if (CPU->Online)
@@ -186,8 +186,8 @@ STATIC BOOLEAN SMPStartAP(CPU_INFO *CPU)
 BOOLEAN SMPInit(LINEOS_BOOT_INFO *BootInfo)
 {
     ACPI_MADT *MADT;
-    UINT8     *entry;
-    UINT8     *end;
+    UINT8     *EntryCursor;
+    UINT8     *End;
     BOOLEAN    HasAP;
 
     CPUCount = 0;
@@ -199,21 +199,21 @@ BOOLEAN SMPInit(LINEOS_BOOT_INFO *BootInfo)
         return FALSE;
     }
 
-    entry = MADT->Entries;
-    end = (UINT8 *) MADT + MADT->Header.Length;
+    EntryCursor = MADT->Entries;
+    End = (UINT8 *) MADT + MADT->Header.Length;
 
-    while (entry + sizeof(ACPI_MADT_ENTRY) <= end)
+    while (EntryCursor + sizeof(ACPI_MADT_ENTRY) <= End)
     {
         ACPI_MADT_ENTRY *Entry;
 
-        Entry = (ACPI_MADT_ENTRY *) entry;
+        Entry = (ACPI_MADT_ENTRY *) EntryCursor;
 
         if (Entry->Length < sizeof(ACPI_MADT_ENTRY))
         {
             return FALSE;
         }
 
-        if (entry + Entry->Length > end)
+        if (EntryCursor + Entry->Length > End)
         {
             return FALSE;
         }
@@ -235,7 +235,7 @@ BOOLEAN SMPInit(LINEOS_BOOT_INFO *BootInfo)
             SMPAddCPU(LocalX2APIC->X2APICID, (LocalX2APIC->Flags & (ACPI_MADT_ENABLED | ACPI_MADT_ONLINE_CAPABLE)) != 0);
         }
 
-        entry += Entry->Length;
+        EntryCursor += Entry->Length;
     }
 
     if (CPUCount == 0)

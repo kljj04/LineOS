@@ -7,5 +7,5 @@
 #include <LineOS/TypeInfo.h>
 #include <interrupt/IDT.h>
 
-VOID Panic(CONST CHAR16 *msg);
-VOID ExceptionPanic(INTERRUPT_FRAME *frame);
+VOID Panic(CONST CHAR16 *Msg);
+VOID ExceptionPanic(INTERRUPT_FRAME *Frame);

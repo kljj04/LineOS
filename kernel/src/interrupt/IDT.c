@@ -53,6 +53,7 @@ EXTERN VOID ISR64(VOID);
 EXTERN VOID ISR65(VOID);
 EXTERN VOID ISR66(VOID);
 EXTERN VOID ISR67(VOID);
+EXTERN VOID ISR68(VOID);
 
 STATIC VOID (*ISRTable[32])(VOID) = {ISR0, ISR1, ISR2, ISR3, ISR4, ISR5, ISR6, ISR7, ISR8, ISR9, ISR10, ISR11, ISR12, ISR13, ISR14, ISR15, ISR16, ISR17, ISR18, ISR19, ISR20, ISR21, ISR22, ISR23, ISR24, ISR25, ISR26, ISR27, ISR28, ISR29, ISR30, ISR31};
 
@@ -61,34 +62,35 @@ STATIC IDT_ENTRY      IDT[256];
 
 VOID IDTInit(VOID)
 {
-    UINT16 selector;
+    UINT16 Selector;
 
     KMemSet(IDT, 0, sizeof(IDT));
 
     IDTR.Limit = sizeof(IDT) - 1;
     IDTR.Base = (UINT64) IDT;
 
-    ASM("mov %%cs, %0" : "=r"(selector));
+    ASM("mov %%cs, %0" : "=r"(Selector));
 
-    for (UINT8 vector = 0; vector < 32; vector++)
+    for (UINT8 Vector = 0; Vector < 32; Vector++)
     {
-        IDTSetGate(vector, (UINT64) ISRTable[vector], selector, 0, 0x8E);
+        IDTSetGate(Vector, (UINT64) ISRTable[Vector], Selector, 0, 0x8E);
     }
-    IDTSetGate(64, (UINT64) ISR64, selector, 0, 0x8E);
-    IDTSetGate(65, (UINT64) ISR65, selector, 0, 0x8E);
-    IDTSetGate(66, (UINT64) ISR66, selector, 0, 0x8E);
-    IDTSetGate(67, (UINT64) ISR67, selector, 0, 0x8E);
+    IDTSetGate(64, (UINT64) ISR64, Selector, 0, 0x8E);
+    IDTSetGate(65, (UINT64) ISR65, Selector, 0, 0x8E);
+    IDTSetGate(66, (UINT64) ISR66, Selector, 0, 0x8E);
+    IDTSetGate(67, (UINT64) ISR67, Selector, 0, 0x8E);
+    IDTSetGate(68, (UINT64) ISR68, Selector, 0, 0x8E);
 }
 
-VOID IDTSetGate(UINT8 vector, UINT64 handler, UINT16 selector, UINT8 IST, UINT8 TypeAttributes)
+VOID IDTSetGate(UINT8 Vector, UINT64 Handler, UINT16 Selector, UINT8 IST, UINT8 TypeAttributes)
 {
-    IDT[vector].OffsetLow = handler & 0xFFFF;
-    IDT[vector].Selector = selector;
-    IDT[vector].IST = IST & 0x07;
-    IDT[vector].TypeAttributes = TypeAttributes;
-    IDT[vector].OffsetMiddle = (handler >> 16) & 0xFFFF;
-    IDT[vector].OffsetHigh = (handler >> 32) & 0xFFFFFFFF;
-    IDT[vector].Reserved = 0;
+    IDT[Vector].OffsetLow = Handler & 0xFFFF;
+    IDT[Vector].Selector = Selector;
+    IDT[Vector].IST = IST & 0x07;
+    IDT[Vector].TypeAttributes = TypeAttributes;
+    IDT[Vector].OffsetMiddle = (Handler >> 16) & 0xFFFF;
+    IDT[Vector].OffsetHigh = (Handler >> 32) & 0xFFFFFFFF;
+    IDT[Vector].Reserved = 0;
 }
 
 VOID IDTLoad(VOID)
@@ -96,54 +98,58 @@ VOID IDTLoad(VOID)
     ASM("lidt %0" : : "m"(IDTR));
 }
 
-UINT64 SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *frame)
+UINT64 SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *Frame)
 {
-    if (frame->Vector < 32)
+    if (Frame->Vector < 32)
     {
-        ExceptionPanic(frame);
+        ExceptionPanic(Frame);
     }
 
-    if (frame->Vector == 64)
+    if (Frame->Vector == 64)
     {
         UINT64 NextRSP;
 
         TSCSetDeadline(RDTSC() + TSCGetFrequency() / 200);
 
-        NextRSP = LBPWRRTick(frame);
+        NextRSP = LBPWRRTick(Frame);
 
         LAPICEOI();
 
         return NextRSP;
     }
 
-    if (frame->Vector == 65)
+    if (Frame->Vector == 65)
     {
         VirtIOKeyboardInterruptHandler();
 
         LAPICEOI();
 
-        return (UINT64) frame;
+        return (UINT64) Frame;
     }
 
-    if (frame->Vector == 66)
+    if (Frame->Vector == 66)
     {
         VirtIOTabletInterruptHandler();
 
         LAPICEOI();
 
-        return (UINT64) frame;
+        return (UINT64) Frame;
     }
 
-    if (frame->Vector == 67)
+    if (Frame->Vector == 67)
     {
         UINT64 RSP;
 
-        RSP = LBPWRRTick(frame);
+        RSP = LBPWRRTick(Frame);
 
         LAPICEOI();
 
         return RSP;
     }
 
-    return (UINT64) frame;
+    if (Frame->Vector == 68)
+    {
+    }
+
+    return (UINT64) Frame;
 }

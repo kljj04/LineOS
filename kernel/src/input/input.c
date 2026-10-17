@@ -100,16 +100,6 @@ STATIC BOOLEAN InitHardwareCursor(VOID)
     CursorReady = TRUE;
     CursorVisible = TRUE;
 
-    DebugWriteLine("[CURSOR] Moving to center");
-    if (VirtIOGPUMoveCursor(VirtIOGPUGetFrameBufferWidth() / 2, VirtIOGPUGetFrameBufferHeight() / 2))
-    {
-        DebugWriteLine("[CURSOR] Move succeeded");
-    }
-    else
-    {
-        DebugWriteLine("[CURSOR] Move failed");
-    }
-
     return TRUE;
 }
 

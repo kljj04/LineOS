@@ -9,7 +9,7 @@
 
 LINEOS_MEMORY_MAP MemoryMap;
 
-STATIC EFI_MEMORY_DESCRIPTOR *buffer = NULL;
+STATIC EFI_MEMORY_DESCRIPTOR *Buffer = NULL;
 STATIC UINTN                  BufferSize = 0;
 STATIC UINTN                  MapKey = 0;
 STATIC EFI_HANDLE             LineOSImageHandle = NULL;
@@ -21,36 +21,36 @@ VOID MemorySetImageHandle(EFI_HANDLE Handle)
 
 BOOLEAN MemoryInit(VOID)
 {
-    EFI_STATUS status;
+    EFI_STATUS Status;
     UINTN      DescriptorSize;
     UINT32     DescriptorVersion;
 
     BufferSize = 0;
 
-    status = UEFIBootServices->GetMemoryMap(&BufferSize, NULL, &MapKey, &DescriptorSize, &DescriptorVersion);
+    Status = UEFIBootServices->GetMemoryMap(&BufferSize, NULL, &MapKey, &DescriptorSize, &DescriptorVersion);
 
-    if (status != EFI_BUFFER_TOO_SMALL)
+    if (Status != EFI_BUFFER_TOO_SMALL)
     {
         return FALSE;
     }
 
     BufferSize += DescriptorSize * 64;
 
-    status = UEFIBootServices->AllocatePool(EfiLoaderData, BufferSize, (VOID **) &buffer);
+    Status = UEFIBootServices->AllocatePool(EfiLoaderData, BufferSize, (VOID **) &Buffer);
 
-    if (EFI_ERROR(status))
+    if (EFI_ERROR(Status))
     {
         return FALSE;
     }
 
-    status = UEFIBootServices->GetMemoryMap(&BufferSize, buffer, &MapKey, &DescriptorSize, &DescriptorVersion);
+    Status = UEFIBootServices->GetMemoryMap(&BufferSize, Buffer, &MapKey, &DescriptorSize, &DescriptorVersion);
 
-    if (EFI_ERROR(status))
+    if (EFI_ERROR(Status))
     {
         return FALSE;
     }
 
-    MemoryMap.MemoryMap = buffer;
+    MemoryMap.MemoryMap = Buffer;
     MemoryMap.MemoryMapSize = BufferSize;
     MemoryMap.MemoryMapDescriptorSize = DescriptorSize;
     MemoryMap.MemoryMapDescriptorVersion = DescriptorVersion;
@@ -60,7 +60,7 @@ BOOLEAN MemoryInit(VOID)
 
 BOOLEAN ExitBootServices(VOID)
 {
-    EFI_STATUS status;
+    EFI_STATUS Status;
     UINTN      DescriptorSize;
     UINT32     DescriptorVersion;
 
@@ -68,53 +68,53 @@ BOOLEAN ExitBootServices(VOID)
     {
         BufferSize = 0;
 
-        status = UEFIBootServices->GetMemoryMap(&BufferSize, NULL, &MapKey, &DescriptorSize, &DescriptorVersion);
+        Status = UEFIBootServices->GetMemoryMap(&BufferSize, NULL, &MapKey, &DescriptorSize, &DescriptorVersion);
 
-        if (status != EFI_BUFFER_TOO_SMALL)
+        if (Status != EFI_BUFFER_TOO_SMALL)
         {
             return FALSE;
         }
 
         BufferSize += DescriptorSize * 64;
 
-        if (buffer != NULL)
+        if (Buffer != NULL)
         {
-            UEFIBootServices->FreePool(buffer);
-            buffer = NULL;
+            UEFIBootServices->FreePool(Buffer);
+            Buffer = NULL;
         }
 
-        status = UEFIBootServices->AllocatePool(EfiLoaderData, BufferSize, (VOID **) &buffer);
+        Status = UEFIBootServices->AllocatePool(EfiLoaderData, BufferSize, (VOID **) &Buffer);
 
-        if (EFI_ERROR(status))
+        if (EFI_ERROR(Status))
         {
             return FALSE;
         }
 
-        status = UEFIBootServices->GetMemoryMap(&BufferSize, buffer, &MapKey, &DescriptorSize, &DescriptorVersion);
+        Status = UEFIBootServices->GetMemoryMap(&BufferSize, Buffer, &MapKey, &DescriptorSize, &DescriptorVersion);
 
-        if (status == EFI_BUFFER_TOO_SMALL)
+        if (Status == EFI_BUFFER_TOO_SMALL)
         {
             continue;
         }
 
-        if (EFI_ERROR(status))
+        if (EFI_ERROR(Status))
         {
             return FALSE;
         }
 
-        MemoryMap.MemoryMap = buffer;
+        MemoryMap.MemoryMap = Buffer;
         MemoryMap.MemoryMapSize = BufferSize;
         MemoryMap.MemoryMapDescriptorSize = DescriptorSize;
         MemoryMap.MemoryMapDescriptorVersion = DescriptorVersion;
 
-        status = UEFIBootServices->ExitBootServices(LineOSImageHandle, MapKey);
+        Status = UEFIBootServices->ExitBootServices(LineOSImageHandle, MapKey);
 
-        if (!EFI_ERROR(status))
+        if (!EFI_ERROR(Status))
         {
             return TRUE;
         }
 
-        if (status != EFI_INVALID_PARAMETER)
+        if (Status != EFI_INVALID_PARAMETER)
         {
             return FALSE;
         }

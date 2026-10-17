@@ -6,21 +6,21 @@
 #include <scheduler/LBPWRRChunk.h>
 #include <arch/AMD64/CPU.h>
 
-BOOLEAN LBPWRRTaskIsRunnable(TASK *task)
+BOOLEAN LBPWRRTaskIsRunnable(TASK *Task)
 {
-    if (task == NULL)
+    if (Task == NULL)
     {
         return FALSE;
     }
 
-    return task->State == TASK_READY || task->State == TASK_RUNNING;
+    return Task->State == TASK_READY || Task->State == TASK_RUNNING;
 }
 
 BOOLEAN LBPWRRWakeSleepingTasks(LBPWRR_RUNQUEUE *RunQueue)
 {
-    UINT32  index;
-    UINT64  now;
-    TASK   *task;
+    UINT32  Index;
+    UINT64  Now;
+    TASK   *Task;
     BOOLEAN WokeTask;
 
     if (RunQueue == NULL)
@@ -28,31 +28,31 @@ BOOLEAN LBPWRRWakeSleepingTasks(LBPWRR_RUNQUEUE *RunQueue)
         return FALSE;
     }
 
-    now = RDTSC();
+    Now = RDTSC();
     WokeTask = FALSE;
 
-    for (index = 0; index < RunQueue->RunnableCount; index++)
+    for (Index = 0; Index < RunQueue->RunnableCount; Index++)
     {
-        task = RunQueue->Runnable[index];
+        Task = RunQueue->Runnable[Index];
 
-        if (task == NULL || task->State != TASK_SLEEPING)
+        if (Task == NULL || Task->State != TASK_SLEEPING)
         {
             continue;
         }
 
-        if ((INT64) (now - task->WakeDeadlineTSC) < 0)
+        if ((INT64) (Now - Task->WakeDeadlineTSC) < 0)
         {
             continue;
         }
 
-        if (!LBPWRRModifyChunk(RunQueue, task, task->Weight))
+        if (!LBPWRRModifyChunk(RunQueue, Task, Task->Weight))
         {
             continue;
         }
 
-        task->WakeDeadlineTSC = 0;
-        task->State = TASK_READY;
-        task->Modified = FALSE;
+        Task->WakeDeadlineTSC = 0;
+        Task->State = TASK_READY;
+        Task->Modified = FALSE;
         WokeTask = TRUE;
     }
 

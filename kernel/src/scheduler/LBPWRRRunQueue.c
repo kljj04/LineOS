@@ -71,31 +71,31 @@ TASK *LBPWRRGetCurrentTaskFromCPU(UINT32 CPUID)
     return CurrentTasks[CPUID];
 }
 
-VOID LBPWRRSetCurrentTask(UINT32 CPUID, TASK *task)
+VOID LBPWRRSetCurrentTask(UINT32 CPUID, TASK *Task)
 {
     if (CPUID >= LBPWRRGetActiveCPUCount())
     {
         return;
     }
 
-    CurrentTasks[CPUID] = task;
+    CurrentTasks[CPUID] = Task;
 }
 
-BOOLEAN LBPWRRAddTask(TASK *task)
+BOOLEAN LBPWRRAddTask(TASK *Task)
 {
     UINT32           CPUID;
-    UINT32           index;
+    UINT32           Index;
     UINT32           TargetCPUID;
     UINT32           CPUCount;
-    UINT64           flags;
+    UINT64           Flags;
     LBPWRR_RUNQUEUE *RunQueue;
 
-    if (task == NULL || task->Scheduled)
+    if (Task == NULL || Task->Scheduled)
     {
         return FALSE;
     }
 
-    if (task->Weight == 0 || task->Weight > 6)
+    if (Task->Weight == 0 || Task->Weight > 6)
     {
         return FALSE;
     }
@@ -112,54 +112,54 @@ BOOLEAN LBPWRRAddTask(TASK *task)
     }
 
     RunQueue = &RunQueues[TargetCPUID];
-    flags = SpinLockAcquireIRQSave(&RunQueue->Lock);
+    Flags = SpinLockAcquireIRQSave(&RunQueue->Lock);
 
-    if (task->Scheduled || RunQueue->RunnableCount >= LBPWRR_MAX_TASKS)
+    if (Task->Scheduled || RunQueue->RunnableCount >= LBPWRR_MAX_TASKS)
     {
-        SpinLockReleaseIRQRestore(&RunQueue->Lock, flags);
+        SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
         return FALSE;
     }
 
-    for (index = 0; index < RunQueue->RunnableCount; index++)
+    for (Index = 0; Index < RunQueue->RunnableCount; Index++)
     {
-        if (RunQueue->Runnable[index] == task)
+        if (RunQueue->Runnable[Index] == Task)
         {
-            SpinLockReleaseIRQRestore(&RunQueue->Lock, flags);
+            SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
             return FALSE;
         }
     }
 
-    if (!LBPWRRModifyChunk(RunQueue, task, task->Weight))
+    if (!LBPWRRModifyChunk(RunQueue, Task, Task->Weight))
     {
-        SpinLockReleaseIRQRestore(&RunQueue->Lock, flags);
+        SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
         return FALSE;
     }
 
-    RunQueue->Runnable[RunQueue->RunnableCount] = task;
+    RunQueue->Runnable[RunQueue->RunnableCount] = Task;
     RunQueue->RunnableCount++;
 
-    task->CPUID = TargetCPUID;
-    task->State = TASK_READY;
-    task->Modified = FALSE;
-    task->Scheduled = TRUE;
+    Task->CPUID = TargetCPUID;
+    Task->State = TASK_READY;
+    Task->Modified = FALSE;
+    Task->Scheduled = TRUE;
 
-    SpinLockReleaseIRQRestore(&RunQueue->Lock, flags);
+    SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
     return TRUE;
 }
 
-BOOLEAN LBPWRRRemoveTask(TASK *task)
+BOOLEAN LBPWRRRemoveTask(TASK *Task)
 {
     UINT32           CPUID;
-    UINT32           index;
-    UINT64           flags;
+    UINT32           Index;
+    UINT64           Flags;
     LBPWRR_RUNQUEUE *RunQueue;
 
-    if (task == NULL || !task->Scheduled)
+    if (Task == NULL || !Task->Scheduled)
     {
         return FALSE;
     }
 
-    CPUID = task->CPUID;
+    CPUID = Task->CPUID;
 
     if (CPUID >= LBPWRRGetActiveCPUCount())
     {
@@ -167,64 +167,64 @@ BOOLEAN LBPWRRRemoveTask(TASK *task)
     }
 
     RunQueue = &RunQueues[CPUID];
-    flags = SpinLockAcquireIRQSave(&RunQueue->Lock);
+    Flags = SpinLockAcquireIRQSave(&RunQueue->Lock);
 
-    if (!task->Scheduled || task->CPUID != CPUID || CurrentTasks[CPUID] == task || (task->State != TASK_TERMINATED && task->State != TASK_KILLED))
+    if (!Task->Scheduled || Task->CPUID != CPUID || CurrentTasks[CPUID] == Task || (Task->State != TASK_TERMINATED && Task->State != TASK_KILLED))
     {
-        SpinLockReleaseIRQRestore(&RunQueue->Lock, flags);
+        SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
         return FALSE;
     }
 
-    for (index = 0; index < RunQueue->RunnableCount; index++)
+    for (Index = 0; Index < RunQueue->RunnableCount; Index++)
     {
-        if (RunQueue->Runnable[index] == task)
+        if (RunQueue->Runnable[Index] == Task)
         {
             break;
         }
     }
 
-    if (index == RunQueue->RunnableCount)
+    if (Index == RunQueue->RunnableCount)
     {
-        SpinLockReleaseIRQRestore(&RunQueue->Lock, flags);
+        SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
         return FALSE;
     }
 
-    if (!LBPWRRModifyChunk(RunQueue, task, 0))
+    if (!LBPWRRModifyChunk(RunQueue, Task, 0))
     {
-        SpinLockReleaseIRQRestore(&RunQueue->Lock, flags);
+        SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
         return FALSE;
     }
 
     RunQueue->RunnableCount--;
-    RunQueue->Runnable[index] = RunQueue->Runnable[RunQueue->RunnableCount];
+    RunQueue->Runnable[Index] = RunQueue->Runnable[RunQueue->RunnableCount];
     RunQueue->Runnable[RunQueue->RunnableCount] = NULL;
 
-    task->Scheduled = FALSE;
-    task->Modified = FALSE;
+    Task->Scheduled = FALSE;
+    Task->Modified = FALSE;
 
-    SpinLockReleaseIRQRestore(&RunQueue->Lock, flags);
+    SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
     return TRUE;
 }
 
-BOOLEAN LBPWRRMoveTask(TASK *task, UINT32 TargetCPUID)
+BOOLEAN LBPWRRMoveTask(TASK *Task, UINT32 TargetCPUID)
 {
     UINT32           SourceCPUID;
     UINT32           CPUCount;
-    UINT32           index;
+    UINT32           Index;
     UINT32           SourceIndex;
     UINT32           LockCPUID;
     UINT32           OtherCPUID;
-    UINT64           flags;
+    UINT64           Flags;
     LBPWRR_RUNQUEUE *SourceRunQueue;
     LBPWRR_RUNQUEUE *TargetRunQueue;
 
-    if (task == NULL || !task->Scheduled)
+    if (Task == NULL || !Task->Scheduled)
     {
         return FALSE;
     }
 
     CPUCount = LBPWRRGetActiveCPUCount();
-    SourceCPUID = task->CPUID;
+    SourceCPUID = Task->CPUID;
 
     if (SourceCPUID >= CPUCount || TargetCPUID >= CPUCount || SourceCPUID == TargetCPUID)
     {
@@ -245,23 +245,23 @@ BOOLEAN LBPWRRMoveTask(TASK *task, UINT32 TargetCPUID)
         OtherCPUID = SourceCPUID;
     }
 
-    flags = SpinLockAcquireIRQSave(&RunQueues[LockCPUID].Lock);
+    Flags = SpinLockAcquireIRQSave(&RunQueues[LockCPUID].Lock);
     SpinLockAcquire(&RunQueues[OtherCPUID].Lock);
 
-    if (!task->Scheduled || task->CPUID != SourceCPUID || task->State != TASK_READY || CurrentTasks[SourceCPUID] == task || TargetRunQueue->RunnableCount >= LBPWRR_MAX_TASKS || task->Weight == 0 || task->Weight > 6)
+    if (!Task->Scheduled || Task->CPUID != SourceCPUID || Task->State != TASK_READY || CurrentTasks[SourceCPUID] == Task || TargetRunQueue->RunnableCount >= LBPWRR_MAX_TASKS || Task->Weight == 0 || Task->Weight > 6)
     {
         SpinLockRelease(&RunQueues[OtherCPUID].Lock);
-        SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, flags);
+        SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, Flags);
         return FALSE;
     }
 
     SourceIndex = SourceRunQueue->RunnableCount;
 
-    for (index = 0; index < SourceRunQueue->RunnableCount; index++)
+    for (Index = 0; Index < SourceRunQueue->RunnableCount; Index++)
     {
-        if (SourceRunQueue->Runnable[index] == task)
+        if (SourceRunQueue->Runnable[Index] == Task)
         {
-            SourceIndex = index;
+            SourceIndex = Index;
             break;
         }
     }
@@ -269,33 +269,33 @@ BOOLEAN LBPWRRMoveTask(TASK *task, UINT32 TargetCPUID)
     if (SourceIndex == SourceRunQueue->RunnableCount)
     {
         SpinLockRelease(&RunQueues[OtherCPUID].Lock);
-        SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, flags);
+        SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, Flags);
         return FALSE;
     }
 
-    for (index = 0; index < TargetRunQueue->RunnableCount; index++)
+    for (Index = 0; Index < TargetRunQueue->RunnableCount; Index++)
     {
-        if (TargetRunQueue->Runnable[index] == task)
+        if (TargetRunQueue->Runnable[Index] == Task)
         {
             SpinLockRelease(&RunQueues[OtherCPUID].Lock);
-            SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, flags);
+            SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, Flags);
             return FALSE;
         }
     }
 
-    if (!LBPWRRModifyChunk(TargetRunQueue, task, task->Weight))
+    if (!LBPWRRModifyChunk(TargetRunQueue, Task, Task->Weight))
     {
         SpinLockRelease(&RunQueues[OtherCPUID].Lock);
-        SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, flags);
+        SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, Flags);
         return FALSE;
     }
 
-    if (!LBPWRRModifyChunk(SourceRunQueue, task, 0))
+    if (!LBPWRRModifyChunk(SourceRunQueue, Task, 0))
     {
-        LBPWRRModifyChunk(TargetRunQueue, task, 0);
+        LBPWRRModifyChunk(TargetRunQueue, Task, 0);
 
         SpinLockRelease(&RunQueues[OtherCPUID].Lock);
-        SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, flags);
+        SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, Flags);
         return FALSE;
     }
 
@@ -303,33 +303,33 @@ BOOLEAN LBPWRRMoveTask(TASK *task, UINT32 TargetCPUID)
     SourceRunQueue->Runnable[SourceIndex] = SourceRunQueue->Runnable[SourceRunQueue->RunnableCount];
     SourceRunQueue->Runnable[SourceRunQueue->RunnableCount] = NULL;
 
-    TargetRunQueue->Runnable[TargetRunQueue->RunnableCount] = task;
+    TargetRunQueue->Runnable[TargetRunQueue->RunnableCount] = Task;
     TargetRunQueue->RunnableCount++;
 
-    task->CPUID = TargetCPUID;
-    task->Modified = FALSE;
+    Task->CPUID = TargetCPUID;
+    Task->Modified = FALSE;
 
     SpinLockRelease(&RunQueues[OtherCPUID].Lock);
-    SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, flags);
+    SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, Flags);
     return TRUE;
 }
 
-BOOLEAN LBPWRRNotifyTaskChanged(TASK *task)
+BOOLEAN LBPWRRNotifyTaskChanged(TASK *Task)
 {
     UINT32           CPUID;
-    UINT32           index;
-    UINT64           flags;
-    UINT8            weight;
-    BOOLEAN          exists;
-    BOOLEAN          result;
+    UINT32           Index;
+    UINT64           Flags;
+    UINT8            Weight;
+    BOOLEAN          Exists;
+    BOOLEAN          Result;
     LBPWRR_RUNQUEUE *RunQueue;
 
-    if (task == NULL || !task->Scheduled)
+    if (Task == NULL || !Task->Scheduled)
     {
         return FALSE;
     }
 
-    CPUID = task->CPUID;
+    CPUID = Task->CPUID;
 
     if (CPUID >= LBPWRRGetActiveCPUCount())
     {
@@ -337,58 +337,58 @@ BOOLEAN LBPWRRNotifyTaskChanged(TASK *task)
     }
 
     RunQueue = &RunQueues[CPUID];
-    flags = SpinLockAcquireIRQSave(&RunQueue->Lock);
+    Flags = SpinLockAcquireIRQSave(&RunQueue->Lock);
 
-    if (!task->Scheduled || task->CPUID != CPUID)
+    if (!Task->Scheduled || Task->CPUID != CPUID)
     {
-        SpinLockReleaseIRQRestore(&RunQueue->Lock, flags);
+        SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
         return FALSE;
     }
 
-    exists = FALSE;
+    Exists = FALSE;
 
-    for (index = 0; index < RunQueue->RunnableCount; index++)
+    for (Index = 0; Index < RunQueue->RunnableCount; Index++)
     {
-        if (RunQueue->Runnable[index] == task)
+        if (RunQueue->Runnable[Index] == Task)
         {
-            exists = TRUE;
+            Exists = TRUE;
             break;
         }
     }
 
-    if (!exists)
+    if (!Exists)
     {
-        SpinLockReleaseIRQRestore(&RunQueue->Lock, flags);
+        SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
         return FALSE;
     }
 
-    weight = 0;
+    Weight = 0;
 
-    if (task->State == TASK_READY || task->State == TASK_RUNNING)
+    if (Task->State == TASK_READY || Task->State == TASK_RUNNING)
     {
-        weight = task->Weight;
+        Weight = Task->Weight;
     }
 
-    result = LBPWRRModifyChunk(RunQueue, task, weight);
+    Result = LBPWRRModifyChunk(RunQueue, Task, Weight);
 
-    if (result)
+    if (Result)
     {
-        task->Modified = FALSE;
+        Task->Modified = FALSE;
     }
     else
     {
-        task->Modified = TRUE;
+        Task->Modified = TRUE;
     }
 
-    SpinLockReleaseIRQRestore(&RunQueue->Lock, flags);
-    return result;
+    SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+    return Result;
 }
 
 TASK *LBPWRRGetTaskFromCPU(UINT32 CPUID)
 {
-    UINT32           index;
-    UINT64           flags;
-    TASK            *task;
+    UINT32           Index;
+    UINT64           Flags;
+    TASK            *Task;
     LBPWRR_RUNQUEUE *RunQueue;
 
     if (CPUID >= LBPWRRGetActiveCPUCount())
@@ -397,22 +397,22 @@ TASK *LBPWRRGetTaskFromCPU(UINT32 CPUID)
     }
 
     RunQueue = &RunQueues[CPUID];
-    flags = SpinLockAcquireIRQSave(&RunQueue->Lock);
-    task = NULL;
+    Flags = SpinLockAcquireIRQSave(&RunQueue->Lock);
+    Task = NULL;
 
-    for (index = RunQueue->RunnableCount; index > 0; index--)
+    for (Index = RunQueue->RunnableCount; Index > 0; Index--)
     {
-        TASK *candidate = RunQueue->Runnable[index - 1];
+        TASK *Candidate = RunQueue->Runnable[Index - 1];
 
-        if (candidate != NULL && candidate->State == TASK_READY && candidate != CurrentTasks[CPUID])
+        if (Candidate != NULL && Candidate->State == TASK_READY && Candidate != CurrentTasks[CPUID])
         {
-            task = candidate;
+            Task = Candidate;
             break;
         }
     }
 
-    SpinLockReleaseIRQRestore(&RunQueue->Lock, flags);
-    return task;
+    SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+    return Task;
 }
 
 TASK *LBPWRRGetCurrentTask(VOID)

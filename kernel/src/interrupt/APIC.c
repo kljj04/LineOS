@@ -36,16 +36,16 @@ STATIC VOLATILE UINT32 *LAPICBase = NULL;
 
 STATIC BOOLEAN LAPICSupported(VOID)
 {
-    UINT32 eax;
-    UINT32 ebx;
-    UINT32 ecx;
-    UINT32 edx;
+    UINT32 EAX;
+    UINT32 EBX;
+    UINT32 ECX;
+    UINT32 EDX;
 
-    eax = 1;
+    EAX = 1;
 
-    ASM("cpuid" : "+a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx));
+    ASM("cpuid" : "+a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX));
 
-    return (edx & (1U << 9)) != 0;
+    return (EDX & (1U << 9)) != 0;
 }
 
 BOOLEAN LAPICInit(VOID)
@@ -97,14 +97,14 @@ BOOLEAN LAPICInitCurrentCPU(VOID)
     return TRUE;
 }
 
-UINT32 LAPICRead(UINT32 reg)
+UINT32 LAPICRead(UINT32 Reg)
 {
-    return LAPICBase[reg / sizeof(UINT32)];
+    return LAPICBase[Reg / sizeof(UINT32)];
 }
 
-VOID LAPICWrite(UINT32 reg, UINT32 value)
+VOID LAPICWrite(UINT32 Reg, UINT32 Value)
 {
-    LAPICBase[reg / sizeof(UINT32)] = value;
+    LAPICBase[Reg / sizeof(UINT32)] = Value;
 }
 
 VOID LAPICEOI(VOID)
@@ -117,14 +117,14 @@ UINT32 LAPICGetID(VOID)
     return LAPICBase[LAPIC_REG_ID / sizeof(UINT32)] >> 24;
 }
 
-VOID LAPICSetTSCDeadlineTimer(UINT8 vector)
+VOID LAPICSetTSCDeadlineTimer(UINT8 Vector)
 {
-    LAPICWrite(LAPIC_REG_LVT_TIMER, (UINT32) vector | LAPIC_TIMER_TSC_DEADLINE);
+    LAPICWrite(LAPIC_REG_LVT_TIMER, (UINT32) Vector | LAPIC_TIMER_TSC_DEADLINE);
 }
 
 STATIC BOOLEAN LAPICWaitForIPI(VOID)
 {
-    for (UINT32 retry = 0; retry < LAPIC_IPI_WAIT_RETRIES; retry++)
+    for (UINT32 Retry = 0; Retry < LAPIC_IPI_WAIT_RETRIES; Retry++)
     {
         if ((LAPICRead(LAPIC_REG_ICR_LOW) & LAPIC_ICR_DELIVERY_STATUS) == 0)
         {

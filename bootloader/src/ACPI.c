@@ -11,27 +11,27 @@
 
 ACPI_RSDP *RSDP = NULL;
 
-STATIC BOOLEAN IsGuidEqual(EFI_GUID *a, EFI_GUID *b)
+STATIC BOOLEAN IsGuidEqual(EFI_GUID *A, EFI_GUID *B)
 {
-    return a->Data1 == b->Data1 && a->Data2 == b->Data2 && a->Data3 == b->Data3 && a->Data4[0] == b->Data4[0] && a->Data4[1] == b->Data4[1] && a->Data4[2] == b->Data4[2] && a->Data4[3] == b->Data4[3] && a->Data4[4] == b->Data4[4] && a->Data4[5] == b->Data4[5] && a->Data4[6] == b->Data4[6] && a->Data4[7] == b->Data4[7];
+    return A->Data1 == B->Data1 && A->Data2 == B->Data2 && A->Data3 == B->Data3 && A->Data4[0] == B->Data4[0] && A->Data4[1] == B->Data4[1] && A->Data4[2] == B->Data4[2] && A->Data4[3] == B->Data4[3] && A->Data4[4] == B->Data4[4] && A->Data4[5] == B->Data4[5] && A->Data4[6] == B->Data4[6] && A->Data4[7] == B->Data4[7];
 }
 
 BOOLEAN ACPIInit(VOID)
 {
-    EFI_CONFIGURATION_TABLE *table;
+    EFI_CONFIGURATION_TABLE *Table;
 
-    UINTN count;
+    UINTN Count;
 
-    table = UEFISystemTable->ConfigurationTable;
-    count = UEFISystemTable->NumberOfTableEntries;
+    Table = UEFISystemTable->ConfigurationTable;
+    Count = UEFISystemTable->NumberOfTableEntries;
 
-    for (UINTN i = 0; i < count; i++)
+    for (UINTN I = 0; I < Count; I++)
     {
-        EFI_GUID *guid = &table[i].VendorGuid;
+        EFI_GUID *GUID = &Table[I].VendorGuid;
 
-        if (IsGuidEqual(guid, &gEfiAcpi20TableGuid))
+        if (IsGuidEqual(GUID, &gEfiAcpi20TableGuid))
         {
-            RSDP = (ACPI_RSDP *) table[i].VendorTable;
+            RSDP = (ACPI_RSDP *) Table[I].VendorTable;
             return TRUE;
         }
     }

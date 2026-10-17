@@ -5,60 +5,60 @@
 #include <arch/AMD64/SpinLock.h>
 #include <LineOS/TypeInfo.h>
 
-VOID SpinLockInit(SPIN_LOCK *lock)
+VOID SpinLockInit(SPIN_LOCK *Lock)
 {
-    lock->Locked = 0;
+    Lock->Locked = 0;
 }
 
-VOID SpinLockAcquire(SPIN_LOCK *lock)
+VOID SpinLockAcquire(SPIN_LOCK *Lock)
 {
-    UINT32 value;
+    UINT32 Value;
 
     while (TRUE)
     {
-        value = 1;
+        Value = 1;
 
-        ASM("xchgl %0, %1" : "+r"(value), "+m"(lock->Locked) : : "memory");
+        ASM("xchgl %0, %1" : "+r"(Value), "+m"(Lock->Locked) : : "memory");
 
-        if (value == 0)
+        if (Value == 0)
         {
             return;
         }
 
-        while (lock->Locked != 0)
+        while (Lock->Locked != 0)
         {
             ASM("pause" ::: "memory");
         }
     }
 }
 
-VOID SpinLockRelease(SPIN_LOCK *lock)
+VOID SpinLockRelease(SPIN_LOCK *Lock)
 {
     ASM("" ::: "memory");
-    lock->Locked = 0;
+    Lock->Locked = 0;
 }
 
-UINT64 SpinLockAcquireIRQSave(SPIN_LOCK *lock)
+UINT64 SpinLockAcquireIRQSave(SPIN_LOCK *Lock)
 {
-    UINT64 flags;
+    UINT64 Flags;
 
     ASM("pushfq\n"
         "popq %0\n"
         "cli"
-        : "=r"(flags)
+        : "=r"(Flags)
         :
         : "memory");
 
-    SpinLockAcquire(lock);
+    SpinLockAcquire(Lock);
 
-    return flags;
+    return Flags;
 }
 
-VOID SpinLockReleaseIRQRestore(SPIN_LOCK *lock, UINT64 flags)
+VOID SpinLockReleaseIRQRestore(SPIN_LOCK *Lock, UINT64 Flags)
 {
-    SpinLockRelease(lock);
+    SpinLockRelease(Lock);
 
-    if ((flags & (1ULL << 9)) != 0)
+    if ((Flags & (1ULL << 9)) != 0)
     {
         ASM("sti" ::: "memory");
     }

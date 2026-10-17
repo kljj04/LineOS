@@ -67,54 +67,54 @@ STATIC UINT32 GetScale(UINT32 Width, UINT32 Height)
     return 1;
 }
 
-STATIC UINT32 Scale(UINT32 Value, UINT32 scale)
+STATIC UINT32 Scale(UINT32 Value, UINT32 UIScale)
 {
-    return Value * scale;
+    return Value * UIScale;
 }
 
-STATIC VOID DrawPanel(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 scale)
+STATIC VOID DrawPanel(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 UIScale)
 {
     FillRect(X, Y, Width, Height, PANIC_PANEL);
-    FillRect(X, Y, Scale(4, scale), Height, PANIC_ACCENT);
+    FillRect(X, Y, Scale(4, UIScale), Height, PANIC_ACCENT);
     DrawRect(X, Y, Width, Height, 0xFFFFFF22);
 }
 
-STATIC VOID DrawMarker(UINT32 X, UINT32 Baseline, UINT32 PixelHeight, UINT32 scale, UINT32 Color)
+STATIC VOID DrawMarker(UINT32 X, UINT32 Baseline, UINT32 PixelHeight, UINT32 UIScale, UINT32 Color)
 {
-    FillCircle((INT32) X + (INT32) Scale(4, scale), (INT32) Baseline - (INT32) (PixelHeight / 3), Scale(4, scale), Color);
+    FillCircle((INT32) X + (INT32) Scale(4, UIScale), (INT32) Baseline - (INT32) (PixelHeight / 3), Scale(4, UIScale), Color);
 }
 
-STATIC VOID DrawSectionTitle(UINT32 X, UINT32 Y, UINT32 scale, CONST CHAR16 *Title)
+STATIC VOID DrawSectionTitle(UINT32 X, UINT32 Y, UINT32 UIScale, CONST CHAR16 *Title)
 {
-    DrawMarker(X, Y, Scale(11, scale), scale, PANIC_WARNING);
-    KPrint(Title, X + Scale(18, scale), Y, PANIC_WARNING, Scale(11, scale), PRETENDARD);
+    DrawMarker(X, Y, Scale(11, UIScale), UIScale, PANIC_WARNING);
+    KPrint(Title, X + Scale(18, UIScale), Y, PANIC_WARNING, Scale(11, UIScale), PRETENDARD);
 }
 
-STATIC VOID DrawPanicBackground(UINT32 Width, UINT32 scale)
+STATIC VOID DrawPanicBackground(UINT32 Width, UINT32 UIScale)
 {
     FillScreen(PANIC_BACKGROUND);
-    FillRect(0, 0, Width, Scale(76, scale), PANIC_PANEL_DARK);
-    FillRect(0, Scale(76, scale), Width, Scale(2, scale), PANIC_ACCENT);
-    KPrint(L"LineOS", Scale(40, scale), Scale(48, scale), PANIC_TEXT, Scale(18, scale), PRETENDARD);
-    KPrint(L"fatal diagnostic screen", Width - Scale(260, scale), Scale(48, scale), PANIC_MUTED, Scale(13, scale), PRETENDARD);
+    FillRect(0, 0, Width, Scale(76, UIScale), PANIC_PANEL_DARK);
+    FillRect(0, Scale(76, UIScale), Width, Scale(2, UIScale), PANIC_ACCENT);
+    KPrint(L"LineOS", Scale(40, UIScale), Scale(48, UIScale), PANIC_TEXT, Scale(18, UIScale), PRETENDARD);
+    KPrint(L"fatal diagnostic screen", Width - Scale(260, UIScale), Scale(48, UIScale), PANIC_MUTED, Scale(13, UIScale), PRETENDARD);
 }
 
-STATIC VOID DrawPanicFooter(UINT32 Width, UINT32 Height, UINT32 scale)
+STATIC VOID DrawPanicFooter(UINT32 Width, UINT32 Height, UINT32 UIScale)
 {
-    UINT32 FooterY = Height - Scale(54, scale);
+    UINT32 FooterY = Height - Scale(54, UIScale);
 
-    FillRect(0, FooterY, Width, Scale(54, scale), PANIC_PANEL_DARK);
-    DrawMarker(Scale(40, scale), FooterY + Scale(32, scale), Scale(12, scale), scale, PANIC_ACCENT);
-    KPrint(L"CPU halted. Reboot the virtual machine.", Scale(60, scale), FooterY + Scale(32, scale), PANIC_MUTED, Scale(12, scale), PRETENDARD);
-    KPrint(L"kljj04 / LineOS", Width - Scale(200, scale), FooterY + Scale(32, scale), PANIC_MUTED, Scale(12, scale), JETBRAINS_MONO);
+    FillRect(0, FooterY, Width, Scale(54, UIScale), PANIC_PANEL_DARK);
+    DrawMarker(Scale(40, UIScale), FooterY + Scale(32, UIScale), Scale(12, UIScale), UIScale, PANIC_ACCENT);
+    KPrint(L"CPU halted. Reboot the virtual machine.", Scale(60, UIScale), FooterY + Scale(32, UIScale), PANIC_MUTED, Scale(12, UIScale), PRETENDARD);
+    KPrint(L"kljj04 / LineOS", Width - Scale(200, UIScale), FooterY + Scale(32, UIScale), PANIC_MUTED, Scale(12, UIScale), JETBRAINS_MONO);
 }
 
-STATIC VOID DrawPanicHeader(UINT32 X, UINT32 Y, UINT32 scale, CONST CHAR16 *Title)
+STATIC VOID DrawPanicHeader(UINT32 X, UINT32 Y, UINT32 UIScale, CONST CHAR16 *Title)
 {
-    KPrint(Title, X, Y, PANIC_TEXT, Scale(28, scale), PRETENDARD);
-    KPrint(L"The kernel stopped itself before state could drift further.", X, Y + Scale(34, scale), PANIC_MUTED, Scale(13, scale), PRETENDARD);
-    FillRect(X, Y + Scale(56, scale), Scale(128, scale), Scale(3, scale), PANIC_ACCENT);
-    FillRect(X + Scale(138, scale), Y + Scale(56, scale), Scale(48, scale), Scale(3, scale), PANIC_WARNING);
+    KPrint(Title, X, Y, PANIC_TEXT, Scale(28, UIScale), PRETENDARD);
+    KPrint(L"The kernel stopped itself before state could drift further.", X, Y + Scale(34, UIScale), PANIC_MUTED, Scale(13, UIScale), PRETENDARD);
+    FillRect(X, Y + Scale(56, UIScale), Scale(128, UIScale), Scale(3, UIScale), PANIC_ACCENT);
+    FillRect(X + Scale(138, UIScale), Y + Scale(56, UIScale), Scale(48, UIScale), Scale(3, UIScale), PANIC_WARNING);
 }
 
 STATIC UINT32 DrawWrappedText(CONST CHAR16 *Text, UINT32 X, UINT32 Baseline, UINT32 MaxWidth, UINT32 PixelHeight, UINT32 LineHeight, UINT32 Color, TRUE_TYPE_FONT Font)
@@ -177,10 +177,10 @@ STATIC UINT64 ReadCR2(VOID)
     return Value;
 }
 
-STATIC VOID DrawIconFrame(UINT32 CenterX, UINT32 CenterY, UINT32 scale, UINT32 Color)
+STATIC VOID DrawIconFrame(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale, UINT32 Color)
 {
-    FillCircle((INT32) CenterX, (INT32) CenterY, Scale(23, scale), Color);
-    FillCircle((INT32) CenterX, (INT32) CenterY, Scale(19, scale), PANIC_PANEL_DARK);
+    FillCircle((INT32) CenterX, (INT32) CenterY, Scale(23, UIScale), Color);
+    FillCircle((INT32) CenterX, (INT32) CenterY, Scale(19, UIScale), PANIC_PANEL_DARK);
 }
 
 STATIC VOID DrawThickLine(INT32 X1, INT32 Y1, INT32 X2, INT32 Y2, UINT32 Thickness, UINT32 Color)
@@ -261,307 +261,307 @@ STATIC VOID DrawCenteredIconText(CONST CHAR16 *Text, UINT32 CenterX, UINT32 Cent
     KPrint(Text, (UINT32) X, (UINT32) Baseline, Color, PixelHeight, JETBRAINS_MONO);
 }
 
-STATIC VOID DrawWarningIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale, UINT32 FrameColor, UINT32 MarkColor)
+STATIC VOID DrawWarningIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale, UINT32 FrameColor, UINT32 MarkColor)
 {
-    DrawIconFrame(CenterX, CenterY, scale, FrameColor);
-    DrawThickLine((INT32) CenterX, (INT32) (CenterY - Scale(11, scale)), (INT32) CenterX, (INT32) (CenterY + Scale(5, scale)), Scale(4, scale), MarkColor);
-    FillCircle((INT32) CenterX, (INT32) (CenterY + Scale(12, scale)), Scale(3, scale), MarkColor);
+    DrawIconFrame(CenterX, CenterY, UIScale, FrameColor);
+    DrawThickLine((INT32) CenterX, (INT32) (CenterY - Scale(11, UIScale)), (INT32) CenterX, (INT32) (CenterY + Scale(5, UIScale)), Scale(4, UIScale), MarkColor);
+    FillCircle((INT32) CenterX, (INT32) (CenterY + Scale(12, UIScale)), Scale(3, UIScale), MarkColor);
 }
 
-STATIC VOID DrawPageFaultIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawPageFaultIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    UINT32 X = CenterX - Scale(14, scale);
-    UINT32 Y = CenterY - Scale(14, scale);
-    UINT32 Thickness = Scale(2, scale);
+    UINT32 X = CenterX - Scale(14, UIScale);
+    UINT32 Y = CenterY - Scale(14, UIScale);
+    UINT32 Thickness = Scale(2, UIScale);
 
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_ACCENT);
-    DrawThickRect(X, Y, Scale(28, scale), Scale(28, scale), Thickness, PANIC_TEXT);
-    DrawThickLine((INT32) (X + Scale(9, scale)), (INT32) Y, (INT32) (X + Scale(9, scale)), (INT32) (Y + Scale(28, scale)), Thickness, PANIC_DIM);
-    DrawThickLine((INT32) (X + Scale(19, scale)), (INT32) Y, (INT32) (X + Scale(19, scale)), (INT32) (Y + Scale(28, scale)), Thickness, PANIC_DIM);
-    DrawThickLine((INT32) X, (INT32) (Y + Scale(9, scale)), (INT32) (X + Scale(28, scale)), (INT32) (Y + Scale(9, scale)), Thickness, PANIC_DIM);
-    DrawThickLine((INT32) X, (INT32) (Y + Scale(19, scale)), (INT32) (X + Scale(28, scale)), (INT32) (Y + Scale(19, scale)), Thickness, PANIC_DIM);
-    DrawThickLine((INT32) (CenterX - Scale(10, scale)), (INT32) (CenterY + Scale(12, scale)), (INT32) (CenterX - Scale(1, scale)), (INT32) (CenterY + Scale(2, scale)), Scale(3, scale), PANIC_ACCENT);
-    DrawThickLine((INT32) (CenterX - Scale(1, scale)), (INT32) (CenterY + Scale(2, scale)), (INT32) (CenterX + Scale(7, scale)), (INT32) (CenterY - Scale(5, scale)), Scale(3, scale), PANIC_ACCENT);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_ACCENT);
+    DrawThickRect(X, Y, Scale(28, UIScale), Scale(28, UIScale), Thickness, PANIC_TEXT);
+    DrawThickLine((INT32) (X + Scale(9, UIScale)), (INT32) Y, (INT32) (X + Scale(9, UIScale)), (INT32) (Y + Scale(28, UIScale)), Thickness, PANIC_DIM);
+    DrawThickLine((INT32) (X + Scale(19, UIScale)), (INT32) Y, (INT32) (X + Scale(19, UIScale)), (INT32) (Y + Scale(28, UIScale)), Thickness, PANIC_DIM);
+    DrawThickLine((INT32) X, (INT32) (Y + Scale(9, UIScale)), (INT32) (X + Scale(28, UIScale)), (INT32) (Y + Scale(9, UIScale)), Thickness, PANIC_DIM);
+    DrawThickLine((INT32) X, (INT32) (Y + Scale(19, UIScale)), (INT32) (X + Scale(28, UIScale)), (INT32) (Y + Scale(19, UIScale)), Thickness, PANIC_DIM);
+    DrawThickLine((INT32) (CenterX - Scale(10, UIScale)), (INT32) (CenterY + Scale(12, UIScale)), (INT32) (CenterX - Scale(1, UIScale)), (INT32) (CenterY + Scale(2, UIScale)), Scale(3, UIScale), PANIC_ACCENT);
+    DrawThickLine((INT32) (CenterX - Scale(1, UIScale)), (INT32) (CenterY + Scale(2, UIScale)), (INT32) (CenterX + Scale(7, UIScale)), (INT32) (CenterY - Scale(5, UIScale)), Scale(3, UIScale), PANIC_ACCENT);
 }
 
-STATIC VOID DrawProtectionIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawProtectionIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    UINT32 Top = CenterY - Scale(15, scale);
-    UINT32 Bottom = CenterY + Scale(16, scale);
+    UINT32 Top = CenterY - Scale(15, UIScale);
+    UINT32 Bottom = CenterY + Scale(16, UIScale);
     UINT32 FillColor = 0x94A3B8FF;
     UINT32 EdgeColor = 0xE5E7EBFF;
 
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_WARNING);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_WARNING);
 
     for (UINT32 Y = Top; Y <= Bottom; Y++)
     {
         UINT32 Distance = Y - Top;
         UINT32 HalfWidth;
 
-        if (Distance < Scale(7, scale))
+        if (Distance < Scale(7, UIScale))
         {
-            HalfWidth = Scale(8, scale) + Distance;
+            HalfWidth = Scale(8, UIScale) + Distance;
         }
-        else if (Distance < Scale(20, scale))
+        else if (Distance < Scale(20, UIScale))
         {
-            HalfWidth = Scale(15, scale);
+            HalfWidth = Scale(15, UIScale);
         }
         else
         {
-            HalfWidth = Scale(15, scale) - (Distance - Scale(20, scale));
+            HalfWidth = Scale(15, UIScale) - (Distance - Scale(20, UIScale));
         }
 
         FillRect(CenterX - HalfWidth, Y, HalfWidth * 2 + 1, 1, FillColor);
     }
 
-    DrawThickLine((INT32) CenterX, (INT32) Top, (INT32) (CenterX + Scale(15, scale)), (INT32) (Top + Scale(7, scale)), Scale(2, scale), EdgeColor);
-    DrawThickLine((INT32) (CenterX + Scale(15, scale)), (INT32) (Top + Scale(7, scale)), (INT32) (CenterX + Scale(12, scale)), (INT32) (CenterY + Scale(9, scale)), Scale(2, scale), EdgeColor);
-    DrawThickLine((INT32) (CenterX + Scale(12, scale)), (INT32) (CenterY + Scale(9, scale)), (INT32) CenterX, (INT32) Bottom, Scale(2, scale), EdgeColor);
-    DrawThickLine((INT32) CenterX, (INT32) Bottom, (INT32) (CenterX - Scale(12, scale)), (INT32) (CenterY + Scale(9, scale)), Scale(2, scale), EdgeColor);
-    DrawThickLine((INT32) (CenterX - Scale(12, scale)), (INT32) (CenterY + Scale(9, scale)), (INT32) (CenterX - Scale(15, scale)), (INT32) (Top + Scale(7, scale)), Scale(2, scale), EdgeColor);
-    DrawThickLine((INT32) (CenterX - Scale(15, scale)), (INT32) (Top + Scale(7, scale)), (INT32) CenterX, (INT32) Top, Scale(2, scale), EdgeColor);
-    DrawThickLine((INT32) CenterX, (INT32) (Top + Scale(4, scale)), (INT32) CenterX, (INT32) (Bottom - Scale(5, scale)), Scale(2, scale), 0x475569FF);
+    DrawThickLine((INT32) CenterX, (INT32) Top, (INT32) (CenterX + Scale(15, UIScale)), (INT32) (Top + Scale(7, UIScale)), Scale(2, UIScale), EdgeColor);
+    DrawThickLine((INT32) (CenterX + Scale(15, UIScale)), (INT32) (Top + Scale(7, UIScale)), (INT32) (CenterX + Scale(12, UIScale)), (INT32) (CenterY + Scale(9, UIScale)), Scale(2, UIScale), EdgeColor);
+    DrawThickLine((INT32) (CenterX + Scale(12, UIScale)), (INT32) (CenterY + Scale(9, UIScale)), (INT32) CenterX, (INT32) Bottom, Scale(2, UIScale), EdgeColor);
+    DrawThickLine((INT32) CenterX, (INT32) Bottom, (INT32) (CenterX - Scale(12, UIScale)), (INT32) (CenterY + Scale(9, UIScale)), Scale(2, UIScale), EdgeColor);
+    DrawThickLine((INT32) (CenterX - Scale(12, UIScale)), (INT32) (CenterY + Scale(9, UIScale)), (INT32) (CenterX - Scale(15, UIScale)), (INT32) (Top + Scale(7, UIScale)), Scale(2, UIScale), EdgeColor);
+    DrawThickLine((INT32) (CenterX - Scale(15, UIScale)), (INT32) (Top + Scale(7, UIScale)), (INT32) CenterX, (INT32) Top, Scale(2, UIScale), EdgeColor);
+    DrawThickLine((INT32) CenterX, (INT32) (Top + Scale(4, UIScale)), (INT32) CenterX, (INT32) (Bottom - Scale(5, UIScale)), Scale(2, UIScale), 0x475569FF);
 }
 
-STATIC VOID DrawDivideIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawDivideIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_ACCENT);
-    FillCircle((INT32) CenterX, (INT32) (CenterY - Scale(10, scale)), Scale(3, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX - Scale(13, scale)), (INT32) CenterY, (INT32) (CenterX + Scale(13, scale)), (INT32) CenterY, Scale(4, scale), PANIC_TEXT);
-    FillCircle((INT32) CenterX, (INT32) (CenterY + Scale(10, scale)), Scale(3, scale), PANIC_TEXT);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_ACCENT);
+    FillCircle((INT32) CenterX, (INT32) (CenterY - Scale(10, UIScale)), Scale(3, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX - Scale(13, UIScale)), (INT32) CenterY, (INT32) (CenterX + Scale(13, UIScale)), (INT32) CenterY, Scale(4, UIScale), PANIC_TEXT);
+    FillCircle((INT32) CenterX, (INT32) (CenterY + Scale(10, UIScale)), Scale(3, UIScale), PANIC_TEXT);
 }
 
-STATIC VOID DrawDebugIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawDebugIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_SUCCESS);
-    DrawThickCircle((INT32) CenterX, (INT32) CenterY, Scale(11, scale), Scale(3, scale), PANIC_TEXT);
-    FillCircle((INT32) CenterX, (INT32) CenterY, Scale(3, scale), PANIC_WARNING);
-    DrawThickLine((INT32) CenterX, (INT32) (CenterY - Scale(15, scale)), (INT32) CenterX, (INT32) (CenterY - Scale(8, scale)), Scale(3, scale), PANIC_TEXT);
-    DrawThickLine((INT32) CenterX, (INT32) (CenterY + Scale(8, scale)), (INT32) CenterX, (INT32) (CenterY + Scale(15, scale)), Scale(3, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX - Scale(15, scale)), (INT32) CenterY, (INT32) (CenterX - Scale(8, scale)), (INT32) CenterY, Scale(3, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX + Scale(8, scale)), (INT32) CenterY, (INT32) (CenterX + Scale(15, scale)), (INT32) CenterY, Scale(3, scale), PANIC_TEXT);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_SUCCESS);
+    DrawThickCircle((INT32) CenterX, (INT32) CenterY, Scale(11, UIScale), Scale(3, UIScale), PANIC_TEXT);
+    FillCircle((INT32) CenterX, (INT32) CenterY, Scale(3, UIScale), PANIC_WARNING);
+    DrawThickLine((INT32) CenterX, (INT32) (CenterY - Scale(15, UIScale)), (INT32) CenterX, (INT32) (CenterY - Scale(8, UIScale)), Scale(3, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) CenterX, (INT32) (CenterY + Scale(8, UIScale)), (INT32) CenterX, (INT32) (CenterY + Scale(15, UIScale)), Scale(3, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX - Scale(15, UIScale)), (INT32) CenterY, (INT32) (CenterX - Scale(8, UIScale)), (INT32) CenterY, Scale(3, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX + Scale(8, UIScale)), (INT32) CenterY, (INT32) (CenterX + Scale(15, UIScale)), (INT32) CenterY, Scale(3, UIScale), PANIC_TEXT);
 }
 
-STATIC VOID DrawOverflowIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawOverflowIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_WARNING);
-    DrawCenteredIconText(L"OF", CenterX, CenterY, Scale(20, scale), PANIC_TEXT);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_WARNING);
+    DrawCenteredIconText(L"OF", CenterX, CenterY, Scale(20, UIScale), PANIC_TEXT);
 }
 
-STATIC VOID DrawBoundIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawBoundIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_WARNING);
-    DrawThickLine((INT32) (CenterX - Scale(14, scale)), (INT32) (CenterY - Scale(12, scale)), (INT32) (CenterX - Scale(14, scale)), (INT32) (CenterY + Scale(12, scale)), Scale(3, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX + Scale(14, scale)), (INT32) (CenterY - Scale(12, scale)), (INT32) (CenterX + Scale(14, scale)), (INT32) (CenterY + Scale(12, scale)), Scale(3, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX - Scale(7, scale)), (INT32) CenterY, (INT32) (CenterX + Scale(7, scale)), (INT32) CenterY, Scale(3, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX - Scale(7, scale)), (INT32) CenterY, (INT32) (CenterX - Scale(3, scale)), (INT32) (CenterY - Scale(4, scale)), Scale(3, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX - Scale(7, scale)), (INT32) CenterY, (INT32) (CenterX - Scale(3, scale)), (INT32) (CenterY + Scale(4, scale)), Scale(3, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX + Scale(7, scale)), (INT32) CenterY, (INT32) (CenterX + Scale(3, scale)), (INT32) (CenterY - Scale(4, scale)), Scale(3, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX + Scale(7, scale)), (INT32) CenterY, (INT32) (CenterX + Scale(3, scale)), (INT32) (CenterY + Scale(4, scale)), Scale(3, scale), PANIC_TEXT);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_WARNING);
+    DrawThickLine((INT32) (CenterX - Scale(14, UIScale)), (INT32) (CenterY - Scale(12, UIScale)), (INT32) (CenterX - Scale(14, UIScale)), (INT32) (CenterY + Scale(12, UIScale)), Scale(3, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX + Scale(14, UIScale)), (INT32) (CenterY - Scale(12, UIScale)), (INT32) (CenterX + Scale(14, UIScale)), (INT32) (CenterY + Scale(12, UIScale)), Scale(3, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX - Scale(7, UIScale)), (INT32) CenterY, (INT32) (CenterX + Scale(7, UIScale)), (INT32) CenterY, Scale(3, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX - Scale(7, UIScale)), (INT32) CenterY, (INT32) (CenterX - Scale(3, UIScale)), (INT32) (CenterY - Scale(4, UIScale)), Scale(3, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX - Scale(7, UIScale)), (INT32) CenterY, (INT32) (CenterX - Scale(3, UIScale)), (INT32) (CenterY + Scale(4, UIScale)), Scale(3, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX + Scale(7, UIScale)), (INT32) CenterY, (INT32) (CenterX + Scale(3, UIScale)), (INT32) (CenterY - Scale(4, UIScale)), Scale(3, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX + Scale(7, UIScale)), (INT32) CenterY, (INT32) (CenterX + Scale(3, UIScale)), (INT32) (CenterY + Scale(4, UIScale)), Scale(3, UIScale), PANIC_TEXT);
 }
 
-STATIC VOID DrawDeviceIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawDeviceIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_DIM);
-    FillRect(CenterX - Scale(13, scale), CenterY - Scale(9, scale), Scale(26, scale), Scale(18, scale), 0xF5F7FA44);
-    DrawThickRect(CenterX - Scale(13, scale), CenterY - Scale(9, scale), Scale(26, scale), Scale(18, scale), Scale(2, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX - Scale(11, scale)), (INT32) (CenterY - Scale(14, scale)), (INT32) (CenterX + Scale(11, scale)), (INT32) (CenterY + Scale(14, scale)), Scale(3, scale), PANIC_ACCENT);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_DIM);
+    FillRect(CenterX - Scale(13, UIScale), CenterY - Scale(9, UIScale), Scale(26, UIScale), Scale(18, UIScale), 0xF5F7FA44);
+    DrawThickRect(CenterX - Scale(13, UIScale), CenterY - Scale(9, UIScale), Scale(26, UIScale), Scale(18, UIScale), Scale(2, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX - Scale(11, UIScale)), (INT32) (CenterY - Scale(14, UIScale)), (INT32) (CenterX + Scale(11, UIScale)), (INT32) (CenterY + Scale(14, UIScale)), Scale(3, UIScale), PANIC_ACCENT);
 }
 
-STATIC VOID DrawDoubleFaultIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawDoubleFaultIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_ACCENT);
-    DrawCenteredIconText(L"!!", CenterX, CenterY, Scale(28, scale), PANIC_TEXT);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_ACCENT);
+    DrawCenteredIconText(L"!!", CenterX, CenterY, Scale(28, UIScale), PANIC_TEXT);
 }
 
-STATIC VOID DrawOpcodeIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawOpcodeIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_ACCENT);
-    DrawCenteredIconText(L"??", CenterX, CenterY, Scale(22, scale), PANIC_TEXT);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_ACCENT);
+    DrawCenteredIconText(L"??", CenterX, CenterY, Scale(22, UIScale), PANIC_TEXT);
 }
 
-STATIC VOID DrawFloatingPointIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawFloatingPointIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_SUCCESS);
-    DrawCenteredIconText(L"f()", CenterX, CenterY, Scale(17, scale), PANIC_TEXT);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_SUCCESS);
+    DrawCenteredIconText(L"f()", CenterX, CenterY, Scale(17, UIScale), PANIC_TEXT);
 }
 
-STATIC VOID DrawAlignmentIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawAlignmentIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_WARNING);
-    DrawThickLine((INT32) (CenterX - Scale(14, scale)), (INT32) (CenterY - Scale(9, scale)), (INT32) (CenterX + Scale(6, scale)), (INT32) (CenterY - Scale(9, scale)), Scale(3, scale), PANIC_MUTED);
-    DrawThickLine((INT32) (CenterX - Scale(6, scale)), (INT32) CenterY, (INT32) (CenterX + Scale(14, scale)), (INT32) CenterY, Scale(3, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX - Scale(14, scale)), (INT32) (CenterY + Scale(9, scale)), (INT32) (CenterX + Scale(6, scale)), (INT32) (CenterY + Scale(9, scale)), Scale(3, scale), PANIC_MUTED);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_WARNING);
+    DrawThickLine((INT32) (CenterX - Scale(14, UIScale)), (INT32) (CenterY - Scale(9, UIScale)), (INT32) (CenterX + Scale(6, UIScale)), (INT32) (CenterY - Scale(9, UIScale)), Scale(3, UIScale), PANIC_MUTED);
+    DrawThickLine((INT32) (CenterX - Scale(6, UIScale)), (INT32) CenterY, (INT32) (CenterX + Scale(14, UIScale)), (INT32) CenterY, Scale(3, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX - Scale(14, UIScale)), (INT32) (CenterY + Scale(9, UIScale)), (INT32) (CenterX + Scale(6, UIScale)), (INT32) (CenterY + Scale(9, UIScale)), Scale(3, UIScale), PANIC_MUTED);
 }
 
-STATIC VOID DrawMachineIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawMachineIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_ACCENT);
-    FillRect(CenterX - Scale(11, scale), CenterY - Scale(11, scale), Scale(22, scale), Scale(22, scale), 0xF5F7FA33);
-    DrawThickRect(CenterX - Scale(11, scale), CenterY - Scale(11, scale), Scale(22, scale), Scale(22, scale), Scale(2, scale), PANIC_TEXT);
-    DrawThickLine((INT32) CenterX, (INT32) (CenterY - Scale(7, scale)), (INT32) CenterX, (INT32) (CenterY + Scale(2, scale)), Scale(3, scale), PANIC_WARNING);
-    FillCircle((INT32) CenterX, (INT32) (CenterY + Scale(7, scale)), Scale(2, scale), PANIC_WARNING);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_ACCENT);
+    FillRect(CenterX - Scale(11, UIScale), CenterY - Scale(11, UIScale), Scale(22, UIScale), Scale(22, UIScale), 0xF5F7FA33);
+    DrawThickRect(CenterX - Scale(11, UIScale), CenterY - Scale(11, UIScale), Scale(22, UIScale), Scale(22, UIScale), Scale(2, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) CenterX, (INT32) (CenterY - Scale(7, UIScale)), (INT32) CenterX, (INT32) (CenterY + Scale(2, UIScale)), Scale(3, UIScale), PANIC_WARNING);
+    FillCircle((INT32) CenterX, (INT32) (CenterY + Scale(7, UIScale)), Scale(2, UIScale), PANIC_WARNING);
 }
 
-STATIC VOID DrawVirtualizationIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawVirtualizationIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_SUCCESS);
-    DrawThickRect(CenterX - Scale(15, scale), CenterY - Scale(11, scale), Scale(21, scale), Scale(15, scale), Scale(2, scale), PANIC_TEXT);
-    DrawThickRect(CenterX - Scale(6, scale), CenterY - Scale(3, scale), Scale(21, scale), Scale(15, scale), Scale(2, scale), PANIC_MUTED);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_SUCCESS);
+    DrawThickRect(CenterX - Scale(15, UIScale), CenterY - Scale(11, UIScale), Scale(21, UIScale), Scale(15, UIScale), Scale(2, UIScale), PANIC_TEXT);
+    DrawThickRect(CenterX - Scale(6, UIScale), CenterY - Scale(3, UIScale), Scale(21, UIScale), Scale(15, UIScale), Scale(2, UIScale), PANIC_MUTED);
 }
 
-STATIC VOID DrawBreakpointIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawBreakpointIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_SUCCESS);
-    DrawThickLine((INT32) (CenterX - Scale(11, scale)), (INT32) (CenterY - Scale(12, scale)), (INT32) (CenterX - Scale(2, scale)), (INT32) (CenterY - Scale(3, scale)), Scale(4, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX + Scale(11, scale)), (INT32) (CenterY - Scale(12, scale)), (INT32) (CenterX + Scale(2, scale)), (INT32) (CenterY - Scale(3, scale)), Scale(4, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX - Scale(11, scale)), (INT32) (CenterY + Scale(12, scale)), (INT32) (CenterX - Scale(2, scale)), (INT32) (CenterY + Scale(3, scale)), Scale(4, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX + Scale(11, scale)), (INT32) (CenterY + Scale(12, scale)), (INT32) (CenterX + Scale(2, scale)), (INT32) (CenterY + Scale(3, scale)), Scale(4, scale), PANIC_TEXT);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_SUCCESS);
+    DrawThickLine((INT32) (CenterX - Scale(11, UIScale)), (INT32) (CenterY - Scale(12, UIScale)), (INT32) (CenterX - Scale(2, UIScale)), (INT32) (CenterY - Scale(3, UIScale)), Scale(4, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX + Scale(11, UIScale)), (INT32) (CenterY - Scale(12, UIScale)), (INT32) (CenterX + Scale(2, UIScale)), (INT32) (CenterY - Scale(3, UIScale)), Scale(4, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX - Scale(11, UIScale)), (INT32) (CenterY + Scale(12, UIScale)), (INT32) (CenterX - Scale(2, UIScale)), (INT32) (CenterY + Scale(3, UIScale)), Scale(4, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX + Scale(11, UIScale)), (INT32) (CenterY + Scale(12, UIScale)), (INT32) (CenterX + Scale(2, UIScale)), (INT32) (CenterY + Scale(3, UIScale)), Scale(4, UIScale), PANIC_TEXT);
 }
 
-STATIC VOID DrawDefaultExceptionIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawDefaultExceptionIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawWarningIcon(CenterX, CenterY, scale, PANIC_ACCENT, PANIC_TEXT);
+    DrawWarningIcon(CenterX, CenterY, UIScale, PANIC_ACCENT, PANIC_TEXT);
 }
 
-STATIC VOID DrawNMIIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawNMIIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_WARNING);
-    DrawThickLine((INT32) (CenterX + Scale(4, scale)), (INT32) (CenterY - Scale(15, scale)), (INT32) (CenterX - Scale(7, scale)), (INT32) CenterY, Scale(5, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX - Scale(7, scale)), (INT32) CenterY, (INT32) (CenterX + Scale(5, scale)), (INT32) CenterY, Scale(5, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX + Scale(5, scale)), (INT32) CenterY, (INT32) (CenterX - Scale(4, scale)), (INT32) (CenterY + Scale(15, scale)), Scale(5, scale), PANIC_TEXT);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_WARNING);
+    DrawThickLine((INT32) (CenterX + Scale(4, UIScale)), (INT32) (CenterY - Scale(15, UIScale)), (INT32) (CenterX - Scale(7, UIScale)), (INT32) CenterY, Scale(5, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX - Scale(7, UIScale)), (INT32) CenterY, (INT32) (CenterX + Scale(5, UIScale)), (INT32) CenterY, Scale(5, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX + Scale(5, UIScale)), (INT32) CenterY, (INT32) (CenterX - Scale(4, UIScale)), (INT32) (CenterY + Scale(15, UIScale)), Scale(5, UIScale), PANIC_TEXT);
 }
 
-STATIC VOID DrawLegacyCoprocessorIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawLegacyCoprocessorIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_DIM);
-    DrawCenteredIconText(L"x87", CenterX, CenterY, Scale(16, scale), PANIC_TEXT);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_DIM);
+    DrawCenteredIconText(L"x87", CenterX, CenterY, Scale(16, UIScale), PANIC_TEXT);
 }
 
-STATIC VOID DrawTSSIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawTSSIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_WARNING);
-    DrawCenteredIconText(L"TSS", CenterX, CenterY, Scale(16, scale), PANIC_TEXT);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_WARNING);
+    DrawCenteredIconText(L"TSS", CenterX, CenterY, Scale(16, UIScale), PANIC_TEXT);
 }
 
-STATIC VOID DrawSegmentIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawSegmentIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_WARNING);
-    DrawThickRect(CenterX - Scale(14, scale), CenterY - Scale(11, scale), Scale(28, scale), Scale(22, scale), Scale(3, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX - Scale(5, scale)), (INT32) (CenterY - Scale(14, scale)), (INT32) (CenterX + Scale(5, scale)), (INT32) (CenterY + Scale(14, scale)), Scale(4, scale), PANIC_ACCENT);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_WARNING);
+    DrawThickRect(CenterX - Scale(14, UIScale), CenterY - Scale(11, UIScale), Scale(28, UIScale), Scale(22, UIScale), Scale(3, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX - Scale(5, UIScale)), (INT32) (CenterY - Scale(14, UIScale)), (INT32) (CenterX + Scale(5, UIScale)), (INT32) (CenterY + Scale(14, UIScale)), Scale(4, UIScale), PANIC_ACCENT);
 }
 
-STATIC VOID DrawStackIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawStackIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_WARNING);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_WARNING);
 
     for (UINT32 Index = 0; Index < 3; Index++)
     {
-        UINT32 Y = CenterY - Scale(10, scale) + (Index * Scale(10, scale));
-        DrawThickLine((INT32) (CenterX - Scale(13, scale)), (INT32) Y, (INT32) (CenterX + Scale(13, scale)), (INT32) Y, Scale(4, scale), Index == 1 ? PANIC_TEXT : PANIC_MUTED);
+        UINT32 Y = CenterY - Scale(10, UIScale) + (Index * Scale(10, UIScale));
+        DrawThickLine((INT32) (CenterX - Scale(13, UIScale)), (INT32) Y, (INT32) (CenterX + Scale(13, UIScale)), (INT32) Y, Scale(4, UIScale), Index == 1 ? PANIC_TEXT : PANIC_MUTED);
     }
 }
 
-STATIC VOID DrawReservedIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawReservedIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_DIM);
-    DrawCenteredIconText(L"R", CenterX, CenterY, Scale(24, scale), PANIC_MUTED);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_DIM);
+    DrawCenteredIconText(L"R", CenterX, CenterY, Scale(24, UIScale), PANIC_MUTED);
 }
 
-STATIC VOID DrawControlProtectionIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawControlProtectionIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_WARNING);
-    DrawThickLine((INT32) (CenterX - Scale(9, scale)), (INT32) (CenterY - Scale(3, scale)), (INT32) (CenterX - Scale(9, scale)), (INT32) (CenterY - Scale(8, scale)), Scale(3, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX - Scale(9, scale)), (INT32) (CenterY - Scale(8, scale)), (INT32) CenterX, (INT32) (CenterY - Scale(14, scale)), Scale(3, scale), PANIC_TEXT);
-    DrawThickLine((INT32) CenterX, (INT32) (CenterY - Scale(14, scale)), (INT32) (CenterX + Scale(9, scale)), (INT32) (CenterY - Scale(8, scale)), Scale(3, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX + Scale(9, scale)), (INT32) (CenterY - Scale(8, scale)), (INT32) (CenterX + Scale(9, scale)), (INT32) (CenterY - Scale(3, scale)), Scale(3, scale), PANIC_TEXT);
-    FillRect(CenterX - Scale(13, scale), CenterY - Scale(3, scale), Scale(26, scale), Scale(18, scale), 0x94A3B8FF);
-    FillCircle((INT32) CenterX, (INT32) (CenterY + Scale(5, scale)), Scale(3, scale), PANIC_PANEL_DARK);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_WARNING);
+    DrawThickLine((INT32) (CenterX - Scale(9, UIScale)), (INT32) (CenterY - Scale(3, UIScale)), (INT32) (CenterX - Scale(9, UIScale)), (INT32) (CenterY - Scale(8, UIScale)), Scale(3, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX - Scale(9, UIScale)), (INT32) (CenterY - Scale(8, UIScale)), (INT32) CenterX, (INT32) (CenterY - Scale(14, UIScale)), Scale(3, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) CenterX, (INT32) (CenterY - Scale(14, UIScale)), (INT32) (CenterX + Scale(9, UIScale)), (INT32) (CenterY - Scale(8, UIScale)), Scale(3, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX + Scale(9, UIScale)), (INT32) (CenterY - Scale(8, UIScale)), (INT32) (CenterX + Scale(9, UIScale)), (INT32) (CenterY - Scale(3, UIScale)), Scale(3, UIScale), PANIC_TEXT);
+    FillRect(CenterX - Scale(13, UIScale), CenterY - Scale(3, UIScale), Scale(26, UIScale), Scale(18, UIScale), 0x94A3B8FF);
+    FillCircle((INT32) CenterX, (INT32) (CenterY + Scale(5, UIScale)), Scale(3, UIScale), PANIC_PANEL_DARK);
 }
 
-STATIC VOID DrawHypervisorIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawHypervisorIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_SUCCESS);
-    DrawCenteredIconText(L"HV", CenterX, CenterY - Scale(4, scale), Scale(17, scale), PANIC_TEXT);
-    DrawThickLine((INT32) CenterX, (INT32) (CenterY + Scale(4, scale)), (INT32) CenterX, (INT32) (CenterY + Scale(14, scale)), Scale(3, scale), PANIC_WARNING);
-    DrawThickLine((INT32) CenterX, (INT32) (CenterY + Scale(14, scale)), (INT32) (CenterX - Scale(5, scale)), (INT32) (CenterY + Scale(9, scale)), Scale(3, scale), PANIC_WARNING);
-    DrawThickLine((INT32) CenterX, (INT32) (CenterY + Scale(14, scale)), (INT32) (CenterX + Scale(5, scale)), (INT32) (CenterY + Scale(9, scale)), Scale(3, scale), PANIC_WARNING);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_SUCCESS);
+    DrawCenteredIconText(L"HV", CenterX, CenterY - Scale(4, UIScale), Scale(17, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) CenterX, (INT32) (CenterY + Scale(4, UIScale)), (INT32) CenterX, (INT32) (CenterY + Scale(14, UIScale)), Scale(3, UIScale), PANIC_WARNING);
+    DrawThickLine((INT32) CenterX, (INT32) (CenterY + Scale(14, UIScale)), (INT32) (CenterX - Scale(5, UIScale)), (INT32) (CenterY + Scale(9, UIScale)), Scale(3, UIScale), PANIC_WARNING);
+    DrawThickLine((INT32) CenterX, (INT32) (CenterY + Scale(14, UIScale)), (INT32) (CenterX + Scale(5, UIScale)), (INT32) (CenterY + Scale(9, UIScale)), Scale(3, UIScale), PANIC_WARNING);
 }
 
-STATIC VOID DrawCommunicationIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawCommunicationIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_SUCCESS);
-    FillCircle((INT32) (CenterX - Scale(10, scale)), (INT32) CenterY, Scale(6, scale), PANIC_TEXT);
-    FillCircle((INT32) (CenterX + Scale(10, scale)), (INT32) CenterY, Scale(6, scale), PANIC_MUTED);
-    DrawThickLine((INT32) (CenterX - Scale(5, scale)), (INT32) CenterY, (INT32) (CenterX + Scale(5, scale)), (INT32) CenterY, Scale(4, scale), PANIC_WARNING);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_SUCCESS);
+    FillCircle((INT32) (CenterX - Scale(10, UIScale)), (INT32) CenterY, Scale(6, UIScale), PANIC_TEXT);
+    FillCircle((INT32) (CenterX + Scale(10, UIScale)), (INT32) CenterY, Scale(6, UIScale), PANIC_MUTED);
+    DrawThickLine((INT32) (CenterX - Scale(5, UIScale)), (INT32) CenterY, (INT32) (CenterX + Scale(5, UIScale)), (INT32) CenterY, Scale(4, UIScale), PANIC_WARNING);
 }
 
-STATIC VOID DrawSecurityKeyIcon(UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawSecurityKeyIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    DrawIconFrame(CenterX, CenterY, scale, PANIC_WARNING);
-    DrawThickCircle((INT32) (CenterX - Scale(7, scale)), (INT32) (CenterY - Scale(4, scale)), Scale(7, scale), Scale(3, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX - Scale(2, scale)), (INT32) (CenterY + Scale(1, scale)), (INT32) (CenterX + Scale(13, scale)), (INT32) (CenterY + Scale(14, scale)), Scale(4, scale), PANIC_TEXT);
-    DrawThickLine((INT32) (CenterX + Scale(7, scale)), (INT32) (CenterY + Scale(8, scale)), (INT32) (CenterX + Scale(3, scale)), (INT32) (CenterY + Scale(12, scale)), Scale(3, scale), PANIC_TEXT);
+    DrawIconFrame(CenterX, CenterY, UIScale, PANIC_WARNING);
+    DrawThickCircle((INT32) (CenterX - Scale(7, UIScale)), (INT32) (CenterY - Scale(4, UIScale)), Scale(7, UIScale), Scale(3, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX - Scale(2, UIScale)), (INT32) (CenterY + Scale(1, UIScale)), (INT32) (CenterX + Scale(13, UIScale)), (INT32) (CenterY + Scale(14, UIScale)), Scale(4, UIScale), PANIC_TEXT);
+    DrawThickLine((INT32) (CenterX + Scale(7, UIScale)), (INT32) (CenterY + Scale(8, UIScale)), (INT32) (CenterX + Scale(3, UIScale)), (INT32) (CenterY + Scale(12, UIScale)), Scale(3, UIScale), PANIC_TEXT);
 }
 
-STATIC VOID DrawExceptionIcon(UINT64 Vector, UINT32 CenterX, UINT32 CenterY, UINT32 scale)
+STATIC VOID DrawExceptionIcon(UINT64 Vector, UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
     switch (Vector)
     {
     case 0:
-        DrawDivideIcon(CenterX, CenterY, scale);
+        DrawDivideIcon(CenterX, CenterY, UIScale);
         break;
 
     case 1:
-        DrawDebugIcon(CenterX, CenterY, scale);
+        DrawDebugIcon(CenterX, CenterY, UIScale);
         break;
 
     case 2:
-        DrawNMIIcon(CenterX, CenterY, scale);
+        DrawNMIIcon(CenterX, CenterY, UIScale);
         break;
 
     case 3:
-        DrawBreakpointIcon(CenterX, CenterY, scale);
+        DrawBreakpointIcon(CenterX, CenterY, UIScale);
         break;
 
     case 4:
-        DrawOverflowIcon(CenterX, CenterY, scale);
+        DrawOverflowIcon(CenterX, CenterY, UIScale);
         break;
 
     case 5:
-        DrawBoundIcon(CenterX, CenterY, scale);
+        DrawBoundIcon(CenterX, CenterY, UIScale);
         break;
 
     case 7:
-        DrawDeviceIcon(CenterX, CenterY, scale);
+        DrawDeviceIcon(CenterX, CenterY, UIScale);
         break;
 
     case 8:
-        DrawDoubleFaultIcon(CenterX, CenterY, scale);
+        DrawDoubleFaultIcon(CenterX, CenterY, UIScale);
         break;
 
     case 9:
-        DrawLegacyCoprocessorIcon(CenterX, CenterY, scale);
+        DrawLegacyCoprocessorIcon(CenterX, CenterY, UIScale);
         break;
 
     case 10:
-        DrawTSSIcon(CenterX, CenterY, scale);
+        DrawTSSIcon(CenterX, CenterY, UIScale);
         break;
 
     case 11:
-        DrawSegmentIcon(CenterX, CenterY, scale);
+        DrawSegmentIcon(CenterX, CenterY, UIScale);
         break;
 
     case 12:
-        DrawStackIcon(CenterX, CenterY, scale);
+        DrawStackIcon(CenterX, CenterY, UIScale);
         break;
 
     case EXCEPTION_GENERAL_PROTECTION:
-        DrawProtectionIcon(CenterX, CenterY, scale);
+        DrawProtectionIcon(CenterX, CenterY, UIScale);
         break;
 
     case EXCEPTION_PAGE_FAULT:
-        DrawPageFaultIcon(CenterX, CenterY, scale);
+        DrawPageFaultIcon(CenterX, CenterY, UIScale);
         break;
 
     case 15:
@@ -572,186 +572,186 @@ STATIC VOID DrawExceptionIcon(UINT64 Vector, UINT32 CenterX, UINT32 CenterY, UIN
     case 26:
     case 27:
     case 31:
-        DrawReservedIcon(CenterX, CenterY, scale);
+        DrawReservedIcon(CenterX, CenterY, UIScale);
         break;
 
     case 6:
-        DrawOpcodeIcon(CenterX, CenterY, scale);
+        DrawOpcodeIcon(CenterX, CenterY, UIScale);
         break;
 
     case 16:
     case 19:
-        DrawFloatingPointIcon(CenterX, CenterY, scale);
+        DrawFloatingPointIcon(CenterX, CenterY, UIScale);
         break;
 
     case 17:
-        DrawAlignmentIcon(CenterX, CenterY, scale);
+        DrawAlignmentIcon(CenterX, CenterY, UIScale);
         break;
 
     case 18:
-        DrawMachineIcon(CenterX, CenterY, scale);
+        DrawMachineIcon(CenterX, CenterY, UIScale);
         break;
 
     case 20:
-        DrawVirtualizationIcon(CenterX, CenterY, scale);
+        DrawVirtualizationIcon(CenterX, CenterY, UIScale);
         break;
 
     case 21:
-        DrawControlProtectionIcon(CenterX, CenterY, scale);
+        DrawControlProtectionIcon(CenterX, CenterY, UIScale);
         break;
 
     case 28:
-        DrawHypervisorIcon(CenterX, CenterY, scale);
+        DrawHypervisorIcon(CenterX, CenterY, UIScale);
         break;
 
     case 29:
-        DrawCommunicationIcon(CenterX, CenterY, scale);
+        DrawCommunicationIcon(CenterX, CenterY, UIScale);
         break;
 
     case 30:
-        DrawSecurityKeyIcon(CenterX, CenterY, scale);
+        DrawSecurityKeyIcon(CenterX, CenterY, UIScale);
         break;
 
     default:
-        DrawDefaultExceptionIcon(CenterX, CenterY, scale);
+        DrawDefaultExceptionIcon(CenterX, CenterY, UIScale);
         break;
     }
 }
 
-STATIC VOID DrawFlag(UINT32 X, UINT32 Y, UINT32 scale, CONST CHAR16 *Name, BOOLEAN Enabled, CONST CHAR16 *EnabledText, CONST CHAR16 *DisabledText)
+STATIC VOID DrawFlag(UINT32 X, UINT32 Y, UINT32 UIScale, CONST CHAR16 *Name, BOOLEAN Enabled, CONST CHAR16 *EnabledText, CONST CHAR16 *DisabledText)
 {
     UINT32 Color = Enabled ? PANIC_WARNING : PANIC_DIM;
 
-    DrawMarker(X, Y, Scale(12, scale), scale, Color);
-    KPrint(Name, X + Scale(18, scale), Y, Color, Scale(12, scale), JETBRAINS_MONO);
-    KPrint(Enabled ? EnabledText : DisabledText, X + Scale(82, scale), Y, Enabled ? PANIC_TEXT : PANIC_MUTED, Scale(12, scale), PRETENDARD);
+    DrawMarker(X, Y, Scale(12, UIScale), UIScale, Color);
+    KPrint(Name, X + Scale(18, UIScale), Y, Color, Scale(12, UIScale), JETBRAINS_MONO);
+    KPrint(Enabled ? EnabledText : DisabledText, X + Scale(82, UIScale), Y, Enabled ? PANIC_TEXT : PANIC_MUTED, Scale(12, UIScale), PRETENDARD);
 }
 
-STATIC VOID DrawExceptionSummary(UINT32 X, UINT32 Y, UINT32 Width, UINT32 scale, INTERRUPT_FRAME *frame)
+STATIC VOID DrawExceptionSummary(UINT32 X, UINT32 Y, UINT32 Width, UINT32 UIScale, INTERRUPT_FRAME *Frame)
 {
     CONST EXCEPTION_INFO *Info;
 
-    DrawPanel(X, Y, Width, Scale(220, scale), scale);
-    DrawSectionTitle(X + Scale(24, scale), Y + Scale(40, scale), scale, L"EXCEPTION");
+    DrawPanel(X, Y, Width, Scale(220, UIScale), UIScale);
+    DrawSectionTitle(X + Scale(24, UIScale), Y + Scale(40, UIScale), UIScale, L"EXCEPTION");
 
-    if (frame == NULL)
+    if (Frame == NULL)
     {
-        DrawDefaultExceptionIcon(X + Scale(44, scale), Y + Scale(106, scale), scale);
-        KPrint(L"(null interrupt frame)", X + Scale(82, scale), Y + Scale(112, scale), PANIC_TEXT, Scale(22, scale), PRETENDARD);
+        DrawDefaultExceptionIcon(X + Scale(44, UIScale), Y + Scale(106, UIScale), UIScale);
+        KPrint(L"(null interrupt frame)", X + Scale(82, UIScale), Y + Scale(112, UIScale), PANIC_TEXT, Scale(22, UIScale), PRETENDARD);
         return;
     }
 
-    DrawExceptionIcon(frame->Vector, X + Scale(44, scale), Y + Scale(106, scale), scale);
+    DrawExceptionIcon(Frame->Vector, X + Scale(44, UIScale), Y + Scale(106, UIScale), UIScale);
 
-    Info = GetExceptionInfo(frame->Vector);
+    Info = GetExceptionInfo(Frame->Vector);
 
     if (Info == NULL)
     {
-        KPrint(L"vector=%X", X + Scale(82, scale), Y + Scale(96, scale), PANIC_TEXT, Scale(24, scale), JETBRAINS_MONO, frame->Vector);
-        KPrint(L"unknown exception", X + Scale(82, scale), Y + Scale(138, scale), PANIC_MUTED, Scale(15, scale), PRETENDARD);
+        KPrint(L"vector=%X", X + Scale(82, UIScale), Y + Scale(96, UIScale), PANIC_TEXT, Scale(24, UIScale), JETBRAINS_MONO, Frame->Vector);
+        KPrint(L"unknown exception", X + Scale(82, UIScale), Y + Scale(138, UIScale), PANIC_MUTED, Scale(15, UIScale), PRETENDARD);
         return;
     }
 
-    KPrint(Info->Mnemonic, X + Scale(82, scale), Y + Scale(96, scale), PANIC_TEXT, Scale(26, scale), JETBRAINS_MONO);
-    KPrint(Info->Name, X + Scale(82, scale), Y + Scale(138, scale), PANIC_TEXT, Scale(18, scale), PRETENDARD);
-    KPrint(Info->Description, X + Scale(82, scale), Y + Scale(172, scale), PANIC_MUTED, Scale(14, scale), PRETENDARD);
+    KPrint(Info->Mnemonic, X + Scale(82, UIScale), Y + Scale(96, UIScale), PANIC_TEXT, Scale(26, UIScale), JETBRAINS_MONO);
+    KPrint(Info->Name, X + Scale(82, UIScale), Y + Scale(138, UIScale), PANIC_TEXT, Scale(18, UIScale), PRETENDARD);
+    KPrint(Info->Description, X + Scale(82, UIScale), Y + Scale(172, UIScale), PANIC_MUTED, Scale(14, UIScale), PRETENDARD);
 }
 
-STATIC VOID DrawPageFaultDetails(UINT32 X, UINT32 Y, UINT32 Width, UINT32 scale, UINT64 ErrorCode)
+STATIC VOID DrawPageFaultDetails(UINT32 X, UINT32 Y, UINT32 Width, UINT32 UIScale, UINT64 ErrorCode)
 {
     UINT64 FaultAddress = ReadCR2();
 
-    DrawPanel(X, Y, Width, Scale(220, scale), scale);
-    DrawSectionTitle(X + Scale(24, scale), Y + Scale(40, scale), scale, L"PAGE FAULT DETAIL");
-    KPrint(L"cr2=%X", X + Scale(24, scale), Y + Scale(78, scale), PANIC_TEXT, Scale(14, scale), JETBRAINS_MONO, FaultAddress);
-    KPrint(L"error=%X", X + Scale(24, scale), Y + Scale(108, scale), PANIC_MUTED, Scale(14, scale), JETBRAINS_MONO, ErrorCode);
+    DrawPanel(X, Y, Width, Scale(220, UIScale), UIScale);
+    DrawSectionTitle(X + Scale(24, UIScale), Y + Scale(40, UIScale), UIScale, L"PAGE FAULT DETAIL");
+    KPrint(L"cr2=%X", X + Scale(24, UIScale), Y + Scale(78, UIScale), PANIC_TEXT, Scale(14, UIScale), JETBRAINS_MONO, FaultAddress);
+    KPrint(L"error=%X", X + Scale(24, UIScale), Y + Scale(108, UIScale), PANIC_MUTED, Scale(14, UIScale), JETBRAINS_MONO, ErrorCode);
 
-    DrawFlag(X + Scale(24, scale), Y + Scale(142, scale), scale, L"P", (ErrorCode & 1) != 0, L"protection", L"not present");
-    DrawFlag(X + Scale(24, scale), Y + Scale(172, scale), scale, L"W", (ErrorCode & 2) != 0, L"write", L"read");
+    DrawFlag(X + Scale(24, UIScale), Y + Scale(142, UIScale), UIScale, L"P", (ErrorCode & 1) != 0, L"protection", L"not present");
+    DrawFlag(X + Scale(24, UIScale), Y + Scale(172, UIScale), UIScale, L"W", (ErrorCode & 2) != 0, L"write", L"read");
 
-    DrawFlag(X + (Width / 2), Y + Scale(142, scale), scale, L"U", (ErrorCode & 4) != 0, L"user", L"supervisor");
-    DrawFlag(X + (Width / 2), Y + Scale(172, scale), scale, L"I", (ErrorCode & 16) != 0, L"instruction", L"data");
+    DrawFlag(X + (Width / 2), Y + Scale(142, UIScale), UIScale, L"U", (ErrorCode & 4) != 0, L"user", L"supervisor");
+    DrawFlag(X + (Width / 2), Y + Scale(172, UIScale), UIScale, L"I", (ErrorCode & 16) != 0, L"instruction", L"data");
 }
 
-STATIC VOID DrawSelectorErrorDetails(UINT32 X, UINT32 Y, UINT32 Width, UINT32 scale, UINT64 ErrorCode)
+STATIC VOID DrawSelectorErrorDetails(UINT32 X, UINT32 Y, UINT32 Width, UINT32 UIScale, UINT64 ErrorCode)
 {
     UINT64 SelectorIndex = ErrorCode >> 3;
     UINT64 Table = (ErrorCode >> 1) & 3;
 
-    DrawPanel(X, Y, Width, Scale(220, scale), scale);
-    DrawSectionTitle(X + Scale(24, scale), Y + Scale(40, scale), scale, L"ERROR CODE DETAIL");
-    KPrint(L"raw=%X", X + Scale(24, scale), Y + Scale(84, scale), PANIC_TEXT, Scale(15, scale), JETBRAINS_MONO, ErrorCode);
-    KPrint(L"selector-index=%X", X + Scale(24, scale), Y + Scale(124, scale), PANIC_TEXT, Scale(15, scale), JETBRAINS_MONO, SelectorIndex);
-    KPrint(L"external=%llu  table=%llu", X + Scale(24, scale), Y + Scale(166, scale), PANIC_MUTED, Scale(15, scale), JETBRAINS_MONO, (UINT64) (ErrorCode & 1), Table);
+    DrawPanel(X, Y, Width, Scale(220, UIScale), UIScale);
+    DrawSectionTitle(X + Scale(24, UIScale), Y + Scale(40, UIScale), UIScale, L"ERROR CODE DETAIL");
+    KPrint(L"raw=%X", X + Scale(24, UIScale), Y + Scale(84, UIScale), PANIC_TEXT, Scale(15, UIScale), JETBRAINS_MONO, ErrorCode);
+    KPrint(L"selector-index=%X", X + Scale(24, UIScale), Y + Scale(124, UIScale), PANIC_TEXT, Scale(15, UIScale), JETBRAINS_MONO, SelectorIndex);
+    KPrint(L"external=%llu  table=%llu", X + Scale(24, UIScale), Y + Scale(166, UIScale), PANIC_MUTED, Scale(15, UIScale), JETBRAINS_MONO, (UINT64) (ErrorCode & 1), Table);
 }
 
-STATIC VOID DrawGenericExceptionDetails(UINT32 X, UINT32 Y, UINT32 Width, UINT32 scale, INTERRUPT_FRAME *frame)
+STATIC VOID DrawGenericExceptionDetails(UINT32 X, UINT32 Y, UINT32 Width, UINT32 UIScale, INTERRUPT_FRAME *Frame)
 {
-    DrawPanel(X, Y, Width, Scale(220, scale), scale);
-    DrawSectionTitle(X + Scale(24, scale), Y + Scale(40, scale), scale, L"FAULT DETAIL");
+    DrawPanel(X, Y, Width, Scale(220, UIScale), UIScale);
+    DrawSectionTitle(X + Scale(24, UIScale), Y + Scale(40, UIScale), UIScale, L"FAULT DETAIL");
 
-    if (frame == NULL)
+    if (Frame == NULL)
     {
-        KPrint(L"no interrupt frame", X + Scale(24, scale), Y + Scale(88, scale), PANIC_TEXT, Scale(16, scale), PRETENDARD);
+        KPrint(L"no interrupt frame", X + Scale(24, UIScale), Y + Scale(88, UIScale), PANIC_TEXT, Scale(16, UIScale), PRETENDARD);
         return;
     }
 
-    KPrint(L"vector=%X  error=%X", X + Scale(24, scale), Y + Scale(88, scale), PANIC_TEXT, Scale(15, scale), JETBRAINS_MONO, frame->Vector, frame->ErrorCode);
-    KPrint(L"rip=%X", X + Scale(24, scale), Y + Scale(130, scale), PANIC_MUTED, Scale(15, scale), JETBRAINS_MONO, frame->RIP);
-    KPrint(L"cs=%X  rflags=%X", X + Scale(24, scale), Y + Scale(170, scale), PANIC_MUTED, Scale(15, scale), JETBRAINS_MONO, frame->CS, frame->RFLAGS);
+    KPrint(L"vector=%X  error=%X", X + Scale(24, UIScale), Y + Scale(88, UIScale), PANIC_TEXT, Scale(15, UIScale), JETBRAINS_MONO, Frame->Vector, Frame->ErrorCode);
+    KPrint(L"rip=%X", X + Scale(24, UIScale), Y + Scale(130, UIScale), PANIC_MUTED, Scale(15, UIScale), JETBRAINS_MONO, Frame->RIP);
+    KPrint(L"cs=%X  rflags=%X", X + Scale(24, UIScale), Y + Scale(170, UIScale), PANIC_MUTED, Scale(15, UIScale), JETBRAINS_MONO, Frame->CS, Frame->RFLAGS);
 }
 
-STATIC VOID DrawMessagePanel(UINT32 X, UINT32 Y, UINT32 Width, UINT32 scale, CONST CHAR16 *Message)
+STATIC VOID DrawMessagePanel(UINT32 X, UINT32 Y, UINT32 Width, UINT32 UIScale, CONST CHAR16 *Message)
 {
-    DrawPanel(X, Y, Width, Scale(220, scale), scale);
-    DrawSectionTitle(X + Scale(24, scale), Y + Scale(40, scale), scale, L"PANIC MESSAGE");
-    DrawWrappedText(Message, X + Scale(24, scale), Y + Scale(90, scale), Width - Scale(48, scale), Scale(19, scale), Scale(30, scale), PANIC_TEXT, PRETENDARD);
+    DrawPanel(X, Y, Width, Scale(220, UIScale), UIScale);
+    DrawSectionTitle(X + Scale(24, UIScale), Y + Scale(40, UIScale), UIScale, L"PANIC MESSAGE");
+    DrawWrappedText(Message, X + Scale(24, UIScale), Y + Scale(90, UIScale), Width - Scale(48, UIScale), Scale(19, UIScale), Scale(30, UIScale), PANIC_TEXT, PRETENDARD);
 }
 
-STATIC VOID DrawRecoveryPanel(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 scale)
+STATIC VOID DrawRecoveryPanel(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 UIScale)
 {
-    DrawPanel(X, Y, Width, Height, scale);
-    DrawSectionTitle(X + Scale(24, scale), Y + Scale(40, scale), scale, L"RECOVERY");
-    KPrint(L"1. Review the panic screen", X + Scale(24, scale), Y + Scale(84, scale), PANIC_TEXT, Scale(14, scale), PRETENDARD);
-    KPrint(L"2. Check the caller path around RIP", X + Scale(24, scale), Y + Scale(116, scale), PANIC_TEXT, Scale(14, scale), PRETENDARD);
-    KPrint(L"3. Reboot after fixing the stop reason", X + Scale(24, scale), Y + Scale(148, scale), PANIC_TEXT, Scale(14, scale), PRETENDARD);
+    DrawPanel(X, Y, Width, Height, UIScale);
+    DrawSectionTitle(X + Scale(24, UIScale), Y + Scale(40, UIScale), UIScale, L"RECOVERY");
+    KPrint(L"1. Review the panic screen", X + Scale(24, UIScale), Y + Scale(84, UIScale), PANIC_TEXT, Scale(14, UIScale), PRETENDARD);
+    KPrint(L"2. Check the caller path around RIP", X + Scale(24, UIScale), Y + Scale(116, UIScale), PANIC_TEXT, Scale(14, UIScale), PRETENDARD);
+    KPrint(L"3. Reboot after fixing the stop reason", X + Scale(24, UIScale), Y + Scale(148, UIScale), PANIC_TEXT, Scale(14, UIScale), PRETENDARD);
 }
 
-STATIC VOID DrawStatusPanel(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 scale, PANIC_REGISTER_SNAPSHOT *Registers)
+STATIC VOID DrawStatusPanel(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 UIScale, PANIC_REGISTER_SNAPSHOT *Registers)
 {
     VIRTIO_GPU_INFO *GPU = VirtIOGPUGetInfo();
 
-    DrawPanel(X, Y, Width, Height, scale);
-    DrawSectionTitle(X + Scale(24, scale), Y + Scale(40, scale), scale, L"SYSTEM STATUS");
-    KPrint(L"graphics     virtio-gpu", X + Scale(24, scale), Y + Scale(84, scale), PANIC_TEXT, Scale(14, scale), JETBRAINS_MONO);
-    KPrint(L"framebuffer  %ux%u", X + Scale(24, scale), Y + Scale(116, scale), PANIC_TEXT, Scale(14, scale), JETBRAINS_MONO, GPU->FrameBufferWidth, GPU->FrameBufferHeight);
-    KPrint(L"panic path   software halt", X + Scale(24, scale), Y + Scale(148, scale), PANIC_MUTED, Scale(14, scale), JETBRAINS_MONO);
-    KPrint(L"r10=%X  r11=%X", X + Scale(24, scale), Y + Scale(180, scale), PANIC_MUTED, Scale(14, scale), JETBRAINS_MONO, Registers->R10, Registers->R11);
+    DrawPanel(X, Y, Width, Height, UIScale);
+    DrawSectionTitle(X + Scale(24, UIScale), Y + Scale(40, UIScale), UIScale, L"SYSTEM STATUS");
+    KPrint(L"graphics     virtio-gpu", X + Scale(24, UIScale), Y + Scale(84, UIScale), PANIC_TEXT, Scale(14, UIScale), JETBRAINS_MONO);
+    KPrint(L"framebuffer  %ux%u", X + Scale(24, UIScale), Y + Scale(116, UIScale), PANIC_TEXT, Scale(14, UIScale), JETBRAINS_MONO, GPU->FrameBufferWidth, GPU->FrameBufferHeight);
+    KPrint(L"panic path   software halt", X + Scale(24, UIScale), Y + Scale(148, UIScale), PANIC_MUTED, Scale(14, UIScale), JETBRAINS_MONO);
+    KPrint(L"r10=%X  r11=%X", X + Scale(24, UIScale), Y + Scale(180, UIScale), PANIC_MUTED, Scale(14, UIScale), JETBRAINS_MONO, Registers->R10, Registers->R11);
 }
 
-STATIC VOID DrawExceptionStatePanel(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 scale, INTERRUPT_FRAME *frame)
+STATIC VOID DrawExceptionStatePanel(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 UIScale, INTERRUPT_FRAME *Frame)
 {
-    DrawPanel(X, Y, Width, Height, scale);
-    DrawSectionTitle(X + Scale(24, scale), Y + Scale(40, scale), scale, L"CPU STATE");
+    DrawPanel(X, Y, Width, Height, UIScale);
+    DrawSectionTitle(X + Scale(24, UIScale), Y + Scale(40, UIScale), UIScale, L"CPU STATE");
 
-    if (frame == NULL)
+    if (Frame == NULL)
     {
-        KPrint(L"frame pointer is null", X + Scale(24, scale), Y + Scale(84, scale), PANIC_TEXT, Scale(15, scale), PRETENDARD);
+        KPrint(L"frame pointer is null", X + Scale(24, UIScale), Y + Scale(84, UIScale), PANIC_TEXT, Scale(15, UIScale), PRETENDARD);
         return;
     }
 
-    KPrint(L"rsi=%X  rdi=%X", X + Scale(24, scale), Y + Scale(84, scale), PANIC_TEXT, Scale(14, scale), JETBRAINS_MONO, frame->RSI, frame->RDI);
-    KPrint(L"rbp=%X  rsp=?", X + Scale(24, scale), Y + Scale(116, scale), PANIC_TEXT, Scale(14, scale), JETBRAINS_MONO, frame->RBP);
-    KPrint(L"r8 =%X  r9 =%X", X + Scale(24, scale), Y + Scale(148, scale), PANIC_MUTED, Scale(14, scale), JETBRAINS_MONO, frame->R8, frame->R9);
-    KPrint(L"r10=%X  r11=%X", X + Scale(24, scale), Y + Scale(180, scale), PANIC_MUTED, Scale(14, scale), JETBRAINS_MONO, frame->R10, frame->R11);
+    KPrint(L"rsi=%X  rdi=%X", X + Scale(24, UIScale), Y + Scale(84, UIScale), PANIC_TEXT, Scale(14, UIScale), JETBRAINS_MONO, Frame->RSI, Frame->RDI);
+    KPrint(L"rbp=%X  rsp=?", X + Scale(24, UIScale), Y + Scale(116, UIScale), PANIC_TEXT, Scale(14, UIScale), JETBRAINS_MONO, Frame->RBP);
+    KPrint(L"r8 =%X  r9 =%X", X + Scale(24, UIScale), Y + Scale(148, UIScale), PANIC_MUTED, Scale(14, UIScale), JETBRAINS_MONO, Frame->R8, Frame->R9);
+    KPrint(L"r10=%X  r11=%X", X + Scale(24, UIScale), Y + Scale(180, UIScale), PANIC_MUTED, Scale(14, UIScale), JETBRAINS_MONO, Frame->R10, Frame->R11);
 }
 
-STATIC VOID DrawRegisterPair(UINT32 X, UINT32 Y, UINT32 scale, CONST CHAR16 *NameA, UINT64 ValueA, CONST CHAR16 *NameB, UINT64 ValueB)
+STATIC VOID DrawRegisterPair(UINT32 X, UINT32 Y, UINT32 UIScale, CONST CHAR16 *NameA, UINT64 ValueA, CONST CHAR16 *NameB, UINT64 ValueB)
 {
-    KPrint(NameA, X, Y, PANIC_MUTED, Scale(13, scale), JETBRAINS_MONO);
-    KPrint(L"%X", X + Scale(48, scale), Y, PANIC_TEXT, Scale(13, scale), JETBRAINS_MONO, ValueA);
-    KPrint(NameB, X + Scale(300, scale), Y, PANIC_MUTED, Scale(13, scale), JETBRAINS_MONO);
-    KPrint(L"%X", X + Scale(348, scale), Y, PANIC_TEXT, Scale(13, scale), JETBRAINS_MONO, ValueB);
+    KPrint(NameA, X, Y, PANIC_MUTED, Scale(13, UIScale), JETBRAINS_MONO);
+    KPrint(L"%X", X + Scale(48, UIScale), Y, PANIC_TEXT, Scale(13, UIScale), JETBRAINS_MONO, ValueA);
+    KPrint(NameB, X + Scale(300, UIScale), Y, PANIC_MUTED, Scale(13, UIScale), JETBRAINS_MONO);
+    KPrint(L"%X", X + Scale(348, UIScale), Y, PANIC_TEXT, Scale(13, UIScale), JETBRAINS_MONO, ValueB);
 }
 
 STATIC VOID CaptureRegisters(PANIC_REGISTER_SNAPSHOT *Registers)
@@ -772,35 +772,35 @@ STATIC VOID CaptureRegisters(PANIC_REGISTER_SNAPSHOT *Registers)
     ASM("pushfq; popq %0" : "=m"(Registers->RFLAGS));
 }
 
-STATIC VOID DrawRegisterSnapshot(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 scale, PANIC_REGISTER_SNAPSHOT *Registers)
+STATIC VOID DrawRegisterSnapshot(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 UIScale, PANIC_REGISTER_SNAPSHOT *Registers)
 {
-    DrawPanel(X, Y, Width, Height, scale);
-    DrawSectionTitle(X + Scale(24, scale), Y + Scale(38, scale), scale, L"REGISTER SNAPSHOT");
-    KPrint(L"rip=%X rflags=%X", X + Scale(24, scale), Y + Scale(74, scale), PANIC_TEXT, Scale(12, scale), JETBRAINS_MONO, Registers->RIP, Registers->RFLAGS);
+    DrawPanel(X, Y, Width, Height, UIScale);
+    DrawSectionTitle(X + Scale(24, UIScale), Y + Scale(38, UIScale), UIScale, L"REGISTER SNAPSHOT");
+    KPrint(L"rip=%X rflags=%X", X + Scale(24, UIScale), Y + Scale(74, UIScale), PANIC_TEXT, Scale(12, UIScale), JETBRAINS_MONO, Registers->RIP, Registers->RFLAGS);
 
-    DrawRegisterPair(X + Scale(24, scale), Y + Scale(108, scale), scale, L"RAX", Registers->RAX, L"RBX", Registers->RBX);
-    DrawRegisterPair(X + Scale(24, scale), Y + Scale(130, scale), scale, L"RCX", Registers->RCX, L"RDX", Registers->RDX);
-    DrawRegisterPair(X + Scale(24, scale), Y + Scale(152, scale), scale, L"RSI", Registers->RSI, L"RDI", Registers->RDI);
-    DrawRegisterPair(X + Scale(24, scale), Y + Scale(174, scale), scale, L"RBP", Registers->RBP, L"RSP", Registers->RSP);
-    DrawRegisterPair(X + Scale(24, scale), Y + Scale(196, scale), scale, L"R8", Registers->R8, L"R9", Registers->R9);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(108, UIScale), UIScale, L"RAX", Registers->RAX, L"RBX", Registers->RBX);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(130, UIScale), UIScale, L"RCX", Registers->RCX, L"RDX", Registers->RDX);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(152, UIScale), UIScale, L"RSI", Registers->RSI, L"RDI", Registers->RDI);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(174, UIScale), UIScale, L"RBP", Registers->RBP, L"RSP", Registers->RSP);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(196, UIScale), UIScale, L"R8", Registers->R8, L"R9", Registers->R9);
 }
 
-STATIC VOID DrawInterruptFrame(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 scale, INTERRUPT_FRAME *frame)
+STATIC VOID DrawInterruptFrame(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 UIScale, INTERRUPT_FRAME *Frame)
 {
-    DrawPanel(X, Y, Width, Height, scale);
-    DrawSectionTitle(X + Scale(24, scale), Y + Scale(36, scale), scale, L"INTERRUPT FRAME");
+    DrawPanel(X, Y, Width, Height, UIScale);
+    DrawSectionTitle(X + Scale(24, UIScale), Y + Scale(36, UIScale), UIScale, L"INTERRUPT FRAME");
 
-    if (frame == NULL)
+    if (Frame == NULL)
     {
-        KPrint(L"(null frame)", X + Scale(24, scale), Y + Scale(76, scale), PANIC_TEXT, Scale(18, scale), PRETENDARD);
+        KPrint(L"(null frame)", X + Scale(24, UIScale), Y + Scale(76, UIScale), PANIC_TEXT, Scale(18, UIScale), PRETENDARD);
         return;
     }
 
-    KPrint(L"rip=%X", X + Scale(24, scale), Y + Scale(82, scale), PANIC_TEXT, Scale(14, scale), JETBRAINS_MONO, frame->RIP);
-    KPrint(L"cs=%X  rflags=%X", X + Scale(24, scale), Y + Scale(112, scale), PANIC_MUTED, Scale(14, scale), JETBRAINS_MONO, frame->CS, frame->RFLAGS);
-    KPrint(L"vector=0x%X  error=%X", X + Scale(24, scale), Y + Scale(144, scale), PANIC_MUTED, Scale(14, scale), JETBRAINS_MONO, frame->Vector, frame->ErrorCode);
+    KPrint(L"rip=%X", X + Scale(24, UIScale), Y + Scale(82, UIScale), PANIC_TEXT, Scale(14, UIScale), JETBRAINS_MONO, Frame->RIP);
+    KPrint(L"cs=%X  rflags=%X", X + Scale(24, UIScale), Y + Scale(112, UIScale), PANIC_MUTED, Scale(14, UIScale), JETBRAINS_MONO, Frame->CS, Frame->RFLAGS);
+    KPrint(L"vector=0x%X  error=%X", X + Scale(24, UIScale), Y + Scale(144, UIScale), PANIC_MUTED, Scale(14, UIScale), JETBRAINS_MONO, Frame->Vector, Frame->ErrorCode);
 
-    DrawRegisterPair(X + Scale(24, scale), Y + Scale(184, scale), scale, L"RAX", frame->RAX, L"RBX", frame->RBX);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(184, UIScale), UIScale, L"RAX", Frame->RAX, L"RBX", Frame->RBX);
 }
 
 STATIC VOID HaltAfterPanic(VOID)
@@ -822,7 +822,7 @@ STATIC VOID HaltWithoutScreen(VOID)
     HLT();
 }
 
-VOID Panic(CONST CHAR16 *msg)
+VOID Panic(CONST CHAR16 *Msg)
 {
     VIRTIO_GPU_INFO        *GPU;
     PANIC_REGISTER_SNAPSHOT Registers;
@@ -831,7 +831,7 @@ VOID Panic(CONST CHAR16 *msg)
     GPU = VirtIOGPUGetInfo();
 
     DebugWrite("PANIC: ");
-    DebugWriteWide(msg);
+    DebugWriteWide(Msg);
     DebugWrite("\n");
 
     if (PanicActive)
@@ -847,30 +847,30 @@ VOID Panic(CONST CHAR16 *msg)
         HaltAfterPanic();
     }
 
-    UINT32 width = GPU->DisplayInfo.Displays[0].Rect.Width;
-    UINT32 height = GPU->DisplayInfo.Displays[0].Rect.Height;
-    UINT32 scale = GetScale(width, height);
-    UINT32 PanelX = Scale(64, scale);
-    UINT32 PanelY = Scale(184, scale);
-    UINT32 PanelWidth = width - Scale(128, scale);
-    UINT32 ColumnGap = Scale(24, scale);
+    UINT32 Width = GPU->DisplayInfo.Displays[0].Rect.Width;
+    UINT32 Height = GPU->DisplayInfo.Displays[0].Rect.Height;
+    UINT32 UIScale = GetScale(Width, Height);
+    UINT32 PanelX = Scale(64, UIScale);
+    UINT32 PanelY = Scale(184, UIScale);
+    UINT32 PanelWidth = Width - Scale(128, UIScale);
+    UINT32 ColumnGap = Scale(24, UIScale);
     UINT32 LeftWidth = (PanelWidth * 2) / 5;
     UINT32 RightWidth = PanelWidth - LeftWidth - ColumnGap;
     UINT32 RightX = PanelX + LeftWidth + ColumnGap;
-    UINT32 BottomY = PanelY + Scale(244, scale);
+    UINT32 BottomY = PanelY + Scale(244, UIScale);
 
     CaptureRegisters(&Registers);
-    DrawPanicBackground(width, scale);
-    DrawPanicHeader(PanelX, Scale(104, scale), scale, L"Kernel Panic");
-    DrawMessagePanel(PanelX, PanelY, LeftWidth, scale, msg);
-    DrawRecoveryPanel(PanelX, BottomY, LeftWidth, Scale(220, scale), scale);
-    DrawRegisterSnapshot(RightX, PanelY, RightWidth, Scale(220, scale), scale, &Registers);
-    DrawStatusPanel(RightX, BottomY, RightWidth, Scale(220, scale), scale, &Registers);
-    DrawPanicFooter(width, height, scale);
+    DrawPanicBackground(Width, UIScale);
+    DrawPanicHeader(PanelX, Scale(104, UIScale), UIScale, L"Kernel Panic");
+    DrawMessagePanel(PanelX, PanelY, LeftWidth, UIScale, Msg);
+    DrawRecoveryPanel(PanelX, BottomY, LeftWidth, Scale(220, UIScale), UIScale);
+    DrawRegisterSnapshot(RightX, PanelY, RightWidth, Scale(220, UIScale), UIScale, &Registers);
+    DrawStatusPanel(RightX, BottomY, RightWidth, Scale(220, UIScale), UIScale, &Registers);
+    DrawPanicFooter(Width, Height, UIScale);
     HaltAfterPanic();
 }
 
-VOID ExceptionPanic(INTERRUPT_FRAME *frame)
+VOID ExceptionPanic(INTERRUPT_FRAME *Frame)
 {
     VIRTIO_GPU_INFO *GPU;
 
@@ -878,11 +878,11 @@ VOID ExceptionPanic(INTERRUPT_FRAME *frame)
     GPU = VirtIOGPUGetInfo();
 
     DebugWrite("EXCEPTION: vector=");
-    DebugWriteHex(frame == NULL ? 0 : frame->Vector);
+    DebugWriteHex(Frame == NULL ? 0 : Frame->Vector);
     DebugWrite(" rip=");
-    DebugWriteHex(frame == NULL ? 0 : frame->RIP);
+    DebugWriteHex(Frame == NULL ? 0 : Frame->RIP);
     DebugWrite(" error=");
-    DebugWriteHex(frame == NULL ? 0 : frame->ErrorCode);
+    DebugWriteHex(Frame == NULL ? 0 : Frame->ErrorCode);
     DebugWrite("\n");
 
     if (PanicActive)
@@ -898,37 +898,37 @@ VOID ExceptionPanic(INTERRUPT_FRAME *frame)
         HaltAfterPanic();
     }
 
-    UINT32 width = GPU->DisplayInfo.Displays[0].Rect.Width;
-    UINT32 height = GPU->DisplayInfo.Displays[0].Rect.Height;
-    UINT32 scale = GetScale(width, height);
-    UINT32 PanelX = Scale(64, scale);
-    UINT32 PanelY = Scale(184, scale);
-    UINT32 PanelWidth = width - Scale(128, scale);
-    UINT32 ColumnGap = Scale(24, scale);
+    UINT32 Width = GPU->DisplayInfo.Displays[0].Rect.Width;
+    UINT32 Height = GPU->DisplayInfo.Displays[0].Rect.Height;
+    UINT32 UIScale = GetScale(Width, Height);
+    UINT32 PanelX = Scale(64, UIScale);
+    UINT32 PanelY = Scale(184, UIScale);
+    UINT32 PanelWidth = Width - Scale(128, UIScale);
+    UINT32 ColumnGap = Scale(24, UIScale);
     UINT32 LeftWidth = (PanelWidth * 2) / 5;
     UINT32 RightWidth = PanelWidth - LeftWidth - ColumnGap;
     UINT32 RightX = PanelX + LeftWidth + ColumnGap;
-    UINT32 BottomY = PanelY + Scale(244, scale);
+    UINT32 BottomY = PanelY + Scale(244, UIScale);
 
-    DrawPanicBackground(width, scale);
-    DrawPanicHeader(PanelX, Scale(104, scale), scale, L"CPU Exception");
-    DrawExceptionSummary(PanelX, PanelY, LeftWidth, scale, frame);
+    DrawPanicBackground(Width, UIScale);
+    DrawPanicHeader(PanelX, Scale(104, UIScale), UIScale, L"CPU Exception");
+    DrawExceptionSummary(PanelX, PanelY, LeftWidth, UIScale, Frame);
 
-    if (frame != NULL && frame->Vector == EXCEPTION_PAGE_FAULT)
+    if (Frame != NULL && Frame->Vector == EXCEPTION_PAGE_FAULT)
     {
-        DrawPageFaultDetails(PanelX, BottomY, LeftWidth, scale, frame->ErrorCode);
+        DrawPageFaultDetails(PanelX, BottomY, LeftWidth, UIScale, Frame->ErrorCode);
     }
-    else if (frame != NULL && (frame->Vector == EXCEPTION_GENERAL_PROTECTION || frame->Vector == 10 || frame->Vector == 11 || frame->Vector == 12 || frame->Vector == 17 || frame->Vector == 21 || frame->Vector == 29 || frame->Vector == 30))
+    else if (Frame != NULL && (Frame->Vector == EXCEPTION_GENERAL_PROTECTION || Frame->Vector == 10 || Frame->Vector == 11 || Frame->Vector == 12 || Frame->Vector == 17 || Frame->Vector == 21 || Frame->Vector == 29 || Frame->Vector == 30))
     {
-        DrawSelectorErrorDetails(PanelX, BottomY, LeftWidth, scale, frame->ErrorCode);
+        DrawSelectorErrorDetails(PanelX, BottomY, LeftWidth, UIScale, Frame->ErrorCode);
     }
     else
     {
-        DrawGenericExceptionDetails(PanelX, BottomY, LeftWidth, scale, frame);
+        DrawGenericExceptionDetails(PanelX, BottomY, LeftWidth, UIScale, Frame);
     }
 
-    DrawInterruptFrame(RightX, PanelY, RightWidth, Scale(220, scale), scale, frame);
-    DrawExceptionStatePanel(RightX, BottomY, RightWidth, Scale(220, scale), scale, frame);
-    DrawPanicFooter(width, height, scale);
+    DrawInterruptFrame(RightX, PanelY, RightWidth, Scale(220, UIScale), UIScale, Frame);
+    DrawExceptionStatePanel(RightX, BottomY, RightWidth, Scale(220, UIScale), UIScale, Frame);
+    DrawPanicFooter(Width, Height, UIScale);
     HaltAfterPanic();
 }

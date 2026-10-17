@@ -16,22 +16,22 @@
 STATIC VOLATILE UINT8 *HPETBase = NULL;
 STATIC UINT64          HPETFrequency = 0;
 
-STATIC UINT64 HPETRead64(UINT32 reg)
+STATIC UINT64 HPETRead64(UINT32 Reg)
 {
-    return *(VOLATILE UINT64 *) (HPETBase + reg);
+    return *(VOLATILE UINT64 *) (HPETBase + Reg);
 }
 
-STATIC VOID HPETWrite64(UINT32 reg, UINT64 value)
+STATIC VOID HPETWrite64(UINT32 Reg, UINT64 Value)
 {
-    *(VOLATILE UINT64 *) (HPETBase + reg) = value;
+    *(VOLATILE UINT64 *) (HPETBase + Reg) = Value;
 }
 
 BOOLEAN HPETInit(LINEOS_BOOT_INFO *BootInfo)
 {
     ACPI_HPET *HPETTable;
-    UINT64     capabilities;
-    UINT64     period;
-    UINT64     configuration;
+    UINT64     Capabilities;
+    UINT64     Period;
+    UINT64     Configuration;
 
     HPETTable = (ACPI_HPET *) ACPIFindTable(BootInfo, (CONST CHAR8 *) "HPET");
 
@@ -52,25 +52,25 @@ BOOLEAN HPETInit(LINEOS_BOOT_INFO *BootInfo)
 
     HPETBase = (VOLATILE UINT8 *) HPETTable->Address.Address;
 
-    capabilities = HPETRead64(HPET_REG_CAPABILITIES);
-    period = capabilities >> 32;
+    Capabilities = HPETRead64(HPET_REG_CAPABILITIES);
+    Period = Capabilities >> 32;
 
-    if (period == 0)
+    if (Period == 0)
     {
         HPETBase = NULL;
         return FALSE;
     }
 
-    HPETFrequency = HPET_FS_PER_SECOND / period;
+    HPETFrequency = HPET_FS_PER_SECOND / Period;
 
-    configuration = HPETRead64(HPET_REG_CONFIGURATION);
-    configuration &= ~HPET_CONFIG_ENABLE;
-    HPETWrite64(HPET_REG_CONFIGURATION, configuration);
+    Configuration = HPETRead64(HPET_REG_CONFIGURATION);
+    Configuration &= ~HPET_CONFIG_ENABLE;
+    HPETWrite64(HPET_REG_CONFIGURATION, Configuration);
 
     HPETWrite64(HPET_REG_MAIN_COUNTER, 0);
 
-    configuration |= HPET_CONFIG_ENABLE;
-    HPETWrite64(HPET_REG_CONFIGURATION, configuration);
+    Configuration |= HPET_CONFIG_ENABLE;
+    HPETWrite64(HPET_REG_CONFIGURATION, Configuration);
 
     return TRUE;
 }

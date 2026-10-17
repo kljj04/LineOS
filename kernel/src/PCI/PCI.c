@@ -295,22 +295,22 @@ STATIC VOID PCIWrite32IOUnlocked(UINT8 Bus, UINT8 Device, UINT8 Function, UINT8 
 STATIC UINT32 PCIRead32IO(UINT8 Bus, UINT8 Device, UINT8 Function, UINT8 Offset)
 {
     UINT32 Value;
-    UINT64 flags;
+    UINT64 Flags;
 
-    flags = SpinLockAcquireIRQSave(&ConfigIOLock);
+    Flags = SpinLockAcquireIRQSave(&ConfigIOLock);
     Value = PCIRead32IOUnlocked(Bus, Device, Function, Offset);
-    SpinLockReleaseIRQRestore(&ConfigIOLock, flags);
+    SpinLockReleaseIRQRestore(&ConfigIOLock, Flags);
 
     return Value;
 }
 
 STATIC VOID PCIWrite32IO(UINT8 Bus, UINT8 Device, UINT8 Function, UINT8 Offset, UINT32 Value)
 {
-    UINT64 flags;
+    UINT64 Flags;
 
-    flags = SpinLockAcquireIRQSave(&ConfigIOLock);
+    Flags = SpinLockAcquireIRQSave(&ConfigIOLock);
     PCIWrite32IOUnlocked(Bus, Device, Function, Offset, Value);
-    SpinLockReleaseIRQRestore(&ConfigIOLock, flags);
+    SpinLockReleaseIRQRestore(&ConfigIOLock, Flags);
 }
 
 STATIC UINT16 PCIRead16IO(UINT8 Bus, UINT8 Device, UINT8 Function, UINT8 Offset)
@@ -483,7 +483,7 @@ VOID PCIConfigWrite8(PCI_DEVICE *Device, UINT8 Offset, UINT8 Value)
     UINT32 Shift;
     UINT32 Mask;
     UINT32 Current;
-    UINT64 flags;
+    UINT64 Flags;
 
     if (Device == NULL)
     {
@@ -492,10 +492,10 @@ VOID PCIConfigWrite8(PCI_DEVICE *Device, UINT8 Offset, UINT8 Value)
 
     Shift = (Offset & 3) * 8;
     Mask = 0xFFU << Shift;
-    flags = SpinLockAcquireIRQSave(&ConfigIOLock);
+    Flags = SpinLockAcquireIRQSave(&ConfigIOLock);
     Current = PCIRead32IOUnlocked(Device->Bus, Device->Device, Device->Function, Offset);
     PCIWrite32IOUnlocked(Device->Bus, Device->Device, Device->Function, Offset, (Current & ~Mask) | ((UINT32) Value << Shift));
-    SpinLockReleaseIRQRestore(&ConfigIOLock, flags);
+    SpinLockReleaseIRQRestore(&ConfigIOLock, Flags);
 }
 
 VOID PCIConfigWrite16(PCI_DEVICE *Device, UINT8 Offset, UINT16 Value)
@@ -503,7 +503,7 @@ VOID PCIConfigWrite16(PCI_DEVICE *Device, UINT8 Offset, UINT16 Value)
     UINT32 Shift;
     UINT32 Mask;
     UINT32 Current;
-    UINT64 flags;
+    UINT64 Flags;
 
     if (Device == NULL)
     {
@@ -512,10 +512,10 @@ VOID PCIConfigWrite16(PCI_DEVICE *Device, UINT8 Offset, UINT16 Value)
 
     Shift = (Offset & 2) * 8;
     Mask = 0xFFFFU << Shift;
-    flags = SpinLockAcquireIRQSave(&ConfigIOLock);
+    Flags = SpinLockAcquireIRQSave(&ConfigIOLock);
     Current = PCIRead32IOUnlocked(Device->Bus, Device->Device, Device->Function, Offset);
     PCIWrite32IOUnlocked(Device->Bus, Device->Device, Device->Function, Offset, (Current & ~Mask) | ((UINT32) Value << Shift));
-    SpinLockReleaseIRQRestore(&ConfigIOLock, flags);
+    SpinLockReleaseIRQRestore(&ConfigIOLock, Flags);
 }
 
 VOID PCIConfigWrite32(PCI_DEVICE *Device, UINT8 Offset, UINT32 Value)

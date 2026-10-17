@@ -52,6 +52,6 @@ typedef struct
 } INTERRUPT_FRAME;
 
 VOID            IDTInit(VOID);
-VOID            IDTSetGate(UINT8 vector, UINT64 handler, UINT16 selector, UINT8 IST, UINT8 TypeAttributes);
+VOID            IDTSetGate(UINT8 Vector, UINT64 Handler, UINT16 Selector, UINT8 IST, UINT8 TypeAttributes);
 VOID            IDTLoad(VOID);
-UINT64 SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *frame);
+UINT64 SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *Frame);

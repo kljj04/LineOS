@@ -5,32 +5,32 @@
 #include <Uefi.h>
 #include <MemoryLib.h>
 
-VOID *CopyMem(VOID *destination, CONST VOID *source, UINTN length)
+VOID *CopyMem(VOID *Destination, CONST VOID *Source, UINTN Length)
 {
     UINT8       *DestinationBuffer;
     CONST UINT8 *SourceBuffer;
 
-    DestinationBuffer = (UINT8 *) destination;
-    SourceBuffer = (CONST UINT8 *) source;
+    DestinationBuffer = (UINT8 *) Destination;
+    SourceBuffer = (CONST UINT8 *) Source;
 
-    for (UINTN i = 0; i < length; i++)
+    for (UINTN I = 0; I < Length; I++)
     {
-        DestinationBuffer[i] = SourceBuffer[i];
+        DestinationBuffer[I] = SourceBuffer[I];
     }
 
-    return destination;
+    return Destination;
 }
 
-VOID *SetMem(VOID *buffer, UINTN length, UINT8 value)
+VOID *SetMem(VOID *Buffer, UINTN Length, UINT8 Value)
 {
-    UINT8 *ptr;
+    UINT8 *Ptr;
 
-    ptr = (UINT8 *) buffer;
+    Ptr = (UINT8 *) Buffer;
 
-    for (UINTN i = 0; i < length; i++)
+    for (UINTN I = 0; I < Length; I++)
     {
-        ptr[i] = value;
+        Ptr[I] = Value;
     }
 
-    return buffer;
+    return Buffer;
 }

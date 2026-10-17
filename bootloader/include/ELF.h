@@ -48,4 +48,4 @@ typedef struct
 
 BOOLEAN LoadKernel(VOID);
 
-EXTERN LINEOS_KERNEL kernel;
+EXTERN LINEOS_KERNEL Kernel;

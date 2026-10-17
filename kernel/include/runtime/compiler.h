@@ -6,4 +6,4 @@
 
 #include <LineOS/TypeInfo.h>
 
-UINT128 __udivti3(UINT128 dividend, UINT128 divisor);
+UINT128 __udivti3(UINT128 Dividend, UINT128 Divisor);
