@@ -20,9 +20,13 @@
 #define VIRTIO_INPUT_EV_ABS             0x03
 #define VIRTIO_INPUT_ABS_X              0x00
 #define VIRTIO_INPUT_ABS_Y              0x01
+#define VIRTIO_INPUT_REL_WHEEL          0x08
+#define VIRTIO_INPUT_REL_HWHEEL         0x06
 #define VIRTIO_INPUT_BTN_LEFT           0x110
 #define VIRTIO_INPUT_BTN_RIGHT          0x111
 #define VIRTIO_INPUT_BTN_MIDDLE         0x112
+#define VIRTIO_INPUT_BTN_BACK           0x113
+#define VIRTIO_INPUT_BTN_FORWARD        0x114
 #define VIRTIO_INPUT_SYN_REPORT         0x00
 #define VIRTIO_INPUT_VENDOR_ID          0x1AF4
 #define VIRTIO_INPUT_DEVICE_ID          0x1052
@@ -44,7 +48,10 @@ typedef struct
     UINT32  Y;
     BOOLEAN LeftButton;
     BOOLEAN RightButton;
-    BOOLEAN MiddleButton;
+    BOOLEAN WheelButton;
+    BOOLEAN BackButton;
+    BOOLEAN ForwardButton;
+    INT32   Wheel;
 } VIRTIO_POINTER_EVENT;
 
 typedef struct PACKED
@@ -116,5 +123,9 @@ typedef struct
     UINT32                    AbsMaxY;
     BOOLEAN                   LeftButton;
     BOOLEAN                   RightButton;
-    BOOLEAN                   MiddleButton;
+    BOOLEAN                   BackButton;
+    BOOLEAN                   ForwardButton;
+    BOOLEAN                   WheelButton;
+    INT32                     Wheel;
+    INT8                      WheelDirection;
 } VIRTIO_INPUT_DEVICE_INFO;

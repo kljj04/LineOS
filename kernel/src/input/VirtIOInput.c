@@ -266,7 +266,10 @@ STATIC VOID PushPointerEvent(VIRTIO_INPUT_DEVICE_INFO *InputDevice)
     PointerEvents[PointerWriteIndex].Y = InputDevice->AbsY;
     PointerEvents[PointerWriteIndex].LeftButton = InputDevice->LeftButton;
     PointerEvents[PointerWriteIndex].RightButton = InputDevice->RightButton;
-    PointerEvents[PointerWriteIndex].MiddleButton = InputDevice->MiddleButton;
+    PointerEvents[PointerWriteIndex].WheelButton = InputDevice->WheelButton;
+    PointerEvents[PointerWriteIndex].BackButton = InputDevice->BackButton;
+    PointerEvents[PointerWriteIndex].ForwardButton = InputDevice->ForwardButton;
+    PointerEvents[PointerWriteIndex].Wheel = InputDevice->Wheel;
 
     PointerWriteIndex = NextIndex;
     SpinLockReleaseIRQRestore(&PointerEventLock, Flags);
@@ -303,6 +306,48 @@ STATIC VOID ProcessTabletEvent(VIRTIO_INPUT_DEVICE_INFO *InputDevice, VIRTIO_INP
         return;
     }
 
+    if (Event->Type == VIRTIO_INPUT_EV_REL)
+    {
+        if (Event->Code == VIRTIO_INPUT_REL_WHEEL)
+        {
+            INT32 Diff = (INT32) Event->Value;
+            INT8 Direction = 0;
+
+            if (Diff > 0)
+            {
+                Direction = 1;
+            }
+            else if (Diff < 0)
+            {
+                Direction = -1;
+            }
+
+            if (Direction != 0)
+            {
+                if (InputDevice->WheelDirection != Direction)
+                {
+                    InputDevice->Wheel = 0;
+                    InputDevice->WheelDirection = Direction;
+                }
+
+                if (Diff > 0 && InputDevice->Wheel > INT32_MAX - Diff)
+                {
+                    InputDevice->Wheel = INT32_MAX;
+                }
+                else if (Diff < 0 && InputDevice->Wheel < INT32_MIN - Diff)
+                {
+                    InputDevice->Wheel = INT32_MIN;
+                }
+                else
+                {
+                    InputDevice->Wheel += Diff;
+                }
+            }
+        }
+
+        return;
+    }
+
     if (Event->Type == VIRTIO_INPUT_EV_KEY)
     {
         if (Event->Code == VIRTIO_INPUT_BTN_LEFT)
@@ -315,7 +360,15 @@ STATIC VOID ProcessTabletEvent(VIRTIO_INPUT_DEVICE_INFO *InputDevice, VIRTIO_INP
         }
         else if (Event->Code == VIRTIO_INPUT_BTN_MIDDLE)
         {
-            InputDevice->MiddleButton = Event->Value != 0;
+            InputDevice->WheelButton = Event->Value != 0;
+        }
+        else if (Event->Code == VIRTIO_INPUT_BTN_BACK)
+        {
+            InputDevice->BackButton = Event->Value != 0;
+        }
+        else if (Event->Code == VIRTIO_INPUT_BTN_FORWARD)
+        {
+            InputDevice->ForwardButton = Event->Value != 0;
         }
 
         return;

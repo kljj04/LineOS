@@ -206,8 +206,10 @@ VOID InputMouseHandler(VOID)
 
             Status.LeftButton = PointerEvent.LeftButton;
             Status.RightButton = PointerEvent.RightButton;
-            Status.MiddleButton = PointerEvent.MiddleButton;
-            Status.Wheel = 0;
+            Status.MiddleButton = PointerEvent.WheelButton;
+            Status.BackButton = PointerEvent.BackButton;
+            Status.ForwardButton = PointerEvent.ForwardButton;
+            Status.Wheel = PointerEvent.Wheel;
 
             Flags = SpinLockAcquireIRQSave(&MouseStatusLock);
             MouseStatus = Status;
