@@ -9,7 +9,59 @@ Checks: >
   readability-misleading-indentation,
   readability-redundant-control-flow,
   misc-misplaced-const,
+  readability-identifier-naming
 
 WarningsAsErrors: ''
 HeaderFilterRegex: '.*'
 FormatStyle: file
+
+CheckOptions:
+  # 기본 식별자: PascalCase
+  - key: readability-identifier-naming.DefaultCase
+    value: CamelCase
+
+  # 함수
+  - key: readability-identifier-naming.FunctionCase
+    value: CamelCase
+  - key: readability-identifier-naming.GlobalFunctionCase
+    value: CamelCase
+  - key: readability-identifier-naming.MethodCase
+    value: CamelCase
+
+  # 변수 및 함수 인자
+  - key: readability-identifier-naming.VariableCase
+    value: CamelCase
+  - key: readability-identifier-naming.LocalVariableCase
+    value: CamelCase
+  - key: readability-identifier-naming.GlobalVariableCase
+    value: CamelCase
+  - key: readability-identifier-naming.StaticVariableCase
+    value: CamelCase
+  - key: readability-identifier-naming.ParameterCase
+    value: CamelCase
+  - key: readability-identifier-naming.PointerParameterCase
+    value: CamelCase
+  - key: readability-identifier-naming.ConstantParameterCase
+    value: CamelCase
+
+  # 구조체 멤버
+  - key: readability-identifier-naming.MemberCase
+    value: CamelCase
+  - key: readability-identifier-naming.PublicMemberCase
+    value: CamelCase
+  - key: readability-identifier-naming.PrivateMemberCase
+    value: CamelCase
+  - key: readability-identifier-naming.ProtectedMemberCase
+    value: CamelCase
+
+  # 구조체 및 타입 이름: UPPER_SNAKE_CASE
+  - key: readability-identifier-naming.StructCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.TypedefCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.UnionCase
+    value: UPPER_CASE
+
+  # 매크로: UPPER_SNAKE_CASE
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE

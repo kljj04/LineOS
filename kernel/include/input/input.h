@@ -13,6 +13,8 @@ typedef struct
     BOOLEAN LeftButton;
     BOOLEAN RightButton;
     BOOLEAN MiddleButton;
+    BOOLEAN BackButton;
+    BOOLEAN ForwardButton;
     INT32   Wheel;
 } MOUSE_STATUS;
 

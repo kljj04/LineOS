@@ -43,8 +43,8 @@ STATIC VOID InputTestTask(VOID)
 {
     KEYBOARD_STATUS Keyboard;
     KEYBOARD_STATUS LastKeyboard = {0};
-    MOUSE_STATUS Mouse;
-    MOUSE_STATUS LastMouse = {0};
+    MOUSE_STATUS    Mouse;
+    MOUSE_STATUS    LastMouse = {0};
 
     BOOLEAN FirstFrame = TRUE;
     BOOLEAN KeyboardChanged;
@@ -56,18 +56,11 @@ STATIC VOID InputTestTask(VOID)
         Keyboard = GetKeyboardStatus();
         Mouse = GetMouseStatus();
 
-        KeyboardChanged = FirstFrame ||
-            Keyboard.KeyCode != LastKeyboard.KeyCode ||
-            Keyboard.Pressed != LastKeyboard.Pressed;
+        KeyboardChanged = FirstFrame || Keyboard.KeyCode != LastKeyboard.KeyCode || Keyboard.Pressed != LastKeyboard.Pressed;
 
-        MouseChanged = FirstFrame ||
-            Mouse.X != LastMouse.X ||
-            Mouse.Y != LastMouse.Y;
+        MouseChanged = FirstFrame || Mouse.X != LastMouse.X || Mouse.Y != LastMouse.Y;
 
-        ButtonsChanged = FirstFrame ||
-            Mouse.LeftButton != LastMouse.LeftButton ||
-            Mouse.RightButton != LastMouse.RightButton ||
-            Mouse.MiddleButton != LastMouse.MiddleButton;
+        ButtonsChanged = FirstFrame || Mouse.LeftButton != LastMouse.LeftButton || Mouse.RightButton != LastMouse.RightButton || Mouse.MiddleButton != LastMouse.MiddleButton || Mouse.Wheel != LastMouse.Wheel || Mouse.BackButton != LastMouse.BackButton || Mouse.ForwardButton != LastMouse.ForwardButton;
 
         if (KeyboardChanged || MouseChanged || ButtonsChanged)
         {
@@ -85,7 +78,9 @@ STATIC VOID InputTestTask(VOID)
             KPrint(L"Left: %u", 40, 540, 0xFFFFFF, 24, JETBRAINS_MONO, Mouse.LeftButton ? 1 : 0);
             KPrint(L"Right: %u", 250, 540, 0xFFFFFF, 24, JETBRAINS_MONO, Mouse.RightButton ? 1 : 0);
             KPrint(L"Middle: %u", 480, 540, 0xFFFFFF, 24, JETBRAINS_MONO, Mouse.MiddleButton ? 1 : 0);
-
+            KPrint(L"Wheel: %d", 40, 580, 0xFFFFFF, 24, JETBRAINS_MONO, Mouse.Wheel);
+            KPrint(L"Back: %u", 250, 580, 0xFFFFFF, 24, JETBRAINS_MONO, Mouse.BackButton ? 1 : 0);
+            KPrint(L"Forward: %u", 480, 580, 0xFFFFFF, 24, JETBRAINS_MONO, Mouse.ForwardButton ? 1 : 0);
             VirtIOGPUTransferRect(INPUT_PANEL_X, INPUT_PANEL_Y, INPUT_PANEL_WIDTH, INPUT_PANEL_HEIGHT);
             VirtIOGPUFlushRect(INPUT_PANEL_X, INPUT_PANEL_Y, INPUT_PANEL_WIDTH, INPUT_PANEL_HEIGHT);
 
@@ -187,47 +182,6 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
     if (!LBPWRRAddTask(TestTask))
     {
         Panic(L"Failed to add input test task");
-    }
-
-    VOID *TestPage;
-    VOLATILE UINT64 *TestWords;
-    UINT64 PhysAddr;
-
-    TestPage = KAllocPages(1);
-
-    if (TestPage == NULL)
-    {
-        DebugWriteLine("[VMM] PMM allocation failed");
-    }
-    else
-    {
-        TestWords = (VOLATILE UINT64 *) TestPage;
-
-        TestWords[0] = 0x4C494E454F530001ULL;
-        TestWords[1] = 0x123456789ABCDEF0ULL;
-
-        if (TestWords[0] == 0x4C494E454F530001ULL &&
-            TestWords[1] == 0x123456789ABCDEF0ULL)
-        {
-            DebugWriteLine("[VMM] PMM read/write OK");
-        }
-
-        if (VMMTranslate((UINT64) TestPage, &PhysAddr))
-        {
-            DebugWriteLine("[VMM] PMM translation OK");
-            DebugWriteHex(PhysAddr);
-
-            if (PhysAddr == (UINT64) TestPage)
-            {
-                DebugWriteLine("[VMM] Identity mapping confirmed");
-            }
-        }
-        else
-        {
-            DebugWriteLine("[VMM] PMM translation failed");
-        }
-
-        KMemFreePages(TestPage, 1);
     }
 
     LBPWRRStart();

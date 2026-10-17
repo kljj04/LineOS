@@ -28,5 +28,5 @@ AlignConsecutiveMacros:
   AlignFunctionPointers: false
   PadOperators: false
 SortIncludes: false
-AttributeMacros: ['__attribute__']
-StatementMacros: ['CLI', 'HLT']
+AttributeMacros: [ '__attribute__' ]
+StatementMacros: [ 'CLI', 'HLT' ]
