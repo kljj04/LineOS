@@ -2,7 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <memory/memory.h>
+#include <memory/PMM.h>
 #include <VirtIO/VirtIOPCI.h>
 #include <VirtIO/VirtQueue.h>
 
@@ -153,6 +153,11 @@ BOOLEAN VirtQueueAllocDesc(VIRTQUEUE *Queue, UINT16 *DescIndex)
     }
 
     Index = Queue->FreeHead;
+    if (Queue->Desc == NULL || Queue->DescInUse == NULL || Queue->Completed == NULL || Queue->CompletedLength == NULL || Queue->FreeCount > Queue->Size || Index >= Queue->Size || Queue->DescInUse[Index] != 0)
+    {
+        LastError = L"virtqueue free list invalid";
+        return FALSE;
+    }
     Queue->FreeHead = Queue->Desc[Index].Next;
     Queue->FreeCount--;
     Queue->DescInUse[Index] = 1;

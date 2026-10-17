@@ -80,6 +80,7 @@ BOOLEAN          VirtIOGPUCreateCursor(UINT32 Width, UINT32 Height, UINT32 HotX,
 BOOLEAN          VirtIOGPUSetCursorImage(CONST UINT32 *Pixels, UINT32 Width, UINT32 Height, UINT32 HotX, UINT32 HotY, UINT32 X, UINT32 Y);
 BOOLEAN          VirtIOGPUUpdateCursor(UINT32 X, UINT32 Y);
 BOOLEAN          VirtIOGPUMoveCursor(UINT32 X, UINT32 Y);
+BOOLEAN          VirtIOGPUHideCursor(VOID);
 VIRTIO_GPU_INFO *VirtIOGPUGetInfo(VOID);
 CONST CHAR16    *VirtIOGPUGetLastError(VOID);
 UINT32           VirtIOGPUGetFrameBufferWidth(VOID);

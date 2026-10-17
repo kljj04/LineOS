@@ -13,7 +13,7 @@
 #include <input/VirtIOInput.h>
 #include <render/GPU/VirtIOGPU.h>
 #include <LineOS/TypeInfo.h>
-#include <memory/memory.h>
+#include <memory/PMM.h>
 #include <arch/AMD64/CPU.h>
 
 EXTERN VOID ISR0(VOID);

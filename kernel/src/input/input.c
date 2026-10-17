@@ -9,7 +9,9 @@
 #include <render/GPU/VirtIOGPU.h>
 #include <input/input.h>
 
-#define INPUT_CURSOR_REDRAW_SIZE 64
+#include "debug/debug.h"
+
+#define INPUT_CURSOR_SIZE 64
 
 STATIC UINT32 MouseMinX = 0;
 STATIC UINT32 MouseMaxX = 32767;
@@ -18,220 +20,39 @@ STATIC UINT32 MouseMaxY = 32767;
 
 STATIC MOUSE_STATUS    MouseStatus = {0};
 STATIC KEYBOARD_STATUS KeyboardStatus = {0};
-STATIC SPIN_LOCK       MouseStatusLock;
-STATIC SPIN_LOCK       KeyboardStatusLock;
+
+STATIC SPIN_LOCK MouseStatusLock;
+STATIC SPIN_LOCK KeyboardStatusLock;
+STATIC SPIN_LOCK CursorLock;
 
 STATIC BOOLEAN CursorReady = FALSE;
+STATIC BOOLEAN CursorVisible = FALSE;
 STATIC UINT32  CursorDrawX = 0;
 STATIC UINT32  CursorDrawY = 0;
 
-STATIC UINT32 CursorBackground[INPUT_CURSOR_REDRAW_SIZE * INPUT_CURSOR_REDRAW_SIZE];
-
-STATIC UINT32 MinUINT32(UINT32 a, UINT32 b)
+STATIC UINT32 ScalePointerCoordinate(UINT32 Value, UINT32 Min, UINT32 Max, UINT32 OutputMax)
 {
-    return a < b ? a : b;
-}
-
-STATIC UINT32 MaxUINT32(UINT32 a, UINT32 b)
-{
-    return a > b ? a : b;
-}
-
-STATIC UINT32 ScalePointerCoordinate(UINT32 value, UINT32 min, UINT32 max, UINT32 outputMax)
-{
-    if (value <= min)
+    if (Max <= Min || Value <= Min)
     {
         return 0;
     }
 
-    if (value >= max)
+    if (Value >= Max)
     {
-        return outputMax;
+        return OutputMax;
     }
 
-    if (max <= min)
-    {
-        return 0;
-    }
-
-    return (UINT32) (((UINT64) (value - min) * outputMax) / (max - min));
-}
-
-STATIC VOID FlushCursorRect(VIRTIO_GPU_INFO *GPU, UINT32 x, UINT32 y, UINT32 width, UINT32 height)
-{
-    if (x >= GPU->FrameBufferWidth || y >= GPU->FrameBufferHeight)
-    {
-        return;
-    }
-
-    if (x + width > GPU->FrameBufferWidth)
-    {
-        width = GPU->FrameBufferWidth - x;
-    }
-
-    if (y + height > GPU->FrameBufferHeight)
-    {
-        height = GPU->FrameBufferHeight - y;
-    }
-
-    if (width == 0 || height == 0)
-    {
-        return;
-    }
-
-    VirtIOGPUTransferRect(x, y, width, height);
-    VirtIOGPUFlushRect(x, y, width, height);
-}
-
-STATIC VOID FlushCursorBox(VIRTIO_GPU_INFO *GPU, UINT32 x, UINT32 y)
-{
-    FlushCursorRect(GPU, x, y, INPUT_CURSOR_REDRAW_SIZE, INPUT_CURSOR_REDRAW_SIZE);
-}
-
-STATIC VOID FlushCursorUnion(VIRTIO_GPU_INFO *GPU, UINT32 OldX, UINT32 OldY, UINT32 NewX, UINT32 NewY)
-{
-    UINT32 MinX;
-    UINT32 MinY;
-    UINT32 MaxX;
-    UINT32 MaxY;
-
-    MinX = MinUINT32(OldX, NewX);
-    MinY = MinUINT32(OldY, NewY);
-
-    MaxX = MaxUINT32(OldX + INPUT_CURSOR_REDRAW_SIZE, NewX + INPUT_CURSOR_REDRAW_SIZE);
-    MaxY = MaxUINT32(OldY + INPUT_CURSOR_REDRAW_SIZE, NewY + INPUT_CURSOR_REDRAW_SIZE);
-
-    if (MaxX > GPU->FrameBufferWidth)
-    {
-        MaxX = GPU->FrameBufferWidth;
-    }
-
-    if (MaxY > GPU->FrameBufferHeight)
-    {
-        MaxY = GPU->FrameBufferHeight;
-    }
-
-    if (MinX >= MaxX || MinY >= MaxY)
-    {
-        return;
-    }
-
-    VirtIOGPUTransferRect(MinX, MinY, MaxX - MinX, MaxY - MinY);
-    VirtIOGPUFlushRect(MinX, MinY, MaxX - MinX, MaxY - MinY);
-}
-
-STATIC UINT32 BlendCursorPixel(UINT32 Background, UINT32 Cursor)
-{
-    UINT32 Alpha;
-    UINT32 InverseAlpha;
-    UINT32 Red;
-    UINT32 Green;
-    UINT32 Blue;
-
-    Alpha = Cursor >> 24;
-
-    if (Alpha == 0)
-    {
-        return Background;
-    }
-
-    if (Alpha == 255)
-    {
-        return Cursor;
-    }
-
-    InverseAlpha = 255 - Alpha;
-
-    Red = ((((Cursor >> 16) & 0xFF) * Alpha) + (((Background >> 16) & 0xFF) * InverseAlpha)) / 255;
-    Green = ((((Cursor >> 8) & 0xFF) * Alpha) + (((Background >> 8) & 0xFF) * InverseAlpha)) / 255;
-    Blue = (((Cursor & 0xFF) * Alpha) + ((Background & 0xFF) * InverseAlpha)) / 255;
-
-    return 0xFF000000 | (Red << 16) | (Green << 8) | Blue;
-}
-
-STATIC VOID SaveCursorBackground(VIRTIO_GPU_INFO *GPU, UINT32 x, UINT32 y)
-{
-    UINT32 TargetX;
-    UINT32 TargetY;
-    UINT32 Index;
-
-    for (UINT32 Row = 0; Row < INPUT_CURSOR_REDRAW_SIZE; Row++)
-    {
-        for (UINT32 Column = 0; Column < INPUT_CURSOR_REDRAW_SIZE; Column++)
-        {
-            TargetX = x + Column;
-            TargetY = y + Row;
-            Index = Row * INPUT_CURSOR_REDRAW_SIZE + Column;
-
-            if (TargetX >= GPU->FrameBufferWidth || TargetY >= GPU->FrameBufferHeight)
-            {
-                CursorBackground[Index] = 0;
-                continue;
-            }
-
-            CursorBackground[Index] = GPU->FrameBuffer[TargetY * GPU->FrameBufferWidth + TargetX];
-        }
-    }
-}
-
-STATIC VOID RestoreCursorBackground(VIRTIO_GPU_INFO *GPU, UINT32 x, UINT32 y)
-{
-    UINT32 TargetX;
-    UINT32 TargetY;
-    UINT32 Index;
-
-    for (UINT32 Row = 0; Row < INPUT_CURSOR_REDRAW_SIZE; Row++)
-    {
-        for (UINT32 Column = 0; Column < INPUT_CURSOR_REDRAW_SIZE; Column++)
-        {
-            TargetX = x + Column;
-            TargetY = y + Row;
-            Index = Row * INPUT_CURSOR_REDRAW_SIZE + Column;
-
-            if (TargetX >= GPU->FrameBufferWidth || TargetY >= GPU->FrameBufferHeight)
-            {
-                continue;
-            }
-
-            GPU->FrameBuffer[TargetY * GPU->FrameBufferWidth + TargetX] = CursorBackground[Index];
-        }
-    }
-}
-
-STATIC VOID DrawCursor(VIRTIO_GPU_INFO *GPU, UINT32 x, UINT32 y)
-{
-    UINT32 TargetX;
-    UINT32 TargetY;
-    UINT32 Index;
-
-    SaveCursorBackground(GPU, x, y);
-
-    for (UINT32 Row = 0; Row < CURSOR_HEIGHT; Row++)
-    {
-        for (UINT32 Column = 0; Column < CURSOR_WIDTH; Column++)
-        {
-            TargetX = x + Column;
-            TargetY = y + Row;
-
-            if (TargetX >= GPU->FrameBufferWidth || TargetY >= GPU->FrameBufferHeight)
-            {
-                continue;
-            }
-
-            Index = TargetY * GPU->FrameBufferWidth + TargetX;
-            GPU->FrameBuffer[Index] = BlendCursorPixel(GPU->FrameBuffer[Index], CursorBitmap[Row * CURSOR_WIDTH + Column]);
-        }
-    }
+    return (UINT32) (((UINT64) (Value - Min) * OutputMax) / (Max - Min));
 }
 
 MOUSE_STATUS GetMouseStatus(VOID)
 {
     MOUSE_STATUS Status;
-    UINT64       flags;
+    UINT64 Flags;
 
-    flags = SpinLockAcquireIRQSave(&MouseStatusLock);
+    Flags = SpinLockAcquireIRQSave(&MouseStatusLock);
     Status = MouseStatus;
-    SpinLockReleaseIRQRestore(&MouseStatusLock, flags);
+    SpinLockReleaseIRQRestore(&MouseStatusLock, Flags);
 
     return Status;
 }
@@ -239,121 +60,143 @@ MOUSE_STATUS GetMouseStatus(VOID)
 KEYBOARD_STATUS GetKeyboardStatus(VOID)
 {
     KEYBOARD_STATUS Status;
-    UINT64          flags;
+    UINT64 Flags;
 
-    flags = SpinLockAcquireIRQSave(&KeyboardStatusLock);
+    Flags = SpinLockAcquireIRQSave(&KeyboardStatusLock);
     Status = KeyboardStatus;
-    SpinLockReleaseIRQRestore(&KeyboardStatusLock, flags);
+    SpinLockReleaseIRQRestore(&KeyboardStatusLock, Flags);
 
     return Status;
 }
 
-VOID HideMouseCursor(VOID)
+STATIC BOOLEAN InitHardwareCursor(VOID)
 {
-    VIRTIO_GPU_INFO *GPU;
-    UINT64           flags;
+    MOUSE_STATUS Status;
 
-    GPU = VirtIOGPUGetInfo();
-
-    flags = VirtIOGPUAcquireRenderLock();
-    if (GPU == NULL || GPU->FrameBuffer == NULL || !CursorReady)
+    if (CursorReady)
     {
-        VirtIOGPUReleaseRenderLock(flags);
-        return;
+        return TRUE;
     }
 
-    RestoreCursorBackground(GPU, CursorDrawX, CursorDrawY);
-    FlushCursorBox(GPU, CursorDrawX, CursorDrawY);
+    if (CURSOR_WIDTH > INPUT_CURSOR_SIZE || CURSOR_HEIGHT > INPUT_CURSOR_SIZE)
+    {
+        return FALSE;
+    }
 
-    CursorReady = FALSE;
-    VirtIOGPUReleaseRenderLock(flags);
+    Status = GetMouseStatus();
+
+    if (!VirtIOGPUCreateCursor(INPUT_CURSOR_SIZE, INPUT_CURSOR_SIZE, 0, 0))
+    {
+        return FALSE;
+    }
+
+    if (!VirtIOGPUSetCursorImage(CursorBitmap, CURSOR_WIDTH, CURSOR_HEIGHT, 0, 0, Status.X, Status.Y))
+    {
+        return FALSE;
+    }
+
+    CursorDrawX = Status.X;
+    CursorDrawY = Status.Y;
+    CursorReady = TRUE;
+    CursorVisible = TRUE;
+
+    DebugWriteLine("[CURSOR] Moving to center");
+    if (VirtIOGPUMoveCursor(VirtIOGPUGetFrameBufferWidth() / 2, VirtIOGPUGetFrameBufferHeight() / 2))
+    {
+        DebugWriteLine("[CURSOR] Move succeeded");
+    }
+    else
+    {
+        DebugWriteLine("[CURSOR] Move failed");
+    }
+
+    return TRUE;
+}
+
+VOID HideMouseCursor(VOID)
+{
+    UINT64 Flags;
+
+    Flags = SpinLockAcquireIRQSave(&CursorLock);
+
+    if (CursorReady && CursorVisible)
+    {
+        if (VirtIOGPUHideCursor())
+        {
+            CursorVisible = FALSE;
+        }
+    }
+
+    SpinLockReleaseIRQRestore(&CursorLock, Flags);
 }
 
 VOID ShowMouseCursor(VOID)
 {
-    VIRTIO_GPU_INFO *GPU;
-    MOUSE_STATUS     status;
-    UINT64           flags;
+    MOUSE_STATUS Status;
+    UINT64 Flags;
 
-    GPU = VirtIOGPUGetInfo();
+    Flags = SpinLockAcquireIRQSave(&CursorLock);
 
-    flags = VirtIOGPUAcquireRenderLock();
-    if (GPU == NULL || GPU->FrameBuffer == NULL || CursorReady)
+    if (!InitHardwareCursor())
     {
-        VirtIOGPUReleaseRenderLock(flags);
+        SpinLockReleaseIRQRestore(&CursorLock, Flags);
         return;
     }
 
-    status = GetMouseStatus();
+    if (!CursorVisible)
+    {
+        Status = GetMouseStatus();
 
-    CursorDrawX = status.X;
-    CursorDrawY = status.Y;
+        if (VirtIOGPUUpdateCursor(Status.X, Status.Y))
+        {
+            CursorDrawX = Status.X;
+            CursorDrawY = Status.Y;
+            CursorVisible = TRUE;
+        }
+    }
 
-    DrawCursor(GPU, CursorDrawX, CursorDrawY);
-    FlushCursorBox(GPU, CursorDrawX, CursorDrawY);
-
-    CursorReady = TRUE;
-    VirtIOGPUReleaseRenderLock(flags);
+    SpinLockReleaseIRQRestore(&CursorLock, Flags);
 }
 
 VOID UpdateMouseCursor(VOID)
 {
-    VIRTIO_GPU_INFO *GPU;
-    MOUSE_STATUS     status;
-    UINT32           OldX;
-    UINT32           OldY;
-    UINT64           flags;
+    MOUSE_STATUS Status;
+    UINT64 Flags;
 
-    GPU = VirtIOGPUGetInfo();
+    Flags = SpinLockAcquireIRQSave(&CursorLock);
 
-    flags = VirtIOGPUAcquireRenderLock();
-    if (GPU == NULL || GPU->FrameBuffer == NULL)
+    if (!InitHardwareCursor())
     {
-        VirtIOGPUReleaseRenderLock(flags);
+        SpinLockReleaseIRQRestore(&CursorLock, Flags);
         return;
     }
 
-    status = GetMouseStatus();
-
-    if (!CursorReady)
+    if (!CursorVisible)
     {
-        CursorDrawX = status.X;
-        CursorDrawY = status.Y;
-
-        DrawCursor(GPU, CursorDrawX, CursorDrawY);
-        FlushCursorBox(GPU, CursorDrawX, CursorDrawY);
-
-        CursorReady = TRUE;
-        VirtIOGPUReleaseRenderLock(flags);
+        SpinLockReleaseIRQRestore(&CursorLock, Flags);
         return;
     }
 
-    if (CursorDrawX == status.X && CursorDrawY == status.Y)
+    Status = GetMouseStatus();
+
+    if (CursorDrawX != Status.X || CursorDrawY != Status.Y)
     {
-        VirtIOGPUReleaseRenderLock(flags);
-        return;
+        if (VirtIOGPUUpdateCursor(Status.X, Status.Y))
+        {
+            CursorDrawX = Status.X;
+            CursorDrawY = Status.Y;
+        }
     }
 
-    OldX = CursorDrawX;
-    OldY = CursorDrawY;
-
-    RestoreCursorBackground(GPU, OldX, OldY);
-
-    CursorDrawX = status.X;
-    CursorDrawY = status.Y;
-
-    DrawCursor(GPU, CursorDrawX, CursorDrawY);
-
-    FlushCursorUnion(GPU, OldX, OldY, CursorDrawX, CursorDrawY);
-    VirtIOGPUReleaseRenderLock(flags);
+    SpinLockReleaseIRQRestore(&CursorLock, Flags);
 }
 
 VOID InputMouseHandler(VOID)
 {
-    VIRTIO_GPU_INFO     *GPU;
-    VIRTIO_POINTER_EVENT PointerEvent;
-    MOUSE_STATUS         Status;
-    UINT64               flags;
+    VIRTIO_GPU_INFO      *GPU;
+    VIRTIO_POINTER_EVENT  PointerEvent;
+    MOUSE_STATUS          Status;
+    UINT64                Flags;
 
     GPU = VirtIOGPUGetInfo();
 
@@ -376,9 +219,11 @@ VOID InputMouseHandler(VOID)
             Status.MiddleButton = PointerEvent.MiddleButton;
             Status.Wheel = 0;
 
-            flags = SpinLockAcquireIRQSave(&MouseStatusLock);
+            Flags = SpinLockAcquireIRQSave(&MouseStatusLock);
             MouseStatus = Status;
-            SpinLockReleaseIRQRestore(&MouseStatusLock, flags);
+            SpinLockReleaseIRQRestore(&MouseStatusLock, Flags);
+
+            UpdateMouseCursor();
         }
 
         HLTONCE();
@@ -388,16 +233,18 @@ VOID InputMouseHandler(VOID)
 VOID InputKeyboardHandler(VOID)
 {
     VIRTIO_KEY_EVENT KeyEvent;
-    UINT64           flags;
+    UINT64 Flags;
 
     while (TRUE)
     {
         while (VirtIOInputGetKeyEvent(&KeyEvent))
         {
-            flags = SpinLockAcquireIRQSave(&KeyboardStatusLock);
+            Flags = SpinLockAcquireIRQSave(&KeyboardStatusLock);
+
             KeyboardStatus.KeyCode = KeyEvent.Code;
             KeyboardStatus.Pressed = KeyEvent.Pressed;
-            SpinLockReleaseIRQRestore(&KeyboardStatusLock, flags);
+
+            SpinLockReleaseIRQRestore(&KeyboardStatusLock, Flags);
         }
 
         HLTONCE();

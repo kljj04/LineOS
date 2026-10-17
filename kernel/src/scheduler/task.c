@@ -7,7 +7,7 @@
 #include <scheduler/LBPWRRTypes.h>
 #include <arch/AMD64/CPU.h>
 #include <debug/debug.h>
-#include <memory/memory.h>
+#include <memory/PMM.h>
 #include <timer/TSC.h>
 
 STATIC TASK    TaskPool[LBPWRR_MAX_TASKS];
@@ -35,7 +35,7 @@ STATIC NORETURN VOID TaskExit(VOID)
 
 STATIC NORETURN VOID TaskIdle(VOID)
 {
-    for (;;)
+    while (TRUE)
     {
         ASM("sti; hlt" ::: "memory");
     }
@@ -285,6 +285,7 @@ VOID TaskSleepMls(UINT64 milliseconds)
 {
     TASK  *task;
     UINT64 ticks;
+    UINT64 frequency;
 
     task = LBPWRRGetCurrentTask();
 
@@ -294,7 +295,94 @@ VOID TaskSleepMls(UINT64 milliseconds)
         return;
     }
 
-    ticks = (UINT64) (((UINT128) TSCGetFrequency() * milliseconds) / 1000ULL);
+    if (milliseconds == 0)
+    {
+        LBPWRRYield();
+        return;
+    }
+
+    frequency = TSCGetFrequency();
+
+    if (frequency == 0)
+    {
+        return;
+    }
+
+    ticks = (UINT64) (((UINT128) frequency * milliseconds + 999ULL) / 1000ULL);
+
+    task->WakeDeadlineTSC = RDTSC() + ticks;
+    task->State = TASK_SLEEPING;
+    task->Modified = TRUE;
+
+    LBPWRRNotifyTaskChanged(task);
+    LBPWRRYield();
+}
+
+VOID TaskSleepMis(UINT64 microseconds)
+{
+    TASK  *task;
+    UINT64 ticks;
+    UINT64 frequency;
+
+    task = LBPWRRGetCurrentTask();
+
+    if (task == NULL)
+    {
+        SleepMis(microseconds);
+        return;
+    }
+
+    if (microseconds == 0)
+    {
+        LBPWRRYield();
+        return;
+    }
+
+    frequency = TSCGetFrequency();
+
+    if (frequency == 0)
+    {
+        return;
+    }
+
+    ticks = (UINT64) (((UINT128) frequency * microseconds + 999999ULL) / 1000000ULL);
+
+    task->WakeDeadlineTSC = RDTSC() + ticks;
+    task->State = TASK_SLEEPING;
+    task->Modified = TRUE;
+
+    LBPWRRNotifyTaskChanged(task);
+    LBPWRRYield();
+}
+
+VOID TaskSleepNs(UINT64 nanoseconds)
+{
+    TASK  *task;
+    UINT64 ticks;
+    UINT64 frequency;
+
+    task = LBPWRRGetCurrentTask();
+
+    if (task == NULL)
+    {
+        SleepNs(nanoseconds);
+        return;
+    }
+
+    if (nanoseconds == 0)
+    {
+        LBPWRRYield();
+        return;
+    }
+
+    frequency = TSCGetFrequency();
+
+    if (frequency == 0)
+    {
+        return;
+    }
+
+    ticks = (UINT64) (((UINT128) frequency * nanoseconds + 999999999ULL) / 1000000000ULL);
 
     task->WakeDeadlineTSC = RDTSC() + ticks;
     task->State = TASK_SLEEPING;

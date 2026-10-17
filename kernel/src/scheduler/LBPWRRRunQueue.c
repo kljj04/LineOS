@@ -6,7 +6,7 @@
 #include <scheduler/LBPWRRRunQueue.h>
 #include <scheduler/LBPWRRChunk.h>
 #include <multicore/SMP.h>
-#include <memory/memory.h>
+#include <memory/PMM.h>
 
 STATIC LBPWRR_RUNQUEUE RunQueues[SMP_MAX_CPUS];
 STATIC TASK           *CurrentTasks[SMP_MAX_CPUS];

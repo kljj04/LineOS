@@ -2,18 +2,21 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <memory/memory.h>
+#include <memory/PMM.h>
 #include <PCI/PCI.h>
 #include <render/GPU/VirtIOGPUProtocol.h>
 #include <arch/AMD64/SpinLock.h>
 #include <VirtIO/VirtIOPCI.h>
 #include <render/GPU/VirtIOGPU.h>
+
 #include <VirtIO/VirtQueue.h>
 
 STATIC VIRTIO_GPU_INFO VirtIOGPUInfo;
 STATIC CONST CHAR16   *LastError = L"not initialized";
 STATIC SPIN_LOCK       CommandLock;
 STATIC SPIN_LOCK       RenderLock;
+STATIC BOOLEAN         ControlQueueTimedOut;
+STATIC BOOLEAN         CursorQueueTimedOut;
 
 #define VIRTIO_GPU_RESOURCE_FRAMEBUFFER 1
 #define VIRTIO_GPU_RESOURCE_CURSOR      2
@@ -43,6 +46,8 @@ STATIC VOID ResetInfo(VOID)
 {
     SpinLockInit(&CommandLock);
     SpinLockInit(&RenderLock);
+    ControlQueueTimedOut = FALSE;
+    CursorQueueTimedOut = FALSE;
     KMemSet(&VirtIOGPUInfo, 0, sizeof(VirtIOGPUInfo));
     VirtIOGPUInfo.Debug.LastStage = L"reset";
 }
@@ -127,6 +132,13 @@ STATIC BOOLEAN SendCommandToQueue(VIRTQUEUE *Queue, VOID *Request, UINT32 Reques
 
     flags = SpinLockAcquireIRQSave(&CommandLock);
 
+    if ((Queue == &VirtIOGPUInfo.ControlQueue && ControlQueueTimedOut) || (Queue == &VirtIOGPUInfo.CursorQueue && CursorQueueTimedOut))
+    {
+        LastError = L"gpu queue unavailable after timeout";
+        SpinLockReleaseIRQRestore(&CommandLock, flags);
+        return FALSE;
+    }
+
     if (Queue == &VirtIOGPUInfo.CursorQueue)
     {
         RequestBuffer = CursorRequestBuffer;
@@ -169,7 +181,14 @@ STATIC BOOLEAN SendCommandToQueue(VIRTQUEUE *Queue, VOID *Request, UINT32 Reques
     if (!VirtQueueWaitUsed(Queue, Head, &UsedLength, VIRTIO_GPU_QUEUE_TIMEOUT))
     {
         LastError = VirtQueueGetLastError();
-        VirtQueueFreeChain(Queue, Head);
+        if (Queue == &VirtIOGPUInfo.CursorQueue)
+        {
+            CursorQueueTimedOut = TRUE;
+        }
+        else
+        {
+            ControlQueueTimedOut = TRUE;
+        }
         SpinLockReleaseIRQRestore(&CommandLock, flags);
         return FALSE;
     }
@@ -203,6 +222,13 @@ STATIC BOOLEAN SendCursorCommand(VOID *Request, UINT32 RequestLength, CONST CHAR
 
     flags = SpinLockAcquireIRQSave(&CommandLock);
 
+    if (CursorQueueTimedOut)
+    {
+        LastError = L"gpu queue unavailable after timeout";
+        SpinLockReleaseIRQRestore(&CommandLock, flags);
+        return FALSE;
+    }
+
     KMemCpy(CursorRequestBuffer, Request, RequestLength);
     KMemSet(CursorResponseBuffer, 0, sizeof(VIRTIO_GPU_CTRL_HEADER));
 
@@ -234,7 +260,7 @@ STATIC BOOLEAN SendCursorCommand(VOID *Request, UINT32 RequestLength, CONST CHAR
     if (!VirtQueueWaitUsed(&VirtIOGPUInfo.CursorQueue, head, &UsedLength, VIRTIO_GPU_QUEUE_TIMEOUT))
     {
         LastError = VirtQueueGetLastError();
-        VirtQueueFreeChain(&VirtIOGPUInfo.CursorQueue, head);
+        CursorQueueTimedOut = TRUE;
         SpinLockReleaseIRQRestore(&CommandLock, flags);
         return FALSE;
     }
@@ -1250,6 +1276,31 @@ BOOLEAN VirtIOGPUMoveCursor(UINT32 X, UINT32 Y)
     Request.ResourceId = VirtIOGPUInfo.CursorResourceId;
 
     if (!SendCursorCommand(&Request, sizeof(Request), L"cursor move"))
+    {
+        return FALSE;
+    }
+
+    LastError = L"ok";
+    return TRUE;
+}
+
+BOOLEAN VirtIOGPUHideCursor(VOID)
+{
+    VIRTIO_GPU_UPDATE_CURSOR_REQUEST Request;
+
+    if (VirtIOGPUInfo.CursorResourceId == 0)
+    {
+        LastError = L"cursor missing";
+        return FALSE;
+    }
+
+    KMemSet(&Request, 0, sizeof(Request));
+
+    Request.Header.Type = VIRTIO_GPU_CMD_UPDATE_CURSOR;
+    Request.Position.ScanoutId = 0;
+    Request.ResourceId = 0;
+
+    if (!SendCursorCommand(&Request, sizeof(Request), L"cursor hide"))
     {
         return FALSE;
     }

@@ -4,7 +4,7 @@
 
 #include <arch/AMD64/SpinLock.h>
 #include <LineOS/BootInfo.h>
-#include <memory/memory.h>
+#include <memory/PMM.h>
 
 #define PAGE_SIZE                 4096ULL
 #define LOW_MEMORY_RESERVED_PAGES 256ULL

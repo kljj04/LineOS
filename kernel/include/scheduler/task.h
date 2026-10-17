@@ -12,6 +12,8 @@ TASK   *TaskCreate(VOID (*entry)(VOID));
 TASK   *TaskCreateIdle(VOID);
 BOOLEAN TaskSetPriority(TASK *task, UINT8 priority);
 VOID    TaskSleepMls(UINT64 milliseconds);
+VOID    TaskSleepMis(UINT64 microseconds);
+VOID    TaskSleepNs(UINT64 nanoseconds);
 VOID    TaskKill(TASK *task);
 VOID    TaskTerminate(TASK *task);
 BOOLEAN TaskDestroy(TASK *task);
