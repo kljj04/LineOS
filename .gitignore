@@ -2,8 +2,8 @@
 .idea/
 build/
 /LineOS/
-logs/
+Logs/
 __pycache__/
 *.pyc
-tools/
+Tools/
 compile_commands.json

@@ -2,13 +2,15 @@
 
 LineOS is a 64-bit x86_64 UEFI hobby operating system written primarily in freestanding C and x86 assembly.
 
-The project currently focuses on multicore kernel bring-up, memory management, interrupt and timer infrastructure, VirtIO devices, native TrueType rendering, and kernel scheduling.
+The project currently focuses on multicore kernel bring-up, memory management, interrupt and timer infrastructure,
+VirtIO devices, native TrueType rendering, and kernel scheduling.
 
 ## Status
 
 LineOS is experimental and under active development.
 
-Internal APIs, scheduler design, memory management, device drivers, boot structures, and build scripts may change frequently.
+Internal APIs, scheduler design, memory management, device drivers, boot structures, and build scripts may change
+frequently.
 
 Current kernel bring-up:
 
@@ -56,7 +58,8 @@ SMP bring-up has been tested with 16 virtual CPUs under QEMU.
 - SMP bring-up tested with 16 QEMU vCPUs
 - Maximum CPU table size currently set to 256 CPUs
 
-After reporting themselves online, Application Processors enter `APMain()` and join the LBPWRR scheduler. Each CPU begins with its own idle task and can run work assigned to its local run queue.
+After reporting themselves online, Application Processors enter `APMain()` and join the LBPWRR scheduler. Each CPU
+begins with its own idle task and can run work assigned to its local run queue.
 
 ### Memory Management
 
@@ -97,11 +100,16 @@ After reporting themselves online, Application Processors enter `APMain()` and j
 - Task termination, removal from the run queue, and destruction
 - Ready-task migration with ordered dual-run-queue locking
 
-`LBPWRRStart()` selects a local runnable task and restores its saved interrupt frame. It arms a new TSC deadline immediately before the first context restore so a BSP that reached the scheduler with interrupts disabled still receives its first timer interrupt after task entry.
+`LBPWRRStart()` selects a local runnable task and restores its saved interrupt frame. It arms a new TSC deadline
+immediately before the first context restore so a BSP that reached the scheduler with interrupts disabled still receives
+its first timer interrupt after task entry.
 
-The timer interrupt saves the current task frame, updates task state, selects the next local task from the weighted chunk, and returns that task's saved frame to the common ISR restore path. Non-idle tasks are preferred; the local idle task is used only when no non-idle task is ready.
+The timer interrupt saves the current task frame, updates task state, selects the next local task from the weighted
+chunk, and returns that task's saved frame to the common ISR restore path. Non-idle tasks are preferred; the local idle
+task is used only when no non-idle task is ready.
 
-The scheduler is experimental. CPU affinity, blocking beyond timed sleep, fairness measurement, and broader SMP subsystem hardening remain future work.
+The scheduler is experimental. CPU affinity, blocking beyond timed sleep, fairness measurement, and broader SMP
+subsystem hardening remain future work.
 
 ### PCI and VirtIO
 
@@ -181,10 +189,11 @@ KVM acceleration is used by the default launcher.
 From the project root:
 
 ```bash
-./run.sh
+./Run.sh
 ```
 
-The launcher uses `sudo` for loop-device attachment, partition mounting, and copying the EFI boot files into the raw disk image. An interactive `sudo` password or equivalent local permission is required.
+The launcher uses `sudo` for loop-device attachment, partition mounting, and copying the EFI boot files into the raw
+disk image. An interactive `sudo` password or equivalent local permission is required.
 
 The current Linux launcher:
 
@@ -207,14 +216,15 @@ The current default QEMU configuration uses:
 - VirtIO tablet
 - VirtIO block device
 
-Runtime logs are written under `logs/`. `qemu.log` contains QEMU diagnostics, and `debugcon.log` is reserved for panic and exception output. The normal scheduler stress workload does not write progress messages to the debug console.
+Runtime logs are written under `Logs`. `qemu.log` contains QEMU diagnostics, and `debugcon.log` is reserved for panic
+and exception output. The normal scheduler stress workload does not write progress messages to the debug console.
 
 ## Font Rendering
 
 LineOS currently embeds two TrueType font files into the kernel image using assembler `.incbin`:
 
-- `kernel/assets/fonts/PTDSB.ttf`: Pretendard SemiBold
-- `kernel/assets/fonts/JBMNFSB.ttf`: JetBrains Mono Nerd Font SemiBold
+- `Kernel`: Pretendard SemiBold
+- `Kernel`: JetBrains Mono Nerd Font SemiBold
 
 The kernel performs runtime TrueType glyph rasterization and draws the resulting glyphs into the VirtIO GPU framebuffer.
 
@@ -245,17 +255,26 @@ The kernel image and other reserved regions must remain unavailable to the physi
 
 ## Scheduler Notes
 
-LBPWRR uses a fixed-capacity per-CPU runnable list and a weighted chunk. A task's priority maps directly to a weight from 1 through 6; each task appears in the chunk according to that weight. Adding a task selects the CPU with the smallest runnable count, then updates that CPU's chunk while holding its run-queue lock.
+LBPWRR uses a fixed-capacity per-CPU runnable list and a weighted chunk. A task's priority maps directly to a weight
+from 1 through 6; each task appears in the chunk according to that weight. Adding a task selects the CPU with the
+smallest runnable count, then updates that CPU's chunk while holding its run-queue lock.
 
-Task state changes update the corresponding weighted chunk. Sleeping, terminated, and killed tasks do not remain runnable. A task must be removed from scheduler ownership before its task storage and stack are destroyed.
+Task state changes update the corresponding weighted chunk. Sleeping, terminated, and killed tasks do not remain
+runnable. A task must be removed from scheduler ownership before its task storage and stack are destroyed.
 
-Migration is intentionally limited to scheduled `TASK_READY` tasks that are not the current task on their source CPU. It acquires the two run-queue locks in CPU-index order and updates both the runnable lists and weighted chunks atomically with respect to those locks.
+Migration is intentionally limited to scheduled `TASK_READY` tasks that are not the current task on their source CPU. It
+acquires the two run-queue locks in CPU-index order and updates both the runnable lists and weighted chunks atomically
+with respect to those locks.
 
 ## Scheduler Stress Workload
 
-The default kernel entry starts a scheduler stress workload after kernel initialization. Its on-screen monitor reports the current phase, worker counters, sleep and yield activity, task churn progress, migration results, and a failure mask.
+The default kernel entry starts a scheduler stress workload after kernel initialization. Its on-screen monitor reports
+the current phase, worker counters, sleep and yield activity, task churn progress, migration results, and a failure
+mask.
 
-The workload exercises timer preemption, timed sleep and wake-up, explicit yield, creation and termination of 32 short-lived tasks, priority changes, ready-task migration, task killing, task termination, and the idle-only transition. It is a runtime regression workload rather than a proof of scheduler correctness on all hardware or CPU counts.
+The workload exercises timer preemption, timed sleep and wake-up, explicit yield, creation and termination of 32
+short-lived tasks, priority changes, ready-task migration, task killing, task termination, and the idle-only transition.
+It is a runtime regression workload rather than a proof of scheduler correctness on all hardware or CPU counts.
 
 ## Planned Work
 
