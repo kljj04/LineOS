@@ -16,11 +16,11 @@ LINEOS_BOOT_INFO *BootInfo = NULL;
 
 BOOLEAN CreateBootInfo(VOID)
 {
-    EFI_STATUS status;
+    EFI_STATUS Status;
 
-    status = UEFIBootServices->AllocatePool(EfiLoaderData, sizeof(LINEOS_BOOT_INFO), (VOID **) &BootInfo);
+    Status = UEFIBootServices->AllocatePool(EfiLoaderData, sizeof(LINEOS_BOOT_INFO), (VOID **) &BootInfo);
 
-    if (EFI_ERROR(status))
+    if (EFI_ERROR(Status))
         return FALSE;
 
     BootInfo->Magic = LINEOS_BOOT_MAGIC;
@@ -30,9 +30,9 @@ BOOLEAN CreateBootInfo(VOID)
     BootInfo->GOP = &GOP;
     BootInfo->MemoryMap = &MemoryMap;
     BootInfo->RSDP = RSDP;
-    BootInfo->Kernel.Base = kernel.Base;
-    BootInfo->Kernel.Size = kernel.Size;
-    BootInfo->Kernel.Entry = kernel.Entry;
+    BootInfo->Kernel.Base = Kernel.Base;
+    BootInfo->Kernel.Size = Kernel.Size;
+    BootInfo->Kernel.Entry = Kernel.Entry;
 
     return TRUE;
 }
@@ -42,7 +42,7 @@ VOID JumpKernel(VOID)
     typedef VOID(MS_ABI * KERNEL_ENTRY)(LINEOS_BOOT_INFO *);
     KERNEL_ENTRY KernelEntry;
 
-    KernelEntry = (KERNEL_ENTRY) kernel.Entry;
+    KernelEntry = (KERNEL_ENTRY) Kernel.Entry;
 
     KernelEntry(BootInfo);
 }

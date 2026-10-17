@@ -16,8 +16,8 @@ typedef struct SPIN_LOCK
     VOLATILE UINT32 Locked;
 } SPIN_LOCK;
 
-VOID   SpinLockInit(SPIN_LOCK *lock);
-VOID   SpinLockAcquire(SPIN_LOCK *lock);
-VOID   SpinLockRelease(SPIN_LOCK *lock);
-UINT64 SpinLockAcquireIRQSave(SPIN_LOCK *lock);
-VOID   SpinLockReleaseIRQRestore(SPIN_LOCK *lock, UINT64 flags);
+VOID   SpinLockInit(SPIN_LOCK *Lock);
+VOID   SpinLockAcquire(SPIN_LOCK *Lock);
+VOID   SpinLockRelease(SPIN_LOCK *Lock);
+UINT64 SpinLockAcquireIRQSave(SPIN_LOCK *Lock);
+VOID   SpinLockReleaseIRQRestore(SPIN_LOCK *Lock, UINT64 Flags);

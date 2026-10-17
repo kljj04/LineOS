@@ -35,29 +35,29 @@ STATIC BOOLEAN BitmapTest(CONST UINT8 *Bitmap, UINT32 Bit)
 STATIC UINT8 ReadConfigBitmap(VIRTIO_INPUT_DEVICE_INFO *InputDevice, UINT8 EventType, UINT8 *Bitmap)
 {
     VOLATILE VIRTIO_INPUT_CONFIG *Config;
-    UINT8                         size;
-    UINT32                        index;
+    UINT8                         Size;
+    UINT32                        Index;
 
     Config = (VOLATILE VIRTIO_INPUT_CONFIG *) InputDevice->Device.DeviceConfig;
 
     Config->Select = VIRTIO_INPUT_CFG_EV_BITS;
     Config->SubSelect = EventType;
 
-    size = Config->Size;
+    Size = Config->Size;
 
-    if (size > 128)
+    if (Size > 128)
     {
-        size = 128;
+        Size = 128;
     }
 
     KMemSet(Bitmap, 0, 128);
 
-    for (index = 0; index < size; index++)
+    for (Index = 0; Index < Size; Index++)
     {
-        Bitmap[index] = Config->Bitmap[index];
+        Bitmap[Index] = Config->Bitmap[Index];
     }
 
-    return size;
+    return Size;
 }
 
 STATIC BOOLEAN ReadABSInfo(VIRTIO_INPUT_DEVICE_INFO *InputDevice, UINT8 Axis, VIRTIO_INPUT_ABS_INFO *Info)
@@ -108,23 +108,23 @@ STATIC VIRTIO_INPUT_DEVICE_TYPE DetectDeviceType(VIRTIO_INPUT_DEVICE_INFO *Input
 
 STATIC BOOLEAN PostEventBuffers(VIRTIO_INPUT_DEVICE_INFO *InputDevice)
 {
-    UINT16 index;
-    UINT16 count;
+    UINT16 Index;
+    UINT16 Count;
 
-    count = InputDevice->EventQueue.Size;
+    Count = InputDevice->EventQueue.Size;
 
-    if (count > VIRTIO_INPUT_EVENT_BUFFER_COUNT)
+    if (Count > VIRTIO_INPUT_EVENT_BUFFER_COUNT)
     {
-        count = VIRTIO_INPUT_EVENT_BUFFER_COUNT;
+        Count = VIRTIO_INPUT_EVENT_BUFFER_COUNT;
     }
 
-    InputDevice->EventBufferCount = count;
+    InputDevice->EventBufferCount = Count;
 
-    for (index = 0; index < count; index++)
+    for (Index = 0; Index < Count; Index++)
     {
-        KMemSet(&InputDevice->EventBuffers[index].Event, 0, sizeof(VIRTIO_INPUT_EVENT));
+        KMemSet(&InputDevice->EventBuffers[Index].Event, 0, sizeof(VIRTIO_INPUT_EVENT));
 
-        if (!VirtQueuePostBuffer(&InputDevice->Device, &InputDevice->EventQueue, &InputDevice->EventBuffers[index].Event, sizeof(VIRTIO_INPUT_EVENT), VIRTQ_DESC_F_WRITE, &InputDevice->EventBuffers[index].Head))
+        if (!VirtQueuePostBuffer(&InputDevice->Device, &InputDevice->EventQueue, &InputDevice->EventBuffers[Index].Event, sizeof(VIRTIO_INPUT_EVENT), VIRTQ_DESC_F_WRITE, &InputDevice->EventBuffers[Index].Head))
         {
             LastError = VirtQueueGetLastError();
             return FALSE;
@@ -230,14 +230,14 @@ STATIC VIRTIO_INPUT_DEVICE_TYPE ProbeInputDevice(PCI_DEVICE *PCIDevice)
 STATIC VOID PushKeyEvent(UINT16 Code, BOOLEAN Pressed)
 {
     UINT32 NextIndex;
-    UINT64 flags;
+    UINT64 Flags;
 
-    flags = SpinLockAcquireIRQSave(&KeyEventLock);
+    Flags = SpinLockAcquireIRQSave(&KeyEventLock);
     NextIndex = (KeyWriteIndex + 1) % VIRTIO_INPUT_KEY_QUEUE_SIZE;
 
     if (NextIndex == KeyReadIndex)
     {
-        SpinLockReleaseIRQRestore(&KeyEventLock, flags);
+        SpinLockReleaseIRQRestore(&KeyEventLock, Flags);
         return;
     }
 
@@ -245,20 +245,20 @@ STATIC VOID PushKeyEvent(UINT16 Code, BOOLEAN Pressed)
     KeyEvents[KeyWriteIndex].Pressed = Pressed;
 
     KeyWriteIndex = NextIndex;
-    SpinLockReleaseIRQRestore(&KeyEventLock, flags);
+    SpinLockReleaseIRQRestore(&KeyEventLock, Flags);
 }
 
 STATIC VOID PushPointerEvent(VIRTIO_INPUT_DEVICE_INFO *InputDevice)
 {
     UINT32 NextIndex;
-    UINT64 flags;
+    UINT64 Flags;
 
-    flags = SpinLockAcquireIRQSave(&PointerEventLock);
+    Flags = SpinLockAcquireIRQSave(&PointerEventLock);
     NextIndex = (PointerWriteIndex + 1) % VIRTIO_INPUT_POINTER_QUEUE_SIZE;
 
     if (NextIndex == PointerReadIndex)
     {
-        SpinLockReleaseIRQRestore(&PointerEventLock, flags);
+        SpinLockReleaseIRQRestore(&PointerEventLock, Flags);
         return;
     }
 
@@ -269,7 +269,7 @@ STATIC VOID PushPointerEvent(VIRTIO_INPUT_DEVICE_INFO *InputDevice)
     PointerEvents[PointerWriteIndex].MiddleButton = InputDevice->MiddleButton;
 
     PointerWriteIndex = NextIndex;
-    SpinLockReleaseIRQRestore(&PointerEventLock, flags);
+    SpinLockReleaseIRQRestore(&PointerEventLock, Flags);
 }
 
 STATIC VOID ProcessKeyboardEvent(VIRTIO_INPUT_EVENT *Event)
@@ -329,13 +329,13 @@ STATIC VOID ProcessTabletEvent(VIRTIO_INPUT_DEVICE_INFO *InputDevice, VIRTIO_INP
 
 STATIC VIRTIO_INPUT_EVENT_BUFFER *FindEventBuffer(VIRTIO_INPUT_DEVICE_INFO *InputDevice, UINT16 Head)
 {
-    UINT16 index;
+    UINT16 Index;
 
-    for (index = 0; index < InputDevice->EventBufferCount; index++)
+    for (Index = 0; Index < InputDevice->EventBufferCount; Index++)
     {
-        if (InputDevice->EventBuffers[index].Head == Head)
+        if (InputDevice->EventBuffers[Index].Head == Head)
         {
-            return &InputDevice->EventBuffers[index];
+            return &InputDevice->EventBuffers[Index];
         }
     }
 
@@ -362,23 +362,23 @@ STATIC VOID AcknowledgeInputInterrupt(VIRTIO_INPUT_DEVICE_INFO *InputDevice)
 STATIC VOID ProcessInputQueue(VIRTIO_INPUT_DEVICE_INFO *InputDevice, SPIN_LOCK *QueueLock)
 {
     VIRTIO_INPUT_EVENT_BUFFER *EventBuffer;
-    UINT16                     head;
-    UINT32                     length;
-    UINT64                     flags;
+    UINT16                     Head;
+    UINT32                     Length;
+    UINT64                     Flags;
 
     if (InputDevice == NULL || !InputDevice->Found)
     {
         return;
     }
 
-    flags = SpinLockAcquireIRQSave(QueueLock);
+    Flags = SpinLockAcquireIRQSave(QueueLock);
     AcknowledgeInputInterrupt(InputDevice);
 
-    while (VirtQueuePopUsed(&InputDevice->EventQueue, &head, &length))
+    while (VirtQueuePopUsed(&InputDevice->EventQueue, &Head, &Length))
     {
-        EventBuffer = FindEventBuffer(InputDevice, head);
+        EventBuffer = FindEventBuffer(InputDevice, Head);
 
-        if (EventBuffer != NULL && length >= sizeof(VIRTIO_INPUT_EVENT))
+        if (EventBuffer != NULL && Length >= sizeof(VIRTIO_INPUT_EVENT))
         {
             if (InputDevice->Type == VIRTIO_INPUT_DEVICE_KEYBOARD)
             {
@@ -390,7 +390,7 @@ STATIC VOID ProcessInputQueue(VIRTIO_INPUT_DEVICE_INFO *InputDevice, SPIN_LOCK *
             }
         }
 
-        VirtQueueFreeChain(&InputDevice->EventQueue, head);
+        VirtQueueFreeChain(&InputDevice->EventQueue, Head);
 
         if (EventBuffer == NULL)
         {
@@ -403,20 +403,20 @@ STATIC VOID ProcessInputQueue(VIRTIO_INPUT_DEVICE_INFO *InputDevice, SPIN_LOCK *
         if (!VirtQueuePostBuffer(&InputDevice->Device, &InputDevice->EventQueue, &EventBuffer->Event, sizeof(VIRTIO_INPUT_EVENT), VIRTQ_DESC_F_WRITE, &EventBuffer->Head))
         {
             LastError = VirtQueueGetLastError();
-            SpinLockReleaseIRQRestore(QueueLock, flags);
+            SpinLockReleaseIRQRestore(QueueLock, Flags);
             return;
         }
     }
 
     LastError = L"ok";
-    SpinLockReleaseIRQRestore(QueueLock, flags);
+    SpinLockReleaseIRQRestore(QueueLock, Flags);
 }
 
 BOOLEAN VirtIOInputInit(VOID)
 {
     PCI_DEVICE              *PCIDevice;
     VIRTIO_INPUT_DEVICE_TYPE Type;
-    UINT32                   index;
+    UINT32                   Index;
 
     KMemSet(&Keyboard, 0, sizeof(VIRTIO_INPUT_DEVICE_INFO));
     KMemSet(&Tablet, 0, sizeof(VIRTIO_INPUT_DEVICE_INFO));
@@ -432,9 +432,9 @@ BOOLEAN VirtIOInputInit(VOID)
     PointerReadIndex = 0;
     PointerWriteIndex = 0;
 
-    for (index = 0; index < PCIGetDeviceCount(); index++)
+    for (Index = 0; Index < PCIGetDeviceCount(); Index++)
     {
-        PCIDevice = PCIGetDevice(index);
+        PCIDevice = PCIGetDevice(Index);
 
         if (PCIDevice == NULL)
         {
@@ -497,67 +497,67 @@ BOOLEAN VirtIOInputIsTabletAvailable(VOID)
 BOOLEAN VirtIOInputHasPendingEvent(VOID)
 {
     BOOLEAN Pending;
-    UINT64  flags;
+    UINT64  Flags;
 
-    flags = SpinLockAcquireIRQSave(&KeyEventLock);
+    Flags = SpinLockAcquireIRQSave(&KeyEventLock);
     Pending = KeyReadIndex != KeyWriteIndex;
-    SpinLockReleaseIRQRestore(&KeyEventLock, flags);
+    SpinLockReleaseIRQRestore(&KeyEventLock, Flags);
 
     if (Pending)
     {
         return TRUE;
     }
 
-    flags = SpinLockAcquireIRQSave(&PointerEventLock);
+    Flags = SpinLockAcquireIRQSave(&PointerEventLock);
     Pending = PointerReadIndex != PointerWriteIndex;
-    SpinLockReleaseIRQRestore(&PointerEventLock, flags);
+    SpinLockReleaseIRQRestore(&PointerEventLock, Flags);
 
     return Pending;
 }
 
 BOOLEAN VirtIOInputGetKeyEvent(VIRTIO_KEY_EVENT *Event)
 {
-    UINT64 flags;
+    UINT64 Flags;
 
     if (Event == NULL)
     {
         return FALSE;
     }
 
-    flags = SpinLockAcquireIRQSave(&KeyEventLock);
+    Flags = SpinLockAcquireIRQSave(&KeyEventLock);
     if (KeyReadIndex == KeyWriteIndex)
     {
-        SpinLockReleaseIRQRestore(&KeyEventLock, flags);
+        SpinLockReleaseIRQRestore(&KeyEventLock, Flags);
         return FALSE;
     }
 
     *Event = KeyEvents[KeyReadIndex];
     KeyReadIndex = (KeyReadIndex + 1) % VIRTIO_INPUT_KEY_QUEUE_SIZE;
 
-    SpinLockReleaseIRQRestore(&KeyEventLock, flags);
+    SpinLockReleaseIRQRestore(&KeyEventLock, Flags);
     return TRUE;
 }
 
 BOOLEAN VirtIOInputGetPointerEvent(VIRTIO_POINTER_EVENT *Event)
 {
-    UINT64 flags;
+    UINT64 Flags;
 
     if (Event == NULL)
     {
         return FALSE;
     }
 
-    flags = SpinLockAcquireIRQSave(&PointerEventLock);
+    Flags = SpinLockAcquireIRQSave(&PointerEventLock);
     if (PointerReadIndex == PointerWriteIndex)
     {
-        SpinLockReleaseIRQRestore(&PointerEventLock, flags);
+        SpinLockReleaseIRQRestore(&PointerEventLock, Flags);
         return FALSE;
     }
 
     *Event = PointerEvents[PointerReadIndex];
     PointerReadIndex = (PointerReadIndex + 1) % VIRTIO_INPUT_POINTER_QUEUE_SIZE;
 
-    SpinLockReleaseIRQRestore(&PointerEventLock, flags);
+    SpinLockReleaseIRQRestore(&PointerEventLock, Flags);
     return TRUE;
 }
 

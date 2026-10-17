@@ -14,7 +14,7 @@ STATIC BOOLEAN LoadBalancerFindSourceCPU(UINT32 *CPUID)
 {
     UINT32 CPUCount;
     UINT32 CurrentCPUID;
-    UINT32 count;
+    UINT32 Count;
     UINT32 MaxCount;
 
     if (CPUID == NULL)
@@ -34,11 +34,11 @@ STATIC BOOLEAN LoadBalancerFindSourceCPU(UINT32 *CPUID)
 
     for (CurrentCPUID = 0; CurrentCPUID < CPUCount; CurrentCPUID++)
     {
-        count = LBPWRRGetCPUAssignedTaskCount(CurrentCPUID);
+        Count = LBPWRRGetCPUAssignedTaskCount(CurrentCPUID);
 
-        if (count > MaxCount)
+        if (Count > MaxCount)
         {
-            MaxCount = count;
+            MaxCount = Count;
             *CPUID = CurrentCPUID;
         }
     }
@@ -50,7 +50,7 @@ STATIC BOOLEAN LoadBalancerFindTargetCPU(UINT32 *CPUID)
 {
     UINT32 CPUCount;
     UINT32 CurrentCPUID;
-    UINT32 count;
+    UINT32 Count;
     UINT32 MinCount;
 
     if (CPUID == NULL)
@@ -70,11 +70,11 @@ STATIC BOOLEAN LoadBalancerFindTargetCPU(UINT32 *CPUID)
 
     for (CurrentCPUID = 0; CurrentCPUID < CPUCount; CurrentCPUID++)
     {
-        count = LBPWRRGetCPUAssignedTaskCount(CurrentCPUID);
+        Count = LBPWRRGetCPUAssignedTaskCount(CurrentCPUID);
 
-        if (count < MinCount)
+        if (Count < MinCount)
         {
-            MinCount = count;
+            MinCount = Count;
             *CPUID = CurrentCPUID;
         }
     }
@@ -82,9 +82,9 @@ STATIC BOOLEAN LoadBalancerFindTargetCPU(UINT32 *CPUID)
     return TRUE;
 }
 
-STATIC BOOLEAN LoadBalancerMoveTask(UINT32 SourceCPUID, UINT32 TargetCPUID, TASK *task)
+STATIC BOOLEAN LoadBalancerMoveTask(UINT32 SourceCPUID, UINT32 TargetCPUID, TASK *Task)
 {
-    if (task == NULL)
+    if (Task == NULL)
     {
         return FALSE;
     }
@@ -94,12 +94,12 @@ STATIC BOOLEAN LoadBalancerMoveTask(UINT32 SourceCPUID, UINT32 TargetCPUID, TASK
         return FALSE;
     }
 
-    if (task->CPUID != SourceCPUID)
+    if (Task->CPUID != SourceCPUID)
     {
         return FALSE;
     }
 
-    return LBPWRRMoveTask(task, TargetCPUID);
+    return LBPWRRMoveTask(Task, TargetCPUID);
 }
 
 VOID LoadBalancerInit(VOID)
@@ -125,7 +125,7 @@ VOID LoadBalancerBalance(VOID)
 {
     UINT32 SourceCPUID;
     UINT32 TargetCPUID;
-    TASK  *task;
+    TASK  *Task;
 
     if (!LoadBalancerFindSourceCPU(&SourceCPUID))
     {
@@ -142,12 +142,12 @@ VOID LoadBalancerBalance(VOID)
         return;
     }
 
-    task = LBPWRRGetTaskFromCPU(SourceCPUID);
+    Task = LBPWRRGetTaskFromCPU(SourceCPUID);
 
-    if (task == NULL)
+    if (Task == NULL)
     {
         return;
     }
 
-    LoadBalancerMoveTask(SourceCPUID, TargetCPUID, task);
+    LoadBalancerMoveTask(SourceCPUID, TargetCPUID, Task);
 }

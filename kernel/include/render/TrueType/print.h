@@ -7,4 +7,4 @@
 #include <LineOS/TypeInfo.h>
 #include <render/TrueType/TrueTypeEngine.h>
 
-VOID KPrint(CONST CHAR16 *msg, UINT32 x, UINT32 baseline, UINT32 color, UINT32 PixelHeight, TRUE_TYPE_FONT font, ...);
+VOID KPrint(CONST CHAR16 *Msg, UINT32 X, UINT32 Baseline, UINT32 Color, UINT32 PixelHeight, TRUE_TYPE_FONT Font, ...);

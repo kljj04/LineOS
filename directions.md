@@ -25,8 +25,7 @@ You must strictly follow these formatting and naming conventions for all C/C++ c
    - If a name may collide with compiler/runtime/library symbols, add a K prefix, such as KMemSet.
 
 4. Variables:
-   - Multi-word variables must use PascalCase.
-   - Single-word variables must use lowercase.
+   - variables must use PascalCase.
 
 5. Enum, struct, and constant names:
    - Enum type names, struct type names, typedef names, enum members, macros, and constants must use all uppercase with underscores between words.

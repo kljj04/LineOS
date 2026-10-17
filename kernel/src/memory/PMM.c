@@ -36,31 +36,31 @@ STATIC UINT64 AlignDown(UINT64 Value, UINT64 Alignment)
 
 STATIC UINTN PToO(UINTN PageCount)
 {
-    UINTN order = 0;
-    UINTN pages = 1;
+    UINTN Order = 0;
+    UINTN Pages = 1;
 
-    while (pages < PageCount)
+    while (Pages < PageCount)
     {
-        pages <<= 1;
-        order++;
+        Pages <<= 1;
+        Order++;
     }
 
-    return order;
+    return Order;
 }
 
-STATIC UINT64 OToP(UINTN order)
+STATIC UINT64 OToP(UINTN Order)
 {
-    return 1ULL << order;
+    return 1ULL << Order;
 }
 
-STATIC UINT64 OToS(UINTN order)
+STATIC UINT64 OToS(UINTN Order)
 {
-    return PAGE_SIZE << order;
+    return PAGE_SIZE << Order;
 }
 
-STATIC EFI_MEMORY_DESCRIPTOR *GetMemoryDescriptor(LINEOS_MEMORY_MAP *MemoryMap, UINTN index)
+STATIC EFI_MEMORY_DESCRIPTOR *GetMemoryDescriptor(LINEOS_MEMORY_MAP *MemoryMap, UINTN Index)
 {
-    return (EFI_MEMORY_DESCRIPTOR *) ((UINT8 *) MemoryMap->MemoryMap + (index * MemoryMap->MemoryMapDescriptorSize));
+    return (EFI_MEMORY_DESCRIPTOR *) ((UINT8 *) MemoryMap->MemoryMap + (Index * MemoryMap->MemoryMapDescriptorSize));
 }
 
 STATIC UINTN GetMemoryDescriptorCount(LINEOS_MEMORY_MAP *MemoryMap)
@@ -73,106 +73,106 @@ STATIC UINT64 FindHighestConventionalMemoryAddress(LINEOS_MEMORY_MAP *MemoryMap)
     UINT64 HighestAddress = 0;
     UINTN  EntryCount = GetMemoryDescriptorCount(MemoryMap);
 
-    for (UINTN index = 0; index < EntryCount; index++)
+    for (UINTN Index = 0; Index < EntryCount; Index++)
     {
-        EFI_MEMORY_DESCRIPTOR *Descriptor = GetMemoryDescriptor(MemoryMap, index);
-        UINT64                 end;
+        EFI_MEMORY_DESCRIPTOR *Descriptor = GetMemoryDescriptor(MemoryMap, Index);
+        UINT64                 End;
 
         if (Descriptor->Type != EFI_CONVENTIONAL_MEMORY)
         {
             continue;
         }
 
-        end = Descriptor->PhysicalStart + (Descriptor->NumberOfPages * PAGE_SIZE);
+        End = Descriptor->PhysicalStart + (Descriptor->NumberOfPages * PAGE_SIZE);
 
-        if (end > HighestAddress)
+        if (End > HighestAddress)
         {
-            HighestAddress = end;
+            HighestAddress = End;
         }
     }
 
     return HighestAddress;
 }
 
-STATIC VOID BuddyPush(UINTN order, UINT64 address)
+STATIC VOID BuddyPush(UINTN Order, UINT64 Address)
 {
-    BUDDY_BLOCK *block;
+    BUDDY_BLOCK *Block;
 
-    if (order > BUDDY_MAX_ORDER)
+    if (Order > BUDDY_MAX_ORDER)
     {
         return;
     }
 
-    block = (BUDDY_BLOCK *) address;
-    block->Next = FreeLists[order];
-    FreeLists[order] = block;
+    Block = (BUDDY_BLOCK *) Address;
+    Block->Next = FreeLists[Order];
+    FreeLists[Order] = Block;
 }
 
-STATIC BUDDY_BLOCK *BuddyPop(UINTN order)
+STATIC BUDDY_BLOCK *BuddyPop(UINTN Order)
 {
-    BUDDY_BLOCK *block;
+    BUDDY_BLOCK *Block;
 
-    if (order > BUDDY_MAX_ORDER)
+    if (Order > BUDDY_MAX_ORDER)
     {
         return NULL;
     }
 
-    block = FreeLists[order];
+    Block = FreeLists[Order];
 
-    if (block == NULL)
+    if (Block == NULL)
     {
         return NULL;
     }
 
-    FreeLists[order] = block->Next;
-    block->Next = NULL;
+    FreeLists[Order] = Block->Next;
+    Block->Next = NULL;
 
-    return block;
+    return Block;
 }
 
-STATIC BOOLEAN BuddyRemove(UINTN order, UINT64 address)
+STATIC BOOLEAN BuddyRemove(UINTN Order, UINT64 Address)
 {
-    BUDDY_BLOCK *block;
-    BUDDY_BLOCK *previous = NULL;
+    BUDDY_BLOCK *Block;
+    BUDDY_BLOCK *Previous = NULL;
 
-    if (order > BUDDY_MAX_ORDER)
+    if (Order > BUDDY_MAX_ORDER)
     {
         return FALSE;
     }
 
-    block = FreeLists[order];
+    Block = FreeLists[Order];
 
-    while (block != NULL)
+    while (Block != NULL)
     {
-        if ((UINT64) block == address)
+        if ((UINT64) Block == Address)
         {
-            if (previous == NULL)
+            if (Previous == NULL)
             {
-                FreeLists[order] = block->Next;
+                FreeLists[Order] = Block->Next;
             }
             else
             {
-                previous->Next = block->Next;
+                Previous->Next = Block->Next;
             }
 
-            block->Next = NULL;
+            Block->Next = NULL;
             return TRUE;
         }
 
-        previous = block;
-        block = block->Next;
+        Previous = Block;
+        Block = Block->Next;
     }
 
     return FALSE;
 }
 
-STATIC UINTN LargestOrderForRange(UINT64 address, UINT64 PageCount)
+STATIC UINTN LargestOrderForRange(UINT64 Address, UINT64 PageCount)
 {
-    UINTN order = 0;
+    UINTN Order = 0;
 
-    while (order < BUDDY_MAX_ORDER)
+    while (Order < BUDDY_MAX_ORDER)
     {
-        UINTN  NextOrder = order + 1;
+        UINTN  NextOrder = Order + 1;
         UINT64 NextPages = OToP(NextOrder);
         UINT64 NextSize = OToS(NextOrder);
 
@@ -181,35 +181,35 @@ STATIC UINTN LargestOrderForRange(UINT64 address, UINT64 PageCount)
             break;
         }
 
-        if ((address & (NextSize - 1)) != 0)
+        if ((Address & (NextSize - 1)) != 0)
         {
             break;
         }
 
-        order = NextOrder;
+        Order = NextOrder;
     }
 
-    return order;
+    return Order;
 }
 
-STATIC VOID BuddyAddRange(UINT64 address, UINT64 PageCount)
+STATIC VOID BuddyAddRange(UINT64 Address, UINT64 PageCount)
 {
     while (PageCount != 0)
     {
-        UINTN  order = LargestOrderForRange(address, PageCount);
-        UINT64 pages = OToP(order);
+        UINTN  Order = LargestOrderForRange(Address, PageCount);
+        UINT64 Pages = OToP(Order);
 
-        BuddyPush(order, address);
+        BuddyPush(Order, Address);
 
-        address += pages * PAGE_SIZE;
-        PageCount -= pages;
+        Address += Pages * PAGE_SIZE;
+        PageCount -= Pages;
     }
 }
 
-STATIC VOID BuddyAddUsableRange(UINT64 address, UINT64 PageCount)
+STATIC VOID BuddyAddUsableRange(UINT64 Address, UINT64 PageCount)
 {
-    UINT64 start;
-    UINT64 end;
+    UINT64 Start;
+    UINT64 End;
     UINT64 ReservedEnd = LOW_MEMORY_RESERVED_PAGES * PAGE_SIZE;
 
     if (PageCount == 0)
@@ -217,79 +217,79 @@ STATIC VOID BuddyAddUsableRange(UINT64 address, UINT64 PageCount)
         return;
     }
 
-    start = AlignUp(address, PAGE_SIZE);
-    end = AlignDown(address + (PageCount * PAGE_SIZE), PAGE_SIZE);
+    Start = AlignUp(Address, PAGE_SIZE);
+    End = AlignDown(Address + (PageCount * PAGE_SIZE), PAGE_SIZE);
 
-    if (end <= start)
+    if (End <= Start)
     {
         return;
     }
 
-    if (end <= ReservedEnd)
+    if (End <= ReservedEnd)
     {
         return;
     }
 
-    if (start < ReservedEnd)
+    if (Start < ReservedEnd)
     {
-        start = ReservedEnd;
+        Start = ReservedEnd;
     }
 
-    if (end <= start)
+    if (End <= Start)
     {
         return;
     }
 
-    BuddyAddRange(start, (end - start) / PAGE_SIZE);
+    BuddyAddRange(Start, (End - Start) / PAGE_SIZE);
 }
 
-STATIC VOID BuddyAddUsableRangeExcept(UINT64 address, UINT64 PageCount, UINT64 ReservedStart, UINT64 ReservedEnd)
+STATIC VOID BuddyAddUsableRangeExcept(UINT64 Address, UINT64 PageCount, UINT64 ReservedStart, UINT64 ReservedEnd)
 {
-    UINT64 start;
-    UINT64 end;
+    UINT64 Start;
+    UINT64 End;
 
     if (PageCount == 0)
     {
         return;
     }
 
-    start = AlignUp(address, PAGE_SIZE);
-    end = AlignDown(address + (PageCount * PAGE_SIZE), PAGE_SIZE);
+    Start = AlignUp(Address, PAGE_SIZE);
+    End = AlignDown(Address + (PageCount * PAGE_SIZE), PAGE_SIZE);
 
-    if (end <= start)
+    if (End <= Start)
     {
         return;
     }
 
-    if (ReservedEnd <= ReservedStart || end <= ReservedStart || start >= ReservedEnd)
+    if (ReservedEnd <= ReservedStart || End <= ReservedStart || Start >= ReservedEnd)
     {
-        BuddyAddUsableRange(start, (end - start) / PAGE_SIZE);
+        BuddyAddUsableRange(Start, (End - Start) / PAGE_SIZE);
         return;
     }
 
-    if (start < ReservedStart)
+    if (Start < ReservedStart)
     {
-        BuddyAddUsableRange(start, (ReservedStart - start) / PAGE_SIZE);
+        BuddyAddUsableRange(Start, (ReservedStart - Start) / PAGE_SIZE);
     }
 
-    if (end > ReservedEnd)
+    if (End > ReservedEnd)
     {
-        BuddyAddUsableRange(ReservedEnd, (end - ReservedEnd) / PAGE_SIZE);
+        BuddyAddUsableRange(ReservedEnd, (End - ReservedEnd) / PAGE_SIZE);
     }
 }
 
-STATIC VOID *BuddyAllocate(UINTN order)
+STATIC VOID *BuddyAllocate(UINTN Order)
 {
     UINTN        CurrentOrder;
-    BUDDY_BLOCK *block;
-    UINT64       address;
+    BUDDY_BLOCK *Block;
+    UINT64       Address;
 
-    if (order > BUDDY_MAX_ORDER)
+    if (Order > BUDDY_MAX_ORDER)
     {
         return NULL;
     }
 
-    CurrentOrder = order;
+    CurrentOrder = Order;
 
     while (CurrentOrder <= BUDDY_MAX_ORDER && FreeLists[CurrentOrder] == NULL)
     {
@@ -301,97 +301,97 @@ STATIC VOID *BuddyAllocate(UINTN order)
         return NULL;
     }
 
-    block = BuddyPop(CurrentOrder);
+    Block = BuddyPop(CurrentOrder);
 
-    if (block == NULL)
+    if (Block == NULL)
     {
         return NULL;
     }
 
-    address = (UINT64) block;
+    Address = (UINT64) Block;
 
-    while (CurrentOrder > order)
+    while (CurrentOrder > Order)
     {
         UINT64 BuddyAddress;
 
         CurrentOrder--;
-        BuddyAddress = address + OToS(CurrentOrder);
+        BuddyAddress = Address + OToS(CurrentOrder);
 
         BuddyPush(CurrentOrder, BuddyAddress);
     }
 
-    return (VOID *) address;
+    return (VOID *) Address;
 }
 
-STATIC VOID *BuddyAllocateBelow(UINTN order, UINT64 limit)
+STATIC VOID *BuddyAllocateBelow(UINTN Order, UINT64 Limit)
 {
-    if (order > BUDDY_MAX_ORDER || limit == 0)
+    if (Order > BUDDY_MAX_ORDER || Limit == 0)
     {
         return NULL;
     }
 
-    for (UINTN CurrentOrder = order; CurrentOrder <= BUDDY_MAX_ORDER; CurrentOrder++)
+    for (UINTN CurrentOrder = Order; CurrentOrder <= BUDDY_MAX_ORDER; CurrentOrder++)
     {
-        BUDDY_BLOCK *block = FreeLists[CurrentOrder];
+        BUDDY_BLOCK *Block = FreeLists[CurrentOrder];
 
-        while (block != NULL)
+        while (Block != NULL)
         {
-            UINT64 address = (UINT64) block;
-            UINT64 RequestedSize = OToS(order);
+            UINT64 Address = (UINT64) Block;
+            UINT64 RequestedSize = OToS(Order);
 
-            if (address <= limit && RequestedSize <= limit - address)
+            if (Address <= Limit && RequestedSize <= Limit - Address)
             {
-                if (!BuddyRemove(CurrentOrder, address))
+                if (!BuddyRemove(CurrentOrder, Address))
                 {
                     return NULL;
                 }
 
-                while (CurrentOrder > order)
+                while (CurrentOrder > Order)
                 {
                     UINT64 BuddyAddress;
 
                     CurrentOrder--;
-                    BuddyAddress = address + OToS(CurrentOrder);
+                    BuddyAddress = Address + OToS(CurrentOrder);
 
                     BuddyPush(CurrentOrder, BuddyAddress);
                 }
 
-                return (VOID *) address;
+                return (VOID *) Address;
             }
 
-            block = block->Next;
+            Block = Block->Next;
         }
     }
 
     return NULL;
 }
 
-STATIC VOID BuddyFree(UINT64 address, UINTN order)
+STATIC VOID BuddyFree(UINT64 Address, UINTN Order)
 {
-    if (order > BUDDY_MAX_ORDER)
+    if (Order > BUDDY_MAX_ORDER)
     {
         return;
     }
 
-    while (order < BUDDY_MAX_ORDER)
+    while (Order < BUDDY_MAX_ORDER)
     {
-        UINT64 size = OToS(order);
-        UINT64 BuddyAddress = address ^ size;
+        UINT64 Size = OToS(Order);
+        UINT64 BuddyAddress = Address ^ Size;
 
-        if (!BuddyRemove(order, BuddyAddress))
+        if (!BuddyRemove(Order, BuddyAddress))
         {
             break;
         }
 
-        if (BuddyAddress < address)
+        if (BuddyAddress < Address)
         {
-            address = BuddyAddress;
+            Address = BuddyAddress;
         }
 
-        order++;
+        Order++;
     }
 
-    BuddyPush(order, address);
+    BuddyPush(Order, Address);
 }
 
 BOOLEAN KMemoryInit(LINEOS_BOOT_INFO *BootInfo)
@@ -410,9 +410,9 @@ BOOLEAN KMemoryInit(LINEOS_BOOT_INFO *BootInfo)
     SpinLockInit(&BuddyLock);
     SpinLockInit(&HeapLock);
 
-    for (UINTN order = 0; order <= BUDDY_MAX_ORDER; order++)
+    for (UINTN Order = 0; Order <= BUDDY_MAX_ORDER; Order++)
     {
-        FreeLists[order] = NULL;
+        FreeLists[Order] = NULL;
     }
 
     MemoryMap = BootInfo->MemoryMap;
@@ -428,9 +428,9 @@ BOOLEAN KMemoryInit(LINEOS_BOOT_INFO *BootInfo)
     KernelStart = AlignDown(BootInfo->Kernel.Base, PAGE_SIZE);
     KernelEnd = AlignUp(BootInfo->Kernel.Base + BootInfo->Kernel.Size, PAGE_SIZE);
 
-    for (UINTN index = 0; index < EntryCount; index++)
+    for (UINTN Index = 0; Index < EntryCount; Index++)
     {
-        EFI_MEMORY_DESCRIPTOR *Descriptor = GetMemoryDescriptor(MemoryMap, index);
+        EFI_MEMORY_DESCRIPTOR *Descriptor = GetMemoryDescriptor(MemoryMap, Index);
 
         if (Descriptor->Type != EFI_CONVENTIONAL_MEMORY)
         {
@@ -448,212 +448,212 @@ UINT64 KGetTotalPages(VOID)
     return TotalPages;
 }
 
-VOID *KMemMove(VOID *destination, CONST VOID *source, UINTN size)
+VOID *KMemMove(VOID *Destination, CONST VOID *Source, UINTN Size)
 {
-    UINT8       *dst = (UINT8 *) destination;
-    CONST UINT8 *src = (CONST UINT8 *) source;
+    UINT8       *Dst = (UINT8 *) Destination;
+    CONST UINT8 *Src = (CONST UINT8 *) Source;
 
-    if (dst == src || size == 0)
+    if (Dst == Src || Size == 0)
     {
-        return destination;
+        return Destination;
     }
 
-    if (dst < src)
+    if (Dst < Src)
     {
-        for (UINTN i = 0; i < size; i++)
+        for (UINTN I = 0; I < Size; I++)
         {
-            dst[i] = src[i];
+            Dst[I] = Src[I];
         }
     }
     else
     {
-        for (UINTN i = size; i > 0; i--)
+        for (UINTN I = Size; I > 0; I--)
         {
-            dst[i - 1] = src[i - 1];
+            Dst[I - 1] = Src[I - 1];
         }
     }
 
-    return destination;
+    return Destination;
 }
 
-VOID *KMemCpy(VOID *destination, CONST VOID *source, UINTN size)
+VOID *KMemCpy(VOID *Destination, CONST VOID *Source, UINTN Size)
 {
-    UINT8       *dst = (UINT8 *) destination;
-    CONST UINT8 *src = (CONST UINT8 *) source;
+    UINT8       *Dst = (UINT8 *) Destination;
+    CONST UINT8 *Src = (CONST UINT8 *) Source;
 
-    for (UINTN index = 0; index < size; index++)
+    for (UINTN Index = 0; Index < Size; Index++)
     {
-        dst[index] = src[index];
+        Dst[Index] = Src[Index];
     }
 
-    return destination;
+    return Destination;
 }
 
-VOID *KMemSet(VOID *destination, UINT8 value, UINTN size)
+VOID *KMemSet(VOID *Destination, UINT8 Value, UINTN Size)
 {
-    UINT8 *dst = (UINT8 *) destination;
+    UINT8 *Dst = (UINT8 *) Destination;
 
-    for (UINTN index = 0; index < size; index++)
+    for (UINTN Index = 0; Index < Size; Index++)
     {
-        dst[index] = value;
+        Dst[Index] = Value;
     }
 
-    return destination;
+    return Destination;
 }
 
 VOID *KAllocPages(UINTN PageCount)
 {
-    UINTN  order;
-    UINT64 flags;
-    VOID  *address;
+    UINTN  Order;
+    UINT64 Flags;
+    VOID  *Address;
 
     if (PageCount == 0)
     {
         return NULL;
     }
 
-    order = PToO(PageCount);
+    Order = PToO(PageCount);
 
-    if (order > BUDDY_MAX_ORDER)
+    if (Order > BUDDY_MAX_ORDER)
     {
         return NULL;
     }
 
-    flags = SpinLockAcquireIRQSave(&BuddyLock);
-    address = BuddyAllocate(order);
-    SpinLockReleaseIRQRestore(&BuddyLock, flags);
+    Flags = SpinLockAcquireIRQSave(&BuddyLock);
+    Address = BuddyAllocate(Order);
+    SpinLockReleaseIRQRestore(&BuddyLock, Flags);
 
-    if (address == NULL)
+    if (Address == NULL)
     {
         return NULL;
     }
 
-    KMemSet(address, 0, (UINTN) OToS(order));
+    KMemSet(Address, 0, (UINTN) OToS(Order));
 
-    return address;
+    return Address;
 }
 
-VOID *KAllocPagesBelow(UINTN PageCount, UINT64 limit)
+VOID *KAllocPagesBelow(UINTN PageCount, UINT64 Limit)
 {
-    UINTN  order;
-    UINT64 flags;
-    VOID  *address;
+    UINTN  Order;
+    UINT64 Flags;
+    VOID  *Address;
 
-    if (PageCount == 0 || limit == 0)
+    if (PageCount == 0 || Limit == 0)
     {
         return NULL;
     }
 
-    order = PToO(PageCount);
+    Order = PToO(PageCount);
 
-    if (order > BUDDY_MAX_ORDER)
+    if (Order > BUDDY_MAX_ORDER)
     {
         return NULL;
     }
 
-    flags = SpinLockAcquireIRQSave(&BuddyLock);
-    address = BuddyAllocateBelow(order, limit);
-    SpinLockReleaseIRQRestore(&BuddyLock, flags);
+    Flags = SpinLockAcquireIRQSave(&BuddyLock);
+    Address = BuddyAllocateBelow(Order, Limit);
+    SpinLockReleaseIRQRestore(&BuddyLock, Flags);
 
-    if (address == NULL)
+    if (Address == NULL)
     {
         return NULL;
     }
 
-    KMemSet(address, 0, (UINTN) OToS(order));
+    KMemSet(Address, 0, (UINTN) OToS(Order));
 
-    return address;
+    return Address;
 }
 
-VOID KMemFreePages(VOID *address, UINTN PageCount)
+VOID KMemFreePages(VOID *PageAddress, UINTN PageCount)
 {
     UINT64 Address;
-    UINTN  order;
-    UINT64 flags;
+    UINTN  Order;
+    UINT64 Flags;
 
-    if (address == NULL || PageCount == 0)
+    if (PageAddress == NULL || PageCount == 0)
     {
         return;
     }
 
-    Address = (UINT64) address;
+    Address = (UINT64) PageAddress;
 
     if ((Address & (PAGE_SIZE - 1)) != 0)
     {
         return;
     }
 
-    order = PToO(PageCount);
+    Order = PToO(PageCount);
 
-    if (order > BUDDY_MAX_ORDER)
+    if (Order > BUDDY_MAX_ORDER)
     {
         return;
     }
 
-    flags = SpinLockAcquireIRQSave(&BuddyLock);
-    BuddyFree(Address, order);
-    SpinLockReleaseIRQRestore(&BuddyLock, flags);
+    Flags = SpinLockAcquireIRQSave(&BuddyLock);
+    BuddyFree(Address, Order);
+    SpinLockReleaseIRQRestore(&BuddyLock, Flags);
 }
 
-STATIC VOID HeapInitializeBlock(HEAP_BLOCK *block, UINTN size, BOOLEAN free)
+STATIC VOID HeapInitializeBlock(HEAP_BLOCK *Block, UINTN Size, BOOLEAN Free)
 {
-    block->Size = size;
-    block->Free = free;
-    block->Next = NULL;
-    block->Previous = NULL;
+    Block->Size = Size;
+    Block->Free = Free;
+    Block->Next = NULL;
+    Block->Previous = NULL;
 }
 
-STATIC HEAP_BLOCK *HeapFindFreeBlock(UINTN size)
+STATIC HEAP_BLOCK *HeapFindFreeBlock(UINTN Size)
 {
-    HEAP_BLOCK *block = HeapHead;
+    HEAP_BLOCK *Block = HeapHead;
 
-    while (block != NULL)
+    while (Block != NULL)
     {
-        if (block->Free && block->Size >= size)
+        if (Block->Free && Block->Size >= Size)
         {
-            return block;
+            return Block;
         }
 
-        block = block->Next;
+        Block = Block->Next;
     }
 
     return NULL;
 }
 
-STATIC VOID HeapSplitBlock(HEAP_BLOCK *block, UINTN size)
+STATIC VOID HeapSplitBlock(HEAP_BLOCK *Block, UINTN Size)
 {
     HEAP_BLOCK *NewBlock;
     UINTN       RemainingSize;
 
-    if (block->Size < size)
+    if (Block->Size < Size)
     {
         return;
     }
 
-    RemainingSize = block->Size - size;
+    RemainingSize = Block->Size - Size;
 
     if (RemainingSize < sizeof(HEAP_BLOCK) + HEAP_MIN_BLOCK_SIZE)
     {
         return;
     }
 
-    NewBlock = (HEAP_BLOCK *) ((UINT8 *) (block + 1) + size);
+    NewBlock = (HEAP_BLOCK *) ((UINT8 *) (Block + 1) + Size);
 
     HeapInitializeBlock(NewBlock, RemainingSize - sizeof(HEAP_BLOCK), TRUE);
-    NewBlock->Next = block->Next;
-    NewBlock->Previous = block;
+    NewBlock->Next = Block->Next;
+    NewBlock->Previous = Block;
 
-    if (block->Next != NULL)
+    if (Block->Next != NULL)
     {
-        block->Next->Previous = NewBlock;
+        Block->Next->Previous = NewBlock;
     }
     else
     {
         HeapTail = NewBlock;
     }
 
-    block->Next = NewBlock;
-    block->Size = size;
+    Block->Next = NewBlock;
+    Block->Size = Size;
 }
 
 STATIC BOOLEAN HeapBlocksAdjacent(HEAP_BLOCK *FirstBlock, HEAP_BLOCK *SecondBlock)
@@ -661,37 +661,37 @@ STATIC BOOLEAN HeapBlocksAdjacent(HEAP_BLOCK *FirstBlock, HEAP_BLOCK *SecondBloc
     return (UINT8 *) (FirstBlock + 1) + FirstBlock->Size == (UINT8 *) SecondBlock;
 }
 
-STATIC VOID HeapMergeWithNext(HEAP_BLOCK *block)
+STATIC VOID HeapMergeWithNext(HEAP_BLOCK *Block)
 {
     HEAP_BLOCK *NextBlock;
 
-    if (block == NULL || block->Next == NULL)
+    if (Block == NULL || Block->Next == NULL)
     {
         return;
     }
 
-    NextBlock = block->Next;
+    NextBlock = Block->Next;
 
     if (!NextBlock->Free)
     {
         return;
     }
 
-    if (!HeapBlocksAdjacent(block, NextBlock))
+    if (!HeapBlocksAdjacent(Block, NextBlock))
     {
         return;
     }
 
-    block->Size += sizeof(HEAP_BLOCK) + NextBlock->Size;
-    block->Next = NextBlock->Next;
+    Block->Size += sizeof(HEAP_BLOCK) + NextBlock->Size;
+    Block->Next = NextBlock->Next;
 
     if (NextBlock->Next != NULL)
     {
-        NextBlock->Next->Previous = block;
+        NextBlock->Next->Previous = Block;
     }
     else
     {
-        HeapTail = block;
+        HeapTail = Block;
     }
 }
 
@@ -699,11 +699,11 @@ STATIC HEAP_BLOCK *HeapExpand(UINTN MinimumSize)
 {
     UINTN       RequiredSize;
     UINTN       PageCount;
-    UINTN       order;
+    UINTN       Order;
     UINTN       AllocatedPages;
     UINTN       AllocatedSize;
-    VOID       *memory;
-    HEAP_BLOCK *block;
+    VOID       *Memory;
+    HEAP_BLOCK *Block;
 
     RequiredSize = MinimumSize + sizeof(HEAP_BLOCK);
     PageCount = (UINTN) (AlignUp(RequiredSize, PAGE_SIZE) / PAGE_SIZE);
@@ -713,44 +713,44 @@ STATIC HEAP_BLOCK *HeapExpand(UINTN MinimumSize)
         PageCount = HEAP_EXPAND_PAGES;
     }
 
-    order = PToO(PageCount);
+    Order = PToO(PageCount);
 
-    if (order > BUDDY_MAX_ORDER)
+    if (Order > BUDDY_MAX_ORDER)
     {
         return NULL;
     }
 
-    AllocatedPages = (UINTN) OToP(order);
+    AllocatedPages = (UINTN) OToP(Order);
     AllocatedSize = AllocatedPages * PAGE_SIZE;
 
-    memory = KAllocPages(AllocatedPages);
+    Memory = KAllocPages(AllocatedPages);
 
-    if (memory == NULL)
+    if (Memory == NULL)
     {
         return NULL;
     }
 
-    block = (HEAP_BLOCK *) memory;
-    HeapInitializeBlock(block, AllocatedSize - sizeof(HEAP_BLOCK), TRUE);
+    Block = (HEAP_BLOCK *) Memory;
+    HeapInitializeBlock(Block, AllocatedSize - sizeof(HEAP_BLOCK), TRUE);
 
     if (HeapHead == NULL)
     {
-        HeapHead = block;
-        HeapTail = block;
-        return block;
+        HeapHead = Block;
+        HeapTail = Block;
+        return Block;
     }
 
-    block->Previous = HeapTail;
-    HeapTail->Next = block;
-    HeapTail = block;
+    Block->Previous = HeapTail;
+    HeapTail->Next = Block;
+    HeapTail = Block;
 
-    if (block->Previous->Free && HeapBlocksAdjacent(block->Previous, block))
+    if (Block->Previous->Free && HeapBlocksAdjacent(Block->Previous, Block))
     {
-        block = block->Previous;
-        HeapMergeWithNext(block);
+        Block = Block->Previous;
+        HeapMergeWithNext(Block);
     }
 
-    return block;
+    return Block;
 }
 
 BOOLEAN KHeapInit(VOID)
@@ -773,63 +773,63 @@ BOOLEAN KHeapInit(VOID)
     return TRUE;
 }
 
-VOID *KAlloc(UINTN size)
+VOID *KAlloc(UINTN Size)
 {
-    HEAP_BLOCK *block;
-    UINT64      flags;
+    HEAP_BLOCK *Block;
+    UINT64      Flags;
 
-    if (size == 0 || !HeapInitialized)
+    if (Size == 0 || !HeapInitialized)
     {
         return NULL;
     }
 
-    size = (UINTN) AlignUp(size, HEAP_ALIGNMENT);
+    Size = (UINTN) AlignUp(Size, HEAP_ALIGNMENT);
 
-    flags = SpinLockAcquireIRQSave(&HeapLock);
+    Flags = SpinLockAcquireIRQSave(&HeapLock);
 
-    block = HeapFindFreeBlock(size);
+    Block = HeapFindFreeBlock(Size);
 
-    if (block == NULL)
+    if (Block == NULL)
     {
-        block = HeapExpand(size);
+        Block = HeapExpand(Size);
 
-        if (block == NULL)
+        if (Block == NULL)
         {
-            SpinLockReleaseIRQRestore(&HeapLock, flags);
+            SpinLockReleaseIRQRestore(&HeapLock, Flags);
             return NULL;
         }
     }
 
-    HeapSplitBlock(block, size);
-    block->Free = FALSE;
+    HeapSplitBlock(Block, Size);
+    Block->Free = FALSE;
 
-    SpinLockReleaseIRQRestore(&HeapLock, flags);
+    SpinLockReleaseIRQRestore(&HeapLock, Flags);
 
-    return (VOID *) (block + 1);
+    return (VOID *) (Block + 1);
 }
 
-VOID KFree(VOID *address)
+VOID KFree(VOID *Address)
 {
-    HEAP_BLOCK *block;
-    UINT64      flags;
+    HEAP_BLOCK *Block;
+    UINT64      Flags;
 
-    if (address == NULL || !HeapInitialized)
+    if (Address == NULL || !HeapInitialized)
     {
         return;
     }
 
-    flags = SpinLockAcquireIRQSave(&HeapLock);
+    Flags = SpinLockAcquireIRQSave(&HeapLock);
 
-    block = ((HEAP_BLOCK *) address) - 1;
-    block->Free = TRUE;
+    Block = ((HEAP_BLOCK *) Address) - 1;
+    Block->Free = TRUE;
 
-    HeapMergeWithNext(block);
+    HeapMergeWithNext(Block);
 
-    if (block->Previous != NULL && block->Previous->Free)
+    if (Block->Previous != NULL && Block->Previous->Free)
     {
-        block = block->Previous;
-        HeapMergeWithNext(block);
+        Block = Block->Previous;
+        HeapMergeWithNext(Block);
     }
 
-    SpinLockReleaseIRQRestore(&HeapLock, flags);
+    SpinLockReleaseIRQRestore(&HeapLock, Flags);
 }

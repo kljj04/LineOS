@@ -57,10 +57,10 @@ BOOLEAN LBPWRRInit(VOID)
 VOID LBPWRRStart(VOID)
 {
     UINT32           CPUID;
-    UINT32           index;
+    UINT32           Index;
     LBPWRR_RUNQUEUE *RunQueue;
-    TASK            *task;
-    UINT64           flags;
+    TASK            *Task;
+    UINT64           Flags;
 
     CPUID = SMPGetCurrentCPUID();
 
@@ -70,59 +70,59 @@ VOID LBPWRRStart(VOID)
     }
 
     RunQueue = LBPWRRGetRunQueue(CPUID);
-    flags = SpinLockAcquireIRQSave(&RunQueue->Lock);
+    Flags = SpinLockAcquireIRQSave(&RunQueue->Lock);
 
-    task = NULL;
+    Task = NULL;
 
-    for (index = 0; index < RunQueue->Chunk.Count; index++)
+    for (Index = 0; Index < RunQueue->Chunk.Count; Index++)
     {
-        TASK *candidate;
+        TASK *Candidate;
 
-        candidate = RunQueue->Chunk.Tasks[index];
+        Candidate = RunQueue->Chunk.Tasks[Index];
 
-        if (candidate == NULL || candidate->State != TASK_READY || candidate->Idle)
+        if (Candidate == NULL || Candidate->State != TASK_READY || Candidate->Idle)
         {
             continue;
         }
 
-        task = candidate;
-        RunQueue->CurrentIndex = index;
+        Task = Candidate;
+        RunQueue->CurrentIndex = Index;
         break;
     }
 
-    if (task == NULL)
+    if (Task == NULL)
     {
-        for (index = 0; index < RunQueue->Chunk.Count; index++)
+        for (Index = 0; Index < RunQueue->Chunk.Count; Index++)
         {
-            TASK *candidate;
+            TASK *Candidate;
 
-            candidate = RunQueue->Chunk.Tasks[index];
+            Candidate = RunQueue->Chunk.Tasks[Index];
 
-            if (candidate == NULL || candidate->State != TASK_READY || !candidate->Idle)
+            if (Candidate == NULL || Candidate->State != TASK_READY || !Candidate->Idle)
             {
                 continue;
             }
 
-            task = candidate;
-            RunQueue->CurrentIndex = index;
+            Task = Candidate;
+            RunQueue->CurrentIndex = Index;
             break;
         }
     }
 
-    if (task == NULL)
+    if (Task == NULL)
     {
-        SpinLockReleaseIRQRestore(&RunQueue->Lock, flags);
+        SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
         return;
     }
 
-    LBPWRRSetCurrentTask(CPUID, task);
-    task->State = TASK_RUNNING;
+    LBPWRRSetCurrentTask(CPUID, Task);
+    Task->State = TASK_RUNNING;
 
-    SpinLockReleaseIRQRestore(&RunQueue->Lock, flags);
+    SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
 
     TSCSetDeadline(RDTSC() + TSCGetFrequency() / 200);
 
-    LBPWRRRestoreContext(task->RSP);
+    LBPWRRRestoreContext(Task->RSP);
 }
 
 VOID LBPWRRJoin(VOID)
@@ -147,7 +147,7 @@ VOID LBPWRRYield(VOID)
     ASM("int $0x43" ::: "memory");
 }
 
-UINT64 LBPWRRTick(INTERRUPT_FRAME *frame)
+UINT64 LBPWRRTick(INTERRUPT_FRAME *Frame)
 {
     UINT32           CPUID;
     UINT32           Index;
@@ -161,7 +161,7 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *frame)
     UINT64           Flags;
     UINT64           NextRSP;
 
-    if (frame == NULL)
+    if (Frame == NULL)
     {
         return 0;
     }
@@ -170,14 +170,14 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *frame)
 
     if (CPUID >= LBPWRRGetActiveCPUCount() || CPUID >= SMP_MAX_CPUS)
     {
-        return (UINT64) frame;
+        return (UINT64) Frame;
     }
 
     RunQueue = LBPWRRGetRunQueue(CPUID);
 
     if (RunQueue == NULL)
     {
-        return (UINT64) frame;
+        return (UINT64) Frame;
     }
 
     Flags = SpinLockAcquireIRQSave(&RunQueue->Lock);
@@ -188,7 +188,7 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *frame)
 
     if (CurrentTask != NULL)
     {
-        CurrentTask->RSP = (UINT64) frame;
+        CurrentTask->RSP = (UINT64) Frame;
 
         if (CurrentTask->State == TASK_RUNNING)
         {
@@ -261,19 +261,17 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *frame)
             CurrentTask->State = TASK_RUNNING;
 
             NextTask = CurrentTask;
-            NextRSP = (UINT64) frame;
+            NextRSP = (UINT64) Frame;
         }
         else
+        {
+            if (CurrentTask != NULL && CurrentTask->State != TASK_RUNNING && CurrentTask->State != TASK_READY)
             {
-                if (CurrentTask != NULL &&
-                    CurrentTask->State != TASK_RUNNING &&
-                    CurrentTask->State != TASK_READY)
-                {
-                    Panic(L"LBPWRR: No runnable task");
-                }
-
-                NextRSP = (UINT64) frame;
+                Panic(L"LBPWRR: No runnable task");
             }
+
+            NextRSP = (UINT64) Frame;
+        }
     }
     else
     {

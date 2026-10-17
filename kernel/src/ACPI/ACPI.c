@@ -12,9 +12,9 @@ typedef struct PACKED
     UINT64          Entries[];
 } ACPI_XSDT;
 
-STATIC BOOLEAN ACPISignatureEqual(CONST CHAR8 *a, CONST CHAR8 *b)
+STATIC BOOLEAN ACPISignatureEqual(CONST CHAR8 *A, CONST CHAR8 *B)
 {
-    return a[0] == b[0] && a[1] == b[1] && a[2] == b[2] && a[3] == b[3];
+    return A[0] == B[0] && A[1] == B[1] && A[2] == B[2] && A[3] == B[3];
 }
 
 VOID *ACPIFindTable(LINEOS_BOOT_INFO *BootInfo, CONST CHAR8 *Signature)
@@ -41,11 +41,11 @@ VOID *ACPIFindTable(LINEOS_BOOT_INFO *BootInfo, CONST CHAR8 *Signature)
 
     EntryCount = (XSDT->Header.Length - sizeof(ACPI_SDT_HEADER)) / sizeof(UINT64);
 
-    for (UINT32 i = 0; i < EntryCount; i++)
+    for (UINT32 I = 0; I < EntryCount; I++)
     {
         ACPI_SDT_HEADER *Header;
 
-        Header = (ACPI_SDT_HEADER *) XSDT->Entries[i];
+        Header = (ACPI_SDT_HEADER *) XSDT->Entries[I];
 
         if (Header == NULL)
         {

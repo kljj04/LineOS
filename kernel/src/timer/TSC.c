@@ -62,24 +62,24 @@ UINT64 TSCGetFrequency(VOID)
 
 BOOLEAN IsTSCDeadlineSupported(VOID)
 {
-    UINT32 eax;
-    UINT32 ebx;
-    UINT32 ecx;
-    UINT32 edx;
+    UINT32 EAX;
+    UINT32 EBX;
+    UINT32 ECX;
+    UINT32 EDX;
 
-    CPUID(1, 0, &eax, &ebx, &ecx, &edx);
+    CPUID(1, 0, &EAX, &EBX, &ECX, &EDX);
 
-    return (ecx & (1U << 24)) != 0;
+    return (ECX & (1U << 24)) != 0;
 }
 
-BOOLEAN TSCDeadlineInit(UINT8 vector)
+BOOLEAN TSCDeadlineInit(UINT8 Vector)
 {
     if (!IsTSCDeadlineSupported())
     {
         Panic(L"TSC Deadline Timer is not supported");
     }
 
-    LAPICSetTSCDeadlineTimer(vector);
+    LAPICSetTSCDeadlineTimer(Vector);
 
     if (TSCFrequency == 0)
     {
@@ -91,18 +91,18 @@ BOOLEAN TSCDeadlineInit(UINT8 vector)
     return TRUE;
 }
 
-VOID TSCSetDeadline(UINT64 deadline)
+VOID TSCSetDeadline(UINT64 Deadline)
 {
-    WriteMSR(IA32_TSC_DEADLINE, deadline);
+    WriteMSR(IA32_TSC_DEADLINE, Deadline);
 }
 
-STATIC VOID TSCSleepTicks(UINT128 ticks)
+STATIC VOID TSCSleepTicks(UINT128 Ticks)
 {
-    UINT64 flags;
-    UINT64 chunk;
-    UINT64 deadline;
+    UINT64 Flags;
+    UINT64 Chunk;
+    UINT64 Deadline;
 
-    if (ticks == 0)
+    if (Ticks == 0)
     {
         return;
     }
@@ -110,43 +110,43 @@ STATIC VOID TSCSleepTicks(UINT128 ticks)
     ASM("pushfq\n"
         "popq %0\n"
         "cli"
-        : "=r"(flags)
+        : "=r"(Flags)
         :
         : "memory");
 
-    while (ticks != 0)
+    while (Ticks != 0)
     {
-        chunk = ticks > INT64_MAX ? INT64_MAX : (UINT64) ticks;
-        deadline = RDTSC() + chunk;
+        Chunk = Ticks > INT64_MAX ? INT64_MAX : (UINT64) Ticks;
+        Deadline = RDTSC() + Chunk;
 
-        if (deadline == 0)
+        if (Deadline == 0)
         {
-            deadline = 1;
+            Deadline = 1;
         }
 
-        TSCSetDeadline(deadline);
+        TSCSetDeadline(Deadline);
 
-        while ((INT64) (RDTSC() - deadline) < 0)
+        while ((INT64) (RDTSC() - Deadline) < 0)
         {
             STIHLT();
             CLI();
         }
 
         TSCSetDeadline(0);
-        ticks -= chunk;
+        Ticks -= Chunk;
     }
 
-    if ((flags & (1ULL << 9)) != 0)
+    if ((Flags & (1ULL << 9)) != 0)
     {
         STI();
     }
 }
 
-STATIC VOID TSCSleepDuration(UINT64 duration, UINT64 divisor)
+STATIC VOID TSCSleepDuration(UINT64 Duration, UINT64 Divisor)
 {
-    UINT128 ticks;
+    UINT128 Ticks;
 
-    if (duration == 0)
+    if (Duration == 0)
     {
         return;
     }
@@ -156,21 +156,21 @@ STATIC VOID TSCSleepDuration(UINT64 duration, UINT64 divisor)
         Panic(L"TSC is not calibrated");
     }
 
-    ticks = (((UINT128) TSCFrequency * duration) + divisor - 1) / divisor;
-    TSCSleepTicks(ticks);
+    Ticks = (((UINT128) TSCFrequency * Duration) + Divisor - 1) / Divisor;
+    TSCSleepTicks(Ticks);
 }
 
-VOID SleepMls(UINT64 milliseconds)
+VOID SleepMls(UINT64 Milliseconds)
 {
-    TSCSleepDuration(milliseconds, 1000ULL);
+    TSCSleepDuration(Milliseconds, 1000ULL);
 }
 
-VOID SleepMis(UINT64 microseconds)
+VOID SleepMis(UINT64 Microseconds)
 {
-    TSCSleepDuration(microseconds, 1000000ULL);
+    TSCSleepDuration(Microseconds, 1000000ULL);
 }
 
-VOID SleepNs(UINT64 nanoseconds)
+VOID SleepNs(UINT64 Nanoseconds)
 {
-    TSCSleepDuration(nanoseconds, 1000000000ULL);
+    TSCSleepDuration(Nanoseconds, 1000000000ULL);
 }

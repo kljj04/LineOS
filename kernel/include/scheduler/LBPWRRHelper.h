@@ -6,5 +6,5 @@
 
 #include <scheduler/LBPWRRTypes.h>
 
-BOOLEAN LBPWRRTaskIsRunnable(TASK *task);
+BOOLEAN LBPWRRTaskIsRunnable(TASK *Task);
 BOOLEAN LBPWRRWakeSleepingTasks(LBPWRR_RUNQUEUE *RunQueue);

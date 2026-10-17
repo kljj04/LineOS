@@ -5,36 +5,36 @@
 #include <runtime/compiler.h>
 #include <LineOS/TypeInfo.h>
 
-UINT128 __udivti3(UINT128 dividend, UINT128 divisor)
+UINT128 __udivti3(UINT128 Dividend, UINT128 Divisor)
 {
-    UINT128 quotient;
-    UINT128 bit;
+    UINT128 Quotient;
+    UINT128 Bit;
 
-    quotient = 0;
-    bit = 1;
+    Quotient = 0;
+    Bit = 1;
 
-    if (divisor == 0)
+    if (Divisor == 0)
     {
         return 0;
     }
 
-    while ((divisor << 1) > divisor && (divisor << 1) <= dividend)
+    while ((Divisor << 1) > Divisor && (Divisor << 1) <= Dividend)
     {
-        divisor <<= 1;
-        bit <<= 1;
+        Divisor <<= 1;
+        Bit <<= 1;
     }
 
-    while (bit != 0)
+    while (Bit != 0)
     {
-        if (dividend >= divisor)
+        if (Dividend >= Divisor)
         {
-            dividend -= divisor;
-            quotient |= bit;
+            Dividend -= Divisor;
+            Quotient |= Bit;
         }
 
-        divisor >>= 1;
-        bit >>= 1;
+        Divisor >>= 1;
+        Bit >>= 1;
     }
 
-    return quotient;
+    return Quotient;
 }

@@ -80,15 +80,15 @@ STATIC VOID *GetBARAddress(VIRTIO_PCI_DEVICE *VirtIODevice, UINT8 BARIndex, UINT
 
 STATIC VOID LoadBARs(VIRTIO_PCI_DEVICE *VirtIODevice)
 {
-    UINT8 index;
+    UINT8 Index;
 
-    for (index = 0; index < 6; index++)
+    for (Index = 0; Index < 6; Index++)
     {
-        PCIGetBAR(VirtIODevice->PCIDevice, index, &VirtIODevice->BARs[index]);
+        PCIGetBAR(VirtIODevice->PCIDevice, Index, &VirtIODevice->BARs[Index]);
 
-        if (VirtIODevice->BARs[index].Type == PCI_BAR_TYPE_MEMORY64)
+        if (VirtIODevice->BARs[Index].Type == PCI_BAR_TYPE_MEMORY64)
         {
-            index++;
+            Index++;
         }
     }
 }
@@ -169,7 +169,7 @@ STATIC BOOLEAN ScanCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
 {
     PCI_DEVICE *Device;
     UINT8       CapabilityOffset;
-    UINT8       guard;
+    UINT8       Guard;
 
     Device = VirtIODevice->PCIDevice;
 
@@ -181,7 +181,7 @@ STATIC BOOLEAN ScanCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
 
     CapabilityOffset = PCIConfigRead8(Device, PCI_CAPABILITY_POINTER) & 0xFC;
 
-    for (guard = 0; CapabilityOffset != 0 && guard < 48; guard++)
+    for (Guard = 0; CapabilityOffset != 0 && Guard < 48; Guard++)
     {
         UINT8 CapabilityId;
 

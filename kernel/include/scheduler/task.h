@@ -8,14 +8,14 @@
 #include <scheduler/TaskTypes.h>
 
 BOOLEAN TaskInit(VOID);
-TASK   *TaskCreate(VOID (*entry)(VOID));
+TASK   *TaskCreate(VOID (*Entry)(VOID));
 TASK   *TaskCreateIdle(VOID);
-BOOLEAN TaskSetPriority(TASK *task, UINT8 priority);
-VOID    TaskSleepMls(UINT64 milliseconds);
-VOID    TaskSleepMis(UINT64 microseconds);
-VOID    TaskSleepNs(UINT64 nanoseconds);
-VOID    TaskKill(TASK *task);
-VOID    TaskTerminate(TASK *task);
-BOOLEAN TaskDestroy(TASK *task);
+BOOLEAN TaskSetPriority(TASK *Task, UINT8 Priority);
+VOID    TaskSleepMls(UINT64 Milliseconds);
+VOID    TaskSleepMis(UINT64 Microseconds);
+VOID    TaskSleepNs(UINT64 Nanoseconds);
+VOID    TaskKill(TASK *Task);
+VOID    TaskTerminate(TASK *Task);
+BOOLEAN TaskDestroy(TASK *Task);
 TASK   *TaskGetByPID(UINT16 PID);
 UINTN   TaskGetCount(VOID);

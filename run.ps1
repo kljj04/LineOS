@@ -103,8 +103,8 @@ DismountImg() {
 
     if [ -f "$ImgFile" ]; then
         LoopDevs=$(losetup -j "$ImgFile" | cut -d: -f1)
-        for dev in $LoopDevs; do
-            sudo losetup -d "$dev" 2>/dev/null
+        for Dev in $LoopDevs; do
+            sudo losetup -d "$Dev" 2>/dev/null
         done
     fi
 

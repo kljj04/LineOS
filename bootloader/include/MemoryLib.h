@@ -6,5 +6,5 @@
 
 #include <LineOS/TypeInfo.h>
 
-VOID *CopyMem(VOID *destination, CONST VOID *source, UINTN length);
-VOID *SetMem(VOID *buffer, UINTN length, UINT8 value);
+VOID *CopyMem(VOID *Destination, CONST VOID *Source, UINTN Length);
+VOID *SetMem(VOID *Buffer, UINTN Length, UINT8 Value);

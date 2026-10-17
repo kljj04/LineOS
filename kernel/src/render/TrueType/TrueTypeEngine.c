@@ -64,17 +64,17 @@ STATIC UINT32 BlendColor(UINT32 Background, UINT32 Foreground, UINT8 Alpha)
     return 0xFF000000 | (Red << 16) | (Green << 8) | Blue;
 }
 
-STATIC VOID BlendPixel(VIRTIO_GPU_INFO *GPU, INT32 x, INT32 y, UINT32 Color, UINT8 Alpha)
+STATIC VOID BlendPixel(VIRTIO_GPU_INFO *GPU, INT32 X, INT32 Y, UINT32 Color, UINT8 Alpha)
 {
     UINT32 *Pixel;
     UINT32  Background;
 
-    if (Alpha == 0 || GetColorAlpha(Color) == 0 || GPU == NULL || GPU->FrameBuffer == NULL || x < 0 || y < 0 || (UINT32) x >= GPU->FrameBufferWidth || (UINT32) y >= GPU->FrameBufferHeight)
+    if (Alpha == 0 || GetColorAlpha(Color) == 0 || GPU == NULL || GPU->FrameBuffer == NULL || X < 0 || Y < 0 || (UINT32) X >= GPU->FrameBufferWidth || (UINT32) Y >= GPU->FrameBufferHeight)
     {
         return;
     }
 
-    Pixel = &GPU->FrameBuffer[((UINT32) y * GPU->FrameBufferWidth) + (UINT32) x];
+    Pixel = &GPU->FrameBuffer[((UINT32) Y * GPU->FrameBufferWidth) + (UINT32) X];
     if (Alpha == 255 && GetColorAlpha(Color) == 255)
     {
         *Pixel = GetColorRGB(Color) | 0xFF000000;
@@ -142,7 +142,7 @@ BOOLEAN TrueTypeInit(VOID)
     return PretendardOK || JetBrainsMonoOK;
 }
 
-UINT32 DrawTrueTypeCodepoint(TRUE_TYPE_FONT Font, UINT32 Codepoint, UINT32 x, UINT32 Baseline, UINT32 Color, UINT32 PixelHeight)
+UINT32 DrawTrueTypeCodepoint(TRUE_TYPE_FONT Font, UINT32 Codepoint, UINT32 X, UINT32 Baseline, UINT32 Color, UINT32 PixelHeight)
 {
     VIRTIO_GPU_INFO *GPU = VirtIOGPUGetInfo();
     FONT_INFO       *DrawFont;
@@ -158,7 +158,7 @@ UINT32 DrawTrueTypeCodepoint(TRUE_TYPE_FONT Font, UINT32 Codepoint, UINT32 x, UI
 
     if (DrawFont == NULL || GPU == NULL || GPU->FrameBuffer == NULL || Codepoint == 0)
     {
-        return x;
+        return X;
     }
 
     Scale = GetPixelScale(DrawFont, PixelHeight);
@@ -171,10 +171,10 @@ UINT32 DrawTrueTypeCodepoint(TRUE_TYPE_FONT Font, UINT32 Codepoint, UINT32 x, UI
     {
         if (Width == 0 && Height == 0)
         {
-            return x + CodepointAdvance(DrawFont, Codepoint, Scale);
+            return X + CodepointAdvance(DrawFont, Codepoint, Scale);
         }
 
-        return x + CodepointAdvance(DrawFont, Codepoint, Scale);
+        return X + CodepointAdvance(DrawFont, Codepoint, Scale);
     }
 
     Flags = VirtIOGPUAcquireRenderLock();
@@ -183,27 +183,27 @@ UINT32 DrawTrueTypeCodepoint(TRUE_TYPE_FONT Font, UINT32 Codepoint, UINT32 x, UI
         for (INT32 Column = 0; Column < Width; Column++)
         {
             UINT8 Alpha = Bitmap[(Row * Width) + Column];
-            BlendPixel(GPU, (INT32) x + XOff + Column, (INT32) Baseline + YOff + Row, Color, Alpha);
+            BlendPixel(GPU, (INT32) X + XOff + Column, (INT32) Baseline + YOff + Row, Color, Alpha);
         }
     }
     VirtIOGPUReleaseRenderLock(Flags);
 
-    if ((INT32) x + XOff >= 0 && (INT32) Baseline + YOff >= 0)
+    if ((INT32) X + XOff >= 0 && (INT32) Baseline + YOff >= 0)
     {
-        VirtIOGPUMarkDirty((UINT32) ((INT32) x + XOff), (UINT32) ((INT32) Baseline + YOff), (UINT32) Width, (UINT32) Height);
+        VirtIOGPUMarkDirty((UINT32) ((INT32) X + XOff), (UINT32) ((INT32) Baseline + YOff), (UINT32) Width, (UINT32) Height);
     }
 
     FreeBitmap(Bitmap, DrawFont->UserData);
-    return x + CodepointAdvance(DrawFont, Codepoint, Scale);
+    return X + CodepointAdvance(DrawFont, Codepoint, Scale);
 }
 
-UINT32 DrawTrueTypeText(TRUE_TYPE_FONT Font, CONST CHAR16 *Text, UINT32 x, UINT32 Baseline, UINT32 Color, UINT32 PixelHeight)
+UINT32 DrawTrueTypeText(TRUE_TYPE_FONT Font, CONST CHAR16 *Text, UINT32 X, UINT32 Baseline, UINT32 Color, UINT32 PixelHeight)
 {
-    UINT32 OriginX = x;
+    UINT32 OriginX = X;
 
     if (Text == NULL)
     {
-        return x;
+        return X;
     }
 
     for (UINT32 Index = 0; Text[Index] != 0; Index++)
@@ -212,28 +212,28 @@ UINT32 DrawTrueTypeText(TRUE_TYPE_FONT Font, CONST CHAR16 *Text, UINT32 x, UINT3
 
         if (Codepoint == '\n')
         {
-            x = OriginX;
+            X = OriginX;
             Baseline += (UINT32) KCeil(PixelHeight * 1.35f);
             continue;
         }
 
         if (Codepoint == '\r')
         {
-            x = OriginX;
+            X = OriginX;
             continue;
         }
 
         if (Codepoint == '\t')
         {
-            UINT32 SpaceAdvance = DrawTrueTypeCodepoint(Font, ' ', x, Baseline, Color, PixelHeight);
-            x += (SpaceAdvance - x) * TRUE_TYPE_TAB_WIDTH;
+            UINT32 SpaceAdvance = DrawTrueTypeCodepoint(Font, ' ', X, Baseline, Color, PixelHeight);
+            X += (SpaceAdvance - X) * TRUE_TYPE_TAB_WIDTH;
             continue;
         }
 
-        x = DrawTrueTypeCodepoint(Font, Codepoint, x, Baseline, Color, PixelHeight);
+        X = DrawTrueTypeCodepoint(Font, Codepoint, X, Baseline, Color, PixelHeight);
     }
 
-    return x;
+    return X;
 }
 
 BOOLEAN MeasureTrueTypeText(TRUE_TYPE_FONT Font, CONST CHAR16 *Text, UINT32 PixelHeight, INT32 *Left, INT32 *Top, INT32 *Right, INT32 *Bottom)

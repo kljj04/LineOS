@@ -21,12 +21,12 @@ typedef struct HEAP_BLOCK
 
 BOOLEAN KMemoryInit(LINEOS_BOOT_INFO *BootInfo);
 UINT64  KGetTotalPages(VOID);
-VOID   *KMemMove(VOID *destination, CONST VOID *source, UINTN size);
-VOID   *KMemCpy(VOID *destination, CONST VOID *source, UINTN size);
-VOID   *KMemSet(VOID *destination, UINT8 value, UINTN size);
+VOID   *KMemMove(VOID *Destination, CONST VOID *Source, UINTN Size);
+VOID   *KMemCpy(VOID *Destination, CONST VOID *Source, UINTN Size);
+VOID   *KMemSet(VOID *Destination, UINT8 Value, UINTN Size);
 VOID   *KAllocPages(UINTN PageCount);
-VOID   *KAllocPagesBelow(UINTN PageCount, UINT64 limit);
-VOID    KMemFreePages(VOID *address, UINTN PageCount);
+VOID   *KAllocPagesBelow(UINTN PageCount, UINT64 Limit);
+VOID    KMemFreePages(VOID *Address, UINTN PageCount);
 BOOLEAN KHeapInit(VOID);
-VOID   *KAlloc(UINTN size);
-VOID    KFree(VOID *address);
+VOID   *KAlloc(UINTN Size);
+VOID    KFree(VOID *Address);
