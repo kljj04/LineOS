@@ -4,8 +4,9 @@
 
 #include <Interrupt/IDT.h>
 
-#include "Debug/Debug.h"
-#include "Timer/TSC.h"
+#include <Debug/Debug.h>
+#include <Disk/VirtIOBlock.h>
+#include <Timer/TSC.h>
 
 #include <Scheduler/LBPWRR.h>
 #include <Interrupt/APIC.h>
@@ -149,6 +150,11 @@ UINT64 SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *Frame)
 
     if (Frame->Vector == 68)
     {
+        VirtIOBlockHandleInterrupt(VirtIOBlockGetDevice());
+
+        LAPICEOI();
+
+        return (UINT64) Frame;
     }
 
     return (UINT64) Frame;

@@ -21,6 +21,7 @@
 #include <PCI/PCI.h>
 #include <Debug/Debug.h>
 #include <Memory/VMM.h>
+#include <Disk/VirtIOBlock.h>
 
 STATIC VOID InputKeyboardTask(VOID)
 {
@@ -43,8 +44,8 @@ STATIC VOID InputTestTask(VOID)
 {
     KEYBOARD_STATUS Keyboard;
     KEYBOARD_STATUS LastKeyboard = {0};
-    MOUSE_STATUS    Mouse;
-    MOUSE_STATUS    LastMouse = {0};
+    MOUSE_STATUS Mouse;
+    MOUSE_STATUS LastMouse = {0};
 
     BOOLEAN FirstFrame = TRUE;
     BOOLEAN KeyboardChanged;
@@ -64,7 +65,6 @@ STATIC VOID InputTestTask(VOID)
 
         if (KeyboardChanged || MouseChanged || ButtonsChanged)
         {
-
             FillRect(INPUT_PANEL_X, INPUT_PANEL_Y, INPUT_PANEL_WIDTH, INPUT_PANEL_HEIGHT, 0x101010);
 
             KPrint(L"KEYBOARD", 40, 240, 0x80C0FF, 32, PRETENDARD);
@@ -81,6 +81,7 @@ STATIC VOID InputTestTask(VOID)
             KPrint(L"Wheel: %d", 40, 580, 0xFFFFFF, 24, JETBRAINS_MONO, Mouse.Wheel);
             KPrint(L"Back: %u", 250, 580, 0xFFFFFF, 24, JETBRAINS_MONO, Mouse.BackButton ? 1 : 0);
             KPrint(L"Forward: %u", 480, 580, 0xFFFFFF, 24, JETBRAINS_MONO, Mouse.ForwardButton ? 1 : 0);
+
             VirtIOGPUTransferRect(INPUT_PANEL_X, INPUT_PANEL_Y, INPUT_PANEL_WIDTH, INPUT_PANEL_HEIGHT);
             VirtIOGPUFlushRect(INPUT_PANEL_X, INPUT_PANEL_Y, INPUT_PANEL_WIDTH, INPUT_PANEL_HEIGHT);
 
@@ -94,6 +95,200 @@ STATIC VOID InputTestTask(VOID)
         TaskSleepMls(INPUT_TEST_INTERVAL_MS);
     }
 }
+
+STATIC VOID DiskTestFlush(VOID)
+{
+    VirtIOGPUTransferRect(20, 650, 1200, 260);
+    VirtIOGPUFlushRect(20, 650, 1200, 260);
+}
+
+typedef struct PACKED
+{
+    UINT64 Signature;
+    UINT32 Revision;
+    UINT32 HeaderSize;
+    UINT32 HeaderCRC32;
+    UINT32 Reserved;
+    UINT64 CurrentLBA;
+    UINT64 BackupLBA;
+    UINT64 FirstUsableLBA;
+    UINT64 LastUsableLBA;
+    UINT8 DiskGUID[16];
+    UINT64 PartitionEntryLBA;
+    UINT32 NumberOfPartitionEntries;
+    UINT32 SizeOfPartitionEntry;
+    UINT32 PartitionEntryArrayCRC32;
+    UINT8 Reserved2[420];
+} GPT_HEADER;
+
+typedef struct PACKED
+{
+    UINT8 TypeGUID[16];
+    UINT8 UniqueGUID[16];
+    UINT64 FirstLBA;
+    UINT64 LastLBA;
+    UINT64 Attributes;
+    CHAR16 Name[36];
+} GPT_PARTITION_ENTRY;
+
+#define GPT_SIGNATURE 0x5452415020494645ULL
+#define EXT2_MAGIC    0xEF53
+#define DISK_TEST_DMA_LIMIT 0x100000000ULL
+#define DISK_TEST_TIMEOUT   10000000U
+
+STATIC VOID *DiskTestBuffer;
+
+STATIC BOOLEAN DiskTestReadSector(UINT64 Sector)
+{
+    VIRTIO_BLOCK_DEVICE *Device;
+    VIRTIO_BLOCK_REQUEST *Request;
+
+    Device = VirtIOBlockGetDevice();
+
+    if (Device == NULL || DiskTestBuffer == NULL)
+    {
+        return FALSE;
+    }
+
+    Request = NULL;
+
+    if (!VirtIOBlockReadAsync(Device, Sector, 1, DiskTestBuffer, &Request))
+    {
+        KPrint(L"Read submit failed: LBA %u", 40, 760, 0xFF6060, 22, JETBRAINS_MONO, (UINT32) Sector);
+        return FALSE;
+    }
+
+    if (!VirtIOBlockWait(Device, Request, DISK_TEST_TIMEOUT))
+    {
+        KPrint(L"Read failed: LBA %u", 40, 790, 0xFF6060, 22, JETBRAINS_MONO, (UINT32) Sector);
+
+        if (Request->State == VIRTIO_BLOCK_REQUEST_FAILED ||
+            Request->State == VIRTIO_BLOCK_REQUEST_COMPLETED)
+        {
+            VirtIOBlockReleaseRequest(Device, Request);
+        }
+
+        return FALSE;
+    }
+
+    VirtIOBlockReleaseRequest(Device, Request);
+    return TRUE;
+}
+
+STATIC VOID VirtIOBlockTestTask(VOID)
+{
+    VIRTIO_BLOCK_DEVICE *Device;
+    GPT_HEADER *GPTHeader;
+    GPT_PARTITION_ENTRY *PartitionEntry;
+    UINT64 Capacity;
+    UINT64 PartitionEntrySector;
+    UINT64 PartitionStartLBA;
+    UINT16 EXT2Magic;
+
+    KPrint(L"VirtIO-BLK Test", 40, 680, 0x80C0FF, 28, PRETENDARD);
+
+    Device = VirtIOBlockGetDevice();
+
+    if (Device == NULL)
+    {
+        KPrint(L"Block device unavailable", 40, 720, 0xFF6060, 22, PRETENDARD);
+
+        for (;;)
+        {
+            TaskSleepMls(1000);
+        }
+    }
+
+    Capacity = VirtIOBlockGetCapacity(Device);
+
+    KPrint(L"Capacity: %u sectors", 40, 720, 0xFFFFFF, 22, JETBRAINS_MONO, (UINT32) Capacity);
+
+    DiskTestBuffer = KAllocPagesBelow(1, DISK_TEST_DMA_LIMIT);
+
+    if (DiskTestBuffer == NULL)
+    {
+        KPrint(L"DMA buffer allocation failed", 40, 760, 0xFF6060, 22, PRETENDARD);
+
+        for (;;)
+        {
+            TaskSleepMls(1000);
+        }
+    }
+
+    KMemSet(DiskTestBuffer, 0, 4096);
+
+    if (!DiskTestReadSector(1))
+    {
+        goto TestFinished;
+    }
+
+    GPTHeader = (GPT_HEADER *) DiskTestBuffer;
+
+    if (GPTHeader->Signature != GPT_SIGNATURE ||
+        GPTHeader->HeaderSize < 92 ||
+        GPTHeader->HeaderSize > 512)
+    {
+        KPrint(L"Invalid GPT header", 40, 760, 0xFF6060, 22, PRETENDARD);
+        goto TestFinished;
+    }
+
+    KPrint(L"GPT header: OK", 40, 760, 0x80FF80, 22, PRETENDARD);
+
+    if (GPTHeader->NumberOfPartitionEntries < 2 ||
+        GPTHeader->SizeOfPartitionEntry != sizeof(GPT_PARTITION_ENTRY))
+    {
+        KPrint(L"Unsupported GPT entry layout", 40, 790, 0xFF6060, 22, PRETENDARD);
+        goto TestFinished;
+    }
+
+    PartitionEntrySector = GPTHeader->PartitionEntryLBA + sizeof(GPT_PARTITION_ENTRY) / 512;
+
+    if (PartitionEntrySector >= Capacity || !DiskTestReadSector(PartitionEntrySector))
+    {
+        KPrint(L"GPT entries read failed", 40, 790, 0xFF6060, 22, PRETENDARD);
+        goto TestFinished;
+    }
+
+    PartitionEntry = (GPT_PARTITION_ENTRY *) ((UINT8 *) DiskTestBuffer + sizeof(GPT_PARTITION_ENTRY));
+
+    if (PartitionEntry->FirstLBA == 0 ||
+        PartitionEntry->FirstLBA >= Capacity ||
+        PartitionEntry->LastLBA < PartitionEntry->FirstLBA ||
+        PartitionEntry->LastLBA >= Capacity)
+    {
+        KPrint(L"Invalid root partition", 40, 820, 0xFF6060, 22, PRETENDARD);
+        goto TestFinished;
+    }
+
+    PartitionStartLBA = PartitionEntry->FirstLBA;
+
+    KPrint(L"Root start LBA: %u", 40, 790, 0xFFFFFF, 22, JETBRAINS_MONO, (UINT32) PartitionStartLBA);
+
+    if (PartitionStartLBA > Capacity - 3 ||
+        !DiskTestReadSector(PartitionStartLBA + 2))
+    {
+        KPrint(L"EXT2 superblock read failed", 40, 820, 0xFF6060, 22, PRETENDARD);
+        goto TestFinished;
+    }
+
+    EXT2Magic = *(UINT16 *) ((UINT8 *) DiskTestBuffer + 56);
+
+    if (EXT2Magic != EXT2_MAGIC)
+    {
+        KPrint(L"EXT2 magic invalid: 0x%X", 40, 850, 0xFF6060, 22, JETBRAINS_MONO, (UINT32) EXT2Magic);
+        goto TestFinished;
+    }
+
+    KPrint(L"EXT2 superblock: OK", 40, 820, 0x80FF80, 22, PRETENDARD);
+    KPrint(L"Storage read test passed!", 40, 860, 0x80FF80, 28, PRETENDARD);
+    DiskTestFlush();
+TestFinished:
+    for (;;)
+    {
+        TaskSleepMls(1000);
+    }
+}
+
 VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
 {
     VIRTIO_GPU_INFO *GPU;
@@ -122,24 +317,15 @@ VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
     IDTLoad();
 
     LAPICInit();
-
     HPETInit(BootInfo);
+    TSCCalibrate();
+    TSCDeadlineInit(0x40);
 
-    if (!TSCCalibrate() || !TSCDeadlineInit(0x40))
-    {
-        HLT();
-    }
+    SMPInit(BootInfo);
 
-    if (!SMPInit(BootInfo))
-    {
-        HLT();
-    }
+    LBPWRRInit();
 
-    if (!LBPWRRInit())
-    {
-        HLT();
-    }
-
+    VirtIOBlockInit();
     VirtIOInputInit();
 }
 
@@ -148,6 +334,7 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
     TASK *KeyboardTask;
     TASK *MouseTask;
     TASK *TestTask;
+    TASK *DiskTask;
 
     InitKernel(BootInfo);
 
@@ -163,10 +350,11 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
     KeyboardTask = TaskCreate(InputKeyboardTask);
     MouseTask = TaskCreate(InputMouseTask);
     TestTask = TaskCreate(InputTestTask);
+    DiskTask = TaskCreate(VirtIOBlockTestTask);
 
-    if (KeyboardTask == NULL || MouseTask == NULL || TestTask == NULL)
+    if (KeyboardTask == NULL || MouseTask == NULL || TestTask == NULL || DiskTask == NULL)
     {
-        Panic(L"VirtIO input test task creation failed");
+        Panic(L"Task creation failed");
     }
 
     if (!LBPWRRAddTask(KeyboardTask))
@@ -182,6 +370,11 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
     if (!LBPWRRAddTask(TestTask))
     {
         Panic(L"Failed to add input test task");
+    }
+
+    if (!LBPWRRAddTask(DiskTask))
+    {
+        Panic(L"Failed to add disk test task");
     }
 
     LBPWRRStart();
