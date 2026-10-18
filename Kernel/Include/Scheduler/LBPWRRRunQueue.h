@@ -1,4 +1,4 @@
-// kernel/include/scheduler/LBPWRRRunQueue.h
+// Kernel/Include/Scheduler/LBPWRRRunQueue.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

@@ -1,4 +1,4 @@
-// kernel/src/scheduler/task.c
+// Kernel/Source/Scheduler/Task.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

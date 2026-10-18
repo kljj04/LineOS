@@ -1,4 +1,4 @@
-// kernel/include/interrupt/APIC.h
+// Kernel/Include/Interrupt/APIC.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

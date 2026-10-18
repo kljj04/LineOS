@@ -1,4 +1,4 @@
-// bootloader/include/ACPI.h
+// BootLoader/Include/ACPI.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

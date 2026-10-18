@@ -1,4 +1,4 @@
-// bootloader/lib/LineOSUEFI.c
+// BootLoader/Library/LineOSUEFI.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

@@ -1,4 +1,4 @@
-// kernel/assets/cursor/cursor.h
+// Kernel/Assets/Cursor/Cursor.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

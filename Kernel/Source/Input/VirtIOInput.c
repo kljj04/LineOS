@@ -1,4 +1,4 @@
-// kernel/src/input/VirtIOInput.c
+// Kernel/Source/Input/VirtIOInput.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

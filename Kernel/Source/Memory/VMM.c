@@ -1,4 +1,4 @@
-// kernel/src/memory/VMM.c
+// Kernel/Source/Memory/VMM.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

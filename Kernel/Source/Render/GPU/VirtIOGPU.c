@@ -1,4 +1,4 @@
-// kernel/src/render/GPU/VirtIOGPU.c
+// Kernel/Source/Render/GPU/VirtIOGPU.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

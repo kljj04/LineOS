@@ -1,4 +1,4 @@
-// kernel/include/PCI/PCI.h
+// Kernel/Include/PCI/PCI.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

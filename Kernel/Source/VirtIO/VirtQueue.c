@@ -1,4 +1,4 @@
-// kernel/src/VirtIO/VirtQueue.c
+// Kernel/Source/VirtIO/VirtQueue.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

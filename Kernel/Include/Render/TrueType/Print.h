@@ -1,4 +1,4 @@
-// kernel/include/render/TrueType/print.h
+// Kernel/Include/Render/TrueType/Print.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

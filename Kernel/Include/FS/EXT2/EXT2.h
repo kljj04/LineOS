@@ -1,0 +1,25 @@
+// Kernel/Include/FS/EXT2/EXT2.h
+// LineOS Project
+// Copyright (C) 2026 LineOS Developer kljj04
+
+#pragma once
+
+#include <FS/EXT2/EXT2Types.h>
+
+BOOLEAN EXT2Mount(EXT2_VOLUME *Volume, VIRTIO_BLOCK_DEVICE *Device, CONST GPT_PARTITION *Partition, BOOLEAN Writable);
+BOOLEAN EXT2MountP2(EXT2_VOLUME *Volume, VIRTIO_BLOCK_DEVICE *Device, BOOLEAN Writable);
+BOOLEAN EXT2Unmount(EXT2_VOLUME *Volume);
+BOOLEAN EXT2Lookup(EXT2_VOLUME *Volume, CONST CHAR8 *Path, UINT32 *InodeNumber, EXT2_INODE *Inode);
+BOOLEAN EXT2ReadFile(EXT2_VOLUME *Volume, UINT32 InodeNumber, UINT64 Offset, VOID *Buffer, UINT32 Length, UINT32 *ReadLength);
+BOOLEAN EXT2WriteFile(EXT2_VOLUME *Volume, UINT32 InodeNumber, UINT64 Offset, CONST VOID *Buffer, UINT32 Length, UINT32 Time);
+BOOLEAN EXT2Create(EXT2_VOLUME *Volume, UINT32 Parent, CONST CHAR8 *Name, BOOLEAN Directory, UINT16 Permissions, UINT32 Time, UINT32 *InodeNumber);
+
+BOOLEAN EXT2Truncate(EXT2_VOLUME *Volume, UINT32 Number, UINT64 Size, UINT32 Time);
+BOOLEAN EXT2Remove(EXT2_VOLUME *Volume, UINT32 Parent, CONST CHAR8 *Name, UINT32 Time);
+BOOLEAN EXT2Rename(EXT2_VOLUME *Volume, UINT32 OldParent, CONST CHAR8 *OldName, UINT32 NewParent, CONST CHAR8 *NewName, UINT32 Time);
+BOOLEAN EXT2Link(EXT2_VOLUME *Volume, UINT32 Parent, CONST CHAR8 *Name, UINT32 Number, UINT32 Time);
+BOOLEAN EXT2Symlink(EXT2_VOLUME *Volume, UINT32 Parent, CONST CHAR8 *Name, CONST CHAR8 *Target, UINT32 Time, UINT32 *Number);
+BOOLEAN EXT2ReadLink(EXT2_VOLUME *Volume, UINT32 Number, CHAR8 *Buffer, UINT32 Capacity, UINT32 *Length);
+BOOLEAN EXT2SetCredentials(EXT2_VOLUME *Volume, UINT32 UID, UINT32 GID);
+BOOLEAN EXT2SetMode(EXT2_VOLUME *Volume, UINT32 Number, UINT16 Mode, UINT32 Time);
+BOOLEAN EXT2SetOwner(EXT2_VOLUME *Volume, UINT32 Number, UINT32 UID, UINT32 GID, UINT32 Time);

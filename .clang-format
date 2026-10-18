@@ -1,3 +1,7 @@
+# .clang-format
+# LineOS Project
+# Copyright (C) 2026 LineOS Developer kljj04
+
 BasedOnStyle: LLVM
 IndentWidth: 4
 TabWidth: 4
