@@ -1,4 +1,4 @@
-// kernel/src/input/input.c
+// Kernel/Source/Input/Input.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

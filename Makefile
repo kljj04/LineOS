@@ -1,3 +1,7 @@
+# Makefile
+# LineOS Project
+# Copyright (C) 2026 LineOS Developer kljj04
+
 .DEFAULT_GOAL := all
 
 TARGET1 = LineOS/EFI/BOOT/BOOTX64.EFI

@@ -3,7 +3,7 @@
 LineOS is a 64-bit x86_64 UEFI hobby operating system written primarily in freestanding C and x86 assembly.
 
 The project currently focuses on multicore kernel bring-up, memory management, interrupt and timer infrastructure,
-VirtIO devices, native TrueType rendering, and kernel scheduling.
+VirtIO devices, native TrueType rendering, kernel scheduling, and an EXT2 filesystem accessed through direct kernel APIs.
 
 ## Status
 
@@ -24,7 +24,9 @@ Current kernel bring-up:
 8. ACPI MADT is used to enumerate processors.
 9. Application Processors are started through INIT-SIPI-SIPI and an x86 trampoline.
 10. APs enter 64-bit Long Mode and call `APMain()`.
-11. VirtIO input and the kernel scheduler are initialized.
+11. The LBPWRR scheduler, VirtIO block device, and VirtIO input devices are initialized.
+12. Keyboard, mouse, input-monitor, and disk/filesystem test tasks are created and registered.
+13. `LBPWRRStart()` begins scheduled execution; the disk task mounts GPT partition 2 and runs EXT2 tests.
 
 SMP bring-up has been tested with 16 virtual CPUs under QEMU.
 
@@ -120,6 +122,37 @@ subsystem hardening remain future work.
 - VirtIO GPU
 - VirtIO keyboard input
 - VirtIO tablet input
+- VirtIO block device with synchronous and asynchronous reads, writes, and flushes
+
+### Storage and EXT2
+
+- GPT partition lookup with header and partition-entry-array CRC validation
+- Mounting the second GPT partition as a Linux EXT2 filesystem
+- 1, 2, and 4 KiB blocks; revision 0/1; tested 128/256-byte inodes
+- Superblock, block-group descriptor, block/inode bitmap, and inode handling
+- Absolute path lookup, including relative and absolute symbolic links
+- File and directory creation; file reads, writes, sparse extension, and truncation
+- Direct, single-, double-, and triple-indirect block addressing
+- File removal, empty-directory removal, and block/inode reclamation
+- Same-volume rename, target replacement, and cross-directory moves
+- Hard links and inline or block-backed symbolic links
+- 32-bit UID/GID ownership and basic owner/group/other permission checks
+- Sticky-directory checks and setgid directory inheritance
+- Writable-mount validation of block ownership, allocation counts, directory references, and parent relationships
+- Bounded in-memory preparation followed by dirty-state and flush-ordered disk updates
+
+EXT2 currently uses direct kernel APIs. There is no VFS, process file-descriptor table, or open-file lifetime layer.
+VFS work is deferred. Callers must manage inode lifetimes, serialize credential changes and volume lifetime operations,
+and prevent duplicate mounts or external concurrent writers. Credentials are a trusted kernel-supplied, volume-wide
+UID and primary GID, not a process authentication mechanism.
+
+A single transaction can stage at most 1024 changed blocks. Oversized operations fail before committing. Active
+extended attributes/ACLs, supplementary groups, journaling, and unsupported features or inode flags are not supported
+for modification. EXT2 has no journal here: dirty marking and flush ordering do not guarantee atomic recovery or data
+preservation after real power loss. A failed disk commit blocks further access through that mount and requires offline
+filesystem checking before the next writable mount.
+
+The public filesystem entry points are declared in `Kernel/Include/FS/EXT2/EXT2.h`.
 
 ### Graphics
 
@@ -216,8 +249,8 @@ The current default QEMU configuration uses:
 - VirtIO tablet
 - VirtIO block device
 
-Runtime logs are written under `Logs`. `qemu.log` contains QEMU diagnostics, and `debugcon.log` is reserved for panic
-and exception output. The normal scheduler stress workload does not write progress messages to the debug console.
+Runtime logs are written to `Logs/QEMU.log` and `Logs/DebugCon.log`. The latter contains EXT2 test progress,
+`[EXT2 TEST] PASS` or a failure stage/error code, and debug output from panic and exception paths.
 
 ## Font Rendering
 
@@ -266,15 +299,40 @@ Migration is intentionally limited to scheduled `TASK_READY` tasks that are not 
 acquires the two run-queue locks in CPU-index order and updates both the runnable lists and weighted chunks atomically
 with respect to those locks.
 
-## Scheduler Stress Workload
+## Current Kernel Test Workload
 
-The default kernel entry starts a scheduler stress workload after kernel initialization. Its on-screen monitor reports
-the current phase, worker counters, sleep and yield activity, task churn progress, migration results, and a failure
-mask.
+The current `Kernel/Kernel.c` runs keyboard and mouse handlers, an on-screen input monitor, and a VirtIO block/EXT2
+test task. The former scheduler stress workload is not the default kernel entry workload.
 
-The workload exercises timer preemption, timed sleep and wake-up, explicit yield, creation and termination of 32
-short-lived tasks, priority changes, ready-task migration, task killing, task termination, and the idle-only transition.
-It is a runtime regression workload rather than a proof of scheduler correctness on all hardware or CPU counts.
+The disk task verifies GPT and EXT2 recognition, then mounts partition 2 writable. It chooses an unused
+`/LineOSTestNNNN` directory and retains `Payload.bin` for inspection. Each successful run leaves a new test directory;
+existing test files are not overwritten. The task performs real writes to the root partition used by the VM.
+
+The filesystem checks cover direct/single-indirect data, double-indirect sparse writes and zero-filled holes, EOF and
+invalid-operation rejection, truncation and regrowth, hard and symbolic links, rename, deletion, ownership and
+permissions, and persistence after a read-only remount. Temporary files used by the additional checks are removed.
+Results appear on screen and through the debug console.
+
+## EXT2 Verification
+
+The 2026-10-19 checkpoint passed:
+
+- 182 host image scenarios using the actual kernel EXT2/GPT sources with AddressSanitizer, UndefinedBehaviorSanitizer,
+  and compiler warnings treated as errors
+- Block/inode-size combinations, revision 0, triple-indirect sparse files, allocation/reclamation, path/link handling,
+  permission checks, and remount persistence
+- Rejection of tested corrupt metadata, unsupported features, dirty writable mounts, and invalid GPT CRCs
+- Allocation, disk-write, and flush failures, plus process termination at disk-write/flush boundaries; interrupted
+  images were repaired with `e2fsck` when needed and then checked again
+- Actual QEMU/KVM kernel tests with both 1 and 16 virtual CPUs reaching `[EXT2 TEST] PASS`
+- `e2fsck -fn` checks of both resulting QEMU EXT2 partitions without errors
+
+The QEMU checks used separate test disks and copied firmware variables. Host process termination models an
+interruption in a file-backed device; it does not reproduce every real device-cache or power-loss behavior.
+
+The host-image results above describe the completed checkpoint, not a test run performed by reading this README.
+The host test harness is not currently present in this checkout. The current runtime test entry point is
+`VirtIOBlockTestTask()` in `Kernel/Kernel.c`, started by `KMain()` through the normal launcher.
 
 ## Planned Work
 
@@ -284,12 +342,12 @@ Near-term:
 - SMP-safe VirtIO and kernel subsystems
 - Scheduler fairness and stress regression coverage
 - CPU affinity and broader task blocking support
-- EXT2 filesystem implementation
-- VirtIO block driver integration
+- EXT2 hardening and broader device/failure regression coverage
 - Kernel console
 
 Later:
 
+- VFS and open-file lifetime management (deferred; not part of current EXT2 work)
 - Virtual memory manager improvements
 - User mode
 - System calls

@@ -1,4 +1,4 @@
-// kernel/src/VirtIO/VirtIOPCI.c
+// Kernel/Source/VirtIO/VirtIOPCI.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

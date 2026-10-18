@@ -1,4 +1,4 @@
-# run.ps1
+# Run.ps1
 # LineOS Project
 # Copyright (C) 2026 LineOS Developer kljj04
 

@@ -1,4 +1,4 @@
-// Kernel/Source/Disk/VirtIoBlock.c
+// Kernel/Source/Disk/VirtIOBlock.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
@@ -272,6 +272,39 @@ STATIC BOOLEAN SubmitRequest(VIRTIO_BLOCK_DEVICE *Device, UINT32 Type, UINT64 Se
     return TRUE;
 }
 
+STATIC BOOLEAN SubmitRequestSync(VIRTIO_BLOCK_DEVICE *Device, UINT32 Type, UINT64 Sector, UINT32 SectorCount, CONST VOID *Buffer)
+{
+    VIRTIO_BLOCK_REQUEST      *Request;
+    VIRTIO_BLOCK_REQUEST_STATE State;
+    BOOLEAN                    Result;
+
+    if (!SubmitRequest(Device, Type, Sector, SectorCount, Buffer, &Request))
+    {
+        return FALSE;
+    }
+
+    for (;;)
+    {
+        State = Request->State;
+
+        if (State != VIRTIO_BLOCK_REQUEST_PENDING)
+        {
+            break;
+        }
+
+        ASM("pause" ::: "memory");
+    }
+
+    Result = State == VIRTIO_BLOCK_REQUEST_COMPLETED;
+
+    if (!VirtIOBlockReleaseRequest(Device, Request))
+    {
+        return FALSE;
+    }
+
+    return Result;
+}
+
 BOOLEAN VirtIOBlockInit(VOID)
 {
     PCI_DEVICE *PCIDevice;
@@ -351,6 +384,21 @@ BOOLEAN VirtIOBlockWriteAsync(VIRTIO_BLOCK_DEVICE *Device, UINT64 Sector, UINT32
 BOOLEAN VirtIOBlockFlushAsync(VIRTIO_BLOCK_DEVICE *Device, VIRTIO_BLOCK_REQUEST **Request)
 {
     return SubmitRequest(Device, VIRTIO_BLOCK_T_FLUSH, 0, 0, NULL, Request);
+}
+
+BOOLEAN VirtIOBlockReadSync(VIRTIO_BLOCK_DEVICE *Device, UINT64 Sector, UINT32 SectorCount, VOID *Buffer)
+{
+    return SubmitRequestSync(Device, VIRTIO_BLOCK_T_IN, Sector, SectorCount, Buffer);
+}
+
+BOOLEAN VirtIOBlockWriteSync(VIRTIO_BLOCK_DEVICE *Device, UINT64 Sector, UINT32 SectorCount, CONST VOID *Buffer)
+{
+    return SubmitRequestSync(Device, VIRTIO_BLOCK_T_OUT, Sector, SectorCount, Buffer);
+}
+
+BOOLEAN VirtIOBlockFlushSync(VIRTIO_BLOCK_DEVICE *Device)
+{
+    return SubmitRequestSync(Device, VIRTIO_BLOCK_T_FLUSH, 0, 0, NULL);
 }
 
 VOID VirtIOBlockHandleInterrupt(VIRTIO_BLOCK_DEVICE *Device)

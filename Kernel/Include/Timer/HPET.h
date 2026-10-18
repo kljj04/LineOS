@@ -1,4 +1,4 @@
-// kernel/include/timer/HPET.h
+// Kernel/Include/Timer/HPET.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

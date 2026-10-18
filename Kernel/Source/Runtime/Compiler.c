@@ -1,4 +1,4 @@
-// kernel/src/runtime/compiler.c
+// Kernel/Source/Runtime/Compiler.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

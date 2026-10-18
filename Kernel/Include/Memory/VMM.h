@@ -1,4 +1,4 @@
-// kernel/include/memory/VMM.h
+// Kernel/Include/Memory/VMM.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

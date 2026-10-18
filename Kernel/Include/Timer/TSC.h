@@ -1,4 +1,4 @@
-// kernel/include/timer/TSC.h
+// Kernel/Include/Timer/TSC.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

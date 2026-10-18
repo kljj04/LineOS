@@ -1,4 +1,4 @@
-// kernel/include/render/GPU/VirtIOGPUProtocol.h
+// Kernel/Include/Render/GPU/VirtIOGPUProtocol.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

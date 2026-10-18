@@ -1,4 +1,4 @@
-// common/LineOS/ACPI.h
+// Common/LineOS/ACPI.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

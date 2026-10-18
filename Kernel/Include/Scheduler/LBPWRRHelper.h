@@ -1,4 +1,4 @@
-// kernel/include/scheduler/LBPWRRHelper.h
+// Kernel/Include/Scheduler/LBPWRRHelper.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

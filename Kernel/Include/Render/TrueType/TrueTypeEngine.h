@@ -1,4 +1,4 @@
-// kernel/include/render/TrueType/TrueTypeEngine.h
+// Kernel/Include/Render/TrueType/TrueTypeEngine.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

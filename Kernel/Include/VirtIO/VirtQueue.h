@@ -1,4 +1,4 @@
-// kernel/include/VirtIO/VirtQueue.h
+// Kernel/Include/VirtIO/VirtQueue.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
