@@ -347,6 +347,11 @@ BOOLEAN EXT2Resolve(EXT2_VOLUME *Volume, CONST CHAR8 *Path, UINT32 *Number, EXT2
                 goto Done;
             }
 
+            if (!EXT2TouchAccess(Volume, Child, &Next))
+            {
+                goto Done;
+            }
+
             if (TargetLength + TailLength >= 4096)
             {
                 EXT2Fail(Volume, EXT2_ERROR_LIMIT);
@@ -788,6 +793,7 @@ BOOLEAN EXT2RenameEntry(EXT2_VOLUME *Volume, UINT32 OldParent, CONST CHAR8 *OldN
         }
 
         EXT2Store16(OldDirectory.Raw + 26, EXT2Load16(OldDirectory.Raw + 26) - 1);
+        EXT2Store32(Inode.Raw + 16, Time);
     }
 
     EXT2Store32(OldDirectory.Raw + 12, Time);

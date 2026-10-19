@@ -311,7 +311,7 @@ STATIC VOID ProcessTabletEvent(VIRTIO_INPUT_DEVICE_INFO *InputDevice, VIRTIO_INP
         if (Event->Code == VIRTIO_INPUT_REL_WHEEL)
         {
             INT32 Diff = (INT32) Event->Value;
-            INT8 Direction = 0;
+            INT8  Direction = 0;
 
             if (Diff > 0)
             {

@@ -21,8 +21,17 @@ STATIC UINT32 MouseMaxY = 32767;
 STATIC MOUSE_STATUS    MouseStatus = {0};
 STATIC KEYBOARD_STATUS KeyboardStatus = {0};
 
-STATIC SPIN_LOCK MouseStatusLock;
-STATIC SPIN_LOCK KeyboardStatusLock;
+STATIC SPIN_LOCK       MouseStatusLock;
+STATIC SPIN_LOCK       KeyboardStatusLock;
+STATIC KEYBOARD_STATUS KeyboardEvents[256];
+STATIC UINT32          KeyboardReadIndex;
+STATIC UINT32          KeyboardWriteIndex;
+STATIC BOOLEAN         KeyboardLeftShift;
+STATIC BOOLEAN         KeyboardRightShift;
+STATIC BOOLEAN         KeyboardControl;
+STATIC BOOLEAN         KeyboardCapsLock;
+STATIC BOOLEAN         KeyboardCapsPressed;
+
 STATIC SPIN_LOCK CursorLock;
 
 STATIC BOOLEAN CursorReady = FALSE;
@@ -48,7 +57,7 @@ STATIC UINT32 ScalePointerCoordinate(UINT32 Value, UINT32 Min, UINT32 Max, UINT3
 MOUSE_STATUS GetMouseStatus(VOID)
 {
     MOUSE_STATUS Status;
-    UINT64 Flags;
+    UINT64       Flags;
 
     Flags = SpinLockAcquireIRQSave(&MouseStatusLock);
     Status = MouseStatus;
@@ -60,7 +69,7 @@ MOUSE_STATUS GetMouseStatus(VOID)
 KEYBOARD_STATUS GetKeyboardStatus(VOID)
 {
     KEYBOARD_STATUS Status;
-    UINT64 Flags;
+    UINT64          Flags;
 
     Flags = SpinLockAcquireIRQSave(&KeyboardStatusLock);
     Status = KeyboardStatus;
@@ -123,7 +132,7 @@ VOID HideMouseCursor(VOID)
 VOID ShowMouseCursor(VOID)
 {
     MOUSE_STATUS Status;
-    UINT64 Flags;
+    UINT64       Flags;
 
     Flags = SpinLockAcquireIRQSave(&CursorLock);
 
@@ -151,7 +160,7 @@ VOID ShowMouseCursor(VOID)
 VOID UpdateMouseCursor(VOID)
 {
     MOUSE_STATUS Status;
-    UINT64 Flags;
+    UINT64       Flags;
 
     Flags = SpinLockAcquireIRQSave(&CursorLock);
 
@@ -183,10 +192,10 @@ VOID UpdateMouseCursor(VOID)
 
 VOID InputMouseHandler(VOID)
 {
-    VIRTIO_GPU_INFO      *GPU;
-    VIRTIO_POINTER_EVENT  PointerEvent;
-    MOUSE_STATUS          Status;
-    UINT64                Flags;
+    VIRTIO_GPU_INFO     *GPU;
+    VIRTIO_POINTER_EVENT PointerEvent;
+    MOUSE_STATUS         Status;
+    UINT64               Flags;
 
     GPU = VirtIOGPUGetInfo();
 
@@ -225,7 +234,7 @@ VOID InputMouseHandler(VOID)
 VOID InputKeyboardHandler(VOID)
 {
     VIRTIO_KEY_EVENT KeyEvent;
-    UINT64 Flags;
+    UINT64           Flags;
 
     while (TRUE)
     {
@@ -233,12 +242,65 @@ VOID InputKeyboardHandler(VOID)
         {
             Flags = SpinLockAcquireIRQSave(&KeyboardStatusLock);
 
+            if (KeyEvent.Code == 42)
+            {
+                KeyboardLeftShift = KeyEvent.Pressed;
+            }
+            else if (KeyEvent.Code == 54)
+            {
+                KeyboardRightShift = KeyEvent.Pressed;
+            }
+            else if (KeyEvent.Code == 29 || KeyEvent.Code == 97)
+            {
+                KeyboardControl = KeyEvent.Pressed;
+            }
+            else if (KeyEvent.Code == 58)
+            {
+                if (KeyEvent.Pressed && !KeyboardCapsPressed)
+                {
+                    KeyboardCapsLock = !KeyboardCapsLock;
+                }
+
+                KeyboardCapsPressed = KeyEvent.Pressed;
+            }
+
             KeyboardStatus.KeyCode = KeyEvent.Code;
             KeyboardStatus.Pressed = KeyEvent.Pressed;
+            KeyboardStatus.Modifiers = (KeyboardLeftShift || KeyboardRightShift ? 1 : 0) | (KeyboardCapsLock ? 2 : 0) | (KeyboardControl ? 4 : 0);
+            KeyboardEvents[KeyboardWriteIndex] = KeyboardStatus;
+            KeyboardWriteIndex = (KeyboardWriteIndex + 1) % 256;
+
+            if (KeyboardWriteIndex == KeyboardReadIndex)
+            {
+                KeyboardReadIndex = (KeyboardReadIndex + 1) % 256;
+            }
 
             SpinLockReleaseIRQRestore(&KeyboardStatusLock, Flags);
         }
 
         HLTONCE();
     }
+}
+
+BOOLEAN InputGetKeyboardEvent(KEYBOARD_STATUS *Event)
+{
+    UINT64 Flags;
+
+    if (Event == NULL)
+    {
+        return FALSE;
+    }
+
+    Flags = SpinLockAcquireIRQSave(&KeyboardStatusLock);
+
+    if (KeyboardReadIndex == KeyboardWriteIndex)
+    {
+        SpinLockReleaseIRQRestore(&KeyboardStatusLock, Flags);
+        return FALSE;
+    }
+
+    *Event = KeyboardEvents[KeyboardReadIndex];
+    KeyboardReadIndex = (KeyboardReadIndex + 1) % 256;
+    SpinLockReleaseIRQRestore(&KeyboardStatusLock, Flags);
+    return TRUE;
 }

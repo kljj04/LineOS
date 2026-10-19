@@ -12,7 +12,8 @@
 #define EXT2_MODE_FILE         0x8000U
 #define EXT2_MODE_TYPE         0xF000U
 #define EXT2_MAX_BLOCK_SIZE    4096U
-#define EXT2_TRANSACTION_LIMIT 1024U
+#define EXT2_TRANSACTION_LIMIT 32768U
+#define EXT2_CHANGE_BUCKETS    4096U
 
 typedef struct
 {
@@ -32,8 +33,9 @@ typedef struct
 typedef struct EXT2_CHANGE
 {
     struct EXT2_CHANGE *Next;
+    struct EXT2_CHANGE *HashNext;
     UINT32              Block;
-    UINT8               Data[EXT2_MAX_BLOCK_SIZE];
+    UINT8               Data[];
 } EXT2_CHANGE;
 
 typedef enum
@@ -52,7 +54,8 @@ typedef enum
     EXT2_ERROR_LIMIT,
     EXT2_ERROR_PERMISSION,
     EXT2_ERROR_NOT_EMPTY,
-    EXT2_ERROR_LOOP
+    EXT2_ERROR_LOOP,
+    EXT2_ERROR_CLOCK
 } EXT2_ERROR;
 
 typedef struct
@@ -76,6 +79,7 @@ typedef struct
     UINT32               UID;
     UINT32               GID;
     EXT2_CHANGE         *Changes;
+    EXT2_CHANGE        **ChangeBuckets;
     VOLATILE UINT32      Busy;
     EXT2_ERROR           Error;
     BOOLEAN              Mounted;
@@ -96,3 +100,5 @@ BOOLEAN EXT2Begin(EXT2_VOLUME *Volume);
 BOOLEAN EXT2Commit(EXT2_VOLUME *Volume);
 VOID    EXT2Abort(EXT2_VOLUME *Volume);
 BOOLEAN EXT2DataBlockValid(EXT2_VOLUME *Volume, UINT32 Block);
+
+BOOLEAN EXT2TouchAccess(EXT2_VOLUME *Volume, UINT32 Number, EXT2_INODE *Inode);

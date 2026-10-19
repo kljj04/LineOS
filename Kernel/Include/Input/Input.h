@@ -22,6 +22,7 @@ typedef struct
 {
     UINT16  KeyCode;
     BOOLEAN Pressed;
+    UINT8   Modifiers;
 } KEYBOARD_STATUS;
 
 VOID            InputMouseHandler(VOID);
@@ -29,6 +30,7 @@ VOID            InputKeyboardHandler(VOID);
 MOUSE_STATUS    GetMouseStatus(VOID);
 KEYBOARD_STATUS GetKeyboardStatus(VOID);
 
-VOID HideMouseCursor(VOID);
-VOID ShowMouseCursor(VOID);
-VOID UpdateMouseCursor(VOID);
+VOID    HideMouseCursor(VOID);
+VOID    ShowMouseCursor(VOID);
+VOID    UpdateMouseCursor(VOID);
+BOOLEAN InputGetKeyboardEvent(KEYBOARD_STATUS *Event);

@@ -141,18 +141,34 @@ subsystem hardening remain future work.
 - Writable-mount validation of block ownership, allocation counts, directory references, and parent relationships
 - Bounded in-memory preparation followed by dirty-state and flush-ordered disk updates
 
-EXT2 currently uses direct kernel APIs. There is no VFS, process file-descriptor table, or open-file lifetime layer.
-VFS work is deferred. Callers must manage inode lifetimes, serialize credential changes and volume lifetime operations,
-and prevent duplicate mounts or external concurrent writers. Credentials are a trusted kernel-supplied, volume-wide
-UID and primary GID, not a process authentication mechanism.
+EXT2 is connected to a VFS core with per-partition roots, path resolution, directory enumeration, and command
+contexts. `/` means the selected partition root; `^` is an administrator-only virtual partition manager. Normal users
+receive a not-found result for that namespace. Administrator privileges do not add a prefix to ordinary `/A/B` paths.
+There is no process file-descriptor table, open-file lifetime layer, or user-mode authentication system yet.
 
-A single transaction can stage at most 1024 changed blocks. Oversized operations fail before committing. Active
+A single transaction can stage at most 32768 changed blocks (about 32–128 MiB including metadata). Oversized operations fail before committing. Active
 extended attributes/ACLs, supplementary groups, journaling, and unsupported features or inode flags are not supported
 for modification. EXT2 has no journal here: dirty marking and flush ordering do not guarantee atomic recovery or data
 preservation after real power loss. A failed disk commit blocks further access through that mount and requires offline
 filesystem checking before the next writable mount.
 
 The public filesystem entry points are declared in `Kernel/Include/FS/EXT2/EXT2.h`.
+
+### UTC Clock and Development Shell
+
+- RTC-backed UTC Unix time through `ClockGetUnixTime()`; local display offsets do not affect disk timestamps
+- EXT2 ctime for inode changes, mtime for content changes, and relatime atime updates on writable mounts
+- A basic kernel development shell in `Kernel.c`, with real VFS-backed file commands
+- `pwd`, `cd`, `ls`, `stat`, `cat`, `hexdump`, `mkdir`, `touch`, `write`, `append`, `cp`, `mv`, `rm`, `rmdir`, `ln`,
+  `truncate`, `chmod`, `chown`, `echo`, `time`, `uptime`, `whoami`, `sync`, `clear`, and `history`
+- One-command debug `sudo`; successful `sudo cd` preserves location without preserving credentials
+- US ASCII keyboard input, quoting/escaping, Backspace, and recent-command recall
+
+The local debug console has no password or login authentication. It starts as UID/GID 1000 and grants command-local
+sudo authorization to the console operator. This is a development policy, not a completed userland security system.
+EFI p1 is a reserved partition entry; its FAT32 backend remains unimplemented.
+
+See [VFS paths, shell commands, timestamp policy, limits, and test details](Docs/VFS.md).
 
 ### Graphics
 
@@ -302,7 +318,8 @@ with respect to those locks.
 ## Current Kernel Test Workload
 
 The current `Kernel/Kernel.c` runs keyboard and mouse handlers, an on-screen input monitor, and a VirtIO block/EXT2
-test task. The former scheduler stress workload is not the default kernel entry workload.
+test task. The clock display also runs continuously. After filesystem tests pass, a development shell mounts p2 for interactive
+file operations. The former scheduler stress workload is not the default kernel entry workload.
 
 The disk task verifies GPT and EXT2 recognition, then mounts partition 2 writable. It chooses an unused
 `/LineOSTestNNNN` directory and retains `Payload.bin` for inspection. Each successful run leaves a new test directory;
@@ -330,9 +347,15 @@ The 2026-10-19 checkpoint passed:
 The QEMU checks used separate test disks and copied firmware variables. Host process termination models an
 interruption in a file-backed device; it does not reproduce every real device-cache or power-loss behavior.
 
-The host-image results above describe the completed checkpoint, not a test run performed by reading this README.
-The host test harness is not currently present in this checkout. The current runtime test entry point is
-`VirtIOBlockTestTask()` in `Kernel/Kernel.c`, started by `KMain()` through the normal launcher.
+The 182-scenario results above are the earlier EXT2 checkpoint. The current Clock/VFS/shell regression suite is:
+
+```bash
+python3 Tests/FS/Run.py --work /tmp/LineOSFSTests
+```
+
+The current checkpoint passes 13 clock checks, 144 filesystem/VFS checks for each of 1/2/4 KiB blocks, and 117 shell
+checks under ASan/UBSan. QEMU/KVM with 1 and 16 CPUs also passed the kernel tests and 27 actual keyboard-driven shell
+commands each; resulting disks passed `e2fsck`. See [the detailed contract and limitations](Docs/VFS.md).
 
 ## Planned Work
 
@@ -347,7 +370,7 @@ Near-term:
 
 Later:
 
-- VFS and open-file lifetime management (deferred; not part of current EXT2 work)
+- Open-file lifetime management, process file descriptors, and userland shell/authentication integration
 - Virtual memory manager improvements
 - User mode
 - System calls

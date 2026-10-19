@@ -7,12 +7,6 @@
 #include <Render/TrueType/TrueTypeEngine.h>
 #include <stdarg.h>
 
-#define KPRINT_TAB_SIZE         4
-#define KPRINT_PIXEL_HEIGHT     24
-#define KPRINT_LINE_HEIGHT      32
-#define KPRINT_BACKSPACE_WIDTH  12
-#define KPRINT_BACKSPACE_HEIGHT 24
-
 STATIC UINT32 KPrintColor(UINT32 Color)
 {
     return Color;
@@ -28,23 +22,37 @@ STATIC UINT32 KPrintString(CONST CHAR16 *Msg, UINT32 X, UINT32 Baseline, UINT32 
     return DrawTrueTypeText(Font, Msg, X, Baseline, KPrintColor(Color), PixelHeight);
 }
 
-STATIC UINT32 KPrintUnsigned(UINT64 Value, UINT32 Base, BOOLEAN UpperCase, UINT32 X, UINT32 Baseline, UINT32 Color, UINT32 PixelHeight, TRUE_TYPE_FONT Font)
+STATIC UINT32 KPrintPadding(CHAR16 Padding, UINT32 Count, UINT32 X, UINT32 Baseline, UINT32 Color, UINT32 PixelHeight, TRUE_TYPE_FONT Font)
+{
+    while (Count > 0)
+    {
+        X = KPrintChar(Padding, X, Baseline, Color, PixelHeight, Font);
+        Count--;
+    }
+
+    return X;
+}
+
+STATIC UINT32 KPrintUnsigned(UINT64 Value, UINT32 Base, BOOLEAN UpperCase, UINT32 Width, CHAR16 Padding, BOOLEAN LeftAlign, UINT32 X, UINT32 Baseline, UINT32 Color, UINT32 PixelHeight, TRUE_TYPE_FONT Font)
 {
     CHAR16             Buffer[32];
     STATIC CONST CHAR8 UpperDigits[] = "0123456789ABCDEF";
     STATIC CONST CHAR8 LowerDigits[] = "0123456789abcdef";
     CONST CHAR8       *Digits = UpperCase ? UpperDigits : LowerDigits;
     UINT32             Index = 0;
+    UINT32             PaddingCount;
 
-    if (Value == 0)
-    {
-        return KPrintChar('0', X, Baseline, Color, PixelHeight, Font);
-    }
-
-    while (Value != 0 && Index < sizeof(Buffer) / sizeof(Buffer[0]))
+    do
     {
         Buffer[Index++] = (CHAR16) Digits[Value % Base];
         Value /= Base;
+    } while (Value != 0 && Index < sizeof(Buffer) / sizeof(Buffer[0]));
+
+    PaddingCount = Width > Index ? Width - Index : 0;
+
+    if (!LeftAlign)
+    {
+        X = KPrintPadding(Padding, PaddingCount, X, Baseline, Color, PixelHeight, Font);
     }
 
     while (Index > 0)
@@ -53,18 +61,60 @@ STATIC UINT32 KPrintUnsigned(UINT64 Value, UINT32 Base, BOOLEAN UpperCase, UINT3
         X = KPrintChar(Buffer[Index], X, Baseline, Color, PixelHeight, Font);
     }
 
+    if (LeftAlign)
+    {
+        X = KPrintPadding(' ', PaddingCount, X, Baseline, Color, PixelHeight, Font);
+    }
+
     return X;
 }
 
-STATIC UINT32 KPrintSigned(INT64 Value, UINT32 X, UINT32 Baseline, UINT32 Color, UINT32 PixelHeight, TRUE_TYPE_FONT Font)
+STATIC UINT32 KPrintSigned(INT64 Value, UINT32 Width, CHAR16 Padding, BOOLEAN LeftAlign, UINT32 X, UINT32 Baseline, UINT32 Color, UINT32 PixelHeight, TRUE_TYPE_FONT Font)
 {
+    UINT64 Magnitude;
+    UINT64 Temp;
+    UINT32 Digits = 1;
+    UINT32 PaddingCount;
+
+    Magnitude = Value < 0 ? (UINT64) (-(Value + 1)) + 1 : (UINT64) Value;
+    Temp = Magnitude;
+
+    while (Temp >= 10)
+    {
+        Temp /= 10;
+        Digits++;
+    }
+
+    if (Value < 0)
+    {
+        Digits++;
+    }
+
+    PaddingCount = Width > Digits ? Width - Digits : 0;
+
+    if (!LeftAlign && Padding == ' ')
+    {
+        X = KPrintPadding(' ', PaddingCount, X, Baseline, Color, PixelHeight, Font);
+    }
+
     if (Value < 0)
     {
         X = KPrintChar('-', X, Baseline, Color, PixelHeight, Font);
-        return KPrintUnsigned((UINT64) (-Value), 10, FALSE, X, Baseline, Color, PixelHeight, Font);
     }
 
-    return KPrintUnsigned((UINT64) Value, 10, FALSE, X, Baseline, Color, PixelHeight, Font);
+    if (!LeftAlign && Padding == '0')
+    {
+        X = KPrintPadding('0', PaddingCount, X, Baseline, Color, PixelHeight, Font);
+    }
+
+    X = KPrintUnsigned(Magnitude, 10, FALSE, 0, ' ', FALSE, X, Baseline, Color, PixelHeight, Font);
+
+    if (LeftAlign)
+    {
+        X = KPrintPadding(' ', PaddingCount, X, Baseline, Color, PixelHeight, Font);
+    }
+
+    return X;
 }
 
 VOID KPrint(CONST CHAR16 *Msg, UINT32 X, UINT32 Baseline, UINT32 Color, UINT32 PixelHeight, TRUE_TYPE_FONT Font, ...)
@@ -132,6 +182,42 @@ VOID KPrint(CONST CHAR16 *Msg, UINT32 X, UINT32 Baseline, UINT32 Color, UINT32 P
 
         BOOLEAN LongValue = FALSE;
         BOOLEAN LongLongValue = FALSE;
+        BOOLEAN LeftAlign = FALSE;
+        CHAR16  Padding = ' ';
+        UINT32  Width = 0;
+
+        if (Ch == '-')
+        {
+            LeftAlign = TRUE;
+            Ch = *Msg++;
+        }
+
+        if (Ch == '0')
+        {
+            Padding = '0';
+            Ch = *Msg++;
+        }
+
+        while (Ch >= '0' && Ch <= '9')
+        {
+            UINT32 Digit = (UINT32) (Ch - '0');
+
+            if (Width > (KPRINT_MAX_WIDTH - Digit) / 10)
+            {
+                Width = KPRINT_MAX_WIDTH;
+            }
+            else
+            {
+                Width = Width * 10 + Digit;
+            }
+
+            Ch = *Msg++;
+        }
+
+        if (LeftAlign)
+        {
+            Padding = ' ';
+        }
 
         if (Ch == 'l')
         {
@@ -170,50 +256,38 @@ VOID KPrint(CONST CHAR16 *Msg, UINT32 X, UINT32 Baseline, UINT32 Color, UINT32 P
 
         case 'd':
         case 'i':
-            if (LongLongValue)
+            if (LongLongValue || LongValue)
             {
-                X = KPrintSigned((INT64) va_arg(Args, UINT64), X, Baseline, Color, PixelHeight, Font);
-            }
-            else if (LongValue)
-            {
-                X = KPrintSigned((INT64) va_arg(Args, UINT64), X, Baseline, Color, PixelHeight, Font);
+                X = KPrintSigned((INT64) va_arg(Args, INT64), Width, Padding, LeftAlign, X, Baseline, Color, PixelHeight, Font);
             }
             else
             {
-                X = KPrintSigned((INT32) va_arg(Args, INT32), X, Baseline, Color, PixelHeight, Font);
+                X = KPrintSigned((INT32) va_arg(Args, INT32), Width, Padding, LeftAlign, X, Baseline, Color, PixelHeight, Font);
             }
 
             break;
 
         case 'u':
-            if (LongLongValue)
+            if (LongLongValue || LongValue)
             {
-                X = KPrintUnsigned(va_arg(Args, UINT64), 10, FALSE, X, Baseline, Color, PixelHeight, Font);
-            }
-            else if (LongValue)
-            {
-                X = KPrintUnsigned(va_arg(Args, UINT64), 10, FALSE, X, Baseline, Color, PixelHeight, Font);
+                X = KPrintUnsigned(va_arg(Args, UINT64), 10, FALSE, Width, Padding, LeftAlign, X, Baseline, Color, PixelHeight, Font);
             }
             else
             {
-                X = KPrintUnsigned(va_arg(Args, UINT32), 10, FALSE, X, Baseline, Color, PixelHeight, Font);
+                X = KPrintUnsigned(va_arg(Args, UINT32), 10, FALSE, Width, Padding, LeftAlign, X, Baseline, Color, PixelHeight, Font);
             }
 
             break;
 
         case 'x':
         case 'X':
-            if (LongLongValue)
+            if (LongLongValue || LongValue)
             {
-                X = KPrintUnsigned(va_arg(Args, UINT64), 16, Ch == 'X', X, Baseline, Color, PixelHeight, Font);
-            }
-            else if (LongValue)
-            {
-                X = KPrintUnsigned(va_arg(Args, UINT64), 16, Ch == 'X', X, Baseline, Color, PixelHeight, Font);
+                X = KPrintUnsigned(va_arg(Args, UINT64), 16, Ch == 'X', Width, Padding, LeftAlign, X, Baseline, Color, PixelHeight, Font);
             }
             else
             {
-                X = KPrintUnsigned(va_arg(Args, UINT32), 16, Ch == 'X', X, Baseline, Color, PixelHeight, Font);
+                X = KPrintUnsigned(va_arg(Args, UINT32), 16, Ch == 'X', Width, Padding, LeftAlign, X, Baseline, Color, PixelHeight, Font);
             }
 
             break;
@@ -221,7 +295,7 @@ VOID KPrint(CONST CHAR16 *Msg, UINT32 X, UINT32 Baseline, UINT32 Color, UINT32 P
         case 'p':
             X = KPrintChar('0', X, Baseline, Color, PixelHeight, Font);
             X = KPrintChar('x', X, Baseline, Color, PixelHeight, Font);
-            X = KPrintUnsigned((UINT64) va_arg(Args, VOID *), 16, FALSE, X, Baseline, Color, PixelHeight, Font);
+            X = KPrintUnsigned((UINT64) va_arg(Args, VOID *), 16, FALSE, 0, ' ', FALSE, X, Baseline, Color, PixelHeight, Font);
             break;
 
         default:
