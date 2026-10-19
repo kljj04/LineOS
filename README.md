@@ -1,9 +1,20 @@
+[![Arch](https://img.shields.io/badge/Arch-x86__64-24292f?style=flat-square)](https://github.com/kljj04/LineOS)
+[![Language](https://img.shields.io/badge/Language-C-3465a4?style=flat-square)](https://github.com/kljj04/LineOS)
+[![Boot](https://img.shields.io/badge/Boot-UEFI-555555?style=flat-square)](https://github.com/kljj04/LineOS)
+[![Kernel](https://img.shields.io/badge/Kernel-Monolithic-24292f?style=flat-square)](https://github.com/kljj04/LineOS)
+[![Platform](https://img.shields.io/badge/Platform-Bare_Metal-555555?style=flat-square)](https://github.com/kljj04/LineOS)
+
+![Last Commit](https://img.shields.io/github/last-commit/kljj04/LineOS?style=flat-square)
+![Repo Size](https://img.shields.io/github/repo-size/kljj04/LineOS?style=flat-square)
+![Commits](https://img.shields.io/github/commit-activity/t/kljj04/LineOS?style=flat-square)
+
 # LineOS
 
 LineOS is a 64-bit x86_64 UEFI hobby operating system written primarily in freestanding C and x86 assembly.
 
 The project currently focuses on multicore kernel bring-up, memory management, interrupt and timer infrastructure,
-VirtIO devices, native TrueType rendering, kernel scheduling, and an EXT2 filesystem accessed through direct kernel APIs.
+VirtIO devices, native TrueType rendering, kernel scheduling, and an EXT2 filesystem integrated with a virtual
+filesystem layer (VFS) and an interactive kernel shell.
 
 ## Status
 
@@ -146,7 +157,8 @@ contexts. `/` means the selected partition root; `^` is an administrator-only vi
 receive a not-found result for that namespace. Administrator privileges do not add a prefix to ordinary `/A/B` paths.
 There is no process file-descriptor table, open-file lifetime layer, or user-mode authentication system yet.
 
-A single transaction can stage at most 32768 changed blocks (about 32–128 MiB including metadata). Oversized operations fail before committing. Active
+A single transaction can stage at most 32768 changed blocks (about 32–128 MiB including metadata). Oversized operations
+fail before committing. Active
 extended attributes/ACLs, supplementary groups, journaling, and unsupported features or inode flags are not supported
 for modification. EXT2 has no journal here: dirty marking and flush ordering do not guarantee atomic recovery or data
 preservation after real power loss. A failed disk commit blocks further access through that mount and requires offline
@@ -318,7 +330,8 @@ with respect to those locks.
 ## Current Kernel Test Workload
 
 The current `Kernel/Kernel.c` runs keyboard and mouse handlers, an on-screen input monitor, and a VirtIO block/EXT2
-test task. The clock display also runs continuously. After filesystem tests pass, a development shell mounts p2 for interactive
+test task. The clock display also runs continuously. After filesystem tests pass, a development shell mounts p2 for
+interactive
 file operations. The former scheduler stress workload is not the default kernel entry workload.
 
 The disk task verifies GPT and EXT2 recognition, then mounts partition 2 writable. It chooses an unused
@@ -379,6 +392,7 @@ Later:
 
 ## License
 
-LineOS is licensed under the MIT License. See `LICENSE`.
+LineOS is licensed under the POL License. See `LICENSE`.
 
-Third-party fonts are licensed separately under the SIL Open Font License 1.1. See `THIRD_PARTY_NOTICES.md`.
+Third-party fonts are licensed separately under the SIL Open Font License 1.1 and BSD-2-Clause-Patent. See
+`THIRD_PARTY_NOTICES.md`.
