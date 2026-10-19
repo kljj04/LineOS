@@ -296,7 +296,7 @@ Current rendering support includes:
 - Korean Hangul
 - Nerd Font private-use glyphs
 
-The bundled fonts are third-party assets. See `THIRD_PARTY_NOTICES.md` and `LICENSES/OFL-1.1`.
+The bundled fonts are third-party assets. See `Docs/THIRD_PARTY_NOTICES.md` and `Docs/LICENSES`.
 
 ## Memory Notes
 
@@ -395,4 +395,4 @@ Later:
 LineOS is licensed under the POL License. See `LICENSE`.
 
 Third-party fonts are licensed separately under the SIL Open Font License 1.1 and BSD-2-Clause-Patent. See
-`THIRD_PARTY_NOTICES.md`.
+`Docs/THIRD_PARTY_NOTICES.md`.

@@ -15,6 +15,7 @@
 #include <Render/GPU/VirtIOGPU.h>
 #include <LineOS/TypeInfo.h>
 #include <Memory/PMM.h>
+#include <Memory/VMM.h>
 #include <Arch/AMD64/CPU.h>
 
 EXTERN VOID ISR0(VOID);
@@ -55,6 +56,7 @@ EXTERN VOID ISR65(VOID);
 EXTERN VOID ISR66(VOID);
 EXTERN VOID ISR67(VOID);
 EXTERN VOID ISR68(VOID);
+EXTERN VOID ISR70(VOID);
 
 STATIC VOID (*ISRTable[32])(VOID) = {ISR0, ISR1, ISR2, ISR3, ISR4, ISR5, ISR6, ISR7, ISR8, ISR9, ISR10, ISR11, ISR12, ISR13, ISR14, ISR15, ISR16, ISR17, ISR18, ISR19, ISR20, ISR21, ISR22, ISR23, ISR24, ISR25, ISR26, ISR27, ISR28, ISR29, ISR30, ISR31};
 
@@ -81,6 +83,7 @@ VOID IDTInit(VOID)
     IDTSetGate(66, (UINT64) ISR66, Selector, 0, 0x8E);
     IDTSetGate(67, (UINT64) ISR67, Selector, 0, 0x8E);
     IDTSetGate(68, (UINT64) ISR68, Selector, 0, 0x8E);
+    IDTSetGate(70, (UINT64) ISR70, Selector, 0, 0x8E);
 }
 
 VOID IDTSetGate(UINT8 Vector, UINT64 Handler, UINT16 Selector, UINT8 IST, UINT8 TypeAttributes)
@@ -101,6 +104,11 @@ VOID IDTLoad(VOID)
 
 UINT64 SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *Frame)
 {
+    if (Frame->Vector == 2 && PanicHandleNMI())
+    {
+        return (UINT64) Frame;
+    }
+
     if (Frame->Vector < 32)
     {
         ExceptionPanic(Frame);
@@ -155,6 +163,12 @@ UINT64 SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *Frame)
         LAPICEOI();
 
         return (UINT64) Frame;
+    }
+
+    if (Frame->Vector == 70)
+    {
+        VMMHandleShootdown();
+        LAPICEOI();
     }
 
     return (UINT64) Frame;

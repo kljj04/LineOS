@@ -28,5 +28,6 @@ VOID   *KAllocPages(UINTN PageCount);
 VOID   *KAllocPagesBelow(UINTN PageCount, UINT64 Limit);
 VOID    KMemFreePages(VOID *Address, UINTN PageCount);
 BOOLEAN KHeapInit(VOID);
+BOOLEAN KMemoryPanicLocksAvailable(VOID);
 VOID   *KAlloc(UINTN Size);
 VOID    KFree(VOID *Address);

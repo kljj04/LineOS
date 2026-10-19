@@ -7,6 +7,10 @@
 #define SMP_TRAMPOLINE_STACK_ADDRESS 0x8F08
 #define SMP_TRAMPOLINE_ENTRY_ADDRESS 0x8F10
 #define SMP_TRAMPOLINE_CPUID_ADDRESS 0x8F18
+#define SMP_TRAMPOLINE_CR4_ADDRESS 0x8F20
+#define SMP_TRAMPOLINE_EFER_ADDRESS 0x8F28
+#define SMP_TRAMPOLINE_PAT_ADDRESS 0x8F30
+#define SMP_TRAMPOLINE_CR0_ADDRESS 0x8F38
 
 #define IA32_EFER_MSR 0xC0000080
 #define IA32_EFER_LME (1 << 8)
@@ -48,7 +52,7 @@ APTrampolineProtectedMode:
     movw %ax, %gs
     movw %ax, %ss
 
-    movl %cr4, %eax
+    movl SMP_TRAMPOLINE_CR4_ADDRESS, %eax
     orl $CR4_PAE, %eax
     movl %eax, %cr4
 
@@ -57,10 +61,16 @@ APTrampolineProtectedMode:
 
     movl $IA32_EFER_MSR, %ecx
     rdmsr
+    orl SMP_TRAMPOLINE_EFER_ADDRESS, %eax
     orl $IA32_EFER_LME, %eax
     wrmsr
 
-    movl %cr0, %eax
+    movl $0x277, %ecx
+    movl SMP_TRAMPOLINE_PAT_ADDRESS, %eax
+    movl SMP_TRAMPOLINE_PAT_ADDRESS + 4, %edx
+    wrmsr
+
+    movl SMP_TRAMPOLINE_CR0_ADDRESS, %eax
     orl $CR0_PG, %eax
     movl %eax, %cr0
 

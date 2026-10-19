@@ -24,6 +24,8 @@ EXTERN UINT8 APTrampolineEnd[];
 
 STATIC CPU_INFO CPUs[SMP_MAX_CPUS];
 STATIC UINT32   CPUCount = 0;
+STATIC BOOLEAN  SMPReady = FALSE;
+STATIC UINT64   BootCR3;
 
 STATIC UINT64 SMPReadCR3(VOID)
 {
@@ -90,6 +92,8 @@ STATIC BOOLEAN SMPDetectBSP(VOID)
 STATIC BOOLEAN SMPPrepareTrampoline(VOID)
 {
     UINT64 CR3;
+    UINT64 CR4;
+    UINT64 CR0;
     UINTN  TrampolineSize;
 
     CR3 = SMPReadCR3();
@@ -110,7 +114,13 @@ STATIC BOOLEAN SMPPrepareTrampoline(VOID)
 
     KMemCpy((VOID *) SMP_TRAMPOLINE_ADDRESS, APTrampolineStart, TrampolineSize);
 
+    ASM("mov %%cr4, %0" : "=r"(CR4));
+    ASM("mov %%cr0, %0" : "=r"(CR0));
     *(VOLATILE UINT32 *) SMP_TRAMPOLINE_CR3_ADDRESS = (UINT32) CR3;
+    *(VOLATILE UINT32 *) SMP_TRAMPOLINE_CR4_ADDRESS = (UINT32) CR4;
+    *(VOLATILE UINT64 *) SMP_TRAMPOLINE_EFER_ADDRESS = ReadMSR(0xC0000080) & (1ULL << 11);
+    *(VOLATILE UINT64 *) SMP_TRAMPOLINE_PAT_ADDRESS = ReadMSR(0x277);
+    *(VOLATILE UINT32 *) SMP_TRAMPOLINE_CR0_ADDRESS = (UINT32) CR0;
 
     return TRUE;
 }
@@ -171,7 +181,7 @@ STATIC BOOLEAN SMPStartAP(CPU_INFO *CPU)
     for (UINT32 Elapsed = 0; Elapsed < SMP_AP_START_TIMEOUT_MS; Elapsed++)
     {
         CompilerBarrier();
-        if (CPU->Online)
+        if (__atomic_load_n(&CPU->Online, __ATOMIC_ACQUIRE))
         {
             CompilerBarrier();
             return TRUE;
@@ -190,6 +200,8 @@ BOOLEAN SMPInit(LINEOS_BOOT_INFO *BootInfo)
     UINT8     *End;
     BOOLEAN    HasAP;
 
+    __atomic_store_n(&SMPReady, FALSE, __ATOMIC_RELEASE);
+    BootCR3 = SMPReadCR3();
     CPUCount = 0;
 
     MADT = (ACPI_MADT *) ACPIFindTable(BootInfo, (CONST CHAR8 *) "APIC");
@@ -261,6 +273,7 @@ BOOLEAN SMPInit(LINEOS_BOOT_INFO *BootInfo)
 
     if (!HasAP)
     {
+        __atomic_store_n(&SMPReady, TRUE, __ATOMIC_RELEASE);
         return TRUE;
     }
 
@@ -284,7 +297,18 @@ BOOLEAN SMPInit(LINEOS_BOOT_INFO *BootInfo)
         }
     }
 
+    __atomic_store_n(&SMPReady, TRUE, __ATOMIC_RELEASE);
     return TRUE;
+}
+
+BOOLEAN SMPIsReady(VOID)
+{
+    return __atomic_load_n(&SMPReady, __ATOMIC_ACQUIRE);
+}
+
+UINT64 SMPGetBootCR3(VOID)
+{
+    return BootCR3;
 }
 
 UINT32 SMPGetCPUCount(VOID)

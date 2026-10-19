@@ -76,6 +76,7 @@ BOOLEAN          VirtIOGPUTransferRect(UINT32 X, UINT32 Y, UINT32 Width, UINT32 
 BOOLEAN          VirtIOGPUFlushRect(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height);
 BOOLEAN          VirtIOGPUPresent(VOID);
 BOOLEAN          VirtIOGPUFlush(VOID);
+BOOLEAN          VirtIOGPUPanicLocksAvailable(VOID);
 BOOLEAN          VirtIOGPUCreateCursor(UINT32 Width, UINT32 Height, UINT32 HotX, UINT32 HotY);
 BOOLEAN          VirtIOGPUSetCursorImage(CONST UINT32 *Pixels, UINT32 Width, UINT32 Height, UINT32 HotX, UINT32 HotY, UINT32 X, UINT32 Y);
 BOOLEAN          VirtIOGPUUpdateCursor(UINT32 X, UINT32 Y);

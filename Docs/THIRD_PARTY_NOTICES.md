@@ -8,7 +8,7 @@ LineOS includes third-party fonts for kernel text rendering tests.
 - Base font: JetBrains Mono
 - Patched font: Nerd Fonts
 - License: SIL Open Font License 1.1
-- License file: `LICENSES/OFL-1.1`
+- License file: `LICENSES`
 - Upstream: https://www.jetbrains.com/lp/mono/
 - Source: https://github.com/JetBrains/JetBrainsMono
 - Nerd Fonts: https://www.nerdfonts.com/
@@ -21,7 +21,7 @@ must remain under the applicable font license terms.
 - File: `Kernel`
 - Font: Pretendard SemiBold
 - License: SIL Open Font License 1.1
-- License file: `LICENSES/OFL-1.1`
+- License file: `LICENSES`
 - Source: https://github.com/orioncactus/pretendard
 
 Pretendard is distributed under the SIL Open Font License 1.1.
@@ -32,7 +32,7 @@ Pretendard is distributed under the SIL Open Font License 1.1.
 - Copyright: Copyright (c) TianoCore and contributors
 - License: BSD 2-Clause Plus Patent License
 - SPDX Identifier: BSD-2-Clause-Patent
-- License file: `LICENSES/BSD-2-Clause-Patent`
+- License file: `LICENSES`
 - Upstream: https://github.com/tianocore/edk2
 - Project website: https://www.tianocore.org/
 
