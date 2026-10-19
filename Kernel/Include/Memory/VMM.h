@@ -9,6 +9,9 @@
 #define VMM_FLAG_WRITABLE (1ULL << 1)
 #define VMM_FLAG_USER     (1ULL << 2)
 
+BOOLEAN VMMInit(VOID);
 UINT64  VMMGetCurrentCR3(VOID);
 BOOLEAN VMMTranslate(UINT64 VirtAddr, UINT64 *PhysAddr);
 BOOLEAN VMMMapPage(UINT64 VirtAddr, UINT64 PhysAddr, UINT64 Flags);
+BOOLEAN VMMUnmapPage(UINT64 VirtAddr, UINT64 *PhysAddr);
+VOID    VMMHandleShootdown(VOID);

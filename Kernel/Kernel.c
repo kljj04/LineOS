@@ -1614,7 +1614,28 @@ VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
     CLI();
     CPUEnableSSE();
 
-    KMemoryInit(BootInfo);
+    DebugWrite("[VMM] Firmware CR3=");
+    DebugWriteHex(VMMGetCurrentCR3());
+    DebugWriteLine("");
+
+    if (!KMemoryInit(BootInfo))
+    {
+        DebugWriteLine("[VMM] PMM init FAILED");
+        HLT();
+    }
+
+    DebugWriteLine("[VMM] PMM init OK; cloning page tables");
+
+    if (!VMMInit())
+    {
+        DebugWriteLine("[VMM] Owned CR3 init FAILED");
+        HLT();
+    }
+
+    DebugWrite("[VMM] Owned CR3=");
+    DebugWriteHex(VMMGetCurrentCR3());
+    DebugWriteLine("");
+
     KHeapInit();
 
     TrueTypeInit();
@@ -1635,10 +1656,14 @@ VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
     HPETInit(BootInfo);
     TSCCalibrate();
     TSCDeadlineInit(0x40);
-
-    SMPInit(BootInfo);
-
     ClockInit();
+
+    DebugWriteLine("[VMM] Starting SMP; TLB IPI=70 (0x46), ISR70");
+
+    if (!SMPInit(BootInfo))
+    {
+        DebugWriteLine("[VMM] SMP init FAILED; mapping changes disabled");
+    }
 
     KernelBootUnix = ClockGetUnixTime();
 
@@ -1650,14 +1675,70 @@ VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
 
 VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
 {
-    TASK *KeyboardTask;
-    TASK *MouseTask;
-    TASK *TestTask;
-    TASK *DiskTask;
-    TASK *ClockTask;
-    TASK *ShellTask;
+    TASK   *KeyboardTask;
+    TASK   *MouseTask;
+    TASK   *TestTask;
+    TASK   *DiskTask;
+    TASK   *ClockTask;
+    TASK   *ShellTask;
+    UINT64  CR0;
+    UINT64  CR4;
+    UINT64  PhysAddr;
+    UINT32  OnlineCount = 0;
+    BOOLEAN TranslationValid;
 
     InitKernel(BootInfo);
+
+    ASM("mov %%cr0, %0" : "=r"(CR0));
+    ASM("mov %%cr4, %0" : "=r"(CR4));
+
+    DebugWrite("[VMM] CR0=");
+    DebugWriteHex(CR0);
+    DebugWrite(" CR4=");
+    DebugWriteHex(CR4);
+    DebugWrite(" EFER=");
+    DebugWriteHex(ReadMSR(0xC0000080));
+    DebugWriteLine("");
+    DebugWrite("[VMM] Current CR3=");
+    DebugWriteHex(VMMGetCurrentCR3());
+    DebugWrite(" Boot CR3=");
+    DebugWriteHex(SMPGetBootCR3());
+    DebugWrite(" TSC Hz=");
+    DebugWriteDec(TSCGetFrequency());
+    DebugWriteLine("");
+
+    for (UINT32 Index = 0; Index < SMPGetCPUCount(); Index++)
+    {
+        CPU_INFO *CPU = SMPGetCPU(Index);
+
+        if (CPU != NULL && __atomic_load_n(&CPU->Online, __ATOMIC_ACQUIRE))
+        {
+            OnlineCount++;
+        }
+    }
+
+    DebugWrite("[VMM] SMP ready=");
+    DebugWriteDec(SMPIsReady());
+    DebugWrite(" Online CPUs=");
+    DebugWriteDec(OnlineCount);
+    DebugWrite("/");
+    DebugWriteDec(SMPGetCPUCount());
+    DebugWriteLine("");
+
+    TranslationValid = VMMTranslate((UINT64) KMain, &PhysAddr);
+
+    if (TranslationValid)
+    {
+        DebugWrite("[VMM] KMain VA=");
+        DebugWriteHex((UINT64) KMain);
+        DebugWrite(" PA=");
+        DebugWriteHex(PhysAddr);
+        DebugWriteLine("");
+    }
+    else
+    {
+        DebugWriteLine("[VMM] KMain translation FAILED");
+    }
 
     FillScreen(0x101010);
 
@@ -1665,6 +1746,26 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
 
     KPrint(L"Keyboard: %u", 40, 140, 0x80FF80, 36, JETBRAINS_MONO, VirtIOInputIsKeyboardAvailable() ? 1 : 0);
     KPrint(L"Tablet: %u", 40, 180, 0x80FF80, 36, JETBRAINS_MONO, VirtIOInputIsTabletAvailable() ? 1 : 0);
+
+    KPrint(L"VMM / SMP", 1140, 240, 0x80C0FF, 32, PRETENDARD);
+    KPrint(L"Ready %u  CPUs %u/%u", 1140, 275, SMPIsReady() ? 0x80FF80 : 0xFF6060, 20, JETBRAINS_MONO, (UINT32) SMPIsReady(), OnlineCount, SMPGetCPUCount());
+    KPrint(L"IPI 70 / 0x46 / ISR70", 1140, 305, 0xFFFFFF, 20, JETBRAINS_MONO);
+    KPrint(L"CR3  %016llX", 1140, 335, 0xFFFFFF, 20, JETBRAINS_MONO, VMMGetCurrentCR3());
+    KPrint(L"BOOT %016llX", 1140, 365, 0xFFFFFF, 20, JETBRAINS_MONO, SMPGetBootCR3());
+    KPrint(L"CR0  %016llX", 1140, 395, 0xFFFFFF, 20, JETBRAINS_MONO, CR0);
+    KPrint(L"CR4  %016llX", 1140, 425, 0xFFFFFF, 20, JETBRAINS_MONO, CR4);
+    KPrint(L"EFER %016llX", 1140, 455, 0xFFFFFF, 20, JETBRAINS_MONO, ReadMSR(0xC0000080));
+    KPrint(L"TSC %llu Hz", 1140, 485, 0xFFFFFF, 20, JETBRAINS_MONO, TSCGetFrequency());
+    KPrint(L"VA   %016llX", 1140, 515, 0xFFFFFF, 20, JETBRAINS_MONO, (UINT64) KMain);
+
+    if (TranslationValid)
+    {
+        KPrint(L"PA   %016llX", 1140, 545, 0x80FF80, 20, JETBRAINS_MONO, PhysAddr);
+    }
+    else
+    {
+        KPrint(L"Translation FAILED", 1140, 545, 0xFF6060, 20, JETBRAINS_MONO);
+    }
 
     VirtIOGPUFlush();
 
@@ -1674,6 +1775,8 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
     DiskTask = TaskCreate(VirtIOBlockTestTask);
     ClockTask = TaskCreate(ClockTestTask);
     ShellTask = TaskCreate(KernelShellTask);
+
+    TaskSetPriority(ClockTask, 6);
 
     if (KeyboardTask == NULL || MouseTask == NULL || TestTask == NULL || DiskTask == NULL || ClockTask == NULL || ShellTask == NULL)
     {
@@ -1710,6 +1813,7 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
         Panic(L"Failed to add shell task");
     }
 
+
     LBPWRRStart();
 
     HLT();
@@ -1739,8 +1843,7 @@ VOID APMain(UINT32 CPUID)
 
     if (CPU != NULL)
     {
-        CPU->Online = TRUE;
-        CompilerBarrier();
+        __atomic_store_n(&CPU->Online, TRUE, __ATOMIC_RELEASE);
     }
 
     CompilerBarrier();

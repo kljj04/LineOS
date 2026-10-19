@@ -175,3 +175,42 @@ BOOLEAN LAPICSendSIPI(UINT32 APICID, UINT8 Vector)
 
     return TRUE;
 }
+
+BOOLEAN LAPICSendIPI(UINT32 APICID, UINT8 Vector)
+{
+    UINT64  Flags;
+    BOOLEAN Result = FALSE;
+
+    if (LAPICBase == NULL || APICID > 0xFF || Vector < 32 || (ReadMSR(IA32_APIC_BASE_MSR) & (1ULL << 10)) != 0)
+    {
+        return FALSE;
+    }
+
+    ASM("pushfq; popq %0; cli" : "=r"(Flags) : : "memory");
+
+    if (LAPICWaitForIPI())
+    {
+        LAPICWrite(LAPIC_REG_ICR_HIGH, APICID << 24);
+        LAPICWrite(LAPIC_REG_ICR_LOW, Vector);
+        Result = LAPICWaitForIPI();
+    }
+
+    if ((Flags & (1ULL << 9)) != 0)
+    {
+        ASM("sti" ::: "memory");
+    }
+
+    return Result;
+}
+
+BOOLEAN LAPICSendNMI(UINT32 APICID)
+{
+    if (LAPICBase == NULL || APICID > 0xFF || (ReadMSR(IA32_APIC_BASE_MSR) & (1ULL << 10)) != 0 || !LAPICWaitForIPI())
+    {
+        return FALSE;
+    }
+
+    LAPICWrite(LAPIC_REG_ICR_HIGH, APICID << 24);
+    LAPICWrite(LAPIC_REG_ICR_LOW, 4U << 8);
+    return LAPICWaitForIPI();
+}

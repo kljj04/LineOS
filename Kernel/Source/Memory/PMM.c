@@ -833,3 +833,8 @@ VOID KFree(VOID *Address)
 
     SpinLockReleaseIRQRestore(&HeapLock, Flags);
 }
+
+BOOLEAN KMemoryPanicLocksAvailable(VOID)
+{
+    return __atomic_load_n(&HeapLock.Locked, __ATOMIC_ACQUIRE) == 0 && __atomic_load_n(&BuddyLock.Locked, __ATOMIC_ACQUIRE) == 0;
+}

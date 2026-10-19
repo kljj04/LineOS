@@ -1328,3 +1328,8 @@ UINT32 VirtIOGPUGetFrameBufferHeight(VOID)
 {
     return VirtIOGPUInfo.FrameBufferHeight;
 }
+
+BOOLEAN VirtIOGPUPanicLocksAvailable(VOID)
+{
+    return __atomic_load_n(&RenderLock.Locked, __ATOMIC_ACQUIRE) == 0 && __atomic_load_n(&CommandLock.Locked, __ATOMIC_ACQUIRE) == 0;
+}

@@ -1,12 +1,12 @@
 Preservation of Origin License
 Version 1.0
 
-Copyright (c) 2026 kljj04
+Copyright (C) 2026 kljj04
 
 Use, Modify, Distribute, including in Closed-Source Form.
 Origin Must Be Preserved.
 
-Full License text is in: https://github.com/kljj04/POL
+Full License text is in: [POL Repo](https://github.com/kljj04/POL)
 
 Original Author: kljj04
 Original Project: LineOS

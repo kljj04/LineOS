@@ -8,6 +8,10 @@
 #include <Render/TrueType/TrueTypeEngine.h>
 #include <Arch/AMD64/CPU.h>
 #include <Debug/Debug.h>
+#include <Interrupt/APIC.h>
+#include <Multicore/SMP.h>
+#include <Memory/PMM.h>
+#include <Timer/TSC.h>
 
 #define PANIC_BACKGROUND             0x0B1020
 #define PANIC_PANEL                  0x141A2ECC
@@ -21,7 +25,8 @@
 #define EXCEPTION_PAGE_FAULT         14
 #define EXCEPTION_GENERAL_PROTECTION 13
 
-STATIC BOOLEAN PanicActive = FALSE;
+STATIC UINT32 PanicOwner = UINT32_MAX;
+STATIC UINT32 PanicStopped[256];
 
 typedef struct
 {
@@ -37,6 +42,17 @@ typedef struct
     UINT64 R9;
     UINT64 R10;
     UINT64 R11;
+    UINT64 R12;
+    UINT64 R13;
+    UINT64 R14;
+    UINT64 R15;
+    UINT64 CR0;
+    UINT64 CR2;
+    UINT64 CR3;
+    UINT64 CR4;
+    UINT64 EFER;
+    UINT64 CS;
+    UINT64 SS;
     UINT64 RIP;
     UINT64 RFLAGS;
 } PANIC_REGISTER_SNAPSHOT;
@@ -657,32 +673,118 @@ STATIC VOID DrawExceptionSummary(UINT32 X, UINT32 Y, UINT32 Width, UINT32 UIScal
     KPrint(Info->Description, X + Scale(82, UIScale), Y + Scale(172, UIScale), PANIC_MUTED, Scale(14, UIScale), PRETENDARD);
 }
 
+STATIC BOOLEAN RegisterNameIs(CONST CHAR16 *Name, CONST CHAR16 *Expected)
+{
+    while (*Name != 0 && *Name == *Expected)
+    {
+        Name++;
+        Expected++;
+    }
+
+    return *Name == *Expected;
+}
+
+STATIC UINT32 GetRegisterColor(CONST CHAR16 *Name, UINT64 Value)
+{
+    if (RegisterNameIs(Name, L"RIP") || RegisterNameIs(Name, L"RSP"))
+    {
+        UINT64 CR4;
+        UINT32 Bits;
+        UINT64 Upper;
+        UINT64 Expected;
+
+        ASM("mov %%cr4, %0" : "=r"(CR4));
+        Bits = (CR4 & (1ULL << 12)) != 0 ? 57 : 48;
+        Upper = Value >> Bits;
+        Expected = (Value & (1ULL << (Bits - 1))) != 0 ? UINT64_MAX >> Bits : 0;
+
+        if (Upper != Expected)
+        {
+            return PANIC_ACCENT;
+        }
+
+        return Value < 4096 ? PANIC_WARNING : PANIC_TEXT;
+    }
+
+    if (RegisterNameIs(Name, L"RFLAGS"))
+    {
+        if ((Value & 2) == 0 || (Value & ~0x3F7FD7ULL) != 0 || (Value & (1ULL << 17)) != 0)
+        {
+            return PANIC_ACCENT;
+        }
+
+        return (Value & ((1ULL << 8) | (1ULL << 10) | (1ULL << 14))) != 0 ? PANIC_WARNING : PANIC_TEXT;
+    }
+
+    if (RegisterNameIs(Name, L"CR0"))
+    {
+        if ((Value & 0x80000001ULL) != 0x80000001ULL || ((Value & (1ULL << 29)) != 0 && (Value & (1ULL << 30)) == 0))
+        {
+            return PANIC_ACCENT;
+        }
+
+        return (Value & (1ULL << 16)) == 0 ? PANIC_WARNING : PANIC_TEXT;
+    }
+
+    if ((RegisterNameIs(Name, L"CR4") && (Value & (1ULL << 5)) == 0) || (RegisterNameIs(Name, L"CS") && (Value & ~3ULL) == 0))
+    {
+        return PANIC_ACCENT;
+    }
+
+    return PANIC_TEXT;
+}
+
+STATIC VOID DrawRegisterValue(UINT32 X, UINT32 Y, UINT32 UIScale, CONST CHAR16 *Name, UINT64 Value, UINT32 Color)
+{
+    UINT32 ValueX = X + Scale(64, UIScale);
+
+    if (Color == PANIC_ACCENT || Color == PANIC_WARNING)
+    {
+        FillRect(ValueX - Scale(12, UIScale), Y - Scale(15, UIScale), Scale(157, UIScale), Scale(20, UIScale), Color == PANIC_ACCENT ? 0x592D3BFF : 0x514329FF);
+        FillRect(ValueX - Scale(12, UIScale), Y - Scale(15, UIScale), Scale(3, UIScale), Scale(20, UIScale), Color);
+    }
+
+    KPrint(Name, X, Y, PANIC_MUTED, Scale(15, UIScale), JETBRAINS_MONO);
+    KPrint(L"%016llX", ValueX, Y, Color, Scale(15, UIScale), JETBRAINS_MONO, Value);
+}
+
+STATIC VOID DrawRegisterPair(UINT32 X, UINT32 Y, UINT32 UIScale, CONST CHAR16 *NameA, UINT64 ValueA, CONST CHAR16 *NameB, UINT64 ValueB)
+{
+    DrawRegisterValue(X, Y, UIScale, NameA, ValueA, GetRegisterColor(NameA, ValueA));
+    DrawRegisterValue(X + Scale(300, UIScale), Y, UIScale, NameB, ValueB, GetRegisterColor(NameB, ValueB));
+}
+
 STATIC VOID DrawPageFaultDetails(UINT32 X, UINT32 Y, UINT32 Width, UINT32 UIScale, UINT64 ErrorCode)
 {
     UINT64 FaultAddress = ReadCR2();
 
     DrawPanel(X, Y, Width, Scale(220, UIScale), UIScale);
     DrawSectionTitle(X + Scale(24, UIScale), Y + Scale(40, UIScale), UIScale, L"PAGE FAULT DETAIL");
-    KPrint(L"cr2=%X", X + Scale(24, UIScale), Y + Scale(78, UIScale), PANIC_TEXT, Scale(14, UIScale), JETBRAINS_MONO, FaultAddress);
-    KPrint(L"error=%X", X + Scale(24, UIScale), Y + Scale(108, UIScale), PANIC_MUTED, Scale(14, UIScale), JETBRAINS_MONO, ErrorCode);
+    DrawRegisterValue(X + Scale(24, UIScale), Y + Scale(78, UIScale), UIScale, L"CR2", FaultAddress, PANIC_ACCENT);
+    DrawRegisterValue(X + Scale(24, UIScale), Y + Scale(108, UIScale), UIScale, L"ERROR", ErrorCode, (ErrorCode & 8) != 0 ? PANIC_ACCENT : PANIC_TEXT);
 
     DrawFlag(X + Scale(24, UIScale), Y + Scale(142, UIScale), UIScale, L"P", (ErrorCode & 1) != 0, L"protection", L"not present");
     DrawFlag(X + Scale(24, UIScale), Y + Scale(172, UIScale), UIScale, L"W", (ErrorCode & 2) != 0, L"write", L"read");
 
     DrawFlag(X + (Width / 2), Y + Scale(142, UIScale), UIScale, L"U", (ErrorCode & 4) != 0, L"user", L"supervisor");
     DrawFlag(X + (Width / 2), Y + Scale(172, UIScale), UIScale, L"I", (ErrorCode & 16) != 0, L"instruction", L"data");
+    DrawFlag(X + Scale(24, UIScale), Y + Scale(202, UIScale), UIScale, L"RSVD", (ErrorCode & 8) != 0, L"reserved bit set", L"no reserved-bit fault");
 }
 
 STATIC VOID DrawSelectorErrorDetails(UINT32 X, UINT32 Y, UINT32 Width, UINT32 UIScale, UINT64 ErrorCode)
 {
-    UINT64 SelectorIndex = ErrorCode >> 3;
-    UINT64 Table = (ErrorCode >> 1) & 3;
-
     DrawPanel(X, Y, Width, Scale(220, UIScale), UIScale);
     DrawSectionTitle(X + Scale(24, UIScale), Y + Scale(40, UIScale), UIScale, L"ERROR CODE DETAIL");
-    KPrint(L"raw=%X", X + Scale(24, UIScale), Y + Scale(84, UIScale), PANIC_TEXT, Scale(15, UIScale), JETBRAINS_MONO, ErrorCode);
-    KPrint(L"selector-index=%X", X + Scale(24, UIScale), Y + Scale(124, UIScale), PANIC_TEXT, Scale(15, UIScale), JETBRAINS_MONO, SelectorIndex);
-    KPrint(L"external=%llu  table=%llu", X + Scale(24, UIScale), Y + Scale(166, UIScale), PANIC_MUTED, Scale(15, UIScale), JETBRAINS_MONO, (UINT64) (ErrorCode & 1), Table);
+    KPrint(L"RAW=%016llX", X + Scale(24, UIScale), Y + Scale(84, UIScale), PANIC_TEXT, Scale(15, UIScale), JETBRAINS_MONO, ErrorCode);
+
+    if (ErrorCode == 0)
+    {
+        KPrint(L"No selector information", X + Scale(24, UIScale), Y + Scale(124, UIScale), PANIC_MUTED, Scale(15, UIScale), PRETENDARD);
+        return;
+    }
+
+    KPrint(L"INDEX=%llX", X + Scale(24, UIScale), Y + Scale(124, UIScale), PANIC_TEXT, Scale(15, UIScale), JETBRAINS_MONO, ErrorCode >> 3);
+    KPrint(L"EXTERNAL=%u  TABLE=%s", X + Scale(24, UIScale), Y + Scale(166, UIScale), PANIC_MUTED, Scale(15, UIScale), JETBRAINS_MONO, (UINT32) (ErrorCode & 1), (ErrorCode & 2) != 0 ? L"IDT" : (ErrorCode & 4) != 0 ? L"LDT" : L"GDT");
 }
 
 STATIC VOID DrawGenericExceptionDetails(UINT32 X, UINT32 Y, UINT32 Width, UINT32 UIScale, INTERRUPT_FRAME *Frame)
@@ -696,9 +798,9 @@ STATIC VOID DrawGenericExceptionDetails(UINT32 X, UINT32 Y, UINT32 Width, UINT32
         return;
     }
 
-    KPrint(L"vector=%X  error=%X", X + Scale(24, UIScale), Y + Scale(88, UIScale), PANIC_TEXT, Scale(15, UIScale), JETBRAINS_MONO, Frame->Vector, Frame->ErrorCode);
-    KPrint(L"rip=%X", X + Scale(24, UIScale), Y + Scale(130, UIScale), PANIC_MUTED, Scale(15, UIScale), JETBRAINS_MONO, Frame->RIP);
-    KPrint(L"cs=%X  rflags=%X", X + Scale(24, UIScale), Y + Scale(170, UIScale), PANIC_MUTED, Scale(15, UIScale), JETBRAINS_MONO, Frame->CS, Frame->RFLAGS);
+    KPrint(L"VECTOR=%llX  ERROR=%llX", X + Scale(24, UIScale), Y + Scale(88, UIScale), PANIC_TEXT, Scale(15, UIScale), JETBRAINS_MONO, Frame->Vector, Frame->ErrorCode);
+    KPrint(L"RIP=%016llX", X + Scale(24, UIScale), Y + Scale(130, UIScale), PANIC_MUTED, Scale(15, UIScale), JETBRAINS_MONO, Frame->RIP);
+    KPrint(L"CS=%04llX  RFLAGS=%016llX", X + Scale(24, UIScale), Y + Scale(170, UIScale), PANIC_MUTED, Scale(15, UIScale), JETBRAINS_MONO, Frame->CS, Frame->RFLAGS);
 }
 
 STATIC VOID DrawMessagePanel(UINT32 X, UINT32 Y, UINT32 Width, UINT32 UIScale, CONST CHAR16 *Message)
@@ -715,22 +817,27 @@ STATIC VOID DrawRecoveryPanel(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, U
     KPrint(L"1. Review the panic screen", X + Scale(24, UIScale), Y + Scale(84, UIScale), PANIC_TEXT, Scale(14, UIScale), PRETENDARD);
     KPrint(L"2. Check the caller path around RIP", X + Scale(24, UIScale), Y + Scale(116, UIScale), PANIC_TEXT, Scale(14, UIScale), PRETENDARD);
     KPrint(L"3. Reboot after fixing the stop reason", X + Scale(24, UIScale), Y + Scale(148, UIScale), PANIC_TEXT, Scale(14, UIScale), PRETENDARD);
+    KPrint(L"Record RIP, RSP and highlighted values.", X + Scale(24, UIScale), Y + Scale(188, UIScale), PANIC_MUTED, Scale(12, UIScale), PRETENDARD);
 }
 
 STATIC VOID DrawStatusPanel(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 UIScale, PANIC_REGISTER_SNAPSHOT *Registers)
 {
-    VIRTIO_GPU_INFO *GPU = VirtIOGPUGetInfo();
-
     DrawPanel(X, Y, Width, Height, UIScale);
     DrawSectionTitle(X + Scale(24, UIScale), Y + Scale(40, UIScale), UIScale, L"SYSTEM STATUS");
-    KPrint(L"graphics     virtio-gpu", X + Scale(24, UIScale), Y + Scale(84, UIScale), PANIC_TEXT, Scale(14, UIScale), JETBRAINS_MONO);
-    KPrint(L"framebuffer  %ux%u", X + Scale(24, UIScale), Y + Scale(116, UIScale), PANIC_TEXT, Scale(14, UIScale), JETBRAINS_MONO, GPU->FrameBufferWidth, GPU->FrameBufferHeight);
-    KPrint(L"panic path   software halt", X + Scale(24, UIScale), Y + Scale(148, UIScale), PANIC_MUTED, Scale(14, UIScale), JETBRAINS_MONO);
-    KPrint(L"r10=%X  r11=%X", X + Scale(24, UIScale), Y + Scale(180, UIScale), PANIC_MUTED, Scale(14, UIScale), JETBRAINS_MONO, Registers->R10, Registers->R11);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(78, UIScale), UIScale, L"RIP", Registers->RIP, L"RFLAGS", Registers->RFLAGS);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(104, UIScale), UIScale, L"CS", Registers->CS, L"SS", Registers->SS);
+    DrawRegisterValue(X + Scale(24, UIScale), Y + Scale(130, UIScale), UIScale, L"CR0", Registers->CR0, GetRegisterColor(L"CR0", Registers->CR0));
+    DrawRegisterValue(X + Scale(324, UIScale), Y + Scale(130, UIScale), UIScale, L"CR2", Registers->CR2, PANIC_TEXT);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(156, UIScale), UIScale, L"CR3", Registers->CR3, L"CR4", Registers->CR4);
+    DrawRegisterValue(X + Scale(24, UIScale), Y + Scale(182, UIScale), UIScale, L"EFER", Registers->EFER, PANIC_TEXT);
 }
 
 STATIC VOID DrawExceptionStatePanel(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 UIScale, INTERRUPT_FRAME *Frame)
 {
+    UINT64 CR0;
+    UINT64 CR3;
+    UINT64 CR4;
+
     DrawPanel(X, Y, Width, Height, UIScale);
     DrawSectionTitle(X + Scale(24, UIScale), Y + Scale(40, UIScale), UIScale, L"CPU STATE");
 
@@ -740,18 +847,15 @@ STATIC VOID DrawExceptionStatePanel(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Hei
         return;
     }
 
-    KPrint(L"rsi=%X  rdi=%X", X + Scale(24, UIScale), Y + Scale(84, UIScale), PANIC_TEXT, Scale(14, UIScale), JETBRAINS_MONO, Frame->RSI, Frame->RDI);
-    KPrint(L"rbp=%X  rsp=?", X + Scale(24, UIScale), Y + Scale(116, UIScale), PANIC_TEXT, Scale(14, UIScale), JETBRAINS_MONO, Frame->RBP);
-    KPrint(L"r8 =%X  r9 =%X", X + Scale(24, UIScale), Y + Scale(148, UIScale), PANIC_MUTED, Scale(14, UIScale), JETBRAINS_MONO, Frame->R8, Frame->R9);
-    KPrint(L"r10=%X  r11=%X", X + Scale(24, UIScale), Y + Scale(180, UIScale), PANIC_MUTED, Scale(14, UIScale), JETBRAINS_MONO, Frame->R10, Frame->R11);
-}
-
-STATIC VOID DrawRegisterPair(UINT32 X, UINT32 Y, UINT32 UIScale, CONST CHAR16 *NameA, UINT64 ValueA, CONST CHAR16 *NameB, UINT64 ValueB)
-{
-    KPrint(NameA, X, Y, PANIC_MUTED, Scale(13, UIScale), JETBRAINS_MONO);
-    KPrint(L"%X", X + Scale(48, UIScale), Y, PANIC_TEXT, Scale(13, UIScale), JETBRAINS_MONO, ValueA);
-    KPrint(NameB, X + Scale(300, UIScale), Y, PANIC_MUTED, Scale(13, UIScale), JETBRAINS_MONO);
-    KPrint(L"%X", X + Scale(348, UIScale), Y, PANIC_TEXT, Scale(13, UIScale), JETBRAINS_MONO, ValueB);
+    ASM("mov %%cr0, %0" : "=r"(CR0));
+    ASM("mov %%cr3, %0" : "=r"(CR3));
+    ASM("mov %%cr4, %0" : "=r"(CR4));
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(78, UIScale), UIScale, L"RIP", Frame->RIP, L"RFLAGS", Frame->RFLAGS);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(104, UIScale), UIScale, L"CS", Frame->CS, L"SS", Frame->SS);
+    DrawRegisterValue(X + Scale(24, UIScale), Y + Scale(130, UIScale), UIScale, L"CR0", CR0, GetRegisterColor(L"CR0", CR0));
+    DrawRegisterValue(X + Scale(324, UIScale), Y + Scale(130, UIScale), UIScale, L"CR2", ReadCR2(), Frame->Vector == EXCEPTION_PAGE_FAULT ? PANIC_ACCENT : PANIC_TEXT);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(156, UIScale), UIScale, L"CR3", CR3, L"CR4", CR4);
+    DrawRegisterValue(X + Scale(24, UIScale), Y + Scale(182, UIScale), UIScale, L"EFER", ReadMSR(0xC0000080), PANIC_TEXT);
 }
 
 STATIC VOID CaptureRegisters(PANIC_REGISTER_SNAPSHOT *Registers)
@@ -768,21 +872,33 @@ STATIC VOID CaptureRegisters(PANIC_REGISTER_SNAPSHOT *Registers)
     ASM("mov %%r9, %0" : "=m"(Registers->R9));
     ASM("mov %%r10, %0" : "=m"(Registers->R10));
     ASM("mov %%r11, %0" : "=m"(Registers->R11));
+    ASM("mov %%r12, %0" : "=m"(Registers->R12));
+    ASM("mov %%r13, %0" : "=m"(Registers->R13));
+    ASM("mov %%r14, %0" : "=m"(Registers->R14));
+    ASM("mov %%r15, %0" : "=m"(Registers->R15));
     ASM("lea (%%rip), %%rax; mov %%rax, %0" : "=m"(Registers->RIP) : : "rax");
     ASM("pushfq; popq %0" : "=m"(Registers->RFLAGS));
+    ASM("mov %%cr0, %0" : "=r"(Registers->CR0));
+    ASM("mov %%cr2, %0" : "=r"(Registers->CR2));
+    ASM("mov %%cr3, %0" : "=r"(Registers->CR3));
+    ASM("mov %%cr4, %0" : "=r"(Registers->CR4));
+    ASM("xor %%eax, %%eax; mov %%cs, %%ax; mov %%rax, %0" : "=m"(Registers->CS) : : "rax", "cc");
+    ASM("xor %%eax, %%eax; mov %%ss, %%ax; mov %%rax, %0" : "=m"(Registers->SS) : : "rax", "cc");
+    Registers->EFER = ReadMSR(0xC0000080);
 }
 
 STATIC VOID DrawRegisterSnapshot(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 UIScale, PANIC_REGISTER_SNAPSHOT *Registers)
 {
     DrawPanel(X, Y, Width, Height, UIScale);
     DrawSectionTitle(X + Scale(24, UIScale), Y + Scale(38, UIScale), UIScale, L"REGISTER SNAPSHOT");
-    KPrint(L"rip=%X rflags=%X", X + Scale(24, UIScale), Y + Scale(74, UIScale), PANIC_TEXT, Scale(12, UIScale), JETBRAINS_MONO, Registers->RIP, Registers->RFLAGS);
-
-    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(108, UIScale), UIScale, L"RAX", Registers->RAX, L"RBX", Registers->RBX);
-    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(130, UIScale), UIScale, L"RCX", Registers->RCX, L"RDX", Registers->RDX);
-    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(152, UIScale), UIScale, L"RSI", Registers->RSI, L"RDI", Registers->RDI);
-    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(174, UIScale), UIScale, L"RBP", Registers->RBP, L"RSP", Registers->RSP);
-    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(196, UIScale), UIScale, L"R8", Registers->R8, L"R9", Registers->R9);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(64, UIScale), UIScale, L"RAX", Registers->RAX, L"RBX", Registers->RBX);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(84, UIScale), UIScale, L"RCX", Registers->RCX, L"RDX", Registers->RDX);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(104, UIScale), UIScale, L"RSI", Registers->RSI, L"RDI", Registers->RDI);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(124, UIScale), UIScale, L"RBP", Registers->RBP, L"RSP", Registers->RSP);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(144, UIScale), UIScale, L"R8", Registers->R8, L"R9", Registers->R9);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(164, UIScale), UIScale, L"R10", Registers->R10, L"R11", Registers->R11);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(184, UIScale), UIScale, L"R12", Registers->R12, L"R13", Registers->R13);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(204, UIScale), UIScale, L"R14", Registers->R14, L"R15", Registers->R15);
 }
 
 STATIC VOID DrawInterruptFrame(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 UIScale, INTERRUPT_FRAME *Frame)
@@ -795,12 +911,14 @@ STATIC VOID DrawInterruptFrame(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, 
         KPrint(L"(null frame)", X + Scale(24, UIScale), Y + Scale(76, UIScale), PANIC_TEXT, Scale(18, UIScale), PRETENDARD);
         return;
     }
-
-    KPrint(L"rip=%X", X + Scale(24, UIScale), Y + Scale(82, UIScale), PANIC_TEXT, Scale(14, UIScale), JETBRAINS_MONO, Frame->RIP);
-    KPrint(L"cs=%X  rflags=%X", X + Scale(24, UIScale), Y + Scale(112, UIScale), PANIC_MUTED, Scale(14, UIScale), JETBRAINS_MONO, Frame->CS, Frame->RFLAGS);
-    KPrint(L"vector=0x%X  error=%X", X + Scale(24, UIScale), Y + Scale(144, UIScale), PANIC_MUTED, Scale(14, UIScale), JETBRAINS_MONO, Frame->Vector, Frame->ErrorCode);
-
-    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(184, UIScale), UIScale, L"RAX", Frame->RAX, L"RBX", Frame->RBX);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(64, UIScale), UIScale, L"RAX", Frame->RAX, L"RBX", Frame->RBX);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(84, UIScale), UIScale, L"RCX", Frame->RCX, L"RDX", Frame->RDX);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(104, UIScale), UIScale, L"RSI", Frame->RSI, L"RDI", Frame->RDI);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(124, UIScale), UIScale, L"RBP", Frame->RBP, L"RSP", Frame->RSP);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(144, UIScale), UIScale, L"R8", Frame->R8, L"R9", Frame->R9);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(164, UIScale), UIScale, L"R10", Frame->R10, L"R11", Frame->R11);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(184, UIScale), UIScale, L"R12", Frame->R12, L"R13", Frame->R13);
+    DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(204, UIScale), UIScale, L"R14", Frame->R14, L"R15", Frame->R15);
 }
 
 STATIC VOID HaltAfterPanic(VOID)
@@ -822,25 +940,157 @@ STATIC VOID HaltWithoutScreen(VOID)
     HLT();
 }
 
+STATIC UINT32 PanicGetAPICID(VOID)
+{
+    UINT32 EAX;
+    UINT32 EBX;
+    UINT32 ECX;
+    UINT32 EDX;
+
+    CPUID(1, 0, &EAX, &EBX, &ECX, &EDX);
+    return EBX >> 24;
+}
+
+STATIC BOOLEAN PanicLocksAvailable(VOID)
+{
+    return VirtIOGPUPanicLocksAvailable() && KMemoryPanicLocksAvailable();
+}
+
+BOOLEAN PanicHandleNMI(VOID)
+{
+    UINT32 Owner = __atomic_load_n(&PanicOwner, __ATOMIC_ACQUIRE);
+    UINT32 APICID;
+
+    if (Owner == UINT32_MAX)
+    {
+        return FALSE;
+    }
+
+    APICID = PanicGetAPICID();
+
+    if (Owner == APICID)
+    {
+        return FALSE;
+    }
+
+    if (PanicLocksAvailable())
+    {
+        __atomic_store_n(&PanicStopped[APICID], 1, __ATOMIC_RELEASE);
+        HaltWithoutScreen();
+    }
+
+    return TRUE;
+}
+
+STATIC BOOLEAN PreparePanicStop(VOID)
+{
+    UINT32 APICID = PanicGetAPICID();
+    UINT32 Expected = UINT32_MAX;
+    UINT32 CPUCount;
+    UINT64 Start;
+    UINT64 Timeout = TSCGetFrequency() / 5;
+
+    if (!__atomic_compare_exchange_n(&PanicOwner, &Expected, APICID, FALSE, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE))
+    {
+        if (Expected != APICID && PanicLocksAvailable())
+        {
+            __atomic_store_n(&PanicStopped[APICID], 1, __ATOMIC_RELEASE);
+        }
+        else if (Expected == APICID)
+        {
+            DebugWriteLine("PANIC: reentered");
+        }
+
+        HaltWithoutScreen();
+    }
+
+    CPUCount = SMPGetCPUCount();
+
+    if (CPUCount > SMP_MAX_CPUS || (CPUCount != 0 && !SMPIsReady()))
+    {
+        return FALSE;
+    }
+
+    Start = RDTSC();
+
+    for (UINT32 Round = 0; Round < 1000; Round++)
+    {
+        BOOLEAN Complete = TRUE;
+
+        for (UINT32 Index = 0; Index < CPUCount; Index++)
+        {
+            CPU_INFO *CPU = SMPGetCPU(Index);
+
+            if (CPU == NULL || CPU->APICID == APICID || !__atomic_load_n(&CPU->Online, __ATOMIC_ACQUIRE))
+            {
+                continue;
+            }
+
+            if (CPU->APICID > 0xFF)
+            {
+                return FALSE;
+            }
+
+            if (__atomic_load_n(&PanicStopped[CPU->APICID], __ATOMIC_ACQUIRE) == 0)
+            {
+                Complete = FALSE;
+
+                if (!LAPICSendNMI(CPU->APICID))
+                {
+                    return FALSE;
+                }
+            }
+        }
+
+        if (Complete)
+        {
+            DebugWriteLine("PANIC: NMI peer stop complete");
+            return PanicLocksAvailable();
+        }
+
+        if (Timeout != 0 && RDTSC() - Start >= Timeout)
+        {
+            return FALSE;
+        }
+
+        {
+            UINT64 RetryStart = RDTSC();
+            UINT64 RetryDelay = Timeout / 100;
+
+            for (UINT32 Retry = 0; Retry < 100000; Retry++)
+            {
+                if (RetryDelay != 0 && RDTSC() - RetryStart >= RetryDelay)
+                {
+                    break;
+                }
+
+                ASM("pause" ::: "memory");
+            }
+        }
+    }
+
+    return FALSE;
+}
+
 VOID Panic(CONST CHAR16 *Msg)
 {
     VIRTIO_GPU_INFO        *GPU;
     PANIC_REGISTER_SNAPSHOT Registers;
+    BOOLEAN                 CanRender;
 
     CLI();
+    CanRender = PreparePanicStop();
     GPU = VirtIOGPUGetInfo();
 
     DebugWrite("PANIC: ");
     DebugWriteWide(Msg);
     DebugWrite("\n");
 
-    if (PanicActive)
+    if (!CanRender)
     {
-        DebugWrite("PANIC: reentered\n");
+        DebugWriteLine("PANIC: peer stop or renderer lock unavailable; screen unchanged");
         HaltWithoutScreen();
     }
-
-    PanicActive = TRUE;
 
     if (GPU == NULL || GPU->FrameBuffer == NULL)
     {
@@ -873,8 +1123,10 @@ VOID Panic(CONST CHAR16 *Msg)
 VOID ExceptionPanic(INTERRUPT_FRAME *Frame)
 {
     VIRTIO_GPU_INFO *GPU;
+    BOOLEAN          CanRender;
 
     CLI();
+    CanRender = PreparePanicStop();
     GPU = VirtIOGPUGetInfo();
 
     DebugWrite("EXCEPTION: vector=");
@@ -885,13 +1137,11 @@ VOID ExceptionPanic(INTERRUPT_FRAME *Frame)
     DebugWriteHex(Frame == NULL ? 0 : Frame->ErrorCode);
     DebugWrite("\n");
 
-    if (PanicActive)
+    if (!CanRender)
     {
-        DebugWrite("EXCEPTION: panic reentered\n");
+        DebugWriteLine("PANIC: peer stop or renderer lock unavailable; screen unchanged");
         HaltWithoutScreen();
     }
-
-    PanicActive = TRUE;
 
     if (GPU == NULL || GPU->FrameBuffer == NULL)
     {
@@ -918,7 +1168,7 @@ VOID ExceptionPanic(INTERRUPT_FRAME *Frame)
     {
         DrawPageFaultDetails(PanelX, BottomY, LeftWidth, UIScale, Frame->ErrorCode);
     }
-    else if (Frame != NULL && (Frame->Vector == EXCEPTION_GENERAL_PROTECTION || Frame->Vector == 10 || Frame->Vector == 11 || Frame->Vector == 12 || Frame->Vector == 17 || Frame->Vector == 21 || Frame->Vector == 29 || Frame->Vector == 30))
+    else if (Frame != NULL && (Frame->Vector == EXCEPTION_GENERAL_PROTECTION || Frame->Vector == 10 || Frame->Vector == 11 || Frame->Vector == 12))
     {
         DrawSelectorErrorDetails(PanelX, BottomY, LeftWidth, UIScale, Frame->ErrorCode);
     }
