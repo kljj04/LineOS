@@ -28,7 +28,7 @@ DebugConLogPath="${BaseDir}/Logs/DebugCon.log"
 BootFile="${BaseDir}/LineOS/EFI/BOOT/BOOTX64.EFI"
 KernelFile="${BaseDir}/LineOS/KERNEL/LINEOS_KERNEL.ELF"
 
-RTC="base=localtime,clock=host"
+RTC="base=utc,clock=host"
 InputA="virtio-keyboard-pci"
 InputB="virtio-tablet-pci"
 Machine="q35"
@@ -298,7 +298,7 @@ StartQEMU() {
     RequireCommand "$QEMU"
     ResolveOVMF
 
-    mkdir -p "${BaseDir}/logs"
+    mkdir -p "${BaseDir}/Logs"
 
     Print "$CYAN" "VM" "Machine: $Machine"
     Print "$CYAN" "VM" "CPU: $CPU ($CPUCount vCPUs)"
@@ -339,7 +339,7 @@ StartQEMU() {
     "$QEMU" "${QEMU_ARGS[@]}" || Status=$?
 
     if [[ -f "$LogPath" ]] &&
-       grep -Eiq 'triple fault|cpu_reset' "$LogPath"; then
+        grep -Eiq 'triple fault|cpu_reset' "$LogPath"; then
         Error "CPU reset or triple fault detected."
         return 1
     fi

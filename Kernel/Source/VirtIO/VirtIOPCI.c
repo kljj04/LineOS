@@ -295,14 +295,13 @@ BOOLEAN VirtIOPCIInitDevice(VIRTIO_PCI_DEVICE *VirtIODevice, PCI_DEVICE *Device)
     return TRUE;
 }
 
-
 BOOLEAN VirtIOPCIStartDeviceWithFeatures(VIRTIO_PCI_DEVICE *VirtIODevice, UINT32 FeaturesLow, UINT32 FeaturesHigh)
 {
     VIRTIO_PCI_COMMON_CONFIG *CommonConfig;
-    UINT32 OfferedFeaturesLow;
-    UINT32 OfferedFeaturesHigh;
-    UINT32 AcceptedFeaturesLow;
-    UINT32 AcceptedFeaturesHigh;
+    UINT32                    OfferedFeaturesLow;
+    UINT32                    OfferedFeaturesHigh;
+    UINT32                    AcceptedFeaturesLow;
+    UINT32                    AcceptedFeaturesHigh;
 
     if (VirtIODevice == NULL || VirtIODevice->CommonConfig == NULL)
     {
@@ -359,7 +358,6 @@ BOOLEAN VirtIOPCIStartDevice(VIRTIO_PCI_DEVICE *VirtIODevice)
 {
     return VirtIOPCIStartDeviceWithFeatures(VirtIODevice, 0, 0);
 }
-
 
 VOID VirtIOPCIReadyDevice(VIRTIO_PCI_DEVICE *VirtIODevice)
 {

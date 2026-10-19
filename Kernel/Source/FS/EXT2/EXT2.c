@@ -8,6 +8,7 @@
 #include <FS/EXT2/EXT2Directory.h>
 #include <FS/EXT2/EXT2File.h>
 #include <Memory/PMM.h>
+#include <Timer/Clock.h>
 
 UINT16 EXT2Load16(CONST UINT8 *Data)
 {
@@ -75,7 +76,7 @@ STATIC BOOLEAN EXT2DiskBlock(EXT2_VOLUME *Volume, UINT32 Block, VOID *Buffer, BO
 
 BOOLEAN EXT2ReadBlock(EXT2_VOLUME *Volume, UINT32 Block, VOID *Buffer)
 {
-    for (EXT2_CHANGE *Change = Volume->Changes; Change != NULL; Change = Change->Next)
+    for (EXT2_CHANGE *Change = Volume->ChangeBuckets == NULL ? NULL : Volume->ChangeBuckets[Block % EXT2_CHANGE_BUCKETS]; Change != NULL; Change = Change->HashNext)
     {
         if (Change->Block == Block)
         {
@@ -97,7 +98,7 @@ UINT8 *EXT2EditBlock(EXT2_VOLUME *Volume, UINT32 Block)
         return NULL;
     }
 
-    for (Change = Volume->Changes; Change != NULL; Change = Change->Next)
+    for (Change = Volume->ChangeBuckets[Block % EXT2_CHANGE_BUCKETS]; Change != NULL; Change = Change->HashNext)
     {
         if (Change->Block == Block)
         {
@@ -111,7 +112,7 @@ UINT8 *EXT2EditBlock(EXT2_VOLUME *Volume, UINT32 Block)
         return NULL;
     }
 
-    Change = KAlloc(sizeof(*Change));
+    Change = KAlloc(sizeof(*Change) + Volume->BlockSize);
 
     if (Change == NULL)
     {
@@ -128,6 +129,8 @@ UINT8 *EXT2EditBlock(EXT2_VOLUME *Volume, UINT32 Block)
     Change->Block = Block;
     Change->Next = Volume->Changes;
     Volume->Changes = Change;
+    Change->HashNext = Volume->ChangeBuckets[Block % EXT2_CHANGE_BUCKETS];
+    Volume->ChangeBuckets[Block % EXT2_CHANGE_BUCKETS] = Change;
     Volume->ChangeCount++;
     return Change->Data;
 }
@@ -139,6 +142,14 @@ BOOLEAN EXT2Begin(EXT2_VOLUME *Volume)
         return EXT2Fail(Volume, EXT2_ERROR_READ_ONLY);
     }
 
+    Volume->ChangeBuckets = KAlloc(EXT2_CHANGE_BUCKETS * sizeof(*Volume->ChangeBuckets));
+
+    if (Volume->ChangeBuckets == NULL)
+    {
+        return EXT2Fail(Volume, EXT2_ERROR_MEMORY);
+    }
+
+    KMemSet(Volume->ChangeBuckets, 0, EXT2_CHANGE_BUCKETS * sizeof(*Volume->ChangeBuckets));
     Volume->Transaction = TRUE;
     return TRUE;
 }
@@ -151,6 +162,12 @@ VOID EXT2Abort(EXT2_VOLUME *Volume)
 
         Volume->Changes = Change->Next;
         KFree(Change);
+    }
+
+    if (Volume->ChangeBuckets != NULL)
+    {
+        KFree(Volume->ChangeBuckets);
+        Volume->ChangeBuckets = NULL;
     }
 
     Volume->ChangeCount = 0;
@@ -352,6 +369,55 @@ BOOLEAN EXT2Lookup(EXT2_VOLUME *Volume, CONST CHAR8 *Path, UINT32 *Number, EXT2_
     return EXT2Leave(Volume, Result);
 }
 
+BOOLEAN EXT2GetCurrentTime(EXT2_VOLUME *Volume, UINT32 *Time)
+{
+    UINT64 Now = ClockGetUnixTime();
+
+    if (Time == NULL || Now == 0 || Now > UINT32_MAX)
+    {
+        return EXT2Fail(Volume, EXT2_ERROR_CLOCK);
+    }
+
+    *Time = (UINT32) Now;
+    return TRUE;
+}
+
+BOOLEAN EXT2TouchAccess(EXT2_VOLUME *Volume, UINT32 Number, EXT2_INODE *Inode)
+{
+    UINT32 Now;
+    UINT32 Access = EXT2Load32(Inode->Raw + 8);
+
+    if (!Volume->Writable || (EXT2Load32(Inode->Raw + 32) & 0x80) != 0)
+    {
+        return TRUE;
+    }
+
+    if (!EXT2GetCurrentTime(Volume, &Now))
+    {
+        return FALSE;
+    }
+
+    if (Access >= EXT2Load32(Inode->Raw + 12) && Access >= EXT2Load32(Inode->Raw + 16) && (Now < Access || Now - Access < 86400))
+    {
+        return TRUE;
+    }
+
+    if (!EXT2Begin(Volume))
+    {
+        return FALSE;
+    }
+
+    EXT2Store32(Inode->Raw + 8, Now);
+
+    if (!EXT2WriteInode(Volume, Number, Inode, FALSE))
+    {
+        EXT2Abort(Volume);
+        return FALSE;
+    }
+
+    return EXT2Commit(Volume);
+}
+
 BOOLEAN EXT2ReadFile(EXT2_VOLUME *Volume, UINT32 Number, UINT64 Offset, VOID *Buffer, UINT32 Length, UINT32 *ReadLength)
 {
     EXT2_INODE Inode;
@@ -382,6 +448,11 @@ BOOLEAN EXT2ReadFile(EXT2_VOLUME *Volume, UINT32 Number, UINT64 Offset, VOID *Bu
         else
         {
             Result = EXT2Access(Volume, &Inode, 4) && EXT2ReadData(Volume, &Inode, Offset, Buffer, Length, ReadLength);
+
+            if (Result && *ReadLength != 0)
+            {
+                Result = EXT2TouchAccess(Volume, Number, &Inode);
+            }
         }
     }
 
@@ -592,6 +663,11 @@ BOOLEAN EXT2ReadLink(EXT2_VOLUME *Volume, UINT32 Number, CHAR8 *Buffer, UINT32 C
     else
     {
         Result = EXT2ReadInode(Volume, Number, &Inode) && EXT2ReadLinkData(Volume, &Inode, Buffer, Capacity, Length);
+
+        if (Result)
+        {
+            Result = EXT2TouchAccess(Volume, Number, &Inode);
+        }
     }
 
     return EXT2Leave(Volume, Result);
@@ -682,5 +758,130 @@ BOOLEAN EXT2SetOwner(EXT2_VOLUME *Volume, UINT32 Number, UINT32 UID, UINT32 GID,
     }
 
     Result = EXT2SetAttributes(Volume, Number, 0, UID, GID, TRUE, Time);
+    return EXT2Leave(Volume, Result);
+}
+
+BOOLEAN EXT2LookupChild(EXT2_VOLUME *Volume, UINT32 Parent, CONST CHAR8 *Name, UINT32 *Number, EXT2_INODE *Inode)
+{
+    EXT2_INODE Directory;
+    BOOLEAN    Result = FALSE;
+
+    if (!EXT2Enter(Volume))
+    {
+        return FALSE;
+    }
+
+    if (Name == NULL || Number == NULL || Inode == NULL)
+    {
+        EXT2Fail(Volume, EXT2_ERROR_ARGUMENT);
+    }
+    else
+    {
+        Result = EXT2ReadInode(Volume, Parent, &Directory) && EXT2Access(Volume, &Directory, 1) && EXT2FindEntry(Volume, &Directory, Name, Number) && EXT2ReadInode(Volume, *Number, Inode);
+    }
+
+    return EXT2Leave(Volume, Result);
+}
+
+BOOLEAN EXT2ReadDirectory(EXT2_VOLUME *Volume, UINT32 Number, UINT64 *Cursor, CHAR8 *Name, UINT32 *Child, EXT2_INODE *Inode, BOOLEAN *End)
+{
+    EXT2_INODE Directory;
+    UINT8      Buffer[EXT2_MAX_BLOCK_SIZE];
+    UINT32     Found;
+    BOOLEAN    Result = FALSE;
+
+    if (!EXT2Enter(Volume))
+    {
+        return FALSE;
+    }
+
+    if (Cursor == NULL || Name == NULL || Child == NULL || Inode == NULL || End == NULL)
+    {
+        EXT2Fail(Volume, EXT2_ERROR_ARGUMENT);
+        goto Done;
+    }
+
+    *End = FALSE;
+
+    if (!EXT2ReadInode(Volume, Number, &Directory) || !EXT2Access(Volume, &Directory, 5) || !EXT2FindEntry(Volume, &Directory, (CONST CHAR8 *) ".", &Found))
+    {
+        goto Done;
+    }
+
+    if (*Cursor > EXT2InodeSize(&Directory))
+    {
+        EXT2Fail(Volume, EXT2_ERROR_ARGUMENT);
+        goto Done;
+    }
+
+    while (*Cursor < EXT2InodeSize(&Directory))
+    {
+        UINT32 Block;
+        UINT32 Within = (UINT32) (*Cursor % Volume->BlockSize);
+        UINT32 Offset = 0;
+
+        if (!EXT2MapBlock(Volume, &Directory, *Cursor / Volume->BlockSize, FALSE, &Block) || !EXT2ReadBlock(Volume, Block, Buffer))
+        {
+            goto Done;
+        }
+
+        while (Offset < Within)
+        {
+            Offset += EXT2Load16(Buffer + Offset + 4);
+        }
+
+        if (Offset != Within)
+        {
+            EXT2Fail(Volume, EXT2_ERROR_ARGUMENT);
+            goto Done;
+        }
+
+        *Cursor += EXT2Load16(Buffer + Within + 4);
+        Found = EXT2Load32(Buffer + Within);
+
+        if (Found != 0)
+        {
+            UINT32 Length = Volume->FileType ? Buffer[Within + 6] : EXT2Load16(Buffer + Within + 6);
+
+            KMemCpy(Name, Buffer + Within + 8, Length);
+            Name[Length] = 0;
+            *Child = Found;
+            Result = EXT2ReadInode(Volume, Found, Inode) && EXT2TouchAccess(Volume, Number, &Directory);
+            goto Done;
+        }
+    }
+
+    *End = TRUE;
+    Result = TRUE;
+Done:
+    return EXT2Leave(Volume, Result);
+}
+
+BOOLEAN EXT2Touch(EXT2_VOLUME *Volume, UINT32 Number, UINT32 Time)
+{
+    EXT2_INODE Inode;
+    BOOLEAN    Result = FALSE;
+
+    if (!EXT2Enter(Volume))
+    {
+        return FALSE;
+    }
+
+    if (EXT2Begin(Volume) && EXT2ReadInode(Volume, Number, &Inode))
+    {
+        if (EXT2Load32(Inode.Raw + 32) != 0)
+        {
+            EXT2Fail(Volume, EXT2_ERROR_UNSUPPORTED);
+        }
+        else if (Volume->UID == 0 || Volume->UID == EXT2InodeUID(&Inode) || EXT2Access(Volume, &Inode, 2))
+        {
+            EXT2Store32(Inode.Raw + 8, Time);
+            EXT2Store32(Inode.Raw + 12, Time);
+            EXT2Store32(Inode.Raw + 16, Time);
+            Result = EXT2WriteInode(Volume, Number, &Inode, FALSE) && EXT2Commit(Volume);
+        }
+    }
+
+    EXT2Abort(Volume);
     return EXT2Leave(Volume, Result);
 }
