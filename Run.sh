@@ -36,7 +36,7 @@ VGA="none"
 DisplayConfig="${LINEOS_DISPLAY:-gtk}"
 GraphicsResInput="QHD"
 
-Network="none"
+Network="user,id=net0"
 DebugOption="int,guest_errors,cpu_reset,unimp"
 
 CYAN=$'\033[36m'
@@ -305,30 +305,39 @@ StartQEMU() {
     Print "$CYAN" "VM" "Memory: $RAM"
     Print "$CYAN" "VM" "Display: $DisplayConfig ($GraphicsResolution)"
 
+
     local QEMU_ARGS=(
-        -rtc "$RTC"
-        -accel "$Accel"
-        -cpu "$CPU,$CPUFlags"
-        -smp "$CPUCount"
-        -drive "if=pflash,format=raw,readonly=on,file=$OVMF_CODE"
-        -drive "if=pflash,format=raw,file=$OVMF_VARS"
-        -net "$Network"
-        -M "$Machine"
-        -device "$InputA"
-        -device "$InputB"
-        -vga "$VGA"
-        -device "$VideoDevice"
-        -drive "file=$ImgFile,format=raw,id=lineos_disk,if=none"
-        -device "virtio-blk-pci,drive=lineos_disk,bootindex=0"
-        -fw_cfg "name=opt/org.tianocore/GraphicsResolution,string=$GraphicsResolution"
-        -no-reboot
-        -no-shutdown
-        -d "$DebugOption"
-        -D "$LogPath"
-        -debugcon "file:$DebugConLogPath"
-        -global "isa-debugcon.iobase=0xe9"
-        -m "$RAM"
-        -display "$DisplayConfig"
+    -M "$Machine"
+    -accel "$Accel"
+    -cpu "$CPU,$CPUFlags"
+    -smp "$CPUCount"
+    -m "$RAM"
+    -rtc "$RTC"
+
+    -drive "if=pflash,format=raw,readonly=on,file=$OVMF_CODE"
+    -drive "if=pflash,format=raw,file=$OVMF_VARS"
+
+    -drive "file=$ImgFile,format=raw,id=lineos_disk,if=none"
+    -device "virtio-blk-pci,drive=lineos_disk,bootindex=0"
+
+    -netdev "$Network"
+    -device "virtio-net-pci,netdev=net0"
+
+    -device "$InputA"
+    -device "$InputB"
+
+    -vga "$VGA"
+    -device "$VideoDevice"
+    -display "$DisplayConfig"
+    -fw_cfg "name=opt/org.tianocore/GraphicsResolution,string=$GraphicsResolution"
+
+    -d "$DebugOption"
+    -D "$LogPath"
+    -debugcon "file:$DebugConLogPath"
+    -global "isa-debugcon.iobase=0xe9"
+
+    -no-reboot
+    -no-shutdown
     )
 
     rm -f "$LogPath" "$DebugConLogPath"
