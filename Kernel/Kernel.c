@@ -3,7 +3,6 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <Render/TrueType/Print.h>
-#include <Render/Web/Web.h>
 #include <Render/TrueType/TrueTypeEngine.h>
 #include <Render/GPU/VirtIOGPU.h>
 #include <Multicore/SMP.h>
@@ -121,15 +120,6 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
                 TaskDestroy(NetworkWorker);
             }
         }
-    }
-
-    TASK *BrowserWorker = TaskCreate(WebTask);
-    TASK *KeyboardWorker = TaskCreate(InputKeyboardHandler);
-    TASK *MouseWorker = TaskCreate(InputMouseHandler);
-
-    if (BrowserWorker == NULL || KeyboardWorker == NULL || MouseWorker == NULL || !LBPWRRAddTask(BrowserWorker) || !LBPWRRAddTask(KeyboardWorker) || !LBPWRRAddTask(MouseWorker))
-    {
-        Panic(L"Web task creation failed");
     }
 
     LBPWRRStart();

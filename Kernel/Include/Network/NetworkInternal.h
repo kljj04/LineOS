@@ -30,18 +30,12 @@ typedef struct
     UINT16                 Identification;
     UINT16                 NextPort;
     BOOLEAN                Ready;
+    BOOLEAN                Configured;
     BOOLEAN                PingPending;
     BOOLEAN                PingReply;
     UINT32                 PingAddress;
     UINT16                 PingID;
     UINT8                  PingData[16];
-    BOOLEAN                UDPPending;
-    BOOLEAN                UDPReply;
-    UINT32                 UDPAddress;
-    UINT16                 UDPPort;
-    UINT16                 UDPLocalPort;
-    UINT32                 UDPLength;
-    UINT8                  UDPData[NETWORK_UDP_MAX_PAYLOAD];
 } NETWORK_STATE;
 
 EXTERN NETWORK_STATE NetworkState;
@@ -70,3 +64,16 @@ BOOLEAN NetworkTCPSendInternal(CONST VOID *Buffer, UINT32 Length, UINT32 Timeout
 BOOLEAN NetworkTCPReceiveInternal(VOID *Buffer, UINT32 Capacity, UINT32 *Length, UINT32 TimeoutMls);
 BOOLEAN NetworkTCPCloseInternal(UINT32 TimeoutMls);
 VOID    NetworkTCPAbortInternal(VOID);
+
+UINT16  NetworkAllocatePortLocked(VOID);
+BOOLEAN NetworkUDPPortInUseLocked(UINT16 Port);
+VOID    NetworkUDPInputLocked(UINT32 Address, UINT32 Destination, CONST UINT8 *Packet, UINT32 Length);
+BOOLEAN NetworkUDPSendLocked(UINT16 LocalPort, UINT32 Address, UINT16 Port, CONST VOID *Buffer, UINT32 Length);
+BOOLEAN NetworkTCPPortInUseLocked(UINT16 Port);
+VOID    NetworkDHCPTick(VOID);
+VOID    NetworkDHCPStopLocked(VOID);
+BOOLEAN NetworkSetConfigLocked(CONST NETWORK_CONFIG *Config);
+VOID    NetworkClearConfigLocked(VOID);
+
+VOID NetworkDHCPInputLocked(UINT32 Source, CONST UINT8 *Packet, UINT32 Length);
+VOID NetworkTCPResetLocked(VOID);

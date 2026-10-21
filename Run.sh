@@ -321,7 +321,7 @@ StartQEMU() {
     -device "virtio-blk-pci,drive=lineos_disk,bootindex=0"
 
     -netdev "$Network"
-    -device "virtio-net-pci,netdev=net0"
+    -device "virtio-net-pci,netdev=net0,mac=52:54:00:4c:4f:53"
 
     -device "$InputA"
     -device "$InputB"
