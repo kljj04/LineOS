@@ -1,4 +1,6 @@
-[LineOS C Coding Style Rules]
+# Coding conventions
+
+[Documentation index](README.md) · [한국어](../ko_KR/Directions.md) · [English](../en_US/Directions.md)
 You must strictly follow these formatting and naming conventions for all C/C++ code generation:
 
 1. Keyword macros:
@@ -31,3 +33,7 @@ You must strictly follow these formatting and naming conventions for all C/C++ c
    - Enum type names, struct type names, typedef names, enum members, macros, and constants must use all uppercase with underscores between words.
 
 * Context: 64-bit UEFI kernel (Long Mode). No 16-bit BIOS code. Custom OS development framework.
+
+## Additional source rules
+
+No-argument functions must specify `VOID`. Attach parentheses to function names and separate them from control keywords. Use PascalCase for parameters and structure members as well as variables. Preserve the existing three-line file banner; do not add internal source comments. Use `ASM` for inline assembly. Preserve user changes and existing file structure. The root `.clang-format` is the formatting reference.

@@ -23,6 +23,9 @@ typedef struct
     UINT32  ReceiveNext;
     UINT16  PeerWindow;
     UINT16  PeerMSS;
+    UINT32  WindowSequence;
+    UINT32  WindowACK;
+    UINT8   LastByte;
     UINT8   Buffer[NETWORK_TCP_BUFFER_SIZE];
     UINT32  Head;
     UINT32  Count;
@@ -34,6 +37,87 @@ typedef struct
 } NETWORK_TCP_CONNECTION;
 
 STATIC NETWORK_TCP_CONNECTION Connection;
+
+typedef struct
+{
+    UINT32 Address;
+    UINT16 Port;
+    UINT16 LocalPort;
+    UINT32 SendNext;
+    UINT32 ReceiveNext;
+    UINT64 Expires;
+} NETWORK_TCP_TIME_WAIT;
+
+STATIC NETWORK_TCP_TIME_WAIT TimeWait[8];
+
+VOID NetworkTCPResetLocked(VOID)
+{
+    KMemSet(&Connection, 0, sizeof(Connection));
+}
+
+BOOLEAN NetworkTCPPortInUseLocked(UINT16 Port)
+{
+    if (Connection.Active && Connection.LocalPort == Port)
+    {
+        return TRUE;
+    }
+
+    for (UINT32 Index = 0; Index < 8; Index++)
+    {
+        if (TimeWait[Index].LocalPort == Port && NetworkNow() < TimeWait[Index].Expires)
+        {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+STATIC VOID FinishClose(VOID)
+{
+    NETWORK_TCP_TIME_WAIT *Entry = &TimeWait[0];
+
+    for (UINT32 Index = 0; Index < 8; Index++)
+    {
+        if (TimeWait[Index].Expires < Entry->Expires)
+        {
+            Entry = &TimeWait[Index];
+        }
+    }
+
+    Entry->Address = Connection.Address;
+    Entry->Port = Connection.Port;
+    Entry->LocalPort = Connection.LocalPort;
+    Entry->SendNext = Connection.SendNext;
+    Entry->ReceiveNext = Connection.ReceiveNext;
+    Entry->Expires = NetworkNow() + 120000;
+    NetworkTCPResetLocked();
+}
+
+STATIC VOID HandleTimeWait(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
+{
+    for (UINT32 Index = 0; Index < 8; Index++)
+    {
+        NETWORK_TCP_TIME_WAIT *Entry = &TimeWait[Index];
+
+        if (NetworkNow() >= Entry->Expires || Entry->Address != Address || Entry->Port != NetworkRead16(Packet) || Entry->LocalPort != NetworkRead16(Packet + 2) || (Packet[13] & (NETWORK_TCP_FIN | NETWORK_TCP_ACK | NETWORK_TCP_SYN | NETWORK_TCP_RST)) != (NETWORK_TCP_FIN | NETWORK_TCP_ACK) || NetworkRead32(Packet + 8) != Entry->SendNext || NetworkRead32(Packet + 4) + Length - (Packet[12] >> 4) * 4 + 1 != Entry->ReceiveNext)
+        {
+            continue;
+        }
+
+        UINT8 Reply[20] = {0};
+        NetworkWrite16(Reply, Entry->LocalPort);
+        NetworkWrite16(Reply + 2, Entry->Port);
+        NetworkWrite32(Reply + 4, Entry->SendNext);
+        NetworkWrite32(Reply + 8, Entry->ReceiveNext);
+        Reply[12] = 0x50;
+        Reply[13] = NETWORK_TCP_ACK;
+        NetworkWrite16(Reply + 16, NetworkTransportChecksum(NetworkState.Config.Address, Address, 6, Reply, sizeof(Reply)));
+        NetworkSendIPv4Locked(Address, 6, Reply, sizeof(Reply));
+        Entry->Expires = NetworkNow() + 120000;
+        return;
+    }
+}
 
 STATIC BOOLEAN SequenceBefore(UINT32 A, UINT32 B)
 {
@@ -98,6 +182,7 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
 
     if (!Connection.Active || Connection.Address != Address || Connection.Port != NetworkRead16(Packet) || Connection.LocalPort != NetworkRead16(Packet + 2))
     {
+        HandleTimeWait(Address, Packet, Length);
         return;
     }
 
@@ -169,6 +254,8 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
         Connection.ReceiveNext = Sequence + 1;
         Connection.SendUnacknowledged = Acknowledgment;
         Connection.PeerWindow = NetworkRead16(Packet + 14);
+        Connection.WindowSequence = Sequence;
+        Connection.WindowACK = Acknowledgment;
         Connection.Connected = TRUE;
         SendSegment(Connection.SendNext, NETWORK_TCP_ACK, NULL, 0);
         return;
@@ -208,7 +295,13 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
     if (!SequenceBefore(Acknowledgment, Connection.SendUnacknowledged))
     {
         Connection.SendUnacknowledged = Acknowledgment;
-        Connection.PeerWindow = NetworkRead16(Packet + 14);
+
+        if (SequenceBefore(Connection.WindowSequence, Sequence) || (Connection.WindowSequence == Sequence && !SequenceBefore(Acknowledgment, Connection.WindowACK)))
+        {
+            Connection.PeerWindow = NetworkRead16(Packet + 14);
+            Connection.WindowSequence = Sequence;
+            Connection.WindowACK = Acknowledgment;
+        }
     }
 
     if (DataLength != 0 || (Flags & NETWORK_TCP_FIN) != 0)
@@ -219,10 +312,15 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
         {
             UINT32 NewLength = DataLength - Skip;
 
-            if (Connection.PeerFIN || NewLength > NETWORK_TCP_BUFFER_SIZE - Connection.Count)
+            if (Connection.PeerFIN || Connection.Count == NETWORK_TCP_BUFFER_SIZE)
             {
                 SendSegment(Connection.SendNext, NETWORK_TCP_ACK, NULL, 0);
                 return;
+            }
+
+            if (NewLength > NETWORK_TCP_BUFFER_SIZE - Connection.Count)
+            {
+                NewLength = NETWORK_TCP_BUFFER_SIZE - Connection.Count;
             }
 
             for (UINT32 Index = 0; Index < NewLength; Index++)
@@ -277,7 +375,7 @@ STATIC BOOLEAN SendReliable(UINT8 SegmentFlags, CONST UINT8 *Data, UINT32 Length
         NetworkWait();
         Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
 
-        if (Connection.Reset)
+        if (!Connection.Active || Connection.Reset)
         {
             SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
             return NetworkError(L"TCP connection reset");
@@ -291,7 +389,22 @@ STATIC BOOLEAN SendReliable(UINT8 SegmentFlags, CONST UINT8 *Data, UINT32 Length
 
         if (NetworkNow() - Sent >= RetryMls)
         {
-            SendSegment(Sequence, SegmentFlags, Data, Length);
+            UINT32 Skip = 0;
+
+            if (Length != 0 && SequenceBefore(Sequence, Connection.SendUnacknowledged))
+            {
+                Skip = Connection.SendUnacknowledged - Sequence;
+                Skip = Skip > Length ? Length : Skip;
+            }
+
+            UINT32 RetryLength = Length - Skip;
+
+            if (Connection.PeerWindow == 0 && RetryLength != 0)
+            {
+                RetryLength = 1;
+            }
+
+            SendSegment(Sequence + Skip, SegmentFlags, Data == NULL ? NULL : Data + Skip, RetryLength);
             NetworkState.Stats.Retransmitted++;
             Sent = NetworkNow();
             RetryMls = RetryMls < 8000 ? RetryMls * 2 : 8000;
@@ -346,8 +459,14 @@ BOOLEAN NetworkTCPConnectInternal(UINT32 Address, UINT16 Port, UINT32 TimeoutMls
     Connection.Active = TRUE;
     Connection.Address = Address;
     Connection.Port = Port;
-    NetworkState.NextPort = NetworkState.NextPort == 65535 ? 49152 : NetworkState.NextPort + 1;
-    Connection.LocalPort = NetworkState.NextPort;
+    Connection.LocalPort = NetworkAllocatePortLocked();
+
+    if (Connection.LocalPort == 0)
+    {
+        NetworkTCPResetLocked();
+        SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+        return NetworkError(L"TCP ports exhausted");
+    }
     Connection.SendNext = (UINT32) RDTSC();
     Connection.SendUnacknowledged = Connection.SendNext;
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
@@ -366,6 +485,8 @@ BOOLEAN NetworkTCPSendInternal(CONST VOID *Buffer, UINT32 Length, UINT32 Timeout
 {
     CONST UINT8 *Data = Buffer;
     UINT32       Offset = 0;
+    UINT64       ProbeAt = 0;
+    UINT32       ProbeMls = 1000;
     UINT64       Start = NetworkNow();
 
     if ((Length != 0 && Buffer == NULL) || TimeoutMls == 0)
@@ -417,6 +538,20 @@ BOOLEAN NetworkTCPSendInternal(CONST VOID *Buffer, UINT32 Length, UINT32 Timeout
 
         if (Count == 0)
         {
+            if (ProbeAt == 0)
+            {
+                ProbeAt = NetworkNow() + ProbeMls;
+            }
+            else if (NetworkNow() >= ProbeAt)
+            {
+                Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+                SendSegment(Connection.SendNext - 1, NETWORK_TCP_ACK, &Connection.LastByte, 1);
+                NetworkState.Stats.Retransmitted++;
+                SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+                ProbeMls = ProbeMls < 8000 ? ProbeMls * 2 : 8000;
+                ProbeAt = NetworkNow() + ProbeMls;
+            }
+
             NetworkWait();
             continue;
         }
@@ -429,6 +564,11 @@ BOOLEAN NetworkTCPSendInternal(CONST VOID *Buffer, UINT32 Length, UINT32 Timeout
             return FALSE;
         }
 
+        Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+        Connection.LastByte = Data[Offset + Count - 1];
+        SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+        ProbeAt = 0;
+        ProbeMls = 1000;
         Offset += Count;
     }
 
@@ -508,10 +648,17 @@ BOOLEAN NetworkTCPCloseInternal(UINT32 TimeoutMls)
         return NetworkError(L"TCP close unavailable");
     }
 
+    if (Connection.Count != 0)
+    {
+        SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+        return NetworkError(L"TCP unread data must be drained before close");
+    }
+
+    BOOLEAN SendFIN = !Connection.FINSent;
     Connection.FINSent = TRUE;
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
 
-    if (!SendReliable(NETWORK_TCP_ACK | NETWORK_TCP_FIN, NULL, 0, TimeoutMls))
+    if (SendFIN && !SendReliable(NETWORK_TCP_ACK | NETWORK_TCP_FIN, NULL, 0, TimeoutMls))
     {
         NetworkTCPAbortInternal();
         return FALSE;
@@ -528,7 +675,14 @@ BOOLEAN NetworkTCPCloseInternal(UINT32 TimeoutMls)
         if (Closed)
         {
             Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
-            KMemSet(&Connection, 0, sizeof(Connection));
+
+            if (Connection.Count != 0)
+            {
+                SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+                return NetworkError(L"TCP received data during close; drain it and close again");
+            }
+
+            FinishClose();
             SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
             NetworkError(L"ok");
             return TRUE;

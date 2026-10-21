@@ -277,9 +277,11 @@ STATIC VOID HandleARP(CONST UINT8 *SourceMAC, CONST UINT8 *Packet, UINT32 Length
 BOOLEAN NetworkSendIPv4Locked(UINT32 Address, UINT8 Protocol, CONST UINT8 *Payload, UINT32 Length)
 {
     UINT8              Packet[NETWORK_MTU] = {0};
-    NETWORK_ARP_ENTRY *Entry = FindARP(NextHop(Address));
+    STATIC CONST UINT8 BroadcastMAC[6] = {255, 255, 255, 255, 255, 255};
+    BOOLEAN            Broadcast = Address == UINT32_MAX || (NetworkState.Configured && Address == (NetworkState.Config.Address | ~NetworkState.Config.Netmask));
+    NETWORK_ARP_ENTRY *Entry = Broadcast ? NULL : FindARP(NextHop(Address));
 
-    if (!IsValidDestination(Address) || Entry == NULL || Length > NETWORK_MTU - 20)
+    if ((!Broadcast && (!NetworkState.Configured || !IsValidDestination(Address) || Entry == NULL)) || (Broadcast && Protocol != 17) || Length > NETWORK_MTU - 20)
     {
         return NetworkError(L"IPv4 route unresolved or packet too large");
     }
@@ -294,7 +296,7 @@ BOOLEAN NetworkSendIPv4Locked(UINT32 Address, UINT8 Protocol, CONST UINT8 *Paylo
     NetworkWrite32(Packet + 16, Address);
     NetworkWrite16(Packet + 10, NetworkChecksum(Packet, 20, 0));
     KMemCpy(Packet + 20, Payload, Length);
-    return SendFrame(Entry->MAC, 0x0800, Packet, Length + 20);
+    return SendFrame(Broadcast ? BroadcastMAC : Entry->MAC, 0x0800, Packet, Length + 20);
 }
 
 STATIC VOID HandleICMP(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
@@ -332,24 +334,6 @@ STATIC VOID HandleICMP(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
     }
 }
 
-STATIC VOID HandleUDP(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
-{
-    if (Length < 8 || NetworkRead16(Packet + 4) != Length || (NetworkRead16(Packet + 6) != 0 && NetworkTransportChecksum(Address, NetworkState.Config.Address, 17, Packet, Length) != 0))
-    {
-        NetworkState.Stats.Dropped++;
-        return;
-    }
-
-    NetworkState.Stats.UDPReceived++;
-
-    if (NetworkState.UDPPending && !NetworkState.UDPReply && NetworkState.UDPAddress == Address && NetworkState.UDPPort == NetworkRead16(Packet) && NetworkState.UDPLocalPort == NetworkRead16(Packet + 2))
-    {
-        NetworkState.UDPLength = Length - 8;
-        KMemCpy(NetworkState.UDPData, Packet + 8, Length - 8);
-        NetworkState.UDPReply = TRUE;
-    }
-}
-
 STATIC VOID HandleIPv4(CONST UINT8 *Packet, UINT32 Length)
 {
     UINT32 HeaderLength;
@@ -365,8 +349,11 @@ STATIC VOID HandleIPv4(CONST UINT8 *Packet, UINT32 Length)
     HeaderLength = (Packet[0] & 15) * 4;
     TotalLength = NetworkRead16(Packet + 2);
     Source = NetworkRead32(Packet + 12);
+    UINT32  Destination = NetworkRead32(Packet + 16);
+    BOOLEAN Broadcast = Destination == UINT32_MAX || (NetworkState.Configured && Destination == (NetworkState.Config.Address | ~NetworkState.Config.Netmask));
+    BOOLEAN DHCP = Packet[9] == 17 && TotalLength >= HeaderLength + 8 && TotalLength <= Length && HeaderLength <= Length && NetworkRead16(Packet + HeaderLength + 2) == 68;
 
-    if ((Packet[0] >> 4) != 4 || HeaderLength < 20 || HeaderLength > Length || TotalLength < HeaderLength || TotalLength > Length || TotalLength > NETWORK_MTU || Packet[8] == 0 || (NetworkRead16(Packet + 6) & 0xBFFF) != 0 || NetworkChecksum(Packet, HeaderLength, 0) != 0 || NetworkRead32(Packet + 16) != NetworkState.Config.Address || !IsValidDestination(Source))
+    if ((Packet[0] >> 4) != 4 || HeaderLength < 20 || HeaderLength > Length || TotalLength < HeaderLength || TotalLength > Length || TotalLength > NETWORK_MTU || Packet[8] == 0 || (NetworkRead16(Packet + 6) & 0xBFFF) != 0 || NetworkChecksum(Packet, HeaderLength, 0) != 0 || (!Broadcast && ((!NetworkState.Configured && !DHCP) || (NetworkState.Configured && Destination != NetworkState.Config.Address))) || (Broadcast && Packet[9] != 17) || (!NetworkState.Configured && !DHCP) || !IsUnicast(Source))
     {
         NetworkState.Stats.Dropped++;
         return;
@@ -378,7 +365,7 @@ STATIC VOID HandleIPv4(CONST UINT8 *Packet, UINT32 Length)
     }
     else if (Packet[9] == 17)
     {
-        HandleUDP(Source, Packet + HeaderLength, TotalLength - HeaderLength);
+        NetworkUDPInputLocked(Source, Destination, Packet + HeaderLength, TotalLength - HeaderLength);
     }
     else if (Packet[9] == 6)
     {
@@ -413,7 +400,7 @@ VOID NetworkPoll(VOID)
         {
             HandleARP(Frame + 6, Frame + 14, Length - 14);
         }
-        else if (NetworkRead16(Frame + 12) == 0x0800 && EqualMAC(Frame, NetworkState.Device->MAC))
+        else if (NetworkRead16(Frame + 12) == 0x0800)
         {
             HandleIPv4(Frame + 14, Length - 14);
         }
@@ -452,6 +439,7 @@ VOID NetworkTask(VOID)
 {
     for (;;)
     {
+        NetworkDHCPTick();
         NetworkPoll();
         TaskSleepMls(1);
     }
@@ -464,7 +452,7 @@ BOOLEAN NetworkResolve(UINT32 Address, UINT32 TimeoutMls)
     UINT64 Flags;
     UINT32 Hop;
 
-    if (!IsValidDestination(Address) || TimeoutMls == 0)
+    if (!NetworkState.Configured || !IsValidDestination(Address) || TimeoutMls == 0)
     {
         return NetworkError(L"invalid destination or timeout");
     }
@@ -494,22 +482,45 @@ BOOLEAN NetworkResolve(UINT32 Address, UINT32 TimeoutMls)
     return NetworkError(L"ARP resolution timeout");
 }
 
-BOOLEAN NetworkConfigure(CONST NETWORK_CONFIG *Config)
+BOOLEAN NetworkSetConfigLocked(CONST NETWORK_CONFIG *Config)
 {
-    UINT64 Flags;
     UINT32 HostMask;
 
-    if (Config == NULL || !IsUnicast(Config->Address) || !IsUnicast(Config->Gateway) || !IsUnicast(Config->DNS))
+    if (Config == NULL || !IsUnicast(Config->Address) || (Config->Gateway != 0 && !IsUnicast(Config->Gateway)) || (Config->DNS != 0 && !IsUnicast(Config->DNS)))
     {
         return NetworkError(L"invalid IPv4 configuration");
     }
 
     HostMask = ~Config->Netmask;
 
-    if (HostMask < 3 || (HostMask & (HostMask + 1)) != 0 || Config->Netmask == 0 || (Config->Address & HostMask) == 0 || (Config->Address & HostMask) == HostMask || (Config->Gateway & Config->Netmask) != (Config->Address & Config->Netmask) || Config->Gateway == Config->Address || (Config->Gateway & HostMask) == 0 || (Config->Gateway & HostMask) == HostMask)
+    if (HostMask < 3 || (HostMask & (HostMask + 1)) != 0 || Config->Netmask == 0 || (Config->Address & HostMask) == 0 || (Config->Address & HostMask) == HostMask || (Config->Gateway != 0 && ((Config->Gateway & Config->Netmask) != (Config->Address & Config->Netmask) || Config->Gateway == Config->Address || (Config->Gateway & HostMask) == 0 || (Config->Gateway & HostMask) == HostMask)))
     {
         return NetworkError(L"invalid netmask or gateway");
     }
+
+    if (NetworkState.Config.Address != Config->Address || NetworkState.Config.Netmask != Config->Netmask || NetworkState.Config.Gateway != Config->Gateway)
+    {
+        NetworkTCPResetLocked();
+        KMemSet(NetworkState.ARP, 0, sizeof(NetworkState.ARP));
+    }
+
+    NetworkState.Config = *Config;
+    NetworkState.Configured = TRUE;
+    return TRUE;
+}
+
+VOID NetworkClearConfigLocked(VOID)
+{
+    NetworkTCPResetLocked();
+    KMemSet(&NetworkState.Config, 0, sizeof(NetworkState.Config));
+    NetworkState.Configured = FALSE;
+    KMemSet(NetworkState.ARP, 0, sizeof(NetworkState.ARP));
+}
+
+BOOLEAN NetworkConfigure(CONST NETWORK_CONFIG *Config)
+{
+    UINT64  Flags;
+    BOOLEAN Result;
 
     if (!NetworkBegin())
     {
@@ -525,12 +536,16 @@ BOOLEAN NetworkConfigure(CONST NETWORK_CONFIG *Config)
         return NetworkError(L"TCP connection active");
     }
 
-    NetworkState.Config = *Config;
-    KMemSet(NetworkState.ARP, 0, sizeof(NetworkState.ARP));
+    Result = NetworkSetConfigLocked(Config);
+
+    if (Result)
+    {
+        NetworkDHCPStopLocked();
+    }
+
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
     NetworkEnd();
-    NetworkError(L"ok");
-    return TRUE;
+    return Result;
 }
 
 BOOLEAN NetworkInit(VOID)
@@ -548,10 +563,6 @@ BOOLEAN NetworkInit(VOID)
     SpinLockInit(&NetworkState.Lock);
     NetworkState.Device = VirtIONetworkGetDevice();
     NetworkState.NextPort = 49152 + (RDTSC() % 10000);
-    NetworkState.Config.Address = NETWORK_IPV4(10, 0, 2, 15);
-    NetworkState.Config.Netmask = NETWORK_IPV4(255, 255, 255, 0);
-    NetworkState.Config.Gateway = NETWORK_IPV4(10, 0, 2, 2);
-    NetworkState.Config.DNS = NETWORK_IPV4(10, 0, 2, 3);
     NetworkState.Ready = TRUE;
     NetworkError(L"ok");
     return TRUE;
@@ -568,8 +579,9 @@ BOOLEAN NetworkGetConfig(NETWORK_CONFIG *Config)
 
     Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
     *Config = NetworkState.Config;
+    BOOLEAN Result = NetworkState.Configured;
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
-    return TRUE;
+    return Result;
 }
 
 VOID NetworkGetStats(NETWORK_STATS *Stats)
@@ -645,92 +657,5 @@ BOOLEAN NetworkPing(UINT32 Address, UINT32 TimeoutMls, UINT32 *RoundTripMls)
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
     NetworkEnd();
     NetworkError(Result ? L"ok" : L"ICMP echo timeout");
-    return Result;
-}
-
-BOOLEAN NetworkUDPExchangeInternal(UINT32 Address, UINT16 Port, CONST VOID *Request, UINT32 RequestLength, VOID *Response, UINT32 Capacity, UINT32 *Length, UINT32 TimeoutMls)
-{
-    UINT8   Packet[NETWORK_MTU - 20] = {0};
-    UINT64  Flags;
-    UINT64  Start;
-    UINT16  Checksum;
-    BOOLEAN Result = FALSE;
-
-    if (Port == 0 || RequestLength > NETWORK_UDP_MAX_PAYLOAD || (RequestLength != 0 && Request == NULL) || Response == NULL || Length == NULL || TimeoutMls == 0)
-    {
-        return NetworkError(L"invalid UDP arguments");
-    }
-
-    *Length = 0;
-    Start = NetworkNow();
-
-    if (!NetworkResolve(Address, TimeoutMls))
-    {
-        return FALSE;
-    }
-
-    Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
-    NetworkState.NextPort = NetworkState.NextPort == 65535 ? 49152 : NetworkState.NextPort + 1;
-    NetworkState.UDPLocalPort = NetworkState.NextPort;
-    NetworkState.UDPAddress = Address;
-    NetworkState.UDPPort = Port;
-    NetworkState.UDPReply = FALSE;
-    NetworkState.UDPPending = TRUE;
-    NetworkWrite16(Packet, NetworkState.UDPLocalPort);
-    NetworkWrite16(Packet + 2, Port);
-    NetworkWrite16(Packet + 4, RequestLength + 8);
-
-    if (RequestLength != 0)
-    {
-        KMemCpy(Packet + 8, Request, RequestLength);
-    }
-
-    Checksum = NetworkTransportChecksum(NetworkState.Config.Address, Address, 17, Packet, RequestLength + 8);
-    NetworkWrite16(Packet + 6, Checksum == 0 ? 0xFFFF : Checksum);
-
-    if (NetworkSendIPv4Locked(Address, 17, Packet, RequestLength + 8))
-    {
-        SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
-
-        do
-        {
-            NetworkWait();
-            Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
-            Result = NetworkState.UDPReply;
-            SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
-        } while (!Result && !NetworkExpired(Start, TimeoutMls));
-
-        Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
-    }
-
-    NetworkState.UDPPending = FALSE;
-
-    if (Result)
-    {
-        *Length = NetworkState.UDPLength;
-        Result = Capacity >= *Length;
-
-        if (Result)
-        {
-            KMemCpy(Response, NetworkState.UDPData, *Length);
-        }
-    }
-
-    SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
-    NetworkError(Result ? L"ok" : (*Length > Capacity ? L"UDP response buffer too small" : L"UDP response timeout"));
-    return Result;
-}
-
-BOOLEAN NetworkUDPExchange(UINT32 Address, UINT16 Port, CONST VOID *Request, UINT32 RequestLength, VOID *Response, UINT32 Capacity, UINT32 *Length, UINT32 TimeoutMls)
-{
-    BOOLEAN Result;
-
-    if (!NetworkBegin())
-    {
-        return FALSE;
-    }
-
-    Result = NetworkUDPExchangeInternal(Address, Port, Request, RequestLength, Response, Capacity, Length, TimeoutMls);
-    NetworkEnd();
     return Result;
 }
