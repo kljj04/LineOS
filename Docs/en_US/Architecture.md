@@ -8,7 +8,7 @@ LineOS is a monolithic x86_64 kernel booted through UEFI. The bootloader loads t
 
 `Kernel/Kernel.c` currently initializes physical and virtual memory, the heap, TrueType rendering, PCI and VirtIO GPU, the GDT and IDT, LAPIC/HPET/TSC timers, the UTC clock, SMP, LBPWRR, and VirtIO block/network/input devices.
 
-`KMain()` currently draws saved frame values, registers the network worker, and starts LBPWRR. It does not launch the former development shell, filesystem test task, or web viewer. Device initialization alone does not imply a task or user interface is running.
+`KMain()` currently draws saved frame values, registers the network, NTP and clock-display workers, and starts LBPWRR. It does not launch the former development shell, filesystem test task, or web viewer. Device initialization alone does not imply a task or user interface is running.
 
 Application processors enter `APMain()`, initialize their CPU-local facilities, report themselves online, and join the scheduler.
 
@@ -73,3 +73,5 @@ begins with its own idle task and can run work assigned to its local run queue.
 - TSC calibration
 - TSC Deadline Timer
 - Kernel timer interrupt infrastructure
+
+See [clock and NTP](Clock.md) for wall time, uptime and synchronization.

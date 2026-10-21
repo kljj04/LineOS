@@ -18,7 +18,21 @@ Up to 8 sockets, each with an 8-datagram receive queue, are available through `N
 
 ## TCP
 
-A single client connection is available through `NetworkTCPConnect`, `NetworkTCPSend`, `NetworkTCPReceive`, `NetworkTCPClose` and `NetworkTCPAbort`. Implemented paths include retransmission, sequence and duplicate validation, partial ACKs, receive windows, zero-window probes and bounded TIME_WAIT retention.
+Up to 16 client connections are available through socket handles. Each connection owns its local port, sequence/window state, retransmission state and 8 KiB receive buffer. Packets are dispatched by peer address, peer port and local port, including connections to the same server endpoint.
+
+| API | Contract |
+| --- | --- |
+| `NetworkTCPConnect(Address, Port, &Socket, TimeoutMls)` | Returns a handle after handshake; writes `UINT32_MAX` on failure |
+| `NetworkTCPSend(Socket, Buffer, Length, TimeoutMls)` | Sends on the selected connection |
+| `NetworkTCPReceive(Socket, Buffer, Capacity, &Length, TimeoutMls)` | Receives on the selected connection; successful zero length means orderly EOF |
+| `NetworkTCPClose(Socket, TimeoutMls)` | Gracefully closes after pending reads/writes finish and unread data is drained |
+| `NetworkTCPAbort(Socket)` | Cancels the selected connection and invalidates its handle |
+
+This replaces the earlier implicit global connection API. Callers must retain the returned handle and supply it on each operation. Generations reject stale handles when a slot is reused. Separate connections can progress concurrently; one reader and one writer can run concurrently on the same connection. A second reader or writer, or close during an active operation, returns a busy failure. Abort may interrupt an operation; the slot remains unavailable for reuse until that operation releases ownership.
+
+Retransmission, sequence/duplicate validation, partial ACKs, receive windows and zero-window probes remain supported. A send timeout aborts only that connection; receive timeout leaves it open. Address configuration changes invalidate all connections. `NetworkGetLastError()` remains a shared diagnostic, not task-local error storage.
+
+TIME_WAIT retains at most 64 records for 120 seconds, reserving room for active connections. New connects fail when this capacity is exhausted rather than evicting an unexpired record. Failed connects and explicit aborts release their slots.
 
 ## Source
 
@@ -26,6 +40,18 @@ Interfaces are in `Kernel/Include/Network/`. Implementations are in `Kernel/Sour
 
 ## Limits and verification
 
-TCP listen, multiple TCP connections, SACK, window scaling and full congestion control are not implemented. TCP uses a simple sequential send scheme with MSS 536. IPv6, IPv4 fragment reassembly and DHCP address-conflict detection are also unsupported. NAT does not replace packet validation.
+TCP listen, SACK, window scaling and full congestion control are not implemented. TCP uses a simple sequential send scheme with MSS 536. IPv6, IPv4 fragment reassembly and DHCP address-conflict detection are also unsupported. NAT does not replace packet validation.
 
-The local `Tests/NetworkStack/Run.py --cpus 16 --scheduled` harness exercises DHCP, gateway ICMP, UDP echo, external DNS and a 12,000-byte TCP stream with EOF. Host sanitizer checks cover malformed packets, UDP queues and handles, DHCP lease state and TCP retransmission/close paths. See [verification](Testing.md) for checkpoint scope and local test availability.
+The local `Tests/NetworkStack/Run.py --cpus 16 --scheduled` harness exercises DHCP, gateway ICMP, UDP echo, external DNS and a 12,000-byte TCP stream with EOF. The scheduled test also runs 16 same-server connections with separate send/receive tasks (32 tasks), checks per-connection data, EOF/close, capacity and stale-handle/reconnect behavior. Host sanitizer checks cover malformed packets, UDP queues and handles, DHCP lease state and TCP retransmission/close paths. See [verification](Testing.md) for checkpoint scope and local test availability.
+
+## Local checks
+
+```bash
+python3 Tests/NetworkStack/RunHost.py
+python3 Tests/NetworkStack/Run.py --cpus 16 --scheduled
+python3 Tests/NetworkStack/Analyze.py Tests/NetworkStack/work/Stack-16-scheduled/Packets.pcap
+```
+
+The network-stack harness sources are tracked; generated work directories are ignored. QEMU tests use copied firmware variables and a separate boot directory. See [build instructions](Build.md) for compiler and VM requirements.
+
+See [clock and NTP](Clock.md) for UDP time synchronization and independent uptime.

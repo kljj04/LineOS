@@ -44,7 +44,6 @@ else
     PRINT_GREEN = printf '%b\n' '$(GREEN)$(1)$(RESET)'
 
     LINK_EFI = lld-link
-    LINK_EFI = lld-link
     LINK_KERNEL = $(LD)
 endif
 
@@ -94,7 +93,7 @@ BOOT_SRCS = $(call rwildcard,BootLoader,*.c)
 KERN_SRCS = $(call rwildcard,Kernel,*.c)
 KERN_ASM_SRCS = $(call rwildcard,Kernel,*.S)
 
-FORMAT_EXCLUDE_SRCS = BootLoader/edk2/%
+FORMAT_EXCLUDE_SRCS = BootLoader/EDK2/%
 
 FORMAT_ALL_SRCS = $(call rwildcard,BootLoader,*.c) \
                   $(call rwildcard,BootLoader,*.h) \

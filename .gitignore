@@ -1,6 +1,6 @@
 .vscode/
 .idea/
-build/
+Build/
 /LineOS/
 Logs/
 __pycache__/

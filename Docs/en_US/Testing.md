@@ -6,9 +6,9 @@ A successful compile/link, an updated boot image and an observed QEMU runtime re
 
 ## Current network checkpoint
 
-The QEMU user-NAT test with 16 scheduled CPUs passed DHCP address acquisition, gateway ICMP, a 1,001-byte UDP echo, external DNS lookup and a 12,000-byte TCP stream with EOF. The latest observed run reported RX 47, TX 50, zero drops and zero retransmissions. This covers the tested traffic, not full TCP compliance.
+The QEMU user-NAT test with 16 scheduled CPUs passed DHCP address acquisition, gateway ICMP, a 1,001-byte UDP echo, external DNS lookup and a 12,000-byte TCP stream with EOF. The earlier single-connection run reported RX 47, TX 50, zero drops and zero retransmissions. See [networking](Network.md) for multi-connection checks and commands. This covers the tested traffic, not full TCP compliance.
 
-The local harness is `Tests/NetworkStack/Run.py`; [networking](Network.md) describes the protocol scope. `Tests/Network/` contains driver-level tests, while `Tests/VMM/` contains memory tests. `Tests/` is ignored by the current repository configuration, so these local harnesses may be absent from a fresh clone. Check availability before using them.
+The local harness is `Tests/NetworkStack/Run.py`; [networking](Network.md) describes the protocol scope. `Tests/Network/` contains driver-level tests, while `Tests/VMM/` contains memory tests. C and Python sources under `Tests/NetworkStack/` are tracked. Generated work directories and other local test directories remain ignored and may be absent from a fresh clone. Check availability before using them.
 
 ## Historical EXT2 checkpoint
 
