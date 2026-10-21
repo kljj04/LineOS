@@ -8,7 +8,7 @@
 
 ## 현재 네트워크 체크포인트
 
-QEMU 사용자 NAT와 16 CPU 스케줄러 환경에서 DHCP 주소 획득, 게이트웨이 ICMP, 1,001바이트 UDP echo, 외부 DNS, 12,000바이트 TCP stream·EOF가 통과했습니다. 마지막 관찰값은 RX 47·TX 50·drop 0·재전송 0입니다. 전체 TCP 규격 적합성 검증은 아닙니다.
+QEMU 사용자 NAT와 16 CPU 스케줄러 환경에서 DHCP 주소 획득, 게이트웨이 ICMP, 1,001바이트 UDP echo, 외부 DNS, 12,000바이트 TCP stream·EOF가 통과했습니다. 이전 단일 연결 검사 기록은 RX 47·TX 50·drop 0·재전송 0입니다. 다중 연결 검증 범위와 실행 방법은 [네트워크](Network.md)에 정리합니다. 전체 TCP 규격 적합성 검증은 아닙니다.
 
 | 로컬 경로 | 목적 |
 | --- | --- |
@@ -16,7 +16,7 @@ QEMU 사용자 NAT와 16 CPU 스케줄러 환경에서 DHCP 주소 획득, 게�
 | `Tests/NetworkStack/` | 프로토콜 host 검사와 QEMU 통합 검증 |
 | `Tests/VMM/` | 메모리 host·QEMU 검사 |
 
-현재 `Tests/`는 저장소 ignore 대상이므로 새 clone에 없을 수 있습니다. 실행 전에 존재 여부를 확인합니다. 네트워크 실행 예시는 [네트워크](Network.md)를 참고합니다.
+`Tests/NetworkStack/`의 C·Python 테스트 소스는 저장소에 포함합니다. 생성된 작업 결과와 다른 로컬 테스트 디렉터리는 ignore 대상이므로 새 clone에 없을 수 있습니다. 실행 전에 존재 여부를 확인합니다. 네트워크 실행 예시는 [네트워크](Network.md)를 참고합니다.
 
 ## 과거 EXT2 검증
 

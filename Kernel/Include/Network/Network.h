@@ -11,6 +11,7 @@
 #define NETWORK_UDP_MAX_PAYLOAD  1472
 #define NETWORK_UDP_SOCKET_COUNT 8
 #define NETWORK_UDP_QUEUE_SIZE   8
+#define NETWORK_TCP_SOCKET_COUNT 16
 
 typedef struct
 {
@@ -46,9 +47,9 @@ BOOLEAN       NetworkUDPSendTo(UINT32 Socket, UINT32 Address, UINT16 Port, CONST
 BOOLEAN       NetworkUDPReceiveFrom(UINT32 Socket, VOID *Buffer, UINT32 Capacity, UINT32 *Length, UINT32 *Address, UINT16 *Port, UINT32 TimeoutMls);
 BOOLEAN       NetworkUDPExchange(UINT32 Address, UINT16 Port, CONST VOID *Request, UINT32 RequestLength, VOID *Response, UINT32 Capacity, UINT32 *Length, UINT32 TimeoutMls);
 BOOLEAN       NetworkDNSResolve(CONST CHAR8 *Name, UINT32 *Address, UINT32 TimeoutMls);
-BOOLEAN       NetworkTCPConnect(UINT32 Address, UINT16 Port, UINT32 TimeoutMls);
-BOOLEAN       NetworkTCPSend(CONST VOID *Buffer, UINT32 Length, UINT32 TimeoutMls);
-BOOLEAN       NetworkTCPReceive(VOID *Buffer, UINT32 Capacity, UINT32 *Length, UINT32 TimeoutMls);
-BOOLEAN       NetworkTCPClose(UINT32 TimeoutMls);
-VOID          NetworkTCPAbort(VOID);
+BOOLEAN       NetworkTCPConnect(UINT32 Address, UINT16 Port, UINT32 *Socket, UINT32 TimeoutMls);
+BOOLEAN       NetworkTCPSend(UINT32 Socket, CONST VOID *Buffer, UINT32 Length, UINT32 TimeoutMls);
+BOOLEAN       NetworkTCPReceive(UINT32 Socket, VOID *Buffer, UINT32 Capacity, UINT32 *Length, UINT32 TimeoutMls);
+BOOLEAN       NetworkTCPClose(UINT32 Socket, UINT32 TimeoutMls);
+BOOLEAN       NetworkTCPAbort(UINT32 Socket);
 CONST CHAR16 *NetworkGetLastError(VOID);

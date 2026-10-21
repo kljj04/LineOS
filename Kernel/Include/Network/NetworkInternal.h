@@ -59,11 +59,6 @@ BOOLEAN NetworkUDPExchangeInternal(UINT32 Address, UINT16 Port, CONST VOID *Requ
 BOOLEAN NetworkDNSResolveInternal(CONST CHAR8 *Name, UINT32 *Address, UINT32 TimeoutMls);
 VOID    NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length);
 BOOLEAN NetworkTCPActiveLocked(VOID);
-BOOLEAN NetworkTCPConnectInternal(UINT32 Address, UINT16 Port, UINT32 TimeoutMls);
-BOOLEAN NetworkTCPSendInternal(CONST VOID *Buffer, UINT32 Length, UINT32 TimeoutMls);
-BOOLEAN NetworkTCPReceiveInternal(VOID *Buffer, UINT32 Capacity, UINT32 *Length, UINT32 TimeoutMls);
-BOOLEAN NetworkTCPCloseInternal(UINT32 TimeoutMls);
-VOID    NetworkTCPAbortInternal(VOID);
 
 UINT16  NetworkAllocatePortLocked(VOID);
 BOOLEAN NetworkUDPPortInUseLocked(UINT16 Port);

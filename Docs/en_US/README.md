@@ -13,6 +13,7 @@ Start with build and run, then choose a subsystem. Source paths and commands are
 | [Devices and rendering](Devices.md) | PCI, VirtIO, GPU, input and fonts |
 | [Storage and filesystems](Storage.md) | Block devices, GPT, EXT2, VFS and timestamps |
 | [Networking](Network.md) | VirtIO-Net, NAT, DHCP, UDP, DNS and TCP |
+| [Clock and NTP](Clock.md) | RTC, UTC, uptime, synchronization and display |
 | [Verification](Testing.md) | Local harnesses and historical checkpoints |
 | [Coding conventions](Directions.md) | Naming, formatting and kernel macros |
 

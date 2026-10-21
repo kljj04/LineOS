@@ -28,6 +28,11 @@
 #include <FS/EXT2/EXT2.h>
 #include <FS/VFS/VFSEXT2.h>
 
+VOID MouseTask(VOID)
+{
+    InputMouseHandler();
+}
+
 VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
 {
     VIRTIO_GPU_INFO *GPU;
@@ -71,6 +76,39 @@ VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
     VirtIOInputInit();
 }
 
+VOID ClockDisplayTask(VOID)
+{
+    for (;;)
+    {
+        CLOCK_DATE_TIME  DateTime;
+        CLOCK_NTP_STATUS Status;
+        UINT64           Uptime = ClockGetUptimeMls() / 1000;
+        UINT32           Width = VirtIOGPUGetFrameBufferWidth();
+        UINT32           PixelHeight = Width >= 1920 ? 72 : Width >= 1280 ? 48 : 32;
+        ClockGetNTPStatus(&Status);
+
+        if (Width > 100)
+        {
+            FillRect(64, 120, Width - 80, 300, 0x1E1E1E);
+            KPrint(L"Uptime: %llu days %02llu:%02llu:%02llu", 80, 190, 0xCCCCCC, PixelHeight - 8, JETBRAINS_MONO, Uptime / 86400, (Uptime / 3600) % 24, (Uptime / 60) % 60, Uptime % 60);
+
+            if (ClockGetDateTime(&DateTime, 540))
+            {
+                KPrint(L"KST: %04u-%02u-%02u %02u:%02u:%02u (UTC+09:00)", 80, 285, 0xFFFFFF, PixelHeight, JETBRAINS_MONO, (UINT32) DateTime.Year, (UINT32) DateTime.Month, (UINT32) DateTime.Day, (UINT32) DateTime.Hour, (UINT32) DateTime.Minute, (UINT32) DateTime.Second);
+            }
+            else
+            {
+                KPrint(L"Current time unavailable", 80, 285, 0xE5C07B, PixelHeight, JETBRAINS_MONO);
+            }
+
+            CONST CHAR16 *State = Status.Busy ? L"synchronizing" : Status.Failures != 0 ? (Status.Synchronized ? L"retry (last sync)" : L"retry pending (RTC)") : Status.Synchronized ? L"synchronized" : L"waiting (RTC)";
+            KPrint(L"NTP: %s / interval 10 min", 80, 380, (Status.Synchronized && Status.Failures == 0) ? 0x98C379 : 0xE5C07B, PixelHeight - 16, JETBRAINS_MONO, State);
+            VirtIOGPUFlush();
+        }
+        TaskSleepMls(100);
+    }
+}
+
 VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
 {
 
@@ -80,8 +118,7 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
     UINT64 FrameCS;
     UINT64 FrameRFLAGS;
 
-    ASM(
-        "movw %%cs, %%ax\n\t"
+    ASM("movw %%cs, %%ax\n\t"
         "movzwq %%ax, %%rax\n\t"
         "leaq 1f(%%rip), %%rcx\n\t"
 
@@ -96,16 +133,13 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
         "addq $24, %%rsp\n\t"
         "1:\n\t"
 
-        : "=&r"(FrameRIP),
-          "=&r"(FrameCS),
-          "=&r"(FrameRFLAGS)
+        : "=&r"(FrameRIP), "=&r"(FrameCS), "=&r"(FrameRFLAGS)
         :
-        : "rax", "rcx", "memory", "cc"
-    );
+        : "rax", "rcx", "memory", "cc");
 
     FillScreen(0x1E1E1E);
 
-    KPrint(L"%016llX, %016llX, %016llX", 100, 100, 0xFFFFFF,28,JETBRAINS_MONO, FrameRIP, FrameCS, FrameRFLAGS);
+    // KPrint(L"%016llX, %016llX, %016llX", 100, 100, 0xFFFFFF, 28, JETBRAINS_MONO, FrameRIP, FrameCS, FrameRFLAGS);
 
     VirtIOGPUFlush();
 
@@ -121,6 +155,22 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
             }
         }
     }
+
+    TASK *CursorTask = TaskCreate(MouseTask);
+    TASK *ClockWorker = TaskCreate(ClockNTPTask);
+    TASK *ClockDisplay = TaskCreate(ClockDisplayTask);
+
+    if (ClockWorker != NULL && !LBPWRRAddTask(ClockWorker))
+    {
+        TaskDestroy(ClockWorker);
+    }
+
+    if (ClockDisplay != NULL && !LBPWRRAddTask(ClockDisplay))
+    {
+        TaskDestroy(ClockDisplay);
+    }
+
+    LBPWRRAddTask(CursorTask);
 
     LBPWRRStart();
 

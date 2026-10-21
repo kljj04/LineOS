@@ -452,16 +452,22 @@ BOOLEAN NetworkResolve(UINT32 Address, UINT32 TimeoutMls)
     UINT64 Flags;
     UINT32 Hop;
 
-    if (!NetworkState.Configured || !IsValidDestination(Address) || TimeoutMls == 0)
+    if (TimeoutMls == 0)
     {
         return NetworkError(L"invalid destination or timeout");
     }
 
-    Hop = NextHop(Address);
-
     do
     {
         Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+
+        if (!NetworkState.Configured || !IsValidDestination(Address))
+        {
+            SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+            return NetworkError(L"invalid destination or unconfigured network");
+        }
+
+        Hop = NextHop(Address);
 
         if (FindARP(Hop) != NULL)
         {

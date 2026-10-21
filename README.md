@@ -22,7 +22,7 @@ The current development environment is Linux with QEMU/KVM and VirtIO devices. P
 - Shared PCI/VirtIO infrastructure for GPU, input, block and network devices
 - Native TrueType text rendering, including Hangul
 - GPT, EXT2 and a VFS layer
-- IPv4 networking with ARP, ICMP, DHCP, UDP, DNS and a single-connection TCP client
+- IPv4 networking with ARP, ICMP, DHCP, UDP, DNS and a TCP client with up to 16 concurrent connections
 
 Internal APIs and the default kernel workload are under active development. User mode, system calls, process isolation and userland applications remain future work. HTTP/HTTPS/TLS belong to that future userland layer.
 
