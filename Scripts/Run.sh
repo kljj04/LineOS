@@ -7,4 +7,6 @@ set -Eeuo pipefail
 
 ScriptDir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
+echo ""
+
 exec node "$ScriptDir/JS/Run.js" "$@"
