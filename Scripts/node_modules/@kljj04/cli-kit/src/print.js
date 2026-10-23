@@ -1,0 +1,7 @@
+const { RESET } = require('./color');
+
+function print(prefix, text) {
+    console.log(`${prefix}${text}${RESET}`);
+}
+
+module.exports = { print };

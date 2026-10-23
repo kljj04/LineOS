@@ -1,0 +1,27 @@
+const { RESET } = require('./color');
+
+function table(prefix, data) {
+    if (!Array.isArray(data) || data.length === 0) return;
+
+    const headers = Object.keys(data[0]);
+    const colWidths = headers.map(h =>
+        Math.max(h.length, ...data.map(row => String(row[h] ?? '').length))
+    );
+
+    const hr = '┼' + colWidths.map(w => '─'.repeat(w + 2)).join('┼') + '┼';
+    const topBorder = '┌' + colWidths.map(w => '─'.repeat(w + 2)).join('┬') + '┐';
+    const bottomBorder = '└' + colWidths.map(w => '─'.repeat(w + 2)).join('┴') + '┘';
+
+    const row = (cells) =>
+        '│' + cells.map((c, i) => ` ${String(c).padEnd(colWidths[i])} `).join('│') + '│';
+
+    console.log(`${prefix}${topBorder}${RESET}`);
+    console.log(`${prefix}${row(headers)}${RESET}`);
+    console.log(`${prefix}${hr}${RESET}`);
+    data.forEach(r => {
+        console.log(`${prefix}${row(headers.map(h => r[h] ?? ''))}${RESET}`);
+    });
+    console.log(`${prefix}${bottomBorder}${RESET}`);
+}
+
+module.exports = { table };

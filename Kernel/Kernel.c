@@ -114,32 +114,7 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
 
     InitKernel(BootInfo);
 
-    UINT64 FrameRIP;
-    UINT64 FrameCS;
-    UINT64 FrameRFLAGS;
-
-    ASM("movw %%cs, %%ax\n\t"
-        "movzwq %%ax, %%rax\n\t"
-        "leaq 1f(%%rip), %%rcx\n\t"
-
-        "pushfq\n\t"
-        "pushq %%rax\n\t"
-        "pushq %%rcx\n\t"
-
-        "movq (%%rsp), %0\n\t"
-        "movq 8(%%rsp), %1\n\t"
-        "movq 16(%%rsp), %2\n\t"
-
-        "addq $24, %%rsp\n\t"
-        "1:\n\t"
-
-        : "=&r"(FrameRIP), "=&r"(FrameCS), "=&r"(FrameRFLAGS)
-        :
-        : "rax", "rcx", "memory", "cc");
-
     FillScreen(0x1E1E1E);
-
-    // KPrint(L"%016llX, %016llX, %016llX", 100, 100, 0xFFFFFF, 28, JETBRAINS_MONO, FrameRIP, FrameCS, FrameRFLAGS);
 
     VirtIOGPUFlush();
 
