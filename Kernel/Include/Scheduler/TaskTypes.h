@@ -99,4 +99,10 @@ typedef struct TASK
     BOOLEAN      Modified;
     BOOLEAN      Idle;
     BOOLEAN      Scheduled;
+    UINT64       CPUTimeTSC;
+    UINT64       LastCPUTimeTSC;
+    UINT32       CPUUsage;
+    BOOLEAN      OnCPU;
+    struct WAIT_QUEUE *WaitQueue;
+    struct TASK       *WaitNext;
 } TASK;

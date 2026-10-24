@@ -3,6 +3,9 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <Scheduler/Task.h>
+#include <Scheduler/WaitQueue.h>
+#include <Scheduler/LBPWRRRunQueue.h>
+#include <Scheduler/LBPWRRChunk.h>
 #include <Scheduler/LBPWRR.h>
 #include <Scheduler/LBPWRRTypes.h>
 #include <Arch/AMD64/CPU.h>
@@ -199,7 +202,8 @@ STATIC VOID InitTaskContext(TASK *Task, VOID (*Entry)(VOID))
     Task->Context.RSP = Task->InitialRSP;
     Task->Context.SS = 0x10;
 
-    Task->RSP = (UINT64) &Task->Context;
+    Task->RSP = Task->InitialRSP - sizeof(TASK_CONTEXT);
+    KMemCpy((VOID *) Task->RSP, &Task->Context, sizeof(TASK_CONTEXT));
 }
 
 BOOLEAN TaskInit(VOID)
@@ -264,20 +268,55 @@ TASK *TaskCreate(VOID (*Entry)(VOID))
 
 BOOLEAN TaskSetPriority(TASK *Task, UINT8 Priority)
 {
+    LBPWRR_RUNQUEUE *RunQueue;
+    UINT32           CPUID;
+    UINT64           Flags;
+    UINT8            Weight;
+
     if (Task == NULL || Priority < 1 || Priority > 6)
     {
         return FALSE;
     }
 
-    Task->Priority = Priority;
-    Task->Weight = PToW(Task->Priority);
-    Task->Modified = TRUE;
-
-    if (Task->Scheduled && !LBPWRRNotifyTaskChanged(Task))
+    if (!Task->Scheduled)
     {
+        Task->Priority = Priority;
+        Task->Weight = PToW(Priority);
+        Task->Modified = TRUE;
+        return TRUE;
+    }
+
+    for (;;)
+    {
+        CPUID = Task->CPUID;
+        RunQueue = LBPWRRGetRunQueue(CPUID);
+        Flags = SpinLockAcquireIRQSave(&RunQueue->Lock);
+
+        if (Task->CPUID == CPUID)
+        {
+            break;
+        }
+
+        SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+    }
+
+    Weight = 0;
+
+    if (Task->State == TASK_READY || Task->State == TASK_RUNNING || (Task->State == TASK_BLOCKED && Task->WaitQueue != NULL))
+    {
+        Weight = PToW(Priority);
+    }
+
+    if (!LBPWRRModifyChunk(RunQueue, Task, Weight))
+    {
+        SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
         return FALSE;
     }
 
+    Task->Priority = Priority;
+    Task->Weight = PToW(Priority);
+    Task->Modified = FALSE;
+    SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
     return TRUE;
 }
 
@@ -438,10 +477,7 @@ VOID TaskKill(TASK *Task)
         return;
     }
 
-    Task->State = TASK_KILLED;
-    Task->Modified = TRUE;
-
-    LBPWRRNotifyTaskChanged(Task);
+    WaitQueueFinishTask(Task, TASK_KILLED);
 }
 
 VOID TaskTerminate(TASK *Task)
@@ -451,10 +487,7 @@ VOID TaskTerminate(TASK *Task)
         return;
     }
 
-    Task->State = TASK_TERMINATED;
-    Task->Modified = TRUE;
-
-    LBPWRRNotifyTaskChanged(Task);
+    WaitQueueFinishTask(Task, TASK_TERMINATED);
 }
 
 TASK *TaskGetByPID(UINT16 PID)
@@ -480,4 +513,43 @@ TASK *TaskGetByPID(UINT16 PID)
 UINTN TaskGetCount(VOID)
 {
     return TaskCount;
+}
+
+VOID TaskSampleCPUUsage(UINT64 IntervalTSC)
+{
+    UINTN  Index;
+    TASK  *Task;
+    UINT64 Current;
+    UINT64 Previous;
+    UINT64 Delta;
+    UINT64 Percent;
+
+    if (IntervalTSC == 0)
+    {
+        return;
+    }
+
+    for (Index = 0; Index < LBPWRR_MAX_TASKS; Index++)
+    {
+        if (!TaskUsed[Index])
+        {
+            continue;
+        }
+
+        Task = &TaskPool[Index];
+
+        Current = ATOMIC_LOAD(&Task->CPUTimeTSC, ATOMIC_RELAXED);
+        Previous = Task->LastCPUTimeTSC;
+        Delta = Current - Previous;
+
+        Task->LastCPUTimeTSC = Current;
+
+        Percent = (UINT64) (((UINT128) Delta * 100) / IntervalTSC);
+
+        if (Percent > 100)
+        {
+            Percent = 100;
+        }
+        ATOMIC_STORE(&Task->CPUUsage, (UINT32) Percent, ATOMIC_RELEASE);
+    }
 }

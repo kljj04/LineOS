@@ -4,7 +4,7 @@
 
 ## GPT와 EXT2
 
-GPT 헤더와 파티션 배열 CRC를 검사하고 두 번째 GPT 파티션의 EXT2를 마운트합니다. EXT2 revision 0/1, 1·2·4 KiB 블록과 128·256바이트 inode 검증 기록이 있습니다.
+GPT 헤더와 파티션 배열 CRC를 검사하고 두 번째 GPT 파티션의 EXT2를 마운트합니다. EXT2 revision 0/1, 1·2·4 KiB 블록과 128·256바이트 inode를 지원합니다.
 
 파일·디렉터리 생성, 읽기·쓰기, sparse 확장, truncate, 삭제, 같은 볼륨 rename·이동·대상 교체, hard link와 inline·block 기반 symbolic link를 제공합니다. 직접 및 단일·이중·삼중 간접 블록 주소를 처리합니다.
 
@@ -24,4 +24,6 @@ VFS는 파티션별 루트, 경로 해석, 디렉터리 열거와 명령 문맥�
 
 ## 관련 소스와 실행 상태
 
-GPT·블록 드라이버는 `Kernel/Source/Disk/`, EXT2·VFS는 `Kernel/Source/FS/`, 인터페이스는 `Kernel/Include/FS/`에 있습니다. 예전 개발 셸과 파일시스템 테스트 작업은 현재 기본 `KMain()`에 포함되지 않습니다. 과거 검증 기록은 [검증 문서](Testing.md)를 참고합니다.
+GPT·블록 드라이버는 `Kernel/Source/Disk/`, EXT2·VFS는 `Kernel/Source/FS/`, 인터페이스는 `Kernel/Include/FS/`에 있습니다. 예전 개발 셸은 현재 기본 `KMain()`에 포함되지 않습니다.
+
+기본 KMain은 블록 장치를 초기화하지만 EXT2·VFS를 마운트하거나 저장소 작업을 시작하지 않습니다. 호스트 이미지 갱신기는 ESP의 두 부팅 파일만 교체합니다. [빌드와 실행](Build.md)을 참고합니다.

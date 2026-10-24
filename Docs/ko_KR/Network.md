@@ -6,9 +6,9 @@
 
 ## 구현 범위
 
-VirtIO-Net, Ethernet, ARP, IPv4, ICMP, UDP, DNS A 조회, DHCPv4 및 TCP 클라이언트를 제공합니다. HTTP와 테스트 웹 렌더러는 커널에서 제거했습니다. HTTP/HTTPS/TLS는 이후 유저스페이스 범위입니다.
+VirtIO-Net, Ethernet, ARP, IPv4, ICMP, UDP, DNS A 조회, DHCPv4 및 TCP 클라이언트를 제공합니다. HTTP와 웹 렌더러는 커널에서 제거했습니다. HTTP/HTTPS/TLS는 이후 유저스페이스 범위입니다.
 
-`NetworkTask`가 수신 처리와 DHCP 임대 갱신을 수행합니다. DHCP로 주소, 서브넷 마스크, 게이트웨이와 DNS를 얻습니다. `NetworkConfigure()`로 정적 설정을 적용하면 DHCP가 비활성화됩니다. 설정 완료 여부와 값은 `NetworkGetConfig()`로 확인합니다.
+`NetworkTask`가 NetworkPoll과 1ms 시간 대기로 수신 처리와 DHCP 임대 갱신을 수행합니다. 현재 KMain은 이 작업을 등록하지 않으며, `NetworkInit()`만으로 작업을 생성하거나 DHCP 임대를 획득하지 않습니다. 입력 Wait Queue 변경은 네트워크 작업까지 인터럽트 기반 블로킹으로 전환하지 않습니다. DHCP로 주소, 서브넷 마스크, 게이트웨이와 DNS를 얻습니다. `NetworkConfigure()`로 정적 설정을 적용하면 DHCP가 비활성화됩니다. 설정 완료 여부와 값은 `NetworkGetConfig()`로 확인합니다.
 
 UDP는 최대 8개 소켓과 소켓별 8개 수신 큐를 제공합니다. `NetworkUDPOpen`, `NetworkUDPSendTo`, `NetworkUDPReceiveFrom`, `NetworkUDPClose`를 사용합니다. 수신 시 송신 주소와 포트를 반환하며, 작은 버퍼에는 필요한 길이를 알리고 패킷을 보존합니다. `NetworkUDPExchange`는 단일 요청/응답 편의 API입니다.
 
@@ -34,22 +34,10 @@ TIME_WAIT는 최대 64개 기록을 120초간 보존하며 활성 연결의 종�
 
 TCP listen, SACK, 윈도우 확장과 완전한 혼잡 제어는 구현하지 않았습니다. IPv6, IPv4 조각 재조립 및 DHCP 주소 충돌 탐지도 미지원입니다. TCP 전송은 MSS 536의 단순한 순차 전송 방식입니다. NAT는 패킷 파서의 보안을 대신하지 않습니다.
 
-## 검증
-
-`Tests/NetworkStack/Run.py --cpus 16 --scheduled`는 격리된 QEMU에서 DHCP, 게이트웨이 ICMP, UDP echo, 외부 DNS와 12,000바이트 TCP echo/EOF를 검사합니다. 테스트 산출물은 해당 테스트 작업 디렉터리에 저장됩니다. 호스트 sanitizer 검증은 잘못된 패킷, UDP 큐 및 핸들, DHCP 임대 상태와 TCP 재전송·종료 경로를 검사합니다.
-
-호스트의 기존 libvirt `virbr0`는 기본 실행과 무관합니다.
-
-## 관련 소스와 로컬 검사
+## 관련 소스
 
 인터페이스는 `Kernel/Include/Network/`, 구현은 `Kernel/Source/Network/`에 있습니다. 장치는 `VirtIONetwork.c`, 공통 계층은 `Network.c`, 프로토콜은 `UDP.c`·`TCP.c`·`DHCP.c`·`DNS.c`로 나뉩니다.
 
-```bash
-python3 Tests/NetworkStack/RunHost.py
-python3 Tests/NetworkStack/Run.py --cpus 16 --scheduled
-python3 Tests/NetworkStack/Analyze.py Tests/NetworkStack/work/Stack-16-scheduled/Packets.pcap
-```
-
-스케줄러 검사는 같은 서버에 16개 연결과 송수신 작업 32개를 실행하고 연결별 데이터, EOF·종료, 용량 한도와 이전 핸들·재접속을 확인합니다. host 검사는 연결별 분배, abort와 수신의 경합, TIME_WAIT 용량 및 기존 잘못된 패킷·손실 복구 경로를 검사합니다. 네트워크 스택 테스트 소스는 저장소에 포함하며 생성된 작업 디렉터리는 제외합니다. QEMU 검사는 복사한 펌웨어 변수와 별도 부팅 디렉터리를 사용합니다.
+호스트의 기존 libvirt `virbr0`는 기본 실행과 무관합니다.
 
 UDP 기반 시각 동기화와 경과 시간은 [시계·NTP](Clock.md)를 참고합니다.

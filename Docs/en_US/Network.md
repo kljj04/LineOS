@@ -6,11 +6,11 @@
 
 The default QEMU arguments are `-netdev user,id=net0` and `-device virtio-net-pci,netdev=net0,mac=52:54:00:4c:4f:53`. QEMU user NAT requires no host bridge or TAP. Inbound connections need explicit port forwarding. The existing libvirt `virbr0` is unrelated to this launcher.
 
-The kernel implements VirtIO-Net, Ethernet, ARP, IPv4, ICMP, UDP, DNS A queries, DHCPv4 and a TCP client. HTTP and the test web renderer have been removed. HTTP/HTTPS/TLS are intended for future user space.
+The kernel implements VirtIO-Net, Ethernet, ARP, IPv4, ICMP, UDP, DNS A queries, DHCPv4 and a TCP client. HTTP and the web renderer have been removed. HTTP/HTTPS/TLS are intended for future user space.
 
 ## Configuration and worker
 
-`NetworkTask` handles receive processing and DHCP lease renewal. DHCP obtains the address, subnet mask, gateway and DNS. `NetworkConfigure()` applies static configuration and disables DHCP. `NetworkGetConfig()` reports whether configuration is ready and returns its values.
+`NetworkTask` handles receive processing and DHCP lease renewal through NetworkPoll and a 1 ms timed sleep. It is not registered by the current KMain; `NetworkInit()` initializes the core without launching a task or obtaining a DHCP lease by itself. Input Wait Queues do not change this network worker into interrupt-driven blocking. DHCP obtains the address, subnet mask, gateway and DNS. `NetworkConfigure()` applies static configuration and disables DHCP. `NetworkGetConfig()` reports whether configuration is ready and returns its values.
 
 ## UDP
 
@@ -38,20 +38,8 @@ TIME_WAIT retains at most 64 records for 120 seconds, reserving room for active 
 
 Interfaces are in `Kernel/Include/Network/`. Implementations are in `Kernel/Source/Network/`: `VirtIONetwork.c` for the device, `Network.c` for the core, and `UDP.c`, `TCP.c`, `DHCP.c` and `DNS.c` for protocols.
 
-## Limits and verification
+## Limits
 
 TCP listen, SACK, window scaling and full congestion control are not implemented. TCP uses a simple sequential send scheme with MSS 536. IPv6, IPv4 fragment reassembly and DHCP address-conflict detection are also unsupported. NAT does not replace packet validation.
-
-The local `Tests/NetworkStack/Run.py --cpus 16 --scheduled` harness exercises DHCP, gateway ICMP, UDP echo, external DNS and a 12,000-byte TCP stream with EOF. The scheduled test also runs 16 same-server connections with separate send/receive tasks (32 tasks), checks per-connection data, EOF/close, capacity and stale-handle/reconnect behavior. Host sanitizer checks cover malformed packets, UDP queues and handles, DHCP lease state and TCP retransmission/close paths. See [verification](Testing.md) for checkpoint scope and local test availability.
-
-## Local checks
-
-```bash
-python3 Tests/NetworkStack/RunHost.py
-python3 Tests/NetworkStack/Run.py --cpus 16 --scheduled
-python3 Tests/NetworkStack/Analyze.py Tests/NetworkStack/work/Stack-16-scheduled/Packets.pcap
-```
-
-The network-stack harness sources are tracked; generated work directories are ignored. QEMU tests use copied firmware variables and a separate boot directory. See [build instructions](Build.md) for compiler and VM requirements.
 
 See [clock and NTP](Clock.md) for UDP time synchronization and independent uptime.

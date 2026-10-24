@@ -836,5 +836,5 @@ VOID KFree(VOID *Address)
 
 BOOLEAN KMemoryPanicLocksAvailable(VOID)
 {
-    return __atomic_load_n(&HeapLock.Locked, __ATOMIC_ACQUIRE) == 0 && __atomic_load_n(&BuddyLock.Locked, __ATOMIC_ACQUIRE) == 0;
+    return ATOMIC_LOAD(&HeapLock.Locked, ATOMIC_ACQUIRE) == 0 && ATOMIC_LOAD(&BuddyLock.Locked, ATOMIC_ACQUIRE) == 0;
 }

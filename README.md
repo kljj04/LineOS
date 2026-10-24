@@ -17,7 +17,7 @@ The current development environment is Linux with QEMU/KVM and VirtIO devices. P
 ## Project overview
 
 - Custom UEFI bootloader and ELF64 monolithic kernel
-- SMP startup, APIC interrupts, hardware timers and the LBPWRR scheduler
+- SMP startup, APIC interrupts, hardware timers and the LBPWRR scheduler with Wait Queues and CPU usage accounting
 - Physical and virtual memory management with a kernel heap
 - Shared PCI/VirtIO infrastructure for GPU, input, block and network devices
 - Native TrueType text rendering, including Hangul
@@ -26,22 +26,24 @@ The current development environment is Linux with QEMU/KVM and VirtIO devices. P
 
 Internal APIs and the default kernel workload are under active development. User mode, system calls, process isolation and userland applications remain future work. HTTP/HTTPS/TLS belong to that future userland layer.
 
+The current startup workload displays CPU usage and runs the mouse handler. Keyboard handling, networking and NTP implementations are present, but their worker tasks are not registered by the default `KMain()`.
+
 ## Getting started
 
 On a Linux development host with the required compiler, disk tools and QEMU/KVM:
 
 ```bash
-make -j"$(nproc)"
-./Run.sh
+./Scripts/Run.sh -build
+./Scripts/Run.sh
 ```
 
-The launcher prepares the boot image using `sudo` and starts a VM. Networking defaults to QEMU user NAT without host bridge setup. See [build and run instructions](Docs/en_US/Build.md) for requirements and configuration.
+The Bash launcher uses a Node.js interface and sequential Make builds. It prepares the boot image using `sudo` and starts QEMU/KVM. VM settings are in `Configs/QEMUSettings.sh`; networking defaults to QEMU user NAT without host bridge setup. See [build and run instructions](Docs/en_US/Build.md) for requirements and configuration.
 
 ## Documentation
 
 [한국어 문서](Docs/ko_KR/README.md) · [English documentation](Docs/en_US/README.md)
 
-The [documentation index](Docs/README.md) links to architecture, memory, scheduling, devices, storage, networking, verification and coding conventions. It also distinguishes implemented subsystems from the current startup workload and historical test results.
+The [documentation index](Docs/README.md) links to architecture, memory, scheduling, devices, storage, networking and coding conventions. It distinguishes implemented subsystems from the current startup workload.
 
 ## License
 

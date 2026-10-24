@@ -181,7 +181,7 @@ STATIC BOOLEAN SMPStartAP(CPU_INFO *CPU)
     for (UINT32 Elapsed = 0; Elapsed < SMP_AP_START_TIMEOUT_MS; Elapsed++)
     {
         CompilerBarrier();
-        if (__atomic_load_n(&CPU->Online, __ATOMIC_ACQUIRE))
+        if (ATOMIC_LOAD(&CPU->Online, ATOMIC_ACQUIRE))
         {
             CompilerBarrier();
             return TRUE;
@@ -200,7 +200,7 @@ BOOLEAN SMPInit(LINEOS_BOOT_INFO *BootInfo)
     UINT8     *End;
     BOOLEAN    HasAP;
 
-    __atomic_store_n(&SMPReady, FALSE, __ATOMIC_RELEASE);
+    ATOMIC_STORE(&SMPReady, FALSE, ATOMIC_RELEASE);
     BootCR3 = SMPReadCR3();
     CPUCount = 0;
 
@@ -273,7 +273,7 @@ BOOLEAN SMPInit(LINEOS_BOOT_INFO *BootInfo)
 
     if (!HasAP)
     {
-        __atomic_store_n(&SMPReady, TRUE, __ATOMIC_RELEASE);
+        ATOMIC_STORE(&SMPReady, TRUE, ATOMIC_RELEASE);
         return TRUE;
     }
 
@@ -297,13 +297,13 @@ BOOLEAN SMPInit(LINEOS_BOOT_INFO *BootInfo)
         }
     }
 
-    __atomic_store_n(&SMPReady, TRUE, __ATOMIC_RELEASE);
+    ATOMIC_STORE(&SMPReady, TRUE, ATOMIC_RELEASE);
     return TRUE;
 }
 
 BOOLEAN SMPIsReady(VOID)
 {
-    return __atomic_load_n(&SMPReady, __ATOMIC_ACQUIRE);
+    return ATOMIC_LOAD(&SMPReady, ATOMIC_ACQUIRE);
 }
 
 UINT64 SMPGetBootCR3(VOID)

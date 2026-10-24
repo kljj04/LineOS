@@ -82,13 +82,13 @@ BOOLEAN NetworkExpired(UINT64 Start, UINT32 TimeoutMls)
 
 BOOLEAN NetworkError(CONST CHAR16 *Error)
 {
-    __atomic_store_n(&LastError, Error, __ATOMIC_RELEASE);
+    ATOMIC_STORE(&LastError, Error, ATOMIC_RELEASE);
     return FALSE;
 }
 
 CONST CHAR16 *NetworkGetLastError(VOID)
 {
-    return __atomic_load_n(&LastError, __ATOMIC_ACQUIRE);
+    return ATOMIC_LOAD(&LastError, ATOMIC_ACQUIRE);
 }
 
 BOOLEAN NetworkBegin(VOID)
@@ -100,7 +100,7 @@ BOOLEAN NetworkBegin(VOID)
         return NetworkError(L"network unavailable");
     }
 
-    if (!__atomic_compare_exchange_n(&NetworkState.Busy, &Expected, 1, FALSE, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED))
+    if (!ATOMIC_COMPARE_EXCHANGE(&NetworkState.Busy, &Expected, 1, FALSE, ATOMIC_ACQUIRE, ATOMIC_RELAXED))
     {
         return NetworkError(L"network operation busy");
     }
@@ -110,7 +110,7 @@ BOOLEAN NetworkBegin(VOID)
 
 VOID NetworkEnd(VOID)
 {
-    __atomic_store_n(&NetworkState.Busy, 0, __ATOMIC_RELEASE);
+    ATOMIC_STORE(&NetworkState.Busy, 0, ATOMIC_RELEASE);
 }
 
 STATIC BOOLEAN IsUnicast(UINT32 Address)

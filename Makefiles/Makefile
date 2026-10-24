@@ -10,8 +10,8 @@ include Makefiles/BuildSettings.mk
 include Makefiles/Utils.mk
 include Makefiles/BootLoader.mk
 include Makefiles/Kernel.mk
+include Makefiles/UserPrograms.mk
 
-.PHONY: All Clean Format CompileBoot LinkBoot CompileKernel LinkKernel
+.PHONY: All Clean Format CompileBoot LinkBoot CompileKernel LinkKernel CompileUserPrograms LinkUserPrograms
 
-All: $(BOOT_TARGET) $(KERN_TARGET)
-	@$(call PRINT_GREEN,[*] Done.)
+All: $(BOOT_TARGET) $(KERN_TARGET) $(USER_PROGRAM_OUTPUTS)

@@ -25,12 +25,13 @@ typedef struct
     UINT8   Modifiers;
 } KEYBOARD_STATUS;
 
+VOID            InputWaitMouseEvents(VOID);
+VOID            InputWaitKeyboardEvent(VOID);
 VOID            InputMouseHandler(VOID);
 VOID            InputKeyboardHandler(VOID);
 MOUSE_STATUS    GetMouseStatus(VOID);
 KEYBOARD_STATUS GetKeyboardStatus(VOID);
-
-VOID    HideMouseCursor(VOID);
-VOID    ShowMouseCursor(VOID);
-VOID    UpdateMouseCursor(VOID);
-BOOLEAN InputGetKeyboardEvent(KEYBOARD_STATUS *Event);
+VOID            HideMouseCursor(VOID);
+VOID            ShowMouseCursor(VOID);
+VOID            UpdateMouseCursor(VOID);
+BOOLEAN         InputGetKeyboardEvent(KEYBOARD_STATUS *Event);

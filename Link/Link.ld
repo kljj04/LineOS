@@ -1,8 +1,6 @@
-/* Link/Link.ld
- * LineOS Project
- * Copyright (C) 2026 LineOS Developer kljj04
- */
-
+/* Link/Link.ld */
+/* LineOS Project */
+/* Copyright (C) 2026 LineOS Developer kljj04 */
 ENTRY(KMain)
 
 SECTIONS

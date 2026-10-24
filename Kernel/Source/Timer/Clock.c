@@ -458,7 +458,7 @@ BOOLEAN ClockSyncNTP(CONST CHAR8 *Server, UINT32 TimeoutMls)
 {
     UINT32 Expected = 0;
 
-    if (!__atomic_compare_exchange_n(&ClockNTPBusy, &Expected, 1, FALSE, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED))
+    if (!ATOMIC_COMPARE_EXCHANGE(&ClockNTPBusy, &Expected, 1, FALSE, ATOMIC_ACQUIRE, ATOMIC_RELAXED))
     {
         return FALSE;
     }
@@ -468,7 +468,7 @@ BOOLEAN ClockSyncNTP(CONST CHAR8 *Server, UINT32 TimeoutMls)
     if (ClockGetUptimeMls() < ClockNTPStatus.NextSyncUptimeMls)
     {
         SpinLockReleaseIRQRestore(&ClockLock, Flags);
-        __atomic_store_n(&ClockNTPBusy, 0, __ATOMIC_RELEASE);
+        ATOMIC_STORE(&ClockNTPBusy, 0, ATOMIC_RELEASE);
         return FALSE;
     }
 
@@ -494,7 +494,7 @@ BOOLEAN ClockSyncNTP(CONST CHAR8 *Server, UINT32 TimeoutMls)
 
     ClockNTPStatus.NextSyncUptimeMls = ClockGetUptimeMls() + RetryDelay;
     SpinLockReleaseIRQRestore(&ClockLock, Flags);
-    __atomic_store_n(&ClockNTPBusy, 0, __ATOMIC_RELEASE);
+    ATOMIC_STORE(&ClockNTPBusy, 0, ATOMIC_RELEASE);
     return Result;
 }
 

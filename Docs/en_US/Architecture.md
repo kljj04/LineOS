@@ -8,7 +8,9 @@ LineOS is a monolithic x86_64 kernel booted through UEFI. The bootloader loads t
 
 `Kernel/Kernel.c` currently initializes physical and virtual memory, the heap, TrueType rendering, PCI and VirtIO GPU, the GDT and IDT, LAPIC/HPET/TSC timers, the UTC clock, SMP, LBPWRR, and VirtIO block/network/input devices.
 
-`KMain()` currently draws saved frame values, registers the network, NTP and clock-display workers, and starts LBPWRR. It does not launch the former development shell, filesystem test task, or web viewer. Device initialization alone does not imply a task or user interface is running.
+`KMain()` clears the screen to `0x1E1E1E`, creates `UsageTask` and `MouseTask`, then starts LBPWRR. UsageTask redraws overall/per-CPU usage and its own PID/usage every 100 ms. MouseTask enters `InputMouseHandler()` and blocks after draining pointer events.
+
+The keyboard handler, NetworkTask and ClockNTPTask are implemented but are not registered by this KMain. ClockDisplayTask is no longer present in Kernel.c. The default workload does not start a shell, mount a VFS filesystem or launch a web viewer. Device and clock initialization alone do not start those services. See [scheduling](Scheduler.md) for Wait Queues and CPU accounting.
 
 Application processors enter `APMain()`, initialize their CPU-local facilities, report themselves online, and join the scheduler.
 
@@ -56,7 +58,6 @@ Application processors enter `APMain()`, initialize their CPU-local facilities, 
 - Shared BSP page tables during AP startup
 - Per-AP kernel stacks
 - AP online state tracking
-- SMP bring-up tested with 16 QEMU vCPUs
 - Maximum CPU table size currently set to 256 CPUs
 
 After reporting themselves online, Application Processors enter `APMain()` and join the LBPWRR scheduler. Each CPU
@@ -75,3 +76,7 @@ begins with its own idle task and can run work assigned to its local run queue.
 - Kernel timer interrupt infrastructure
 
 See [clock and NTP](Clock.md) for wall time, uptime and synchronization.
+
+## Host configuration
+
+The launcher reads `Configs/QEMUSettings.sh`. Build flags and target discovery are in `Makefiles/BuildSettings.mk`; the Bash backend and Node.js interface are under `Scripts/Backend/` and `Scripts/Frontend/`. See [building and running](Build.md) for all current configuration values.

@@ -23,20 +23,40 @@
 #undef MS_ABI
 #undef SYSV_ABI
 #undef ASM
+#undef NORETURN
+#undef ATOMIC_LOAD
+#undef ATOMIC_STORE
+#undef ATOMIC_EXCHANGE
+#undef ATOMIC_FETCH_ADD
+#undef ATOMIC_FETCH_SUB
+#undef ATOMIC_COMPARE_EXCHANGE
 
-#define CONST    const
-#define NULL     ((VOID *) 0)
-#define TRUE     ((BOOLEAN) 1)
-#define FALSE    ((BOOLEAN) 0)
-#define STATIC   static
-#define EXTERN   extern
-#define INLINE   inline
-#define VOLATILE volatile
-#define PACKED   __attribute__((packed))
-#define MS_ABI   __attribute__((ms_abi))
-#define SYSV_ABI __attribute__((sysv_abi))
-#define ASM      __asm__ volatile
-#define NORETURN __attribute__((noreturn))
+#define CONST                                                                             const
+#define NULL                                                                              ((VOID *) 0)
+#define TRUE                                                                              ((BOOLEAN) 1)
+#define FALSE                                                                             ((BOOLEAN) 0)
+#define STATIC                                                                            static
+#define EXTERN                                                                            extern
+#define INLINE                                                                            inline
+#define VOLATILE                                                                          volatile
+#define PACKED                                                                            __attribute__((packed))
+#define MS_ABI                                                                            __attribute__((ms_abi))
+#define SYSV_ABI                                                                          __attribute__((sysv_abi))
+#define ASM                                                                               __asm__ volatile
+#define NORETURN                                                                          __attribute__((noreturn))
+#define ATOMIC_LOAD(Ptr, Order)                                                           __atomic_load_n((Ptr), (Order))
+#define ATOMIC_STORE(Ptr, Value, Order)                                                   __atomic_store_n((Ptr), (Value), (Order))
+#define ATOMIC_EXCHANGE(Ptr, Value, Order)                                                __atomic_exchange_n((Ptr), (Value), (Order))
+#define ATOMIC_FETCH_ADD(Ptr, Value, Order)                                               __atomic_fetch_add((Ptr), (Value), (Order))
+#define ATOMIC_FETCH_SUB(Ptr, Value, Order)                                               __atomic_fetch_sub((Ptr), (Value), (Order))
+#define ATOMIC_COMPARE_EXCHANGE(Ptr, Expected, Desired, Weak, SuccessOrder, FailureOrder) __atomic_compare_exchange_n((Ptr), (Expected), (Desired), (Weak), (SuccessOrder), (FailureOrder))
+#define ATOMIC_RELAXED                                                                    __ATOMIC_RELAXED
+#define ATOMIC_CONSUME                                                                    __ATOMIC_CONSUME
+#define ATOMIC_ACQUIRE                                                                    __ATOMIC_ACQUIRE
+#define ATOMIC_RELEASE                                                                    __ATOMIC_RELEASE
+#define ATOMIC_ACQ_REL                                                                    __ATOMIC_ACQ_REL
+#define ATOMIC_SEQ_CST                                                                    __ATOMIC_SEQ_CST
+#define STATIC_ASSERT(Condition, Message)                                                 _Static_assert(Condition, Message)
 
 #ifdef LINEOS_KERNEL_BUILD
 typedef unsigned char      UINT8;

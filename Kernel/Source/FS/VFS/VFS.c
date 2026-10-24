@@ -36,12 +36,12 @@ STATIC BOOLEAN VFSEqual(CONST CHAR8 *A, CONST CHAR8 *B)
 STATIC BOOLEAN VFSLock(VFS_REGISTRY *Registry)
 {
     UINT32 Expected = 0;
-    return Registry != NULL && __atomic_compare_exchange_n(&Registry->Busy, &Expected, 1, FALSE, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED);
+    return Registry != NULL && ATOMIC_COMPARE_EXCHANGE(&Registry->Busy, &Expected, 1, FALSE, ATOMIC_ACQUIRE, ATOMIC_RELAXED);
 }
 
 STATIC VFS_ERROR VFSUnlock(VFS_REGISTRY *Registry, VFS_ERROR Error)
 {
-    __atomic_store_n(&Registry->Busy, 0, __ATOMIC_RELEASE);
+    ATOMIC_STORE(&Registry->Busy, 0, ATOMIC_RELEASE);
     return Error;
 }
 
