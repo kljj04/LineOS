@@ -8,11 +8,13 @@ LineOS는 x86_64 UEFI 환경의 모놀리식 커널입니다. 부트로더가 EL
 
 `InitKernel()`은 물리·가상 메모리와 힙, TrueType, PCI와 VirtIO GPU, GDT·IDT, LAPIC·HPET·TSC 타이머, UTC 시계, SMP, LBPWRR, VirtIO 블록·네트워크·입력을 초기화합니다.
 
-현재 `KMain()`은 프레임 값을 화면에 출력하고 네트워크·NTP·시계 화면 작업을 등록한 뒤 스케줄러를 시작합니다. 예전 셸·파일시스템 테스트·웹 뷰어는 기본 작업에 포함되지 않습니다.
+현재 `KMain()`은 화면을 `0x1E1E1E`로 지우고 `UsageTask`와 `MouseTask`를 생성한 뒤 LBPWRR을 시작합니다. UsageTask는 전체·CPU별 사용률과 자신의 PID·사용률을 100ms마다 갱신합니다. MouseTask는 `InputMouseHandler()`에 진입하여 포인터 이벤트를 소진한 뒤 블로킹합니다.
+
+키보드 핸들러·NetworkTask·ClockNTPTask는 구현되어 있지만 현재 KMain에서 등록하지 않습니다. ClockDisplayTask는 현재 Kernel.c에 없습니다. 셸·VFS 파일시스템 마운트·웹 뷰어도 기본 작업에 포함되지 않습니다. 장치나 시계 초기화만으로 해당 서비스가 시작되지는 않습니다. Wait Queue와 CPU 회계는 [스케줄러](Scheduler.md)를 참고합니다.
 
 ## SMP
 
-MADT에서 CPU를 탐색하고 INIT-SIPI-SIPI와 저주소 트램펄린으로 AP를 시작합니다. AP는 16→32→64비트 전환 후 `APMain()`으로 진입합니다. 초기에는 BSP 페이지 테이블을 공유하며 AP별 커널 스택을 사용합니다. CPU별 시설을 초기화하고 online 상태를 기록한 뒤 스케줄러에 합류합니다. CPU 테이블 용량은 현재 256이며, 16 vCPU QEMU 실행 검증 기록이 있습니다.
+MADT에서 CPU를 탐색하고 INIT-SIPI-SIPI와 저주소 트램펄린으로 AP를 시작합니다. AP는 16→32→64비트 전환 후 `APMain()`으로 진입합니다. 초기에는 BSP 페이지 테이블을 공유하며 AP별 커널 스택을 사용합니다. CPU별 시설을 초기화하고 online 상태를 기록한 뒤 스케줄러에 합류합니다. CPU 테이블 용량은 현재 256입니다.
 
 ## 인터럽트와 타이머
 
@@ -36,3 +38,7 @@ IDT의 예외·인터럽트 처리, 커널 panic, LAPIC 초기화와 EOI, HPET, 
 장치 초기화와 사용자에게 보이는 기능 실행은 별개입니다. 현재 기본 동작은 `Kernel/Kernel.c`를 기준으로 확인합니다.
 
 날짜·시각과 경과 시간은 [시계·NTP](Clock.md)에서 설명합니다.
+
+## 호스트 설정
+
+실행기는 `Configs/QEMUSettings.sh`를 읽습니다. 빌드 플래그와 대상 탐색은 `Makefiles/BuildSettings.mk`, Bash 처리부와 Node.js 화면은 `Scripts/Backend/`·`Scripts/Frontend/`에 있습니다. 전체 현재 설정값은 [빌드와 실행](Build.md)에 정리했습니다.

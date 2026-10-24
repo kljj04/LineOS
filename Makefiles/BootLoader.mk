@@ -8,17 +8,19 @@ LinkBoot: $(BOOT_TARGET)
 
 $(BOOT_TARGET): $(BOOT_OBJS)
 	@$(call MKDIR_P,$(dir $@))
-	@$(call PRINT_YELLOW,[LD] $@)
+	@$(call BUILD_PROGRESS,$@)
 	@$(LINK_EFI) -nodefaultlib \
 		$(BOOT_OBJS) \
 		-dll \
 		-entry:EfiMain \
 		-subsystem:efi_application \
 		-out:$@
+	@$(call BUILD_DONE,$@)
 
 Build/Objects/BootLoader/%.o: BootLoader/%.c Makefiles/BuildSettings.mk
 	@$(call MKDIR_P,$(dir $@))
-	@$(call PRINT_CYAN,[CC] $<)
+	@$(call BUILD_PROGRESS,$<)
 	@$(CC) $(EFI_CFLAGS) $(DEPFLAGS) -c $< -o $@
+	@$(call BUILD_DONE,$<)
 
 -include $(BOOT_DEPS)

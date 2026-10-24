@@ -19,3 +19,4 @@ VOID    TaskTerminate(TASK *Task);
 BOOLEAN TaskDestroy(TASK *Task);
 TASK   *TaskGetByPID(UINT16 PID);
 UINTN   TaskGetCount(VOID);
+VOID    TaskSampleCPUUsage(UINT64 IntervalTSC);

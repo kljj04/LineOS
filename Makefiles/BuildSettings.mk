@@ -10,9 +10,38 @@ PYTHON = python3
 
 EFI_TYPE_TARGET := x86_64-unknown-windows
 KERNEL_TYPE_TARGET := x86_64-elf
+
 BOOT_TARGET := LineOS/EFI/BOOT/BOOTX64.EFI
 KERN_TARGET := LineOS/KERNEL/LINEOS_KERNEL.ELF
+
 DEPFLAGS := -MMD -MP
+
+BOOT_SRCS = $(call RWildcard,BootLoader,*.c)
+KERN_SRCS = $(call RWildcard,Kernel,*.c)
+KERN_ASM_SRCS = $(call RWildcard,Kernel,*.S)
+
+BOOT_OBJS = $(patsubst %.c,Build/Objects/%.o,$(BOOT_SRCS))
+KERN_C_OBJS = $(patsubst %.c,Build/Objects/%.o,$(KERN_SRCS))
+KERN_ASM_OBJS = $(patsubst %.S,Build/Objects/%.o,$(KERN_ASM_SRCS))
+KERN_OBJS = $(KERN_C_OBJS) $(KERN_ASM_OBJS)
+
+BOOT_DEPS = $(BOOT_OBJS:.o=.d)
+KERN_DEPS = $(KERN_OBJS:.o=.d)
+
+KERN_FLOAT_OBJS = Build/Objects/Kernel/Kernel.o \
+                  Build/Objects/Kernel/Source/Render/TrueType/TrueType.o \
+                  Build/Objects/Kernel/Source/Render/TrueType/TrueTypeEngine.o \
+                  Build/Objects/Kernel/Source/Render/TrueType/TrueTypeRuntime.o
+
+USER_PROGRAM_ROOT := UserPrograms
+USER_PROGRAM_OUTPUT_DIR := LineOS/Programs
+
+USER_PROGRAM_DIRS := $(wildcard $(USER_PROGRAM_ROOT)/*/)
+USER_PROGRAMS := $(patsubst $(USER_PROGRAM_ROOT)/%/,%,$(USER_PROGRAM_DIRS))
+
+USER_PROGRAM_OBJS = $(foreach Program,$(USER_PROGRAMS),$(USER_PROGRAM_OBJS_$(Program)))
+USER_PROGRAM_OUTPUTS = $(foreach Program,$(USER_PROGRAMS),$(USER_PROGRAM_OUTPUT_$(Program)))
+USER_PROGRAM_DEPS = $(USER_PROGRAM_OBJS:.o=.d)
 
 EFI_CFLAGS = -target $(EFI_TYPE_TARGET) \
              -Wall -Wextra -nostdlib -fno-builtin \
@@ -30,27 +59,21 @@ KERN_CFLAGS = -target $(KERNEL_TYPE_TARGET) \
               -ICommon -IKernel/Include -IKernel/Assets \
               -Wunused-variable -fshort-wchar
 
-BOOT_SRCS = $(call RWildcard,BootLoader,*.c)
-KERN_SRCS = $(call RWildcard,Kernel,*.c)
-KERN_ASM_SRCS = $(call RWildcard,Kernel,*.S)
-
-BOOT_OBJS = $(patsubst %.c,Build/Objects/%.o,$(BOOT_SRCS))
-KERN_C_OBJS = $(patsubst %.c,Build/Objects/%.o,$(KERN_SRCS))
-KERN_ASM_OBJS = $(patsubst %.S,Build/Objects/%.o,$(KERN_ASM_SRCS))
-KERN_OBJS = $(KERN_C_OBJS) $(KERN_ASM_OBJS)
-
-BOOT_DEPS = $(BOOT_OBJS:.o=.d)
-KERN_DEPS = $(KERN_OBJS:.o=.d)
+USER_PROGRAM_CFLAGS = -target $(KERNEL_TYPE_TARGET) \
+                      -Wall -Wextra -nostdlib -fno-builtin \
+                      -ffreestanding -mno-red-zone \
+                      -fno-pie -fno-stack-protector \
+                      -fno-asynchronous-unwind-tables \
+                      -fno-unwind-tables \
+                      -ICommon
 
 KERN_FLOAT_CFLAGS = $(filter-out -mgeneral-regs-only,$(KERN_CFLAGS)) -msse2 -mfpmath=sse
 KERN_OBJ_CFLAGS = $(KERN_CFLAGS)
-KERN_FLOAT_OBJS = Build/Objects/Kernel/Kernel.o \
-                  Build/Objects/Kernel/Source/Render/TrueType/TrueType.o \
-                  Build/Objects/Kernel/Source/Render/TrueType/TrueTypeEngine.o \
-                  Build/Objects/Kernel/Source/Render/TrueType/TrueTypeRuntime.o
 
 FORMAT_EXCLUDE_SRCS := BootLoader/EDK2/%
+
 FORMAT_ALL_SRCS = $(call RWildcard,BootLoader,*.c) $(call RWildcard,BootLoader,*.h) \
                   $(call RWildcard,Common,*.c) $(call RWildcard,Common,*.h) \
                   $(call RWildcard,Kernel,*.c) $(call RWildcard,Kernel,*.h)
+
 FORMAT_SRCS = $(filter-out $(FORMAT_EXCLUDE_SRCS),$(FORMAT_ALL_SRCS))

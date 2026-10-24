@@ -1,39 +1,39 @@
 # Coding conventions
 
 [Documentation index](README.md) · [한국어](../ko_KR/Directions.md) · [English](../en_US/Directions.md)
-You must strictly follow these formatting and naming conventions for all C/C++ code generation:
 
-1. Keyword macros:
-   - Use the LineOS keyword macros consistently:
-     - CONST    -> const
-     - NULL     -> ((VOID *) 0)
-     - TRUE     -> ((BOOLEAN) 1)
-     - FALSE    -> ((BOOLEAN) 0)
-     - STATIC   -> static
-     - EXTERN   -> extern
-     - INLINE   -> inline
-     - PACKED   -> __attribute__((packed))
-     - MS_ABI   -> __attribute__((ms_abi))
-     - SYSV_ABI -> __attribute__((sysv_abi))
-     - ASM      -> __asm__ volatile
+## Naming
 
-2. Formatting:
-   - Use Allman braces.
-   - Function definitions and declarations must keep all parameters on one line.
+Functions, variables, parameters and structure members use PascalCase, preserving established acronym spellings such as CPU, GPU, PCI and VirtIO. Structure/enum/typedef names, enum members and macros use SCREAMING_SNAKE_CASE. These naming rules have no exceptions. Reuse the actual declared names when calling existing interfaces; do not invent APIs.
 
-3. Functions:
-   - Function names must use PascalCase.
-   - Acronyms inside function names must remain uppercase.
-   - If a name may collide with compiler/runtime/library symbols, add a K prefix, such as KMemSet.
+## Layout and comments
 
-4. Variables:
-   - variables must use PascalCase.
+Use Allman braces, four spaces and no tabs. Attach parentheses to function names and put a space after control-flow keywords. No-argument declarations and definitions specify `VOID`. Keep argument and parameter lists on one line even when long. Preserve existing three-line file banners. Do not add implementation-body comments; header interface comments are allowed.
 
-5. Enum, struct, and constant names:
-   - Enum type names, struct type names, typedef names, enum members, macros, and constants must use all uppercase with underscores between words.
+The root `.clang-format` is the formatting source of truth:
 
-* Context: 64-bit UEFI kernel (Long Mode). No 16-bit BIOS code. Custom OS development framework.
+| Setting | Value |
+| --- | --- |
+| Base style | LLVM |
+| IndentWidth / TabWidth / UseTab | 4 / 4 / Never |
+| ColumnLimit | 12000 |
+| PointerAlignment / DerivePointerAlignment | Right / false |
+| BreakBeforeBraces | Allman |
+| SpaceBeforeParens / SpaceAfterCStyleCast | ControlStatements / true |
+| BinPackParameters / BinPackArguments | true / true |
+| AllowShortFunctionsOnASingleLine | Empty |
+| AlwaysBreakAfterReturnType | None |
+| AlignConsecutiveAssignments | None |
+| AlignConsecutiveDeclarations | Enabled, AlignCompound, AlignFunctionPointers and PadOperators; not across empty lines/comments |
+| AlignConsecutiveMacros | Enabled; not across empty lines/comments; AlignCompound, AlignFunctionPointers and PadOperators disabled |
+| SortIncludes | false |
+| AttributeMacros | `__attribute__` |
+| StatementMacros | `CLI`, `HLT` |
 
-## Additional source rules
+## Kernel definitions
 
-No-argument functions must specify `VOID`. Attach parentheses to function names and separate them from control keywords. Use PascalCase for parameters and structure members as well as variables. Preserve the existing three-line file banner; do not add internal source comments. Use `ASM` for inline assembly. Preserve user changes and existing file structure. The root `.clang-format` is the formatting reference.
+Use the project's `CONST`, `NULL`, `TRUE`, `FALSE`, `STATIC`, `EXTERN`, `INLINE`, `PACKED`, `MS_ABI` and `SYSV_ABI` definitions, and `ASM` for inline assembly. Verify types and interfaces in the live headers before editing callers.
+
+## Scope and documentation
+
+Preserve user changes and existing subsystem ownership. Distinguish compile/link, image deployment and observed runtime results. Keep README as an overview and matching subsystem pages under `Docs/en_US/` and `Docs/ko_KR/`. Korean documentation uses formal 합니다/습니다 endings. Implementation alone does not establish that the default KMain starts a service.

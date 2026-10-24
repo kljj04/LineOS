@@ -3,6 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <Scheduler/LBPWRR.h>
+#include <Scheduler/Usage.h>
 #include <Debug/Panic.h>
 #include <Scheduler/LBPWRRChunk.h>
 #include <Scheduler/LBPWRRRunQueue.h>
@@ -16,6 +17,7 @@
 EXTERN VOID LBPWRRRestoreContext(UINT64 RSP) NORETURN;
 
 STATIC TASK *IdleTasks[SMP_MAX_CPUS];
+STATIC TASK *SwitchingTasks[SMP_MAX_CPUS];
 
 BOOLEAN LBPWRRInit(VOID)
 {
@@ -40,6 +42,7 @@ BOOLEAN LBPWRRInit(VOID)
     }
 
     LBPWRRInitRunQueues(CPUCount);
+    UsageInit(CPUCount);
 
     for (CPUID = 0; CPUID < CPUCount; CPUID++)
     {
@@ -117,8 +120,11 @@ VOID LBPWRRStart(VOID)
 
     LBPWRRSetCurrentTask(CPUID, Task);
     Task->State = TASK_RUNNING;
+    Task->OnCPU = TRUE;
 
     SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+
+    UsageStart(CPUID);
 
     TSCSetDeadline(RDTSC() + TSCGetFrequency() / 200);
 
@@ -160,6 +166,7 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *Frame)
     TASK            *Candidate;
     UINT64           Flags;
     UINT64           NextRSP;
+    UINT64           DeltaTSC;
 
     if (Frame == NULL)
     {
@@ -183,6 +190,15 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *Frame)
     Flags = SpinLockAcquireIRQSave(&RunQueue->Lock);
 
     CurrentTask = LBPWRRGetCurrentTaskFromCPU(CPUID);
+
+    if (CurrentTask != NULL)
+    {
+        DeltaTSC = UsageAccount(CPUID, CurrentTask->Idle);
+
+        ATOMIC_FETCH_ADD(&CurrentTask->CPUTimeTSC, DeltaTSC, ATOMIC_RELAXED);
+
+        UsageSample(CPUID);
+    }
 
     LBPWRRWakeSleepingTasks(RunQueue);
 
@@ -278,10 +294,45 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *Frame)
         LBPWRRSetCurrentTask(CPUID, NextTask);
 
         NextTask->State = TASK_RUNNING;
+        NextTask->OnCPU = TRUE;
         NextRSP = NextTask->RSP;
+    }
+
+    if (CurrentTask != NULL && NextTask != CurrentTask)
+    {
+        SwitchingTasks[CPUID] = CurrentTask;
     }
 
     SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
 
+    UsageSampleTasks();
+
     return NextRSP;
+}
+
+VOID LBPWRRCompleteSwitch(VOID)
+{
+    UINT32           CPUID;
+    TASK            *Task;
+    LBPWRR_RUNQUEUE *RunQueue;
+
+    CPUID = SMPGetCurrentCPUID();
+
+    if (CPUID >= LBPWRRGetActiveCPUCount())
+    {
+        return;
+    }
+
+    Task = SwitchingTasks[CPUID];
+
+    if (Task == NULL)
+    {
+        return;
+    }
+
+    RunQueue = LBPWRRGetRunQueue(CPUID);
+    SpinLockAcquire(&RunQueue->Lock);
+    Task->OnCPU = FALSE;
+    SwitchingTasks[CPUID] = NULL;
+    SpinLockRelease(&RunQueue->Lock);
 }

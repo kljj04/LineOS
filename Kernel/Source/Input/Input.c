@@ -9,7 +9,8 @@
 #include <Render/GPU/VirtIOGPU.h>
 #include <Input/Input.h>
 
-#include "Debug/Debug.h"
+#include <Debug/Debug.h>
+#include <Scheduler/Task.h>
 
 #define INPUT_CURSOR_SIZE 64
 
@@ -226,9 +227,18 @@ VOID InputMouseHandler(VOID)
 
             UpdateMouseCursor();
         }
-
-        HLTONCE();
+        InputWaitMouseEvents();
     }
+}
+
+VOID InputWaitMouseEvents(VOID)
+{
+    VirtIOInputWaitPointerEvent();
+}
+
+VOID InputWaitKeyboardEvent(VOID)
+{
+    VirtIOInputWaitKeyEvent();
 }
 
 VOID InputKeyboardHandler(VOID)
@@ -277,8 +287,7 @@ VOID InputKeyboardHandler(VOID)
 
             SpinLockReleaseIRQRestore(&KeyboardStatusLock, Flags);
         }
-
-        HLTONCE();
+        InputWaitKeyboardEvent();
     }
 }
 

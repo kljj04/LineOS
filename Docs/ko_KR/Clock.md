@@ -10,7 +10,7 @@
 
 ## 자동 동기화
 
-`KMain()`은 네트워크 작업과 별도로 `ClockNTPTask`를 등록합니다. 주소 설정이 준비되면 `pool.ntp.org`에 SNTPv4 요청을 보내고, 성공한 뒤 600초(10분)마다 다시 동기화합니다. 요청 전체 제한 시간은 5초이며 실패 시 현재 시계를 유지하고 64→128→256→512→600초 간격으로 재시도합니다.
+`ClockNTPTask`는 구현되어 있지만 현재 `KMain()`에서 등록하지 않습니다. 호출자가 네트워크 작업과 함께 등록하고 주소 설정이 준비되면 `pool.ntp.org`에 SNTPv4 요청을 보내고, 성공한 뒤 600초(10분)마다 다시 동기화합니다. 요청 전체 제한 시간은 5초이며 실패 시 현재 시계를 유지하고 64→128→256→512→600초 간격으로 재시도합니다.
 
 `ClockSyncNTP(Server, TimeoutMls)`는 서버 이름 또는 IPv4 문자열을 받습니다. `ClockGetNTPStatus()`로 동기화 진행 여부, 마지막 성공, 실패 수, 서버 주소, 왕복 지연과 다음 시도 시점을 확인합니다. 호출은 직렬화되며 다음 예정 시점 전에는 새 요청을 보내지 않습니다. `CLOCK_NTP_SERVER`와 `CLOCK_NTP_PORT`의 기본값은 각각 `pool.ntp.org`와 UDP 123입니다.
 
@@ -18,20 +18,12 @@
 
 ## 화면
 
-`Kernel/Kernel.c`의 `ClockDisplayTask()`가 경과 시간, KST 현재 날짜·시각(UTC+09:00), NTP 상태를 매초 갱신합니다. QHD에서는 현재 시각 72px, 경과 시간 64px, 상태 56px을 사용하며 작은 화면에서는 크기를 줄입니다. 시계 동기화 전에는 RTC 기준 시각을 표시합니다.
+현재 Kernel.c는 CPU 사용률과 마우스 입력을 처리하며 ClockDisplayTask나 시계·NTP 상태 자동 표시는 없습니다. KST(UTC+09:00)가 필요한 호출자는 `ClockGetDateTime()`에 540분 오프셋을 전달합니다.
 
-## 제한과 검증
+## 제한과 관련 소스
 
 초기 구현은 RTC 초기화가 성공해야 동작하는 단일 서버 SNTP 클라이언트입니다. 시각 보정은 즉시 적용하므로 UTC 날짜·시각이 뒤로 이동할 수 있습니다. RTC 하드웨어에는 쓰지 않으며, 주파수 보정·점진적 보정·다중 서버 선택·NTS 인증은 제공하지 않습니다. 응답 검사만으로 서버 인증이 성립하지는 않습니다.
 
-`Clock.c`와 `Clock.h`는 `Kernel/Source/Timer/`와 `Kernel/Include/Timer/`에 있습니다. host 검사는 잘못된 응답, 앞·뒤 시각 보정, 가상 시간으로 진행한 10분 간격, 실패·KoD, era 순환 및 경과 시간 분리를 검사합니다. QEMU에서는 UDP 테스트 서버의 2037년 응답과 실제 외부 NTP 응답을 확인하고 화면을 캡처합니다. 실제로 10분을 대기한 검증과 가상 시간 검사는 구분합니다.
-
-```bash
-python3 Tests/NetworkStack/RunHost.py
-python3 Tests/NetworkStack/Run.py --cpus 16 --scheduled --clock
-python3 Tests/NetworkStack/Run.py --cpus 16 --scheduled --clock --external-ntp --production
-```
-
-화면 캡처에는 Python Pillow가 필요합니다. 테스트는 별도 부팅 디렉터리와 복사한 펌웨어 변수를 사용합니다. 외부 테스트는 UDP 123 통신 가능 여부에 영향을 받습니다.
+구현과 인터페이스는 `Kernel/Source/Timer/Clock.c`와 `Kernel/Include/Timer/Clock.h`에 있습니다.
 
 패킷과 계산 방식은 [RFC 4330](https://www.rfc-editor.org/rfc/rfc4330.html)을 참고합니다.

@@ -244,7 +244,7 @@ STATIC BOOLEAN EXT2Enter(EXT2_VOLUME *Volume)
         return EXT2Fail(Volume, EXT2_ERROR_ARGUMENT);
     }
 
-    if (!__atomic_compare_exchange_n(&Volume->Busy, &Expected, 1, FALSE, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED))
+    if (!ATOMIC_COMPARE_EXCHANGE(&Volume->Busy, &Expected, 1, FALSE, ATOMIC_ACQUIRE, ATOMIC_RELAXED))
     {
         return FALSE;
     }
@@ -254,7 +254,7 @@ STATIC BOOLEAN EXT2Enter(EXT2_VOLUME *Volume)
     if (Volume->Poisoned)
     {
         Volume->Error = EXT2_ERROR_IO;
-        __atomic_store_n(&Volume->Busy, 0, __ATOMIC_RELEASE);
+        ATOMIC_STORE(&Volume->Busy, 0, ATOMIC_RELEASE);
         return FALSE;
     }
 
@@ -263,7 +263,7 @@ STATIC BOOLEAN EXT2Enter(EXT2_VOLUME *Volume)
 
 STATIC BOOLEAN EXT2Leave(EXT2_VOLUME *Volume, BOOLEAN Result)
 {
-    __atomic_store_n(&Volume->Busy, 0, __ATOMIC_RELEASE);
+    ATOMIC_STORE(&Volume->Busy, 0, ATOMIC_RELEASE);
     return Result;
 }
 
@@ -344,7 +344,7 @@ BOOLEAN EXT2Unmount(EXT2_VOLUME *Volume)
         return EXT2Fail(Volume, EXT2_ERROR_ARGUMENT);
     }
 
-    if (!__atomic_compare_exchange_n(&Volume->Busy, &Expected, 1, FALSE, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED))
+    if (!ATOMIC_COMPARE_EXCHANGE(&Volume->Busy, &Expected, 1, FALSE, ATOMIC_ACQUIRE, ATOMIC_RELAXED))
     {
         return FALSE;
     }

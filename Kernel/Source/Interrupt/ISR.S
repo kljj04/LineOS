@@ -4,6 +4,7 @@
 
 .section .text
 
+.extern LBPWRRCompleteSwitch
 .extern IDTInterruptHandler
 .extern HostLoopTask
 
@@ -102,7 +103,14 @@ ISRCommon:
 
 1:
     movq %rax, %rsp
+    cmpq %rbx, %rax
+    je 2f
+    movq %rsp, %rbx
+    andq $-16, %rsp
+    call LBPWRRCompleteSwitch
+    movq %rbx, %rsp
 
+2:
     popq %r15
     popq %r14
     popq %r13

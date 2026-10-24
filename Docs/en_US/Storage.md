@@ -4,7 +4,7 @@
 
 - GPT partition lookup with header and partition-entry-array CRC validation
 - Mounting the second GPT partition as a Linux EXT2 filesystem
-- 1, 2, and 4 KiB blocks; revision 0/1; tested 128/256-byte inodes
+- 1, 2, and 4 KiB blocks; revision 0/1; 128/256-byte inodes
 - Superblock, block-group descriptor, block/inode bitmap, and inode handling
 - Absolute path lookup, including relative and absolute symbolic links
 - File and directory creation; file reads, writes, sparse extension, and truncation
@@ -39,4 +39,4 @@ VFS and the EXT2 adapter are implemented under `Kernel/Source/FS/VFS/`. They pro
 
 The former kernel development shell is not part of the current `KMain()` workload. A userland shell, authentication, process file descriptors and open-file lifetime management remain future work. The EFI FAT32 partition is used by the host launcher for boot files; it does not imply a kernel FAT32 filesystem backend.
 
-See [verification](Testing.md) for historical EXT2 results and their limits.
+The default KMain initializes the block device but does not mount EXT2/VFS or start a storage worker. The host image updater only replaces the two boot files on the ESP; see [building and running](Build.md).

@@ -3,6 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <Input/VirtIOInput.h>
+#include <Scheduler/WaitQueue.h>
 #include <Memory/PMM.h>
 #include <PCI/PCI.h>
 #include <Arch/AMD64/SpinLock.h>
@@ -24,6 +25,8 @@ STATIC SPIN_LOCK                KeyboardQueueLock;
 STATIC SPIN_LOCK                TabletQueueLock;
 STATIC SPIN_LOCK                KeyEventLock;
 STATIC SPIN_LOCK                PointerEventLock;
+STATIC WAIT_QUEUE               KeyWaitQueue;
+STATIC WAIT_QUEUE               PointerWaitQueue;
 
 STATIC CONST CHAR16 *LastError = L"not initialized";
 
@@ -245,6 +248,7 @@ STATIC VOID PushKeyEvent(UINT16 Code, BOOLEAN Pressed)
     KeyEvents[KeyWriteIndex].Pressed = Pressed;
 
     KeyWriteIndex = NextIndex;
+    WaitQueueWakeAll(&KeyWaitQueue);
     SpinLockReleaseIRQRestore(&KeyEventLock, Flags);
 }
 
@@ -272,6 +276,7 @@ STATIC VOID PushPointerEvent(VIRTIO_INPUT_DEVICE_INFO *InputDevice)
     PointerEvents[PointerWriteIndex].Wheel = InputDevice->Wheel;
 
     PointerWriteIndex = NextIndex;
+    WaitQueueWakeAll(&PointerWaitQueue);
     SpinLockReleaseIRQRestore(&PointerEventLock, Flags);
 }
 
@@ -479,6 +484,8 @@ BOOLEAN VirtIOInputInit(VOID)
     SpinLockInit(&TabletQueueLock);
     SpinLockInit(&KeyEventLock);
     SpinLockInit(&PointerEventLock);
+    WaitQueueInit(&KeyWaitQueue);
+    WaitQueueInit(&PointerWaitQueue);
 
     KeyReadIndex = 0;
     KeyWriteIndex = 0;
@@ -632,4 +639,38 @@ BOOLEAN VirtIOInputGetTabletRange(UINT32 *MinX, UINT32 *MaxX, UINT32 *MinY, UINT
     *MaxY = Tablet.AbsMaxY;
 
     return TRUE;
+}
+
+VOID VirtIOInputWaitKeyEvent(VOID)
+{
+    UINT64 Flags;
+
+    Flags = SpinLockAcquireIRQSave(&KeyEventLock);
+
+    while (KeyReadIndex == KeyWriteIndex)
+    {
+        if (!WaitQueueSleep(&KeyWaitQueue, &KeyEventLock))
+        {
+            break;
+        }
+    }
+
+    SpinLockReleaseIRQRestore(&KeyEventLock, Flags);
+}
+
+VOID VirtIOInputWaitPointerEvent(VOID)
+{
+    UINT64 Flags;
+
+    Flags = SpinLockAcquireIRQSave(&PointerEventLock);
+
+    while (PointerReadIndex == PointerWriteIndex)
+    {
+        if (!WaitQueueSleep(&PointerWaitQueue, &PointerEventLock))
+        {
+            break;
+        }
+    }
+
+    SpinLockReleaseIRQRestore(&PointerEventLock, Flags);
 }

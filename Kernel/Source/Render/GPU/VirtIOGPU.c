@@ -1331,5 +1331,5 @@ UINT32 VirtIOGPUGetFrameBufferHeight(VOID)
 
 BOOLEAN VirtIOGPUPanicLocksAvailable(VOID)
 {
-    return __atomic_load_n(&RenderLock.Locked, __ATOMIC_ACQUIRE) == 0 && __atomic_load_n(&CommandLock.Locked, __ATOMIC_ACQUIRE) == 0;
+    return ATOMIC_LOAD(&RenderLock.Locked, ATOMIC_ACQUIRE) == 0 && ATOMIC_LOAD(&CommandLock.Locked, ATOMIC_ACQUIRE) == 0;
 }

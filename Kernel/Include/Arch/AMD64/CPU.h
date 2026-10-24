@@ -14,6 +14,7 @@ VOID   STI();
 VOID   PAUSE();
 VOID   CompilerBarrier();
 VOID   GDTInitCurrentCPU(VOID);
+BOOLEAN GDTSetKernelStack(UINT64 StackTop);
 VOID   CPUEnableSSE(VOID);
 UINT64 RDTSC();
 UINT8  INB(UINT16 Port);

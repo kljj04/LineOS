@@ -958,7 +958,7 @@ STATIC BOOLEAN PanicLocksAvailable(VOID)
 
 BOOLEAN PanicHandleNMI(VOID)
 {
-    UINT32 Owner = __atomic_load_n(&PanicOwner, __ATOMIC_ACQUIRE);
+    UINT32 Owner = ATOMIC_LOAD(&PanicOwner, ATOMIC_ACQUIRE);
     UINT32 APICID;
 
     if (Owner == UINT32_MAX)
@@ -975,7 +975,7 @@ BOOLEAN PanicHandleNMI(VOID)
 
     if (PanicLocksAvailable())
     {
-        __atomic_store_n(&PanicStopped[APICID], 1, __ATOMIC_RELEASE);
+        ATOMIC_STORE(&PanicStopped[APICID], 1, ATOMIC_RELEASE);
         HaltWithoutScreen();
     }
 
@@ -990,11 +990,11 @@ STATIC BOOLEAN PreparePanicStop(VOID)
     UINT64 Start;
     UINT64 Timeout = TSCGetFrequency() / 5;
 
-    if (!__atomic_compare_exchange_n(&PanicOwner, &Expected, APICID, FALSE, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE))
+    if (!ATOMIC_COMPARE_EXCHANGE(&PanicOwner, &Expected, APICID, FALSE, ATOMIC_ACQ_REL, ATOMIC_ACQUIRE))
     {
         if (Expected != APICID && PanicLocksAvailable())
         {
-            __atomic_store_n(&PanicStopped[APICID], 1, __ATOMIC_RELEASE);
+            ATOMIC_STORE(&PanicStopped[APICID], 1, ATOMIC_RELEASE);
         }
         else if (Expected == APICID)
         {
@@ -1021,7 +1021,7 @@ STATIC BOOLEAN PreparePanicStop(VOID)
         {
             CPU_INFO *CPU = SMPGetCPU(Index);
 
-            if (CPU == NULL || CPU->APICID == APICID || !__atomic_load_n(&CPU->Online, __ATOMIC_ACQUIRE))
+            if (CPU == NULL || CPU->APICID == APICID || !ATOMIC_LOAD(&CPU->Online, ATOMIC_ACQUIRE))
             {
                 continue;
             }
@@ -1031,7 +1031,7 @@ STATIC BOOLEAN PreparePanicStop(VOID)
                 return FALSE;
             }
 
-            if (__atomic_load_n(&PanicStopped[CPU->APICID], __ATOMIC_ACQUIRE) == 0)
+            if (ATOMIC_LOAD(&PanicStopped[CPU->APICID], ATOMIC_ACQUIRE) == 0)
             {
                 Complete = FALSE;
 

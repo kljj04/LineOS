@@ -169,7 +169,7 @@ BOOLEAN LBPWRRRemoveTask(TASK *Task)
     RunQueue = &RunQueues[CPUID];
     Flags = SpinLockAcquireIRQSave(&RunQueue->Lock);
 
-    if (!Task->Scheduled || Task->CPUID != CPUID || CurrentTasks[CPUID] == Task || (Task->State != TASK_TERMINATED && Task->State != TASK_KILLED))
+    if (!Task->Scheduled || Task->CPUID != CPUID || CurrentTasks[CPUID] == Task || Task->OnCPU || (Task->State != TASK_TERMINATED && Task->State != TASK_KILLED))
     {
         SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
         return FALSE;
@@ -248,7 +248,7 @@ BOOLEAN LBPWRRMoveTask(TASK *Task, UINT32 TargetCPUID)
     Flags = SpinLockAcquireIRQSave(&RunQueues[LockCPUID].Lock);
     SpinLockAcquire(&RunQueues[OtherCPUID].Lock);
 
-    if (!Task->Scheduled || Task->CPUID != SourceCPUID || Task->State != TASK_READY || CurrentTasks[SourceCPUID] == Task || TargetRunQueue->RunnableCount >= LBPWRR_MAX_TASKS || Task->Weight == 0 || Task->Weight > 6)
+    if (!Task->Scheduled || Task->CPUID != SourceCPUID || Task->State != TASK_READY || Task->Idle || Task->OnCPU || CurrentTasks[SourceCPUID] == Task || TargetRunQueue->RunnableCount >= LBPWRR_MAX_TASKS || Task->Weight == 0 || Task->Weight > 6)
     {
         SpinLockRelease(&RunQueues[OtherCPUID].Lock);
         SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, Flags);
@@ -364,7 +364,7 @@ BOOLEAN LBPWRRNotifyTaskChanged(TASK *Task)
 
     Weight = 0;
 
-    if (Task->State == TASK_READY || Task->State == TASK_RUNNING)
+    if (Task->State == TASK_READY || Task->State == TASK_RUNNING || (Task->State == TASK_BLOCKED && Task->WaitQueue != NULL))
     {
         Weight = Task->Weight;
     }
@@ -404,7 +404,7 @@ TASK *LBPWRRGetTaskFromCPU(UINT32 CPUID)
     {
         TASK *Candidate = RunQueue->Runnable[Index - 1];
 
-        if (Candidate != NULL && Candidate->State == TASK_READY && Candidate != CurrentTasks[CPUID])
+        if (Candidate != NULL && Candidate->State == TASK_READY && !Candidate->Idle && !Candidate->OnCPU && Candidate != CurrentTasks[CPUID])
         {
             Task = Candidate;
             break;

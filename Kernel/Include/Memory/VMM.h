@@ -15,3 +15,13 @@ BOOLEAN VMMTranslate(UINT64 VirtAddr, UINT64 *PhysAddr);
 BOOLEAN VMMMapPage(UINT64 VirtAddr, UINT64 PhysAddr, UINT64 Flags);
 BOOLEAN VMMUnmapPage(UINT64 VirtAddr, UINT64 *PhysAddr);
 VOID    VMMHandleShootdown(VOID);
+
+
+typedef struct VMM_ADDRESS_SPACE VMM_ADDRESS_SPACE;
+
+BOOLEAN VMMCreateAddressSpace(VMM_ADDRESS_SPACE **AddressSpace);
+BOOLEAN VMMDestroyAddressSpace(VMM_ADDRESS_SPACE *AddressSpace);
+BOOLEAN VMMTranslateAddressSpace(VMM_ADDRESS_SPACE *AddressSpace, UINT64 VirtAddr, UINT64 *PhysAddr);
+BOOLEAN VMMMapAddressSpacePage(VMM_ADDRESS_SPACE *AddressSpace, UINT64 VirtAddr, UINT64 PhysAddr, UINT64 Flags);
+BOOLEAN VMMUnmapAddressSpacePage(VMM_ADDRESS_SPACE *AddressSpace, UINT64 VirtAddr, UINT64 *PhysAddr);
+BOOLEAN VMMSwitchAddressSpace(VMM_ADDRESS_SPACE *AddressSpace);

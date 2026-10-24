@@ -20,4 +20,4 @@
 
 `Kernel/Include/Memory/VMM.h` exposes initialization, address translation, page mapping/unmapping, current CR3 access and SMP shootdown handling. The implementation is in `Kernel/Source/Memory/VMM.c`.
 
-Physical allocation and virtual mapping are separate operations. Reserved boot regions and the kernel image must remain unavailable to the physical allocator. See [verification](Testing.md) for available VMM harnesses.
+Physical allocation and virtual mapping are separate operations. Reserved boot regions and the kernel image must remain unavailable to the physical allocator.

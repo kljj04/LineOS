@@ -8,22 +8,25 @@ LinkKernel: $(KERN_TARGET)
 
 $(KERN_TARGET): $(KERN_OBJS) Link/Link.ld
 	@$(call MKDIR_P,$(dir $@))
-	@$(call PRINT_YELLOW,[LD] $@)
+	@$(call BUILD_PROGRESS,$@)
 	@$(LD) -static \
 		-T Link/Link.ld \
 		-e KMain \
 		-o $@ \
 		$(KERN_OBJS)
+	@$(call BUILD_DONE,$@)
 
 Build/Objects/Kernel/%.o: Kernel/%.c Makefiles/BuildSettings.mk Makefiles/Kernel.mk
 	@$(call MKDIR_P,$(dir $@))
-	@$(call PRINT_CYAN,[CC] $<)
+	@$(call BUILD_PROGRESS,$<)
 	@$(CC) $(KERN_OBJ_CFLAGS) $(DEPFLAGS) -c $< -o $@
+	@$(call BUILD_DONE,$<)
 
 Build/Objects/Kernel/%.o: Kernel/%.S Makefiles/BuildSettings.mk Makefiles/Kernel.mk
 	@$(call MKDIR_P,$(dir $@))
-	@$(call PRINT_PURPLE,[AS] $<)
+	@$(call BUILD_PROGRESS,$<)
 	@$(CC) $(KERN_OBJ_CFLAGS) $(DEPFLAGS) -c $< -o $@
+	@$(call BUILD_DONE,$<)
 
 $(KERN_FLOAT_OBJS): KERN_OBJ_CFLAGS = $(KERN_FLOAT_CFLAGS)
 

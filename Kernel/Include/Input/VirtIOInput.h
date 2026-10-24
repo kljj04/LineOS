@@ -7,6 +7,8 @@
 #include <LineOS/TypeInfo.h>
 #include <Input/VirtIOInputProtocol.h>
 
+VOID          VirtIOInputWaitKeyEvent(VOID);
+VOID          VirtIOInputWaitPointerEvent(VOID);
 BOOLEAN       VirtIOInputInit(VOID);
 VOID          VirtIOKeyboardInterruptHandler(VOID);
 VOID          VirtIOTabletInterruptHandler(VOID);

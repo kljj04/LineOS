@@ -2,6 +2,9 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
+#include "Scheduler/LBPWRRRunQueue.h"
+
+#include <stdio.h>
 #include <Render/TrueType/Print.h>
 #include <Render/TrueType/TrueTypeEngine.h>
 #include <Render/GPU/VirtIOGPU.h>
@@ -10,6 +13,7 @@
 #include <Input/Input.h>
 #include <Scheduler/LBPWRR.h>
 #include <Scheduler/Task.h>
+#include <Scheduler/Usage.h>
 #include <Arch/AMD64/CPU.h>
 #include <Debug/Panic.h>
 #include <LineOS/BootInfo.h>
@@ -23,36 +27,51 @@
 #include <Debug/Debug.h>
 #include <Memory/VMM.h>
 #include <Disk/VirtIOBlock.h>
+#include <Disk/GPT.h>
 #include <Network/VirtIONetwork.h>
 #include <Network/Network.h>
 #include <FS/EXT2/EXT2.h>
+#include <FS/VFS/VFS.h>
 #include <FS/VFS/VFSEXT2.h>
+#include <Exec/ELF64.h>
 
-VOID MouseTask(VOID)
-{
-    InputMouseHandler();
-}
+#define KERNEL_ELF_MAX_SIZE (64ULL * 1024 * 1024)
+#define KERNEL_ELF_READ_SIZE 4096
+
+STATIC VFS_REGISTRY RootRegistry;
+STATIC EXT2_VOLUME RootVolume;
+STATIC VFS_CONTEXT RootContext;
+STATIC UINT32 RootPartition;
 
 VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
 {
     VIRTIO_GPU_INFO *GPU;
+    VIRTIO_BLOCK_DEVICE *BlockDevice;
+    VIRTIO_NETWORK_DEVICE *NetworkDevice;
+    VFS_NODE RootNode;
+    VFS_CREDENTIALS Credentials = {0, 0, TRUE};
+    CLOCK_TIME ClockTime;
+    UINT32 DisplayWidth;
+    UINT32 DisplayHeight;
 
     CLI();
     CPUEnableSSE();
 
     KMemoryInit(BootInfo);
-
     VMMInit();
     KHeapInit();
-
     TrueTypeInit();
     PCIInit(BootInfo);
 
-    VirtIOGPUInit();
+    GPU = NULL;
 
+    VirtIOGPUInit();
     GPU = VirtIOGPUGetInfo();
 
-    VirtIOGPUCreateFrameBuffer(GPU->DisplayInfo.Displays[0].Rect.Width, GPU->DisplayInfo.Displays[0].Rect.Height);
+    DisplayWidth = GPU->DisplayInfo.Displays[0].Rect.Width;
+    DisplayHeight = GPU->DisplayInfo.Displays[0].Rect.Height;
+
+    VirtIOGPUCreateFrameBuffer(DisplayWidth, DisplayHeight);
 
     GDTInitCurrentCPU();
 
@@ -65,87 +84,96 @@ VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
     TSCDeadlineInit(0x40);
 
     ClockInit();
+    ClockGetTime(&ClockTime);
 
     SMPInit(BootInfo);
-
     LBPWRRInit();
 
     VirtIOBlockInit();
+    BlockDevice = VirtIOBlockGetDevice();
+
+    VFSInit(&RootRegistry);
+    VFSMountEXT2(&RootRegistry, (CONST CHAR8 *) "root", &RootVolume, BlockDevice, 2, FALSE, &RootPartition);
+    VFSContextInit(&RootContext, &RootRegistry, RootPartition, Credentials);
+    VFSLookup(&RootContext, (CONST CHAR8 *) "/", &RootNode);
+
     VirtIONetworkInit();
+    NetworkDevice = VirtIONetworkGetDevice();
     NetworkInit();
+
     VirtIOInputInit();
 }
 
-VOID ClockDisplayTask(VOID)
+STATIC BOOLEAN KernelValidateInitELF(VOID)
 {
-    for (;;)
+    VFS_NODE Node;
+    VOID *FileData;
+    UINT64 Offset;
+    UINT32 Chunk;
+    UINT32 ReadLength;
+    BOOLEAN Valid;
+
+    if (VFSLookup(&RootContext, (CONST CHAR8 *) "/bin/init.lix", &Node) != VFS_OK)
     {
-        CLOCK_DATE_TIME  DateTime;
-        CLOCK_NTP_STATUS Status;
-        UINT64           Uptime = ClockGetUptimeMls() / 1000;
-        UINT32           Width = VirtIOGPUGetFrameBufferWidth();
-        UINT32           PixelHeight = Width >= 1920 ? 72 : Width >= 1280 ? 48 : 32;
-        ClockGetNTPStatus(&Status);
-
-        if (Width > 100)
-        {
-            FillRect(64, 120, Width - 80, 300, 0x1E1E1E);
-            KPrint(L"Uptime: %llu days %02llu:%02llu:%02llu", 80, 190, 0xCCCCCC, PixelHeight - 8, JETBRAINS_MONO, Uptime / 86400, (Uptime / 3600) % 24, (Uptime / 60) % 60, Uptime % 60);
-
-            if (ClockGetDateTime(&DateTime, 540))
-            {
-                KPrint(L"KST: %04u-%02u-%02u %02u:%02u:%02u (UTC+09:00)", 80, 285, 0xFFFFFF, PixelHeight, JETBRAINS_MONO, (UINT32) DateTime.Year, (UINT32) DateTime.Month, (UINT32) DateTime.Day, (UINT32) DateTime.Hour, (UINT32) DateTime.Minute, (UINT32) DateTime.Second);
-            }
-            else
-            {
-                KPrint(L"Current time unavailable", 80, 285, 0xE5C07B, PixelHeight, JETBRAINS_MONO);
-            }
-
-            CONST CHAR16 *State = Status.Busy ? L"synchronizing" : Status.Failures != 0 ? (Status.Synchronized ? L"retry (last sync)" : L"retry pending (RTC)") : Status.Synchronized ? L"synchronized" : L"waiting (RTC)";
-            KPrint(L"NTP: %s / interval 10 min", 80, 380, (Status.Synchronized && Status.Failures == 0) ? 0x98C379 : 0xE5C07B, PixelHeight - 16, JETBRAINS_MONO, State);
-            VirtIOGPUFlush();
-        }
-        TaskSleepMls(100);
+        DebugWriteLine("ELF64: /bin/init not found");
+        return FALSE;
     }
+
+    if ((Node.Mode & VFS_MODE_TYPE) != EXT2_MODE_FILE || Node.Size < 64 || Node.Size > KERNEL_ELF_MAX_SIZE)
+    {
+        DebugWriteLine("ELF64: invalid executable file");
+        return FALSE;
+    }
+
+    FileData = KAlloc((UINTN) Node.Size);
+
+    if (FileData == NULL)
+    {
+        DebugWriteLine("ELF64: allocation failed");
+        return FALSE;
+    }
+
+    for (Offset = 0; Offset < Node.Size;)
+    {
+        Chunk = Node.Size - Offset > KERNEL_ELF_READ_SIZE ? KERNEL_ELF_READ_SIZE : (UINT32) (Node.Size - Offset);
+        ReadLength = 0;
+
+        if (VFSRead(&RootContext, (CONST CHAR8 *) "/bin/init.lix", Offset, (UINT8 *) FileData + Offset, Chunk, &ReadLength) != VFS_OK || ReadLength != Chunk)
+        {
+            KFree(FileData);
+            DebugWriteLine("ELF64: file read failed");
+            return FALSE;
+        }
+
+        Offset += Chunk;
+    }
+
+    Valid = ELF64Validate(FileData, Node.Size);
+
+    KFree(FileData);
+
+    if (!Valid)
+    {
+        DebugWriteLine("ELF64: validation failed");
+        return FALSE;
+    }
+
+    DebugWriteLine("ELF64: /bin/init validated");
+
+    return TRUE;
 }
 
 VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
 {
-
     InitKernel(BootInfo);
 
-    FillScreen(0x1E1E1E);
 
-    VirtIOGPUFlush();
 
-    if (NetworkInit())
+
+    if (!KernelValidateInitELF())
     {
-        TASK *NetworkWorker = TaskCreate(NetworkTask);
-
-        if (NetworkWorker != NULL)
-        {
-            if (!LBPWRRAddTask(NetworkWorker))
-            {
-                TaskDestroy(NetworkWorker);
-            }
-        }
+        Panic(L"Failed to validate /bin/init");
     }
-
-    TASK *CursorTask = TaskCreate(MouseTask);
-    TASK *ClockWorker = TaskCreate(ClockNTPTask);
-    TASK *ClockDisplay = TaskCreate(ClockDisplayTask);
-
-    if (ClockWorker != NULL && !LBPWRRAddTask(ClockWorker))
-    {
-        TaskDestroy(ClockWorker);
-    }
-
-    if (ClockDisplay != NULL && !LBPWRRAddTask(ClockDisplay))
-    {
-        TaskDestroy(ClockDisplay);
-    }
-
-    LBPWRRAddTask(CursorTask);
 
     LBPWRRStart();
 
@@ -176,7 +204,7 @@ VOID APMain(UINT32 CPUID)
 
     if (CPU != NULL)
     {
-        __atomic_store_n(&CPU->Online, TRUE, __ATOMIC_RELEASE);
+        ATOMIC_STORE(&CPU->Online, TRUE, ATOMIC_RELEASE);
     }
 
     CompilerBarrier();

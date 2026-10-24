@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-LineOS includes third-party fonts for kernel text rendering tests.
+LineOS includes third-party fonts for kernel text rendering.
 
 ## JetBrains Mono Nerd Font
 
@@ -46,7 +46,7 @@ The applicable EDK II files are distributed under the BSD 2-Clause Plus Patent L
 - Upstream: https://github.com/tianocore/edk2
 - Project website: https://www.tianocore.org/
 
-LineOS includes OVMF firmware images for development and testing with QEMU.
+LineOS includes OVMF firmware images for development with QEMU.
 The firmware images are third-party components and are not covered by the
 LineOS project license.
 

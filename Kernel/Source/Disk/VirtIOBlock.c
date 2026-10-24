@@ -292,6 +292,15 @@ STATIC BOOLEAN SubmitRequestSync(VIRTIO_BLOCK_DEVICE *Device, UINT32 Type, UINT6
             break;
         }
 
+        VirtIOBlockHandleInterrupt(Device);
+
+        State = Request->State;
+
+        if (State != VIRTIO_BLOCK_REQUEST_PENDING)
+        {
+            break;
+        }
+
         ASM("pause" ::: "memory");
     }
 
