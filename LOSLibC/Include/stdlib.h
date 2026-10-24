@@ -1,5 +1,5 @@
-// Kernel/Source/Exec/UserMode.c
+// LOSLibC/Include/stdlib.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <Exec/UserMode.h>
+#pragma once
