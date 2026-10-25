@@ -1,7 +1,0 @@
-Init: starting userspace TrueType test
-Init: display 2560 x 1440
-Init: Pretendard loaded (2671468 bytes)
-Init: JetBrains Mono loaded (2574704 bytes)
-spawn: ELF64Execute failed
-Init: Shell spawn failed
-exit: pid=2 code=1
