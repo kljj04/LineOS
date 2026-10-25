@@ -20,9 +20,7 @@ PCI 설정 공간 탐색, Q35 지원, 공통 VirtIO PCI 전송 계층과 VirtQue
 픽셀 읽기·쓰기, 사각형·선·원, 알파 합성, 프레임버퍼 복사와 dirty rectangle 추적을 제공합니다. TrueType 글꼴은 assembler `.incbin`으로 포함하고 실행 중 파싱·래스터화해 GPU
 프레임버퍼에 합성합니다.
 
-Pretendard SemiBold와 JetBrains Mono Nerd Font SemiBold를 사용하며 ASCII, 한글 및 Nerd Font private-use 글리프를 렌더링합니다. 소스는
-`Kernel/Source/Render/TrueType/`, 글꼴은 `Kernel/Assets/Fonts/`에 있습니다. 라이선스는 [제3자 고지](../THIRD_PARTY_NOTICES.md)와
-`Docs/LICENSES/`를 참고합니다.
+커널은 패닉 출력용으로 `Kernel/Source/Render/TrueType/`과 `Kernel/Assets/Fonts/`의 내장 폰트를 유지합니다. 유저 공간은 별도 TrueType 정적 라이브러리와 `/sys/fonts/`의 폰트 파일을 사용합니다. 현재 Shell은 ASCII 출력만 유저 프레임버퍼에 그린 뒤 디스플레이 시스템 호출로 표시하며 대화형 터미널은 아닙니다. [유저 프로그램](UserLibraries.md)과 [제3자 고지](../THIRD_PARTY_NOTICES.md)를 참고합니다.
 
 ## 입력 큐와 블로킹
 
@@ -33,7 +31,7 @@ PushKeyEvent·PushPointerEvent는 해당 이벤트 잠금 안에서 이벤트를
 `InputWaitKeyboardEvent()`를 호출합니다. VirtIO 대기 함수는 같은 조건 잠금으로 링 인덱스를 확인하고 비어 있을 때만 WaitQueueSleep을 호출하므로 검사와 블로킹 사이의 wake를
 놓치지 않습니다. IRQ 플래그·잠금 순서·스택 소유권은 [스케줄러](Scheduler.md)를 참고합니다.
 
-현재 KMain은 마우스 소비자만 등록합니다. 키보드 소비자는 필요한 작업 구성에서 명시적으로 등록해야 합니다. 드라이버 IRQ 처리만으로 키 이벤트 링을 상위 키보드 상태 큐로 소진하지는 않습니다.
+현재 KMain은 키보드·마우스 소비자를 등록하지 않습니다. 드라이버 IRQ 처리만으로 Shell에 키보드 입력을 전달하거나 이벤트 링을 상위 핸들러로 소진하지는 않습니다.
 
 ## 지원 범위
 

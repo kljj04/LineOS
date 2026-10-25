@@ -6,6 +6,17 @@
 
 #include <LineOS/TypeInfo.h>
 #include <Memory/VMM.h>
+#include <FS/VFS/VFSTypes.h>
+
+#define TASK_FILE_LIMIT 8U
+
+typedef struct
+{
+    CHAR8 *Path;
+    UINT64 Offset;
+    UINT32 Number;
+    UINT32 Partition;
+} TASK_FILE;
 
 typedef enum
 {
@@ -111,4 +122,6 @@ typedef struct TASK
     VMM_ADDRESS_SPACE *AddressSpace;
     UINT64             UserStackBase;
     UINT64             UserStackSize;
+    VFS_CONTEXT       *FileContext;
+    TASK_FILE          Files[TASK_FILE_LIMIT];
 } TASK;

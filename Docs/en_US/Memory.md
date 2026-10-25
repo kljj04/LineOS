@@ -20,4 +20,4 @@
 
 `Kernel/Include/Memory/VMM.h` exposes initialization, address translation, page mapping/unmapping, current CR3 access and SMP shootdown handling. The implementation is in `Kernel/Source/Memory/VMM.c`.
 
-Physical allocation and virtual mapping are separate operations. Reserved boot regions and the kernel image must remain unavailable to the physical allocator.
+Physical allocation and virtual mapping are separate operations. Reserved boot regions and the kernel image must remain unavailable to the physical allocator. ELF user tasks receive separate address spaces sharing kernel mappings. VMM provides address-space creation, inactive-space mapping and user-copy operations; managed current user roots can create and modify another inactive space. This is a partial process-isolation implementation, not a complete security boundary.

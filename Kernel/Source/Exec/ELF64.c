@@ -5,6 +5,7 @@
 #include <ELF/ELF64.h>
 #include <Exec/ELF64.h>
 #include <Memory/PMM.h>
+#include <Debug/Debug.h>
 
 STATIC BOOLEAN ELF64RangeValid(UINT64 Offset, UINT64 Length, UINT64 TotalSize)
 {
@@ -351,7 +352,7 @@ BOOLEAN ELF64Load(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUTION *Execut
     Task->Context.CS = 0x23;
     Task->Context.SS = 0x2B;
     Task->Context.RFLAGS = 0x202;
-    Task->Context.RSP = ELF64_EXEC_STACK + Task->UserStackSize - 48;
+    Task->Context.RSP = ELF64_EXEC_STACK + Task->UserStackSize - 56;
     KMemCpy((VOID *) Task->RSP, &Task->Context, sizeof(Task->Context));
     return TRUE;
 
@@ -369,26 +370,41 @@ BOOLEAN ELF64Execute(VFS_CONTEXT *Context, CONST CHAR8 *Path, ELF64_EXECUTION *E
 
     if (Context == NULL || Path == NULL || Execution == NULL || VFSLookup(Context, Path, &Node) != VFS_OK || (Node.Mode & VFS_MODE_TYPE) != 0x8000 || (Node.Mode & 0111) == 0 || Node.Size == 0 || Node.Size > ELF64_EXEC_MAX_FILE)
     {
+        DebugWriteLine("ELF64Execute: lookup or file metadata rejected");
         return FALSE;
     }
     UINT16 ExecuteBit = Context->Credentials.UID == Node.UID ? 0100 : (Context->Credentials.GID == Node.GID ? 0010 : 0001);
     if (!Context->Credentials.Administrator && (Node.Mode & ExecuteBit) == 0)
     {
+        DebugWriteLine("ELF64Execute: execute permission denied");
         return FALSE;
     }
     Data = KAlloc(Node.Size);
     if (Data == NULL)
     {
+        DebugWriteLine("ELF64Execute: file allocation failed");
         return FALSE;
     }
     Loaded = VFSRead(Context, Path, 0, Data, (UINT32) Node.Size, &ReadLength) == VFS_OK && ReadLength == Node.Size && ELF64Load(Data, Node.Size, Execution);
     KFree(Data);
     if (!Loaded)
     {
+        DebugWriteLine("ELF64Execute: read or load failed");
         return FALSE;
     }
+    Execution->Task->FileContext = KAlloc(sizeof(VFS_CONTEXT));
+    if (Execution->Task->FileContext == NULL)
+    {
+        DebugWriteLine("ELF64Execute: context allocation failed");
+        TaskKill(Execution->Task);
+        ELF64Release(Execution);
+        return FALSE;
+    }
+    KMemCpy(Execution->Task->FileContext, Context, sizeof(VFS_CONTEXT));
+
     if (!LBPWRRAddTask(Execution->Task))
     {
+        DebugWriteLine("ELF64Execute: scheduling failed");
         TaskKill(Execution->Task);
         ELF64Release(Execution);
         return FALSE;

@@ -4,7 +4,7 @@
 
 Start with build and run, then choose a subsystem. Source paths and commands are relative to the project root.
 
-Configuration and startup were checked against the checkout on 2026-10-24. Start with `./Scripts/Run.sh --help`; VM settings are in `Configs/QEMUSettings.sh`. The default workload is CPU usage display plus mouse handling.
+Configuration and startup reflect the current checkout. Start with `./Scripts/Run.sh --help`; VM settings are in `Configs/QEMUSettings.sh`. The default workload starts Init and the output-only Shell.
 
 | Document | Contents |
 | --- | --- |
@@ -14,6 +14,7 @@ Configuration and startup were checked against the checkout on 2026-10-24. Start
 | [Scheduler](Scheduler.md) | LBPWRR, Wait Queues, CPU usage, task lifetime and migration |
 | [Devices and rendering](Devices.md) | PCI, VirtIO, GPU, input and fonts |
 | [Storage and filesystems](Storage.md) | Block devices, GPT, EXT2, VFS and timestamps |
+| [User programs and libraries](UserLibraries.md) | Deployment, syscalls, TrueType and Shell |
 | [Networking](Network.md) | VirtIO-Net, NAT, DHCP, UDP, DNS and TCP |
 | [Clock and NTP](Clock.md) | RTC, UTC, uptime and optional NTP worker |
 | [Coding conventions](Directions.md) | Naming, formatting and kernel macros |

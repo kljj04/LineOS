@@ -6,7 +6,7 @@ Linux is the primary development environment. Commands below run from the projec
 
 ## Requirements
 
-- Build: Bash, `make`, `clang`, `ld.lld` and `lld-link`.
+- Build: Bash, `make`, `clang`, `ld.lld`, `lld-link` and `llvm-ar`.
 - Builder interface: `node`, using built-in Node.js modules; no npm install is required.
 - Disk preparation: `sudo`, `truncate`, `parted`, `losetup`, `mkfs.vfat`, `mkfs.ext2`, `mount`, `umount`, `findmnt`, `fuser`, `install` and standard Linux file utilities.
 - VM: `qemu-system-x86_64`, accessible `/dev/kvm`, the configured host CPU features, and bundled `UEFI/OVMF_CODE.fd` and `UEFI/OVMF_VARS.fd`.
@@ -42,7 +42,7 @@ Direct build without the Node.js interface:
 make -f Makefiles/Makefile -j1
 ```
 
-Outputs are `LineOS/EFI/BOOT/BOOTX64.EFI` and `LineOS/KERNEL/LINEOS_KERNEL.ELF`; objects and dependency files are under `Build/Objects/`. The current Make rules build the bootloader and kernel, with no user-space program target. Building alone neither updates the image nor starts QEMU.
+Outputs include `LineOS/EFI/BOOT/BOOTX64.EFI`, `LineOS/KERNEL/LINEOS_KERNEL.ELF`, `LineOS/Programs/<ProgramName>.lix`, `Build/Libraries/libtruetype.a` and `Build/Libraries/liblosc.a`; objects and dependency files are under `Build/Objects/`. Immediate `UserPrograms/` directories supply program names and their C/assembly sources are linked into static ELF64 executables. Building alone neither updates the image nor starts QEMU.
 
 ## Configuration
 
@@ -70,7 +70,7 @@ Outputs are `LineOS/EFI/BOOT/BOOTX64.EFI` and `LineOS/KERNEL/LINEOS_KERNEL.ELF`;
 
 Run the launcher as the desktop user. The full workflow prompts through `sudo -v` in the foreground before releasing managed mounts and building; subsequent disk operations use non-interactive sudo. QEMU runs as the desktop user.
 
-A missing image is prepared as a temporary raw GPT disk, with FAT32 ESP partition 1 from 1 MiB through 301 MiB and EXT2 partition 2 using the remaining space. It is published without overwriting an existing path. An existing image is reused without formatting. The update mounts only the ESP and copies `EFI/BOOT/BOOTX64.EFI` and `KERNEL/LINEOS_KERNEL.ELF`; it does not populate or format the EXT2 partition. Managed mounts created by `-mount` are unmounted and detached before updating the image. Other existing loop attachments are rejected. Cleanup unmounts and detaches the loop device; failures identify resources left for inspection.
+A missing image is prepared as a temporary raw GPT disk, with FAT32 ESP partition 1 from 1 MiB through 301 MiB and EXT2 partition 2 using the remaining space. It is published without overwriting an existing path. An existing image is reused without formatting. The update copies `EFI/BOOT/BOOTX64.EFI` and `KERNEL/LINEOS_KERNEL.ELF` to the ESP, then copies user programs and `Assets/Fonts/*.ttf` to EXT2. Program destinations come from `Program.conf` and default to `/bin/`; fonts go to `/sys/fonts/`. See [program deployment](UserLibraries.md). Existing EXT2 is not formatted. Managed mounts created by `-mount` are unmounted and detached before updating the image. Other existing loop attachments are rejected. Cleanup unmounts and detaches the loop device; failures identify resources left for inspection.
 
 ## Logs and firmware state
 

@@ -42,7 +42,7 @@ Wait Queue의 BLOCKED 작업은 청크의 가중치 자리를 예약하지만 RE
 
 `Usage.c`는 스케줄링 경계에서 TSC 시간을 busy·idle로 누적하고 약 100ms 간격으로 표본을 갱신합니다. `UsageGetCPU()`는 정수 백분율, `UsageGetTotal()`은 활성 CPU의 산술 평균을 반환합니다. TASK의 CPUTimeTSC·CPUUsage는 작업별 시간과 백분율입니다. 호스트 QEMU 프로세스의 사용률이 아닌 스케줄러 회계 값입니다.
 
-기본 `UsageTask`는 `TaskSleepMls(100)`으로 대기하며 100ms마다 사용률 화면을 갱신합니다. 마우스 핸들러는 입력 큐에서 블로킹합니다. 키보드 핸들러도 같은 대기를 지원하지만 현재 KMain에서 등록하지 않습니다. [장치](Devices.md)·[아키텍처](Architecture.md)을 참고합니다.
+현재 시작 경로는 Init을 등록하고 Init이 Shell을 실행합니다. 사용률 화면과 키보드·마우스 소비자 작업은 등록하지 않습니다. Shell은 출력 스트림을 반복 확인하며 유저 yield 시스템 호출이 현재 실패를 반환하므로 CPU를 사용할 수 있습니다. [장치](Devices.md)·[아키텍처](Architecture.md)를 참고합니다.
 
 ## 관련 소스와 제한
 

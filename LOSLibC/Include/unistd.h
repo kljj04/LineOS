@@ -5,7 +5,8 @@
 #pragma once
 
 #include <stddef.h>
+#include <sys/types.h>
 
-typedef long ssize_t;
-
+ssize_t read(int FD, void *Buffer, size_t Count);
+int close(int FD);
 ssize_t write(int FD, const void *Buffer, size_t Count);

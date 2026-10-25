@@ -10,7 +10,7 @@ BOOLEAN ELF64Validate(CONST VOID *FileData, UINT64 FileSize);
 #include <FS/VFS/VFS.h>
 #include <Scheduler/TaskTypes.h>
 
-#define ELF64_EXEC_MAX_PAGES 4096U
+#define ELF64_EXEC_MAX_PAGES 262144U
 
 typedef struct
 {

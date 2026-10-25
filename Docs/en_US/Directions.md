@@ -24,8 +24,9 @@ The root `.clang-format` is the formatting source of truth:
 | AllowShortFunctionsOnASingleLine | Empty |
 | AlwaysBreakAfterReturnType | None |
 | AlignConsecutiveAssignments | None |
-| AlignConsecutiveDeclarations | Enabled, AlignCompound, AlignFunctionPointers and PadOperators; not across empty lines/comments |
+| AlignConsecutiveDeclarations | Enabled with AlignFunctionPointers and PadOperators; AlignCompound disabled; not across empty lines/comments |
 | AlignConsecutiveMacros | Enabled; not across empty lines/comments; AlignCompound, AlignFunctionPointers and PadOperators disabled |
+| IndentCaseLabels | true |
 | SortIncludes | false |
 | AttributeMacros | `__attribute__` |
 | StatementMacros | `CLI`, `HLT` |

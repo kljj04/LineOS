@@ -267,6 +267,101 @@ MountOpen()
     printf 'Root mounted at: %s\n' "$MountBase/Root"
 )
 
+MountProgramPath()
+{
+    local Program="$1"
+    local Config="$MountRoot/UserPrograms/$Program/Program.conf"
+    local Line Value="/bin/"
+    local Seen=0
+
+    if [[ ! "$Program" =~ ^[A-Za-z0-9_-]+$ || ! -d "$MountRoot/UserPrograms/$Program" || -L "$MountRoot/UserPrograms/$Program" ]]; then
+        printf 'Invalid program directory: %s\n' "$Program" >&2
+        return 1
+    fi
+
+    if [[ -e "$Config" || -L "$Config" ]]; then
+        if [[ ! -f "$Config" || -L "$Config" || ! -r "$Config" ]]; then
+            return 1
+        fi
+
+        while IFS= read -r Line || [[ -n "$Line" ]]; do
+            Line=${Line%$'\r'}
+            if [[ -z "$Line" || "$Line" == \#* ]]; then
+                continue
+            fi
+            if [[ "$Line" != CopyPath=* || "$Seen" == 1 ]]; then
+                printf 'Invalid program configuration: %s\n' "$Config" >&2
+                return 1
+            fi
+            Value=${Line#CopyPath=}
+            Seen=1
+        done < "$Config"
+
+        if (( Seen == 0 )); then
+            return 1
+        fi
+    fi
+
+    if [[ ! "$Value" =~ ^/([A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]*$ || "$Value" == *//* || "/${Value#/}/" == */../* || "/${Value#/}/" == */./* ]]; then
+        printf 'Invalid CopyPath: %s\n' "$Value" >&2
+        return 1
+    fi
+
+    printf '%s\n' "$Value"
+}
+
+MountProgramCopy()
+{
+    local Source="$1"
+    local CopyPath="$2"
+    local Root="$3"
+    local Mode="${4:-0755}"
+    local Directory="$Root"
+    local Component Destination Target
+    local -a Components=()
+
+    if [[ -L "$Source" || ! -f "$Source" || -L "$Root" ]]; then
+        return 1
+    fi
+    if ! Target=$(findmnt --raw --noheadings --mountpoint "$Root" --types ext2 --output TARGET) || [[ "$Target" != "$Root" ]]; then
+        return 1
+    fi
+
+    IFS=/ read -r -a Components <<< "${CopyPath#/}"
+    for Component in "${Components[@]}"; do
+        [[ -z "$Component" ]] && continue
+        if ! Target=$(findmnt --raw --noheadings --target "$Directory" --output TARGET) || [[ "$Target" != "$Root" ]]; then
+            return 1
+        fi
+        Directory="$Directory/$Component"
+        if MountPrivilege test -L "$Directory"; then
+            return 1
+        fi
+        if MountPrivilege test -e "$Directory"; then
+            if ! Target=$(findmnt --raw --noheadings --target "$Directory" --output TARGET) || [[ "$Target" != "$Root" ]]; then
+                return 1
+            fi
+        fi
+        if ! MountPrivilege install -d -m 0755 -- "$Directory"; then
+            return 1
+        fi
+        if ! Target=$(findmnt --raw --noheadings --target "$Directory" --output TARGET) || [[ "$Target" != "$Root" ]]; then
+            return 1
+        fi
+    done
+
+    Destination="$Directory/${Source##*/}"
+    if MountPrivilege test -L "$Destination" || MountPrivilege test -d "$Destination"; then
+        return 1
+    fi
+    if MountPrivilege test -e "$Destination"; then
+        if ! MountPrivilege test -f "$Destination" || [[ $(MountPrivilege stat -c %h -- "$Destination") != 1 ]]; then
+            return 1
+        fi
+    fi
+    MountPrivilege install -T -m "$Mode" -- "$Source" "$Destination"
+}
+
 MountUpdate()
 (
     local ImagePath="$MountRoot/$DiskImage"
@@ -276,7 +371,9 @@ MountUpdate()
     local LoopDevice=""
     local MountPoint=""
     local Mounted=0
-    local File Command ProgramFile
+    local File Command ProgramFile Program CopyPath FontFile
+    local -a FontFiles=()
+    local -a ProgramPaths=()
     local -a ProgramFiles=()
 
     MountCleanup()
@@ -321,14 +418,44 @@ MountUpdate()
     fi
 
     shopt -s nullglob
-    ProgramFiles=("$ProgramsDir"/*.lix)
+    for ProgramFile in "$ProgramsDir"/*.lix; do
+        Program=${ProgramFile##*/}
+        Program=${Program%.lix}
+        if [[ ! -e "$MountRoot/UserPrograms/$Program" && ! -L "$MountRoot/UserPrograms/$Program" ]]; then
+            printf 'Skipping stale user program: %s\n' "$ProgramFile"
+            continue
+        fi
+        ProgramFiles+=("$ProgramFile")
+    done
 
     if (( ${#ProgramFiles[@]} == 0 )); then
         printf 'No user programs found in: %s\n' "$ProgramsDir" >&2
         return 1
     fi
 
-    for Command in sudo losetup findmnt mount umount mktemp install; do
+    for ProgramFile in "${ProgramFiles[@]}"; do
+        Program=${ProgramFile##*/}
+        Program=${Program%.lix}
+        if ! CopyPath=$(MountProgramPath "$Program"); then
+            return 1
+        fi
+        ProgramPaths+=("$CopyPath")
+    done
+
+    FontFiles=("$MountRoot"/Assets/Fonts/*.ttf)
+    if (( ${#FontFiles[@]} == 0 )); then
+        printf 'No TTF fonts found in: %s\n' "$MountRoot/Assets/Fonts" >&2
+        return 1
+    fi
+
+    for FontFile in "${FontFiles[@]}"; do
+        if [[ -L "$FontFile" || ! -f "$FontFile" || ! -r "$FontFile" ]]; then
+            printf 'Invalid font file: %s\n' "$FontFile" >&2
+            return 1
+        fi
+    done
+
+    for Command in sudo losetup findmnt mount umount mktemp install stat; do
         if ! command -v "$Command" >/dev/null 2>&1; then
             printf 'Missing command: %s\n' "$Command" >&2
             return 1
@@ -377,12 +504,19 @@ MountUpdate()
 
     Mounted=1
 
-    if ! MountPrivilege install -d -m 0755 "$MountPoint/bin"; then
-        return 1
-    fi
+    local Index=0
 
     for ProgramFile in "${ProgramFiles[@]}"; do
-        if ! MountPrivilege install -m 0755 "$ProgramFile" "$MountPoint/bin/$(basename "$ProgramFile")"; then
+        if ! MountProgramCopy "$ProgramFile" "${ProgramPaths[$Index]}" "$MountPoint"; then
+            printf 'Program copy rejected or failed: %s\n' "$ProgramFile" >&2
+            return 1
+        fi
+        Index=$((Index + 1))
+    done
+
+    for FontFile in "${FontFiles[@]}"; do
+        if ! MountProgramCopy "$FontFile" "/sys/fonts" "$MountPoint" 0644; then
+            printf 'Font copy rejected or failed: %s\n' "$FontFile" >&2
             return 1
         fi
     done

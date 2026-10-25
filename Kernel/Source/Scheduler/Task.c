@@ -477,6 +477,18 @@ BOOLEAN TaskDestroy(TASK *Task)
         KMemFreePages((VOID *) Task->KernelStackBase, TASK_STACK_PAGES);
     }
 
+    for (UINTN FileIndex = 0; FileIndex < TASK_FILE_LIMIT; FileIndex++)
+    {
+        if (Task->Files[FileIndex].Path != NULL)
+        {
+            KFree(Task->Files[FileIndex].Path);
+        }
+    }
+    if (Task->FileContext != NULL)
+    {
+        KFree(Task->FileContext);
+    }
+
     TaskFreeSlot(Task);
 
     if (TaskCount > 0)

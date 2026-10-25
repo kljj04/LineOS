@@ -42,7 +42,7 @@
 
 ## Fonts and licenses
 
-The font files are embedded with assembler `.incbin` and rasterized by the kernel at runtime. See [third-party notices](../THIRD_PARTY_NOTICES.md) and the bundled texts in `Docs/LICENSES/`.
+The kernel retains embedded fonts and TrueType rendering for panic output. Userspace has a separate static TrueType library and reads deployed font files from `/sys/fonts/`. The current Shell renders ASCII output to a userspace framebuffer and presents it through display syscalls; it is not yet an interactive terminal. See [user programs](UserLibraries.md) and [third-party notices](../THIRD_PARTY_NOTICES.md).
 
 ## Input queues and blocking
 
@@ -50,7 +50,7 @@ Keyboard IRQ vector 65 and tablet vector 66 use separate VirtIO queues, 64-entry
 
 `InputMouseHandler()` drains pointer events and calls `InputWaitMouseEvents()`. `InputKeyboardHandler()` drains key events and calls `InputWaitKeyboardEvent()`. Their VirtIO wait functions check ring indices under the same condition lock and call WaitQueueSleep only when empty. A wake cannot be lost between checking and blocking. See [scheduling](Scheduler.md) for IRQ flags, lock ordering and stack ownership.
 
-The current KMain registers only the mouse consumer. The keyboard consumer must be explicitly scheduled by a workload that needs it. Driver IRQ handling alone does not drain the key-event ring into the higher-level keyboard status queue.
+The current KMain registers neither keyboard nor mouse consumers. Driver IRQ handling alone does not provide keyboard input to Shell or drain the rings into higher-level handlers.
 
 ## Supported environment
 

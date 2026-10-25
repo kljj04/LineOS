@@ -706,6 +706,28 @@ STATIC BOOLEAN VMMAddressSpaceInactive(VMM_ADDRESS_SPACE *AddressSpace)
 
     return TRUE;
 }
+
+STATIC BOOLEAN VMMCanModifyFromManagedRoot(VOID)
+{
+    UINT32 CPUID;
+    VMM_ADDRESS_SPACE *Current;
+
+    if (!VMMCanModify())
+    {
+        return FALSE;
+    }
+    if (VMMGetCurrentCR3() == SMPGetBootCR3())
+    {
+        return TRUE;
+    }
+    CPUID = SMPGetCurrentCPUID();
+    if (CPUID >= SMP_MAX_CPUS)
+    {
+        return FALSE;
+    }
+    Current = VMMActiveAddressSpaces[CPUID];
+    return Current != NULL && VMMAddressSpaceValid(Current) && (VMMGetCurrentCR3() & VMM_PAGE_MASK) == (UINT64) Current->Root;
+}
 STATIC UINT64 *VMMAllocateAddressSpacePage(UINT64 PhysMask)
 {
     UINT64 *Page = KAllocPagesBelow(1, 0x100000000ULL);
@@ -751,7 +773,7 @@ BOOLEAN VMMCreateAddressSpace(VMM_ADDRESS_SPACE **AddressSpace)
         return FALSE;
     }
 
-    if (!VMMCanModifyCurrentRoot() || !VMMGetPhysicalAddressMask(&PhysMask))
+    if (!VMMCanModifyFromManagedRoot() || !VMMGetPhysicalAddressMask(&PhysMask))
     {
         goto Cleanup;
     }
@@ -818,7 +840,7 @@ BOOLEAN VMMDestroyAddressSpace(VMM_ADDRESS_SPACE *AddressSpace)
         return FALSE;
     }
 
-    if (!VMMCanModifyCurrentRoot() || !VMMAddressSpaceValid(AddressSpace) || !VMMAddressSpaceInactive(AddressSpace))
+    if (!VMMCanModifyFromManagedRoot() || !VMMAddressSpaceValid(AddressSpace) || !VMMAddressSpaceInactive(AddressSpace))
     {
         goto Cleanup;
     }
@@ -1115,7 +1137,7 @@ BOOLEAN VMMMapAddressSpacePage(VMM_ADDRESS_SPACE *AddressSpace, UINT64 VirtAddr,
         return FALSE;
     }
 
-    if (!VMMCanModifyCurrentRoot())
+    if (!VMMCanModifyFromManagedRoot())
     {
         goto Cleanup;
     }
@@ -1226,7 +1248,7 @@ BOOLEAN VMMUnmapAddressSpacePage(VMM_ADDRESS_SPACE *AddressSpace, UINT64 VirtAdd
         return FALSE;
     }
 
-    if (!VMMCanModifyCurrentRoot() || !VMMAddressSpaceValid(AddressSpace) || !VMMAddressSpaceInactive(AddressSpace) || (AddressSpace->Shared[RootIndex / 64] & (1ULL << (RootIndex % 64))) != 0)
+    if (!VMMCanModifyFromManagedRoot() || !VMMAddressSpaceValid(AddressSpace) || !VMMAddressSpaceInactive(AddressSpace) || (AddressSpace->Shared[RootIndex / 64] & (1ULL << (RootIndex % 64))) != 0)
     {
         goto Cleanup;
     }

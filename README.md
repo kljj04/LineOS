@@ -24,9 +24,7 @@ The current development environment is Linux with QEMU/KVM and VirtIO devices. P
 - GPT, EXT2 and a VFS layer
 - IPv4 networking with ARP, ICMP, DHCP, UDP, DNS and a TCP client with up to 16 concurrent connections
 
-Internal APIs and the default kernel workload are under active development. User mode, system calls, process isolation and userland applications remain future work. HTTP/HTTPS/TLS belong to that future userland layer.
-
-The current startup workload displays CPU usage and runs the mouse handler. Keyboard handling, networking and NTP implementations are present, but their worker tasks are not registered by the default `KMain()`.
+The kernel mounts EXT2 and starts the Ring 3 `Init.lix` program. Init loads fonts and starts `Shell.lix`; Shell currently reads the shared output stream and displays ASCII text using the userspace TrueType library. It is an output demonstration, not an interactive command shell. The system call interface and process lifecycle are still incomplete. Networking and NTP workers are implemented but are not registered by the default startup path.
 
 ## Getting started
 

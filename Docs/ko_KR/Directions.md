@@ -24,8 +24,9 @@ Allman 중괄호와 공백 4칸을 사용하며 탭은 사용하지 않습니다
 | AllowShortFunctionsOnASingleLine | Empty입니다 |
 | AlwaysBreakAfterReturnType | None입니다 |
 | AlignConsecutiveAssignments | None입니다 |
-| AlignConsecutiveDeclarations | Enabled·AlignCompound·AlignFunctionPointers·PadOperators를 켜며 빈 줄·주석을 가로질러 정렬하지 않습니다 |
+| AlignConsecutiveDeclarations | Enabled·AlignFunctionPointers·PadOperators를 켜고 AlignCompound는 끄며 빈 줄·주석을 가로질러 정렬하지 않습니다 |
 | AlignConsecutiveMacros | Enabled만 켜며 빈 줄·주석을 가로지르는 정렬과 AlignCompound·AlignFunctionPointers·PadOperators는 끕니다 |
+| IndentCaseLabels | true입니다 |
 | SortIncludes | false입니다 |
 | AttributeMacros | `__attribute__`입니다 |
 | StatementMacros | `CLI`·`HLT`입니다 |

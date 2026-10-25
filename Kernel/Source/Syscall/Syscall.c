@@ -9,6 +9,9 @@
 #include <Syscall/SyscallExit.h>
 #include <Syscall/SyscallWrite.h>
 #include <Syscall/SyscallDisplay.h>
+#include <Syscall/SyscallFile.h>
+#include <Syscall/SyscallStream.h>
+#include <Syscall/SyscallSpawn.h>
 
 UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
 {
@@ -25,8 +28,20 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
         }
 
         case SYSCALL_READ:
+        {
+            return (UINT64) SyscallRead(Frame->RDI, Frame->RSI, Frame->RDX);
+        }
+
         case SYSCALL_OPEN:
+        {
+            return (UINT64) SyscallOpen(Frame->RDI, Frame->RSI);
+        }
+
         case SYSCALL_CLOSE:
+        {
+            return (UINT64) SyscallClose(Frame->RDI);
+        }
+
         case SYSCALL_YIELD:
         {
             return (UINT64) -1;
@@ -62,6 +77,16 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
         case SYSCALL_DISPLAY_PRESENT_RECT:
         {
             return (UINT64) SyscallDisplayPresentRect(Frame->RDI);
+        }
+
+        case SYSCALL_STREAM_READ:
+        {
+            return (UINT64) SyscallStreamRead(Frame->RDI, Frame->RSI);
+        }
+
+        case SYSCALL_SPAWN:
+        {
+            return (UINT64) SyscallSpawn(Frame->RDI);
         }
 
         default:

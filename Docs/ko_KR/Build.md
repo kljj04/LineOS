@@ -6,7 +6,7 @@
 
 ## 필요한 도구
 
-- 빌드에는 Bash, `make`, `clang`, `ld.lld`, `lld-link`를 사용합니다.
+- 빌드에는 Bash, `make`, `clang`, `ld.lld`, `lld-link`, `llvm-ar`를 사용합니다.
 - Builder 화면에는 `node`가 필요합니다. Node.js 기본 모듈만 사용하므로 npm 설치는 필요하지 않습니다.
 - 디스크 준비에는 `sudo`, `truncate`, `parted`, `losetup`, `mkfs.vfat`, `mkfs.ext2`, `mount`, `umount`, `findmnt`, `fuser`, `install`과 Linux 기본 파일
   도구를 사용합니다.
@@ -28,6 +28,7 @@
 | 옵션 없음 또는 `all` | 관리 마운트 해제 → 빌드·이미지 갱신 → QEMU → EFI·루트 재마운트입니다 |
 | `-build`             | 증분 빌드만 수행합니다                                                       |
 | `-image`             | 이미지가 없으면 생성하고 기존 빌드 결과물을 복사합니다. 빌드는 하지 않습니다 |
+| `-m`, `-mount` | 기존 이미지의 EFI·루트 파티션을 마운트하며 빌드나 파일 갱신은 하지 않습니다 |
 | `-u`, `-umount` | 관리 EFI·루트 마운트와 loop 연결을 해제합니다 |
 | `-qemu` | 마운트 해제 → QEMU → 재마운트입니다. 빌드·이미지 갱신은 하지 않습니다 |
 | `-clean`             | 빌드 오브젝트와 두 부팅 결과물을 제거합니다. 디스크 이미지는 보존합니다      |
@@ -42,8 +43,7 @@ Node.js 화면 없이 직접 빌드할 때는 다음 명령을 사용합니다.
 make -f Makefiles/Makefile -j1
 ```
 
-결과물은 `LineOS/EFI/BOOT/BOOTX64.EFI`와 `LineOS/KERNEL/LINEOS_KERNEL.ELF`이며, 오브젝트와 의존성 파일은 `Build/Objects/`에 생성합니다. 현재 Make
-규칙은 부트로더와 커널을 빌드하며 유저스페이스 프로그램 대상은 없습니다. 빌드만으로 이미지 내부 파일을 갱신하거나 QEMU를 실행하지는 않습니다.
+결과물에는 `LineOS/EFI/BOOT/BOOTX64.EFI`, `LineOS/KERNEL/LINEOS_KERNEL.ELF`, `LineOS/Programs/<ProgramName>.lix`, `Build/Libraries/libtruetype.a`와 `Build/Libraries/liblosc.a`가 포함됩니다. 오브젝트와 의존성 파일은 `Build/Objects/`에 생성합니다. `UserPrograms/` 바로 아래 디렉터리 이름을 프로그램 이름으로 사용하고 그 아래 C·어셈블리 소스를 정적 ELF64 실행 파일로 링크합니다. 빌드만으로 이미지 내부 파일을 갱신하거나 QEMU를 실행하지는 않습니다.
 
 ## 설정 파일과 현재 값
 
@@ -74,8 +74,7 @@ make -f Makefiles/Makefile -j1
 실행기는 데스크톱 사용자로 실행합니다. 전체 실행에서는 관리 마운트 해제와 빌드 전에 전경의 `sudo -v`로 인증하고 이후 디스크 작업은 비대화형 sudo로 처리합니다. QEMU는 데스크톱 사용자 권한으로 실행합니다.
 
 이미지가 없으면 임시 raw GPT 디스크를 만들고 1 MiB부터 301 MiB까지 FAT32 ESP 1번 파티션, 나머지 공간에 EXT2 2번 파티션을 준비합니다. 기존 경로를 덮어쓰지 않는 방식으로 새 이미지를
-배치합니다. 기존 이미지는 포맷 없이 재사용합니다. 갱신은 ESP만 마운트하여 `EFI/BOOT/BOOTX64.EFI`와 `KERNEL/LINEOS_KERNEL.ELF`를 복사하며 EXT2 영역을 포맷하거나 파일을
-배치하지 않습니다. `-mount`로 연결한 관리 경로는 갱신 전에 마운트와 loop 연결을 해제합니다. 그 외의 기존 loop 연결은 거부합니다. 정리 단계에서 마운트와 loop 연결을 해제하며 실패 시 확인할 자원을 출력합니다.
+배치합니다. 기존 이미지는 포맷 없이 재사용합니다. 갱신은 ESP에 `EFI/BOOT/BOOTX64.EFI`와 `KERNEL/LINEOS_KERNEL.ELF`를 복사하고 EXT2에 유저 프로그램과 `Assets/Fonts/*.ttf`를 배치합니다. 프로그램 위치는 `Program.conf`를 따르며 기본값은 `/bin/`, 폰트 위치는 `/sys/fonts/`입니다. 기존 EXT2는 포맷하지 않습니다. 자세한 내용은 [프로그램 배치](UserLibraries.md)를 참고합니다. `-mount`로 연결한 관리 경로는 갱신 전에 마운트와 loop 연결을 해제합니다. 그 외의 기존 loop 연결은 거부합니다. 정리 단계에서 마운트와 loop 연결을 해제하며 실패 시 확인할 자원을 출력합니다.
 
 ## 로그와 펌웨어 상태
 

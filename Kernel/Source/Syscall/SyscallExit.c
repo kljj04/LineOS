@@ -5,12 +5,18 @@
 #include <Syscall/Syscall.h>
 #include <Scheduler/LBPWRR.h>
 #include <Scheduler/Task.h>
+#include <Debug/Debug.h>
 
 INT64 SyscallExit(UINT64 ExitCode)
 {
     TASK *CurrentTask;
 
     CurrentTask = LBPWRRGetCurrentTask();
+    DebugWrite("exit: pid=");
+    DebugWriteDec(CurrentTask == NULL ? 0 : CurrentTask->PID);
+    DebugWrite(" code=");
+    DebugWriteDec(ExitCode);
+    DebugWrite("\n");
 
     if (CurrentTask == NULL || CurrentTask->Idle)
     {

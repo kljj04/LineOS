@@ -20,7 +20,7 @@
 EXT2 is connected to a VFS core with per-partition roots, path resolution, directory enumeration, and command
 contexts. `/` means the selected partition root; `^` is an administrator-only virtual partition manager. Normal users
 receive a not-found result for that namespace. Administrator privileges do not add a prefix to ordinary `/A/B` paths.
-There is no process file-descriptor table, open-file lifetime layer, or user-mode authentication system yet.
+Each task has a small read-only descriptor table; a full POSIX open-file lifetime layer and user-mode authentication are not implemented.
 
 A single transaction can stage at most 32768 changed blocks (about 32–128 MiB including metadata). Oversized operations
 fail before committing. Active
@@ -37,6 +37,4 @@ VFS and the EXT2 adapter are implemented under `Kernel/Source/FS/VFS/`. They pro
 
 `ClockGetUnixTime()` supplies RTC-backed UTC Unix time. EXT2 uses ctime for inode changes, mtime for content changes and relatime atime updates on writable mounts. Local display offsets do not change disk timestamps.
 
-The former kernel development shell is not part of the current `KMain()` workload. A userland shell, authentication, process file descriptors and open-file lifetime management remain future work. The EFI FAT32 partition is used by the host launcher for boot files; it does not imply a kernel FAT32 filesystem backend.
-
-The default KMain initializes the block device but does not mount EXT2/VFS or start a storage worker. The host image updater only replaces the two boot files on the ESP; see [building and running](Build.md).
+The former kernel development shell is absent; the current userspace Shell displays output but does not accept commands. `KMain()` initializes the block device and mounts GPT partition 2 as the EXT2 VFS root. The host image updater also deploys user programs and fonts to EXT2; see [building and running](Build.md). The host use of the EFI FAT32 partition does not imply a kernel FAT32 backend.

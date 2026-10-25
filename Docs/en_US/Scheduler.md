@@ -42,7 +42,7 @@ Removal requires a terminal task that is neither current nor OnCPU. Migration is
 
 `Usage.c` accounts TSC time as busy or idle at scheduling boundaries and samples at approximately 100 ms. `UsageGetCPU()` returns an integer percentage; `UsageGetTotal()` returns the arithmetic mean across active CPUs. TASK CPUTimeTSC and CPUUsage track per-task time and percentage. These are scheduler accounting values, not host process CPU measurements.
 
-The default `UsageTask` redraws usage values every 100 ms using `TaskSleepMls(100)`. The mouse handler blocks on its input queue. The keyboard handler has the same blocking support but is not registered by the current KMain. See [devices](Devices.md) and [architecture](Architecture.md).
+Current startup schedules Init, which starts Shell. It does not register the usage display, keyboard or mouse consumer tasks. Shell polls its output stream; its user yield syscall currently returns failure, so this loop can consume CPU. See [devices](Devices.md) and [architecture](Architecture.md).
 
 ## Limits and source
 

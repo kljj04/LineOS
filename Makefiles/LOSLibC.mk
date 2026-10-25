@@ -9,6 +9,7 @@ LinkLOSLibC: $(LOSLIBC_TARGET)
 $(LOSLIBC_TARGET): $(LOSLIBC_OBJS) Makefiles/LOSLibC.mk
 	@$(call MKDIR_P,$(dir $@))
 	@$(call BUILD_PROGRESS,$@)
+	@rm -f $@
 	@$(AR) rcs $@ $(LOSLIBC_OBJS)
 	@$(call BUILD_DONE,$@)
 
