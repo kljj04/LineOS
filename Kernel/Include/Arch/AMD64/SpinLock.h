@@ -1,11 +1,6 @@
 // Kernel/Include/Arch/AMD64/SpinLock.h
-// LineOS
-// Project
-// Copyright
-// (C) 2026
-// LineOS
-// Developer
-// kljj04
+// LineOS Project
+// Copyright (C) 2026 LineOS Developer kljj04
 
 #pragma once
 

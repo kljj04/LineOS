@@ -5,6 +5,7 @@
 #pragma once
 
 #include <LineOS/TypeInfo.h>
+#include <Memory/VMM.h>
 
 typedef enum
 {
@@ -84,25 +85,30 @@ typedef struct TASK_CONTEXT
 
 typedef struct TASK
 {
-    UINT64       RSP;
-    UINT64       InitialRSP;
-    UINT64       StackBase;
-    UINT64       StackSize;
-    TASK_STATE   State;
-    TASK_CONTEXT Context;
-    UINT32       CPUID;
-    UINT8        Priority;
-    UINT8        Weight;
-    UINT16       PID;
-    UINT64       WakeDeadlineTSC;
-    TASK_SIGNAL  Signal;
-    BOOLEAN      Modified;
-    BOOLEAN      Idle;
-    BOOLEAN      Scheduled;
-    UINT64       CPUTimeTSC;
-    UINT64       LastCPUTimeTSC;
-    UINT32       CPUUsage;
-    BOOLEAN      OnCPU;
+    UINT64             RSP;
+    UINT64             InitialRSP;
+    UINT64             StackBase;
+    UINT64             StackSize;
+    UINT64             KernelStackBase;
+    UINT64             KernelStackSize;
+    TASK_STATE         State;
+    TASK_CONTEXT       Context;
+    UINT32             CPUID;
+    UINT8              Priority;
+    UINT8              Weight;
+    UINT16             PID;
+    UINT64             WakeDeadlineTSC;
+    TASK_SIGNAL        Signal;
+    BOOLEAN            Modified;
+    BOOLEAN            Idle;
+    BOOLEAN            Scheduled;
+    UINT64             CPUTimeTSC;
+    UINT64             LastCPUTimeTSC;
+    UINT32             CPUUsage;
+    BOOLEAN            OnCPU;
     struct WAIT_QUEUE *WaitQueue;
     struct TASK       *WaitNext;
+    VMM_ADDRESS_SPACE *AddressSpace;
+    UINT64             UserStackBase;
+    UINT64             UserStackSize;
 } TASK;

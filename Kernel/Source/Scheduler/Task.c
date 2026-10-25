@@ -243,12 +243,24 @@ TASK *TaskCreate(VOID (*Entry)(VOID))
     Task->Weight = PToW(Task->Priority);
 
     Task->StackBase = (UINT64) KAllocPagesBelow(TASK_STACK_PAGES, TASK_STACK_ADDRESS_LIMIT);
-
     if (Task->StackBase == 0)
     {
         TaskFreeSlot(Task);
         return NULL;
     }
+
+    Task->KernelStackBase = (UINT64) KAllocPagesBelow(TASK_STACK_PAGES, TASK_STACK_ADDRESS_LIMIT);
+
+    if (Task->KernelStackBase == 0)
+    {
+        KMemFreePages((VOID *) Task->StackBase, TASK_STACK_PAGES);
+
+        TaskFreeSlot(Task);
+
+        return NULL;
+    }
+
+    Task->KernelStackSize = TASK_STACK_PAGES * PAGE_SIZE;
 
     Task->StackSize = TASK_STACK_PAGES * PAGE_SIZE;
     Task->InitialRSP = Task->StackBase + Task->StackSize;
@@ -458,6 +470,11 @@ BOOLEAN TaskDestroy(TASK *Task)
     if (Task->StackBase != 0)
     {
         KMemFreePages((VOID *) Task->StackBase, TASK_STACK_PAGES);
+    }
+
+    if (Task->KernelStackBase != 0)
+    {
+        KMemFreePages((VOID *) Task->KernelStackBase, TASK_STACK_PAGES);
     }
 
     TaskFreeSlot(Task);

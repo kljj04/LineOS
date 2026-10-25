@@ -3,28 +3,18 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <Arch/AMD64/CPU.h>
+
+#include "Debug/Debug.h"
+
+#include <Multicore/SMP.h>
+#include <Memory/PMM.h>
 #include <LineOS/TypeInfo.h>
 
-#define GDT_KERNEL_DATA_SELECTOR 0x10
-#define GDT_KERNEL_CODE_SELECTOR 0x18
-
-typedef struct PACKED
-{
-    UINT16 Limit;
-    UINT64 Base;
-} GDT_DESCRIPTOR;
-
-STATIC UINT64 GDT[] = {
-    0x0000000000000000ULL,
-    0x00CF9A000000FFFFULL,
-    0x00CF92000000FFFFULL,
-    0x00AF9A000000FFFFULL,
-};
-
-STATIC GDT_DESCRIPTOR GDTR = {
-    sizeof(GDT) - 1,
-    (UINT64) GDT,
-};
+STATIC UINT64         GDT[GDT_MAX_CPUS][GDT_ENTRY_COUNT];
+STATIC GDT_DESCRIPTOR GDTR[GDT_MAX_CPUS];
+STATIC TSS_64         TSS[GDT_MAX_CPUS];
+STATIC BOOLEAN        GDTInitialized[GDT_MAX_CPUS];
+STATIC UINT8          GDTISTStacks[GDT_MAX_CPUS][GDT_IST_STACK_SIZE] __attribute__((aligned(16)));
 
 VOID HLT()
 {
@@ -83,8 +73,61 @@ VOID CPUEnableSSE(VOID)
     ASM("fninit" ::: "memory");
 }
 
-VOID GDTInitCurrentCPU(VOID)
+STATIC BOOLEAN GDTGetCurrentCPUIndex(UINT32 *CPUIndex)
 {
+    if (CPUIndex == NULL)
+    {
+        return FALSE;
+    }
+
+    if (!SMPIsReady())
+    {
+        *CPUIndex = 0;
+        return TRUE;
+    }
+
+    *CPUIndex = SMPGetCurrentCPUID();
+
+    return *CPUIndex < GDT_MAX_CPUS;
+}
+
+VOID GDTInitCurrentCPU(UINT32 CPUID)
+{
+    UINT32 CPUIndex;
+    UINT64 TSSBase;
+    UINT64 TSSLimit;
+
+    CPUIndex = CPUID;
+
+    if (CPUIndex >= GDT_MAX_CPUS)
+    {
+        HLT();
+    }
+
+    KMemSet(GDT[CPUIndex], 0, sizeof(GDT[CPUIndex]));
+    KMemSet(&TSS[CPUIndex], 0, sizeof(TSS[CPUIndex]));
+
+    GDT[CPUIndex][0] = 0;
+    GDT[CPUIndex][1] = 0x00CF9A000000FFFFULL;
+    GDT[CPUIndex][2] = 0x00CF92000000FFFFULL;
+    GDT[CPUIndex][3] = 0x00AF9A000000FFFFULL;
+    GDT[CPUIndex][4] = 0x00AFFA000000FFFFULL;
+    GDT[CPUIndex][5] = 0x00CFF2000000FFFFULL;
+
+    TSS[CPUIndex].IST1 = (UINT64) &GDTISTStacks[CPUIndex][GDT_IST_STACK_SIZE];
+    TSS[CPUIndex].IOPBOffset = sizeof(TSS_64);
+
+    TSSBase = (UINT64) &TSS[CPUIndex];
+    TSSLimit = sizeof(TSS_64) - 1;
+
+    GDT[CPUIndex][6] = (TSSLimit & 0xFFFFULL) | ((TSSBase & 0xFFFFFFULL) << 16) | (0x89ULL << 40) | ((TSSLimit & 0xF0000ULL) << 32) | ((TSSBase & 0xFF000000ULL) << 32);
+    GDT[CPUIndex][7] = TSSBase >> 32;
+
+    GDTR[CPUIndex].Limit = sizeof(GDT[CPUIndex]) - 1;
+    GDTR[CPUIndex].Base = (UINT64) GDT[CPUIndex];
+
+    GDTInitialized[CPUIndex] = TRUE;
+
     ASM("lgdt %0\n"
         "movw %1, %%ax\n"
         "movw %%ax, %%ds\n"
@@ -95,9 +138,37 @@ VOID GDTInitCurrentCPU(VOID)
         "pushq %%rax\n"
         "lretq\n"
         "1:\n"
+        "movw $0x30, %%ax\n"
+        "ltr %%ax\n"
         :
-        : "m"(GDTR), "i"(GDT_KERNEL_DATA_SELECTOR), "i"(GDT_KERNEL_CODE_SELECTOR)
+        : "m"(GDTR[CPUIndex]), "i"(GDT_KERNEL_DATA_SELECTOR), "i"(GDT_KERNEL_CODE_SELECTOR)
         : "rax", "memory");
+}
+
+BOOLEAN GDTSetKernelStack(UINT64 StackTop)
+{
+    UINT32 CPUIndex;
+
+    if (StackTop == 0 || (StackTop & 0xFULL) != 0)
+    {
+        return FALSE;
+    }
+
+    if (!GDTGetCurrentCPUIndex(&CPUIndex))
+    {
+        return FALSE;
+    }
+
+    if (!GDTInitialized[CPUIndex])
+    {
+        return FALSE;
+    }
+
+    TSS[CPUIndex].RSP0 = StackTop;
+
+    CompilerBarrier();
+
+    return TRUE;
 }
 
 UINT64 RDTSC()

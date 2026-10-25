@@ -12,29 +12,29 @@ PHDRS
 
 SECTIONS
 {
-    . = 0x400000 + SIZEOF_HEADERS;
+    . = 0x400000000000 + SIZEOF_HEADERS;
 
     .text :
     {
-        *(.text .text.*)
+        *(.text .text.* .ltext .ltext.*)
     } :Text
 
     .rodata :
     {
-        *(.rodata .rodata.*)
+        *(.rodata .rodata.* .lrodata .lrodata.*)
     } :Text
 
     . = ALIGN(4096);
 
     .data :
     {
-        *(.data .data.*)
+        *(.data .data.* .ldata .ldata.*)
     } :Data
 
     .bss :
     {
         *(COMMON)
-        *(.bss .bss.*)
+        *(.bss .bss.* .lbss .lbss.*)
     } :Data
 
     /DISCARD/ :

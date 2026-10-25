@@ -13,6 +13,7 @@
 #include <Memory/PMM.h>
 #include <Timer/TSC.h>
 #include <Arch/AMD64/CPU.h>
+#include <Memory/VMM.h>
 
 EXTERN VOID LBPWRRRestoreContext(UINT64 RSP) NORETURN;
 
@@ -122,7 +123,18 @@ VOID LBPWRRStart(VOID)
     Task->State = TASK_RUNNING;
     Task->OnCPU = TRUE;
 
+    if (!GDTSetKernelStack(Task->KernelStackBase + Task->KernelStackSize))
+    {
+        SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+        Panic(L"LBPWRR: Failed to set RSP0");
+    }
+
     SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+
+    if (Task->AddressSpace != NULL && !VMMSwitchAddressSpace(Task->AddressSpace))
+    {
+        Panic(L"LBPWRR: Initial CR3 switch failed");
+    }
 
     UsageStart(CPUID);
 
@@ -303,9 +315,27 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *Frame)
         SwitchingTasks[CPUID] = CurrentTask;
     }
 
+    if (NextTask != NULL)
+    {
+        if (NextTask->KernelStackBase == 0 || NextTask->KernelStackSize == 0 || !GDTSetKernelStack(NextTask->KernelStackBase + NextTask->KernelStackSize))
+        {
+            SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+
+            Panic(L"LBPWRR: Failed to set RSP0");
+        }
+    }
+
     SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
 
     UsageSampleTasks();
+
+    if (NextTask != NULL && (CurrentTask == NULL ? NextTask->AddressSpace != NULL : NextTask->AddressSpace != CurrentTask->AddressSpace))
+    {
+        if (!VMMSwitchAddressSpace(NextTask->AddressSpace))
+        {
+            Panic(L"LBPWRR: CR3 switch failed");
+        }
+    }
 
     return NextRSP;
 }

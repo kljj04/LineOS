@@ -136,7 +136,7 @@ VOID KPrint(CONST CHAR16 *Msg, UINT32 X, UINT32 Baseline, UINT32 Color, UINT32 P
         if (Ch == '\n')
         {
             X = OriginX;
-            Baseline += KPRINT_LINE_HEIGHT;
+            Baseline += PixelHeight + PixelHeight / 4;
             continue;
         }
 

@@ -34,3 +34,4 @@ AlignConsecutiveMacros:
 SortIncludes: false
 AttributeMacros: [ '__attribute__' ]
 StatementMacros: [ 'CLI', 'HLT' ]
+IndentCaseLabels: true

@@ -30,13 +30,14 @@ USER_PROGRAM_SRCS_$(1) := $(call RWildcard,$(USER_PROGRAM_ROOT)/$(1),*.c) $(call
 USER_PROGRAM_OBJS_$(1) := $$(patsubst $(USER_PROGRAM_ROOT)/$(1)/%.c,Build/Objects/UserPrograms/$(1)/%.o,$$(filter %.c,$$(USER_PROGRAM_SRCS_$(1)))) $$(patsubst $(USER_PROGRAM_ROOT)/$(1)/%.S,Build/Objects/UserPrograms/$(1)/%.o,$$(filter %.S,$$(USER_PROGRAM_SRCS_$(1))))
 USER_PROGRAM_OUTPUT_$(1) := $(USER_PROGRAM_OUTPUT_DIR)/$(1).lix
 
-$$(USER_PROGRAM_OUTPUT_$(1)): $$(USER_PROGRAM_OBJS_$(1)) Link/UserProgram.ld Makefiles/UserPrograms.mk
+$$(USER_PROGRAM_OUTPUT_$(1)): $$(USER_PROGRAM_OBJS_$(1)) $(LOSLIBC_TARGET) Link/UserProgram.ld Makefiles/UserPrograms.mk
 	@$$(call MKDIR_P,$$(dir $$@))
 	@$$(LD) -static \
 		-T Link/UserProgram.ld \
 		-e _Start \
 		-o $$@ \
-		$$(USER_PROGRAM_OBJS_$(1))
+		$$(USER_PROGRAM_OBJS_$(1)) \
+		$(LOSLIBC_TARGET)
 
 endef
 
