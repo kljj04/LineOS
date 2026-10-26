@@ -16,22 +16,43 @@ Include `TrueType/TrueTypeEngine.h`. Supply a `TTF_ALLOCATOR` with aligned alloc
 
 Drawing changes CPU memory only. After checking the display dimensions, pitch and buffer capacity, the caller can use the existing `DisplayPresent(Surface.FrameBuffer, (UINT64) Surface.FrameBufferWidth * Surface.FrameBufferHeight * 4)`. The library does not invoke display syscalls or change kernel display ownership.
 
-The engine holds one surface/allocator state per process; serialize calls. Fonts must be trusted: input-length validation and complete allocation-failure recovery are not provided. Existing mathematical approximations and single-line-oriented measurement behavior are retained. Init and Shell each initialize their own library state. A QEMU/KVM single-CPU run displayed the Shell output; that observation does not establish multi-CPU correctness.
+The engine holds one surface/allocator state per process; serialize calls. Fonts must be trusted: input-length validation and complete allocation-failure recovery are not provided. Existing mathematical approximations and single-line-oriented measurement behavior are retained. Shell initializes its own library state; Init only publishes assets. A QEMU/KVM single-CPU run displayed the Shell output; that observation does not establish multi-CPU correctness.
 
 ## Files and process creation
 
 Image updates copy `Assets/Fonts/*.ttf` to EXT2 `/sys/fonts/` with their names and mode 0644. User programs can read them with `open(Path, O_RDONLY)` from `fcntl.h` and `read`/`close` from `unistd.h`. There are eight read-only descriptors per task. Errors return -1 and EOF returns 0; `errno` is not implemented. Reads resolve the path again, so POSIX open-file behavior across rename or deletion is not implemented. Access uses the VFS context supplied at execution; Init currently inherits an administrator context.
 
-`spawn(Path)` from `spawn.h` starts a static ELF in a separate address space using the caller's VFS context, returning the child PID or -1 on failure. This is a simple LineOS extension, not POSIX `posix_spawn`. Arguments, wait, exit-status collection and file-descriptor inheritance are not yet supported. At most 16 child execution records are retained; terminated records are reclaimed on a later spawn once the scheduler has retired the task. Per-task SSE state preservation is not implemented; concurrent userspace floating-point/SIMD has not been validated. TrueType initialization and font memory are per process and are not inherited by a spawned Shell.
+`spawn(Path)` from `spawn.h` starts a static ELF in a separate address space using the caller's VFS context, returning the child PID or -1 on failure. This is a simple LineOS extension, not POSIX `posix_spawn`. Arguments, wait, exit-status collection and file-descriptor inheritance are not yet supported. At most 16 child execution records are retained; terminated records are reclaimed on a later spawn once the scheduler has retired the task. Per-task SSE state preservation is not implemented; concurrent userspace floating-point/SIMD has not been validated. TrueType state and glyph caches remain per process; original TTF bytes are shared through the asset API below. Publishing authority is not inherited by children.
+
+## Shared assets
+
+Include `Asset.h`. All three functions return 0 on success or -1 on failure, without errno.
+
+- `LOSAssetPublish(Name, Data, Size)` is restricted to the boot Init. It copies original bytes into kernel-owned pages once, allowing reuse of the source buffer and preserving assets after Init exits. Names contain 1–63 bytes. Assets are immutable; duplicate names and replacement are rejected.
+- `LOSAssetAcquire(Name, &Asset)` maps those same physical pages read-only into the caller and returns `Data`, `Size`, and `Handle` in `LOS_ASSET`. Repeated acquisitions of a name in one process increment the same mapping's reference count. Use a separate structure and matching release for each acquisition. Copying a structure does not add a reference.
+- `LOSAssetRelease(&Asset)` drops that process's reference, removes the mapping at the last reference, and clears the caller's structure. It preserves other processes' mappings and the published bytes. Address-space destruction cleans remaining mappings and their page tables without freeing the kernel-owned asset payload.
+
+Limits are 16 published assets, 16MiB per asset, 64MiB total payload rounded to pages, and eight distinct mapped assets per process. Page tables and metadata are additional bounded allocations. The first version retains published bytes until reboot and has no unpublish, replacement or eviction API. Writes to mapped bytes cause protection exceptions. Consumers must stay within `Size`.
+
+```c
+LOS_ASSET Asset = {0};
+
+if (LOSAssetAcquire("Fonts/JetBrainsMono", &Asset) == 0)
+{
+    TrueTypeRegisterFont(&Font, Asset.Data);
+}
+```
+
+Keep the mapping alive until the font object and caches stop referencing its data. Only TTF bytes are shared: font objects, glyph caches, allocators and surfaces remain private. The asset API does not validate file formats.
 
 ## System call interface
 
-The current `int 0x80` dispatch exposes exit, read, write, open, close, getpid, display information/presentation, output stream reading and spawn. The yield number is reserved but currently returns failure. File and process interfaces expose only the subset described here; there is no `errno` or general descriptor inheritance.
+The current `int 0x80` dispatch exposes exit, read, write, open, close, getpid, display information/presentation, output stream reading, spawn, and asset publication/acquisition/release. The yield number is reserved but currently returns failure. File and process interfaces expose only the subset described here; there is no `errno` or general descriptor inheritance.
 
 ## Output and Shell
 
 The libc `printf`, `puts` and `putchar` use `write` on stdout. The kernel accepts writes to descriptors 1 and 2, copies bytes to the global stream, and currently mirrors attempted bytes to debugcon. The stream is shared and destructive: readers consume the same bytes, with no per-process routing or blocking read. It is not a terminal, pipe, or a complete POSIX stdio implementation. The diagnostic mirror may include bytes that do not fit in the stream.
 
-Init checks the display, reads and registers Pretendard and JetBrains Mono, starts `/bin/Shell.lix` and exits. A spawned process does not inherit those font objects: Shell opens JetBrains Mono itself, initializes a separate TrueType surface and allocator, consumes stream bytes, renders printable ASCII with newline, carriage return and scrolling, and presents the framebuffer. The current Shell has no keyboard input or command interpreter. It supports displays up to 2560 × 1440 and polls when the stream is empty; its yield syscall currently returns -1, so it can consume CPU. Font loading can leave the screen dark for some time before Shell presents its framebuffer.
+Init reads Pretendard and JetBrains Mono once, publishes `Fonts/Pretendard` and `Fonts/JetBrainsMono`, starts `/bin/Shell.lix`, and exits. Shell maps JetBrains Mono read-only and initializes its own TrueType surface, allocator and font object. It consumes stream bytes, renders printable ASCII with newline, carriage return and scrolling, and presents the framebuffer. It has no keyboard input or command interpreter. Displays up to 2560 × 1440 are supported. It polls an empty stream; yield currently returns -1, so it can consume CPU.
 
 The libc interface is a limited freestanding subset. Standard names such as `open`, `read`, `write` and `printf` do not imply full C or POSIX conformance. `spawn` and the display and stream interfaces are LineOS-specific; `exec`, process waiting, a general userspace allocator and terminal input are not implemented.

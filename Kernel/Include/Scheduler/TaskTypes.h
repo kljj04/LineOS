@@ -6,6 +6,7 @@
 
 #include <LineOS/TypeInfo.h>
 #include <Memory/VMM.h>
+#include <LineOS/Asset.h>
 #include <FS/VFS/VFSTypes.h>
 
 #define TASK_FILE_LIMIT 8U
@@ -17,6 +18,13 @@ typedef struct
     UINT32 Number;
     UINT32 Partition;
 } TASK_FILE;
+
+typedef struct
+{
+    UINT64 Handle;
+    UINT32 Index;
+    UINT32 References;
+} TASK_ASSET;
 
 typedef enum
 {
@@ -123,5 +131,7 @@ typedef struct TASK
     UINT64             UserStackBase;
     UINT64             UserStackSize;
     VFS_CONTEXT       *FileContext;
+    BOOLEAN            AssetPublisher;
+    TASK_ASSET         Assets[LOS_ASSET_MAPPING_LIMIT];
     TASK_FILE          Files[TASK_FILE_LIMIT];
 } TASK;

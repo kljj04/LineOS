@@ -25,3 +25,9 @@ BOOLEAN VMMUnmapAddressSpacePage(VMM_ADDRESS_SPACE *AddressSpace, UINT64 VirtAdd
 BOOLEAN VMMSwitchAddressSpace(VMM_ADDRESS_SPACE *AddressSpace);
 BOOLEAN VMMCopyFromUser(VMM_ADDRESS_SPACE *AddressSpace, VOID *Destination, UINT64 Source, UINT64 Size);
 BOOLEAN VMMCopyToUser(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Destination, CONST VOID *Source, UINT64 Size);
+
+#define VMM_SHARED_USER_START 0x500000000000ULL
+#define VMM_SHARED_USER_END   (VMM_SHARED_USER_START + (1ULL << 30))
+
+BOOLEAN VMMMapSharedPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, CONST UINT64 *Pages, UINT32 Count);
+BOOLEAN VMMUnmapSharedPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, CONST UINT64 *Pages, UINT32 Count);

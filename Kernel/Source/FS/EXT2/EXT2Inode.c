@@ -20,7 +20,7 @@ BOOLEAN EXT2ReadInode(EXT2_VOLUME *Volume, UINT32 Number, EXT2_INODE *Inode)
 
     Offset = (UINT64) ((Number - 1) % Volume->InodesPerGroup) * Volume->InodeSize;
 
-    if (!EXT2ReadBlock(Volume, Descriptor.InodeTable + (UINT32) (Offset / Volume->BlockSize), Buffer))
+    if (!EXT2ReadMetadataBlock(Volume, Descriptor.InodeTable + (UINT32) (Offset / Volume->BlockSize), Buffer))
     {
         return FALSE;
     }
@@ -162,7 +162,7 @@ BOOLEAN EXT2MapBlock(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT64 Logical, BOO
             return TRUE;
         }
 
-        if (!EXT2DataBlockValid(Volume, Block) || !EXT2ReadBlock(Volume, Block, Buffer))
+        if (!EXT2DataBlockValid(Volume, Block) || !EXT2ReadMetadataBlock(Volume, Block, Buffer))
         {
             return FALSE;
         }

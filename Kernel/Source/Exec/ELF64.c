@@ -361,7 +361,7 @@ Failure:
     return FALSE;
 }
 
-BOOLEAN ELF64Execute(VFS_CONTEXT *Context, CONST CHAR8 *Path, ELF64_EXECUTION *Execution)
+STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, ELF64_EXECUTION *Execution, BOOLEAN AssetPublisher)
 {
     VFS_NODE Node;
     VOID    *Data;
@@ -402,6 +402,8 @@ BOOLEAN ELF64Execute(VFS_CONTEXT *Context, CONST CHAR8 *Path, ELF64_EXECUTION *E
     }
     KMemCpy(Execution->Task->FileContext, Context, sizeof(VFS_CONTEXT));
 
+    Execution->Task->AssetPublisher = AssetPublisher;
+
     if (!LBPWRRAddTask(Execution->Task))
     {
         DebugWriteLine("ELF64Execute: scheduling failed");
@@ -410,4 +412,14 @@ BOOLEAN ELF64Execute(VFS_CONTEXT *Context, CONST CHAR8 *Path, ELF64_EXECUTION *E
         return FALSE;
     }
     return TRUE;
+}
+
+BOOLEAN ELF64Execute(VFS_CONTEXT *Context, CONST CHAR8 *Path, ELF64_EXECUTION *Execution)
+{
+    return ELF64ExecuteProgram(Context, Path, Execution, FALSE);
+}
+
+BOOLEAN ELF64ExecuteInit(VFS_CONTEXT *Context, CONST CHAR8 *Path, ELF64_EXECUTION *Execution)
+{
+    return ELF64ExecuteProgram(Context, Path, Execution, TRUE);
 }

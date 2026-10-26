@@ -60,7 +60,7 @@ STATIC BOOLEAN EXT2DirectoryScan(EXT2_VOLUME *Volume, EXT2_INODE *Directory, CON
             return EXT2Fail(Volume, EXT2_ERROR_CORRUPT);
         }
 
-        if (!EXT2ReadBlock(Volume, Physical, Buffer))
+        if (!EXT2ReadMetadataBlock(Volume, Physical, Buffer))
         {
             return FALSE;
         }
@@ -566,7 +566,7 @@ STATIC BOOLEAN EXT2EmptyDirectory(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT32
     {
         UINT32 Block;
 
-        if (!EXT2MapBlock(Volume, Inode, Logical, FALSE, &Block) || !EXT2ReadBlock(Volume, Block, Buffer))
+        if (!EXT2MapBlock(Volume, Inode, Logical, FALSE, &Block) || !EXT2ReadMetadataBlock(Volume, Block, Buffer))
         {
             return FALSE;
         }
@@ -972,7 +972,7 @@ BOOLEAN EXT2ValidateDirectories(EXT2_VOLUME *Volume)
         EXT2_BLOCK_GROUP Descriptor;
         UINT32           Directories = 0;
 
-        if (!EXT2ReadBlockGroup(Volume, Group, &Descriptor) || !EXT2ReadBlock(Volume, Descriptor.InodeBitmap, Bitmap))
+        if (!EXT2ReadBlockGroup(Volume, Group, &Descriptor) || !EXT2ReadMetadataBlock(Volume, Descriptor.InodeBitmap, Bitmap))
         {
             goto Done;
         }
@@ -1036,7 +1036,7 @@ BOOLEAN EXT2ValidateDirectories(EXT2_VOLUME *Volume)
         {
             UINT32 Block;
 
-            if (!EXT2MapBlock(Volume, &Inode, Logical, FALSE, &Block) || !EXT2ReadBlock(Volume, Block, Buffer))
+            if (!EXT2MapBlock(Volume, &Inode, Logical, FALSE, &Block) || !EXT2ReadMetadataBlock(Volume, Block, Buffer))
             {
                 goto Done;
             }

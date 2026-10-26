@@ -42,6 +42,49 @@ BOOLEAN EXT2ReadData(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT64 Offset, VOID
         {
             KMemSet((UINT8 *) Buffer + *ReadLength, 0, Count);
         }
+        else if (Within == 0 && Count == Volume->BlockSize && !Volume->Transaction)
+        {
+            UINT32  Blocks = 1;
+            UINT32  Limit = (Length - *ReadLength) / Volume->BlockSize;
+            UINT32  Capacity = Volume->DMAPages * EXT2_MAX_BLOCK_SIZE / Volume->BlockSize;
+            BOOLEAN MappingFailed = FALSE;
+
+            if (Limit > Capacity)
+            {
+                Limit = Capacity;
+            }
+
+            while (Blocks < Limit)
+            {
+                UINT32 Next;
+
+                if (!EXT2MapBlock(Volume, Inode, Offset / Volume->BlockSize + Blocks, FALSE, &Next))
+                {
+                    MappingFailed = TRUE;
+                    break;
+                }
+
+                if (Next == 0 || (UINT64) Next != (UINT64) Physical + Blocks)
+                {
+                    break;
+                }
+
+                Blocks++;
+            }
+
+            if (!EXT2ReadBlocks(Volume, Physical, Blocks, (UINT8 *) Buffer + *ReadLength))
+            {
+                return FALSE;
+            }
+
+            Count = Blocks * Volume->BlockSize;
+
+            if (MappingFailed)
+            {
+                *ReadLength += Count;
+                return FALSE;
+            }
+        }
         else
         {
             if (!EXT2ReadBlock(Volume, Physical, BlockBuffer))

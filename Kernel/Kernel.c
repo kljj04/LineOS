@@ -108,7 +108,7 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
 
     KMemSet(&InitExecution, 0, sizeof(InitExecution));
 
-    if (!ELF64Execute(&RootContext, (CONST CHAR8 *) "/bin/Init.lix", &InitExecution))
+    if (!ELF64ExecuteInit(&RootContext, (CONST CHAR8 *) "/bin/Init.lix", &InitExecution))
     {
         Panic(L"Init Failed");
     }

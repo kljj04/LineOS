@@ -14,6 +14,8 @@
 #define EXT2_MAX_BLOCK_SIZE    4096U
 #define EXT2_TRANSACTION_LIMIT 32768U
 #define EXT2_CHANGE_BUCKETS    4096U
+#define EXT2_READ_CACHE_BLOCKS 16U
+#define EXT2_READ_DMA_PAGES    16U
 
 typedef struct
 {
@@ -37,6 +39,13 @@ typedef struct EXT2_CHANGE
     UINT32              Block;
     UINT8               Data[];
 } EXT2_CHANGE;
+
+typedef struct
+{
+    UINT32  Block;
+    BOOLEAN Valid;
+    UINT8   Data[EXT2_MAX_BLOCK_SIZE];
+} EXT2_READ_CACHE;
 
 typedef enum
 {
@@ -64,6 +73,7 @@ typedef struct
     GPT_PARTITION        Partition;
     UINT8                Superblock[1024];
     UINT8               *DMABuffer;
+    UINT32               DMAPages;
     UINT32               BlockSize;
     UINT32               BlockCount;
     UINT32               InodeCount;
@@ -80,6 +90,8 @@ typedef struct
     UINT32               GID;
     EXT2_CHANGE         *Changes;
     EXT2_CHANGE        **ChangeBuckets;
+    EXT2_READ_CACHE     *ReadCache;
+    UINT32               ReadCacheNext;
     VOLATILE UINT32      Busy;
     EXT2_ERROR           Error;
     BOOLEAN              Mounted;
@@ -95,6 +107,9 @@ VOID    EXT2Store16(UINT8 *Data, UINT16 Value);
 VOID    EXT2Store32(UINT8 *Data, UINT32 Value);
 BOOLEAN EXT2Fail(EXT2_VOLUME *Volume, EXT2_ERROR Error);
 BOOLEAN EXT2ReadBlock(EXT2_VOLUME *Volume, UINT32 Block, VOID *Buffer);
+BOOLEAN EXT2ReadBlocks(EXT2_VOLUME *Volume, UINT32 Block, UINT32 Count, VOID *Buffer);
+BOOLEAN EXT2ReadMetadataBlock(EXT2_VOLUME *Volume, UINT32 Block, VOID *Buffer);
+VOID    EXT2InvalidateReadCache(EXT2_VOLUME *Volume);
 UINT8  *EXT2EditBlock(EXT2_VOLUME *Volume, UINT32 Block);
 BOOLEAN EXT2Begin(EXT2_VOLUME *Volume);
 BOOLEAN EXT2Commit(EXT2_VOLUME *Volume);

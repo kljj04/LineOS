@@ -12,6 +12,7 @@
 #include <Syscall/SyscallFile.h>
 #include <Syscall/SyscallStream.h>
 #include <Syscall/SyscallSpawn.h>
+#include <Syscall/SyscallAsset.h>
 
 UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
 {
@@ -87,6 +88,21 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
         case SYSCALL_SPAWN:
         {
             return (UINT64) SyscallSpawn(Frame->RDI);
+        }
+
+        case SYSCALL_ASSET_PUBLISH:
+        {
+            return (UINT64) SyscallAssetPublish(Frame->RDI, Frame->RSI, Frame->RDX);
+        }
+
+        case SYSCALL_ASSET_ACQUIRE:
+        {
+            return (UINT64) SyscallAssetAcquire(Frame->RDI, Frame->RSI);
+        }
+
+        case SYSCALL_ASSET_RELEASE:
+        {
+            return (UINT64) SyscallAssetRelease(Frame->RDI);
         }
 
         default:

@@ -17,7 +17,7 @@ BOOLEAN EXT2InodeAllocated(EXT2_VOLUME *Volume, UINT32 Number)
         return EXT2Fail(Volume, EXT2_ERROR_CORRUPT);
     }
 
-    if (!EXT2ReadBlockGroup(Volume, (Number - 1) / Volume->InodesPerGroup, &Descriptor) || !EXT2ReadBlock(Volume, Descriptor.InodeBitmap, Bitmap))
+    if (!EXT2ReadBlockGroup(Volume, (Number - 1) / Volume->InodesPerGroup, &Descriptor) || !EXT2ReadMetadataBlock(Volume, Descriptor.InodeBitmap, Bitmap))
     {
         return FALSE;
     }

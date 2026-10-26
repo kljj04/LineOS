@@ -41,7 +41,7 @@ BOOLEAN EXT2ReadBlockGroup(EXT2_VOLUME *Volume, UINT32 Group, EXT2_BLOCK_GROUP *
         return EXT2Fail(Volume, EXT2_ERROR_CORRUPT);
     }
 
-    if (!EXT2ReadBlock(Volume, Volume->DescriptorStart + Group / (Volume->BlockSize / 32), Buffer))
+    if (!EXT2ReadMetadataBlock(Volume, Volume->DescriptorStart + Group / (Volume->BlockSize / 32), Buffer))
     {
         return FALSE;
     }
@@ -107,7 +107,7 @@ BOOLEAN EXT2DataBlockValid(EXT2_VOLUME *Volume, UINT32 Block)
         return EXT2Fail(Volume, EXT2_ERROR_CORRUPT);
     }
 
-    if (!EXT2ReadBlock(Volume, Descriptor.BlockBitmap, Bitmap))
+    if (!EXT2ReadMetadataBlock(Volume, Descriptor.BlockBitmap, Bitmap))
     {
         return FALSE;
     }

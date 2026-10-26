@@ -56,54 +56,82 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags)
     return -1;
 }
 
+#define SYSCALL_READ_BUFFER_SIZE (1024U * 1024U)
+
 INT64 SyscallRead(UINT64 FD, UINT64 Buffer, UINT64 Count)
 {
     TASK      *Task = LBPWRRGetCurrentTask();
     TASK_FILE *File;
     VFS_NODE   Node;
-    UINT8      Bytes[4096];
+    UINT8     *Bytes;
+    UINT32     BufferSize;
     UINT64     Total = 0;
 
     if (Task == NULL || Task->AddressSpace == NULL || Task->FileContext == NULL || FD < 3 || FD - 3 >= TASK_FILE_LIMIT || Count > 0x7FFFFFFFFFFFFFFFULL)
     {
         return -1;
     }
+
     File = &Task->Files[FD - 3];
+
     if (File->Path == NULL)
     {
         return -1;
     }
+
     if (Count == 0)
     {
         return 0;
     }
-    if (Buffer == 0 || Buffer > UINT64_MAX - Count || VFSLookup(Task->FileContext, File->Path, &Node) != VFS_OK || Node.Number != File->Number || Node.Partition != File->Partition)
+
+    if (Buffer == 0 || Buffer > UINT64_MAX - Count)
     {
         return -1;
     }
+
+    Node.Number = File->Number;
+    Node.Partition = File->Partition;
+    BufferSize = Count > SYSCALL_READ_BUFFER_SIZE ? SYSCALL_READ_BUFFER_SIZE : (UINT32) Count;
+    Bytes = KAlloc(BufferSize);
+
+    if (Bytes == NULL)
+    {
+        return -1;
+    }
+
     while (Total < Count)
     {
-        UINT32 Length = Count - Total > sizeof(Bytes) ? sizeof(Bytes) : (UINT32) (Count - Total);
+        UINT32 Length = Count - Total > BufferSize ? BufferSize : (UINT32) (Count - Total);
         UINT32 ReadLength = 0;
-        if (VFSRead(Task->FileContext, File->Path, File->Offset, Bytes, Length, &ReadLength) != VFS_OK || ReadLength > Length)
+
+        if (VFSReadChecked(Task->FileContext, File->Path, &Node, File->Offset, Bytes, Length, &ReadLength) != VFS_OK || ReadLength > Length)
         {
+            KFree(Bytes);
             return Total != 0 ? (INT64) Total : -1;
         }
+
         if (ReadLength == 0)
         {
             break;
         }
+
         if (!VMMCopyToUser(Task->AddressSpace, Buffer + Total, Bytes, ReadLength))
         {
+            KFree(Bytes);
             return Total != 0 ? (INT64) Total : -1;
         }
+
         File->Offset += ReadLength;
         Total += ReadLength;
+
         if (ReadLength < Length)
         {
             break;
         }
     }
+
+    KFree(Bytes);
+
     return (INT64) Total;
 }
 

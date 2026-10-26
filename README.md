@@ -24,7 +24,7 @@ The current development environment is Linux with QEMU/KVM and VirtIO devices. P
 - GPT, EXT2 and a VFS layer
 - IPv4 networking with ARP, ICMP, DHCP, UDP, DNS and a TCP client with up to 16 concurrent connections
 
-The kernel mounts EXT2 and starts the Ring 3 `Init.lix` program. Init loads fonts and starts `Shell.lix`; Shell currently reads the shared output stream and displays ASCII text using the userspace TrueType library. It is an output demonstration, not an interactive command shell. The system call interface and process lifecycle are still incomplete. Networking and NTP workers are implemented but are not registered by the default startup path.
+The kernel mounts EXT2 and starts the Ring 3 `Init.lix` program. Init publishes shared font assets and starts `Shell.lix`; Shell maps those assets read-only, reads the shared output stream and displays ASCII text using the userspace TrueType library. It is an output demonstration, not an interactive command shell. The system call interface and process lifecycle are still incomplete. Networking and NTP workers are implemented but are not registered by the default startup path.
 
 ## Getting started
 

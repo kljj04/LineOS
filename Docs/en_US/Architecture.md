@@ -8,7 +8,7 @@ LineOS is a monolithic x86_64 kernel booted through UEFI. The bootloader loads t
 
 `Kernel/Kernel.c` currently initializes physical and virtual memory, the heap, TrueType rendering, PCI and VirtIO GPU, the GDT and IDT, LAPIC/HPET/TSC timers, the UTC clock, SMP, LBPWRR, and VirtIO block/network/input devices.
 
-`InitKernel()` initializes VFS, mounts GPT partition 2 as an EXT2 root and initializes network and input devices. `KMain()` loads `/bin/Init.lix` as a static ELF64 userspace task, panics with `Init Failed` if loading fails, and starts LBPWRR. Init loads and registers fonts before calling `spawn("/bin/Shell.lix")`. Shell loads its own font and displays the shared output stream. See [user programs](UserLibraries.md) for details and current limits.
+`InitKernel()` initializes VFS, mounts GPT partition 2 as an EXT2 root and initializes network and input devices. `KMain()` loads `/bin/Init.lix` as a static ELF64 userspace task, panics with `Init Failed` if loading fails, and starts LBPWRR. Init publishes fonts as shared assets before calling `spawn("/bin/Shell.lix")`. Shell maps the font read-only and displays the shared output stream. See [user programs](UserLibraries.md) for details and current limits.
 
 The keyboard and mouse consumers, NetworkTask and ClockNTPTask are not registered by this startup path. Device initialization alone does not start these workers. See [scheduling](Scheduler.md) for Wait Queues and CPU accounting.
 

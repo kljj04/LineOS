@@ -644,7 +644,7 @@ VFS_ERROR VFSReadDirectory(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 *Curs
     return VFSUnlock(Context->Registry, Error);
 }
 
-STATIC VFS_ERROR VFSData(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 Offset, VOID *Buffer, UINT32 Length, UINT32 *ReadLength, BOOLEAN Write)
+STATIC VFS_ERROR VFSData(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 Offset, VOID *Buffer, UINT32 Length, UINT32 *ReadLength, BOOLEAN Write, CONST VFS_NODE *Expected)
 {
     VFS_RESOLVED Resolved;
     VFS_ERROR    Error;
@@ -670,6 +670,10 @@ STATIC VFS_ERROR VFSData(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 Offset,
     {
         Error = VFS_INVALID;
     }
+    else if (Error == VFS_OK && Expected != NULL && (Resolved.Partition != Expected->Partition || Resolved.Node.Number != Expected->Number))
+    {
+        Error = VFS_NOT_FOUND;
+    }
     else if (Error == VFS_OK)
     {
         VFS_PARTITION *Partition = VFSPartition(Context, Resolved.Partition);
@@ -689,12 +693,27 @@ STATIC VFS_ERROR VFSData(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 Offset,
 
 VFS_ERROR VFSRead(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 Offset, VOID *Buffer, UINT32 Length, UINT32 *ReadLength)
 {
-    return VFSData(Context, Path, Offset, Buffer, Length, ReadLength, FALSE);
+    return VFSData(Context, Path, Offset, Buffer, Length, ReadLength, FALSE, NULL);
+}
+
+VFS_ERROR VFSReadChecked(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST VFS_NODE *Expected, UINT64 Offset, VOID *Buffer, UINT32 Length, UINT32 *ReadLength)
+{
+    if (Expected == NULL)
+    {
+        if (ReadLength != NULL)
+        {
+            *ReadLength = 0;
+        }
+
+        return VFS_INVALID;
+    }
+
+    return VFSData(Context, Path, Offset, Buffer, Length, ReadLength, FALSE, Expected);
 }
 
 VFS_ERROR VFSWrite(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 Offset, CONST VOID *Buffer, UINT32 Length)
 {
-    return VFSData(Context, Path, Offset, (VOID *) Buffer, Length, NULL, TRUE);
+    return VFSData(Context, Path, Offset, (VOID *) Buffer, Length, NULL, TRUE, NULL);
 }
 
 STATIC VFS_ERROR VFSParent(VFS_CONTEXT *Context, CONST CHAR8 *Path, VFS_RESOLVED *Resolved, CHAR8 *Name)

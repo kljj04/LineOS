@@ -478,14 +478,10 @@ VOID *KMemMove(VOID *Destination, CONST VOID *Source, UINTN Size)
 
 VOID *KMemCpy(VOID *Destination, CONST VOID *Source, UINTN Size)
 {
-    UINT8       *Dst = (UINT8 *) Destination;
-    CONST UINT8 *Src = (CONST UINT8 *) Source;
+    VOID       *Target = Destination;
+    CONST VOID *Input = Source;
 
-    for (UINTN Index = 0; Index < Size; Index++)
-    {
-        Dst[Index] = Src[Index];
-    }
-
+    ASM("cld; rep movsb" : "+D"(Target), "+S"(Input), "+c"(Size) : : "memory");
     return Destination;
 }
 

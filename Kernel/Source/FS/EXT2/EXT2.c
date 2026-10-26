@@ -54,6 +54,7 @@ STATIC BOOLEAN EXT2DiskBlock(EXT2_VOLUME *Volume, UINT32 Block, VOID *Buffer, BO
 
     if (Write)
     {
+        EXT2InvalidateReadCache(Volume);
         KMemCpy(Volume->DMABuffer, Buffer, Volume->BlockSize);
 
         if (!VirtIOBlockWriteSync(Volume->Device, Volume->Partition.FirstLBA + Sector, Count, Volume->DMABuffer))
@@ -86,6 +87,84 @@ BOOLEAN EXT2ReadBlock(EXT2_VOLUME *Volume, UINT32 Block, VOID *Buffer)
     }
 
     return EXT2DiskBlock(Volume, Block, Buffer, FALSE);
+}
+
+BOOLEAN EXT2ReadBlocks(EXT2_VOLUME *Volume, UINT32 Block, UINT32 Count, VOID *Buffer)
+{
+    UINT64 Sector = (UINT64) Block * (Volume->BlockSize / 512);
+    UINT64 Sectors = (UINT64) Count * (Volume->BlockSize / 512);
+
+    if (Count == 0 || Count > (UINT64) Volume->DMAPages * EXT2_MAX_BLOCK_SIZE / Volume->BlockSize || Block >= Volume->BlockCount || Count > Volume->BlockCount - Block || Sector >= Volume->Partition.SectorCount || Sectors > Volume->Partition.SectorCount - Sector)
+    {
+        return EXT2Fail(Volume, EXT2_ERROR_CORRUPT);
+    }
+
+    if (Volume->Transaction)
+    {
+        for (UINT32 Index = 0; Index < Count; Index++)
+        {
+            if (!EXT2ReadBlock(Volume, Block + Index, (UINT8 *) Buffer + (UINT64) Index * Volume->BlockSize))
+            {
+                return FALSE;
+            }
+        }
+
+        return TRUE;
+    }
+
+    if (!VirtIOBlockReadSync(Volume->Device, Volume->Partition.FirstLBA + Sector, (UINT32) Sectors, Volume->DMABuffer))
+    {
+        return EXT2Fail(Volume, EXT2_ERROR_IO);
+    }
+
+    KMemCpy(Buffer, Volume->DMABuffer, (UINT64) Count * Volume->BlockSize);
+    return TRUE;
+}
+
+VOID EXT2InvalidateReadCache(EXT2_VOLUME *Volume)
+{
+    if (Volume->ReadCache != NULL)
+    {
+        for (UINT32 Index = 0; Index < EXT2_READ_CACHE_BLOCKS; Index++)
+        {
+            Volume->ReadCache[Index].Valid = FALSE;
+        }
+    }
+
+    Volume->ReadCacheNext = 0;
+}
+
+BOOLEAN EXT2ReadMetadataBlock(EXT2_VOLUME *Volume, UINT32 Block, VOID *Buffer)
+{
+    EXT2_READ_CACHE *Entry;
+
+    if (Volume->ReadCache == NULL || Volume->Transaction)
+    {
+        return EXT2ReadBlock(Volume, Block, Buffer);
+    }
+
+    for (UINT32 Index = 0; Index < EXT2_READ_CACHE_BLOCKS; Index++)
+    {
+        Entry = &Volume->ReadCache[Index];
+
+        if (Entry->Valid && Entry->Block == Block)
+        {
+            KMemCpy(Buffer, Entry->Data, Volume->BlockSize);
+            return TRUE;
+        }
+    }
+
+    if (!EXT2ReadBlock(Volume, Block, Buffer))
+    {
+        return FALSE;
+    }
+
+    Entry = &Volume->ReadCache[Volume->ReadCacheNext];
+    Entry->Block = Block;
+    KMemCpy(Entry->Data, Buffer, Volume->BlockSize);
+    Entry->Valid = TRUE;
+    Volume->ReadCacheNext = (Volume->ReadCacheNext + 1) % EXT2_READ_CACHE_BLOCKS;
+    return TRUE;
 }
 
 UINT8 *EXT2EditBlock(EXT2_VOLUME *Volume, UINT32 Block)
@@ -150,12 +229,14 @@ BOOLEAN EXT2Begin(EXT2_VOLUME *Volume)
     }
 
     KMemSet(Volume->ChangeBuckets, 0, EXT2_CHANGE_BUCKETS * sizeof(*Volume->ChangeBuckets));
+    EXT2InvalidateReadCache(Volume);
     Volume->Transaction = TRUE;
     return TRUE;
 }
 
 VOID EXT2Abort(EXT2_VOLUME *Volume)
 {
+    EXT2InvalidateReadCache(Volume);
     while (Volume->Changes != NULL)
     {
         EXT2_CHANGE *Change = Volume->Changes;
@@ -291,7 +372,14 @@ BOOLEAN EXT2Mount(EXT2_VOLUME *Volume, VIRTIO_BLOCK_DEVICE *Device, CONST GPT_PA
         return EXT2Fail(Volume, EXT2_ERROR_READ_ONLY);
     }
 
-    Volume->DMABuffer = KAllocPagesBelow(1, 0x100000000ULL);
+    Volume->DMAPages = EXT2_READ_DMA_PAGES;
+    Volume->DMABuffer = KAllocPagesBelow(Volume->DMAPages, 0x100000000ULL);
+
+    if (Volume->DMABuffer == NULL)
+    {
+        Volume->DMAPages = 1;
+        Volume->DMABuffer = KAllocPagesBelow(Volume->DMAPages, 0x100000000ULL);
+    }
 
     if (Volume->DMABuffer == NULL)
     {
@@ -305,11 +393,13 @@ BOOLEAN EXT2Mount(EXT2_VOLUME *Volume, VIRTIO_BLOCK_DEVICE *Device, CONST GPT_PA
             Volume->Error = EXT2_ERROR_CORRUPT;
         }
 
-        KMemFreePages(Volume->DMABuffer, 1);
+        KMemFreePages(Volume->DMABuffer, Volume->DMAPages);
         Volume->DMABuffer = NULL;
         return FALSE;
     }
 
+    Volume->ReadCache = KAlloc(EXT2_READ_CACHE_BLOCKS * sizeof(*Volume->ReadCache));
+    EXT2InvalidateReadCache(Volume);
     Volume->Mounted = TRUE;
     return TRUE;
 }
@@ -350,7 +440,14 @@ BOOLEAN EXT2Unmount(EXT2_VOLUME *Volume)
     }
 
     EXT2Abort(Volume);
-    KMemFreePages(Volume->DMABuffer, 1);
+
+    if (Volume->ReadCache != NULL)
+    {
+        KFree(Volume->ReadCache);
+        Volume->ReadCache = NULL;
+    }
+
+    KMemFreePages(Volume->DMABuffer, Volume->DMAPages);
     Volume->DMABuffer = NULL;
     Volume->Mounted = FALSE;
     return EXT2Leave(Volume, TRUE);
@@ -820,7 +917,7 @@ BOOLEAN EXT2ReadDirectory(EXT2_VOLUME *Volume, UINT32 Number, UINT64 *Cursor, CH
         UINT32 Within = (UINT32) (*Cursor % Volume->BlockSize);
         UINT32 Offset = 0;
 
-        if (!EXT2MapBlock(Volume, &Directory, *Cursor / Volume->BlockSize, FALSE, &Block) || !EXT2ReadBlock(Volume, Block, Buffer))
+        if (!EXT2MapBlock(Volume, &Directory, *Cursor / Volume->BlockSize, FALSE, &Block) || !EXT2ReadMetadataBlock(Volume, Block, Buffer))
         {
             goto Done;
         }

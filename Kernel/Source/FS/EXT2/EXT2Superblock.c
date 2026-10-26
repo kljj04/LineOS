@@ -67,6 +67,7 @@ BOOLEAN EXT2LoadSuperblock(EXT2_VOLUME *Volume)
 
 BOOLEAN EXT2WriteSuperblock(EXT2_VOLUME *Volume, CONST UINT8 *Superblock)
 {
+    EXT2InvalidateReadCache(Volume);
     KMemCpy(Volume->DMABuffer, Superblock, 1024);
 
     if (!VirtIOBlockWriteSync(Volume->Device, Volume->Partition.FirstLBA + 2, 2, Volume->DMABuffer))
