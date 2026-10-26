@@ -8,7 +8,8 @@
 
 - 빌드에는 Bash, `make`, `clang`, `ld.lld`, `lld-link`, `llvm-ar`를 사용합니다.
 - Builder 화면에는 `node`가 필요합니다. Node.js 기본 모듈만 사용하므로 npm 설치는 필요하지 않습니다.
-- 디스크 준비에는 `sudo`, `truncate`, `parted`, `losetup`, `mkfs.vfat`, `mkfs.ext2`, `mount`, `umount`, `findmnt`, `fuser`, `install`과 Linux 기본 파일
+- 디스크 준비에는 `sudo`, `truncate`, `parted`, `losetup`, `mkfs.vfat`, `mkfs.ext2`, `mount`, `umount`, `findmnt`, `fuser`,
+  `install`과 Linux 기본 파일
   도구를 사용합니다.
 - VM에는 `qemu-system-x86_64`, 접근 가능한 `/dev/kvm`, 설정된 호스트 CPU 기능과 번들 `UEFI/OVMF_CODE.fd`·`UEFI/OVMF_VARS.fd`가 필요합니다.
 - 소스 정렬에는 `clang-format`을 사용합니다.
@@ -25,12 +26,12 @@
 
 | 옵션                 | 동작                                                                         |
 |----------------------|------------------------------------------------------------------------------|
-| 옵션 없음 또는 `all` | 관리 마운트 해제 → 빌드·이미지 갱신 → QEMU → EFI·루트 재마운트입니다 |
+| 옵션 없음 또는 `all` | 관리 마운트 해제 → 빌드·이미지 갱신 → QEMU → EFI·루트 재마운트입니다         |
 | `-build`             | 증분 빌드만 수행합니다                                                       |
 | `-image`             | 이미지가 없으면 생성하고 기존 빌드 결과물을 복사합니다. 빌드는 하지 않습니다 |
-| `-m`, `-mount` | 기존 이미지의 EFI·루트 파티션을 마운트하며 빌드나 파일 갱신은 하지 않습니다 |
-| `-u`, `-umount` | 관리 EFI·루트 마운트와 loop 연결을 해제합니다 |
-| `-qemu` | 마운트 해제 → QEMU → 재마운트입니다. 빌드·이미지 갱신은 하지 않습니다 |
+| `-m`, `-mount`       | 기존 이미지의 EFI·루트 파티션을 마운트하며 빌드나 파일 갱신은 하지 않습니다  |
+| `-u`, `-umount`      | 관리 EFI·루트 마운트와 loop 연결을 해제합니다                                |
+| `-qemu`              | 마운트 해제 → QEMU → 재마운트입니다. 빌드·이미지 갱신은 하지 않습니다        |
 | `-clean`             | 빌드 오브젝트와 두 부팅 결과물을 제거합니다. 디스크 이미지는 보존합니다      |
 | `-format`            | 번들 EDK2를 제외한 프로젝트 C·헤더 소스를 직접 정렬합니다                    |
 | `-h`, `--help`       | 도움말을 표시합니다                                                          |
@@ -43,7 +44,10 @@ Node.js 화면 없이 직접 빌드할 때는 다음 명령을 사용합니다.
 make -f Makefiles/Makefile -j1
 ```
 
-결과물에는 `LineOS/EFI/BOOT/BOOTX64.EFI`, `LineOS/KERNEL/LINEOS_KERNEL.ELF`, `LineOS/Programs/<ProgramName>.lix`, `Build/Libraries/libtruetype.a`와 `Build/Libraries/liblosc.a`가 포함됩니다. 오브젝트와 의존성 파일은 `Build/Objects/`에 생성합니다. `UserPrograms/` 바로 아래 디렉터리 이름을 프로그램 이름으로 사용하고 그 아래 C·어셈블리 소스를 정적 ELF64 실행 파일로 링크합니다. 빌드만으로 이미지 내부 파일을 갱신하거나 QEMU를 실행하지는 않습니다.
+결과물에는 `LineOS/EFI/BOOT/BOOTX64.EFI`, `LineOS/KERNEL/LINEOS_KERNEL.ELF`, `LineOS/Programs/<ProgramName>.lix`,
+`Build/Libraries/libtruetype.a`와 `Build/Libraries/liblosc.a`가 포함됩니다. 오브젝트와 의존성 파일은 `Build/Objects/`에 생성합니다.
+`UserPrograms/` 바로 아래 디렉터리 이름을 프로그램 이름으로 사용하고 그 아래 C·어셈블리 소스를 정적 ELF64 실행 파일로 링크합니다. 빌드만으로 이미지 내부 파일을 갱신하거나 QEMU를 실행하지는
+않습니다.
 
 ## 설정 파일과 현재 값
 
@@ -71,22 +75,26 @@ make -f Makefiles/Makefile -j1
 
 ## 이미지와 권한
 
-실행기는 데스크톱 사용자로 실행합니다. 전체 실행에서는 관리 마운트 해제와 빌드 전에 전경의 `sudo -v`로 인증하고 이후 디스크 작업은 비대화형 sudo로 처리합니다. QEMU는 데스크톱 사용자 권한으로 실행합니다.
+실행기는 데스크톱 사용자로 실행합니다. 전체 실행에서는 관리 마운트 해제와 빌드 전에 전경의 `sudo -v`로 인증하고 이후 디스크 작업은 비대화형 sudo로 처리합니다. QEMU는 데스크톱 사용자 권한으로
+실행합니다.
 
 이미지가 없으면 임시 raw GPT 디스크를 만들고 1 MiB부터 301 MiB까지 FAT32 ESP 1번 파티션, 나머지 공간에 EXT2 2번 파티션을 준비합니다. 기존 경로를 덮어쓰지 않는 방식으로 새 이미지를
-배치합니다. 기존 이미지는 포맷 없이 재사용합니다. 갱신은 ESP에 `EFI/BOOT/BOOTX64.EFI`와 `KERNEL/LINEOS_KERNEL.ELF`를 복사하고 EXT2에 유저 프로그램과 `Assets/Fonts/*.ttf`를 배치합니다. 프로그램 위치는 `Program.conf`를 따르며 기본값은 `/bin/`, 폰트 위치는 `/sys/fonts/`입니다. 기존 EXT2는 포맷하지 않습니다. 자세한 내용은 [프로그램 배치](UserLibraries.md)를 참고합니다. `-mount`로 연결한 관리 경로는 갱신 전에 마운트와 loop 연결을 해제합니다. 그 외의 기존 loop 연결은 거부합니다. 정리 단계에서 마운트와 loop 연결을 해제하며 실패 시 확인할 자원을 출력합니다.
+배치합니다. 기존 이미지는 포맷 없이 재사용합니다. 갱신은 ESP에 `EFI/BOOT/BOOTX64.EFI`와 `KERNEL/LINEOS_KERNEL.ELF`를 복사하고 EXT2에 유저 프로그램과
+`Assets/Fonts/*.ttf`를 배치합니다. 프로그램 위치는 `Program.conf`를 따르며 기본값은 `/bin/`, 폰트 위치는 `/sys/fonts/`입니다. 기존 EXT2는 포맷하지 않습니다. 자세한
+내용은 [프로그램 배치](UserLibraries.md)를 참고합니다. `-mount`로 연결한 관리 경로는 갱신 전에 마운트와 loop 연결을 해제합니다. 그 외의 기존 loop 연결은 거부합니다. 정리 단계에서
+마운트와 loop 연결을 해제하며 실패 시 확인할 자원을 출력합니다.
 
 ## 로그와 펌웨어 상태
 
-| 파일                                | 내용                                |
-|-------------------------------------|-------------------------------------|
-| `Logs/Build.log`                    | 빌드 출력                           |
-| `Logs/Format.log`, `Logs/Clean.log` | 해당 작업의 출력                    |
-| `Logs/Image.log`, `Logs/Mount.log` | 이미지 준비·갱신 또는 수동 마운트입니다 |
-| `Logs/Remount.log` | QEMU 종료 후 재마운트 결과입니다 |
-| `Logs/QEMU.log`                     | 설정한 QEMU 진단                    |
-| `Logs/DebugCon.log`                 | 커널 포트 `0xE9` 출력               |
-| `Logs/QEMUProcess.log`              | QEMU 프로세스 출력                  |
+| 파일                                | 내용                                    |
+|-------------------------------------|-----------------------------------------|
+| `Logs/Build.log`                    | 빌드 출력                               |
+| `Logs/Format.log`, `Logs/Clean.log` | 해당 작업의 출력                        |
+| `Logs/Image.log`, `Logs/Mount.log`  | 이미지 준비·갱신 또는 수동 마운트입니다 |
+| `Logs/Remount.log`                  | QEMU 종료 후 재마운트 결과입니다        |
+| `Logs/QEMU.log`                     | 설정한 QEMU 진단                        |
+| `Logs/DebugCon.log`                 | 커널 포트 `0xE9` 출력                   |
+| `Logs/QEMUProcess.log`              | QEMU 프로세스 출력                      |
 
 각 단계는 실행할 때 자신의 로그를 덮어씁니다. QEMU 로그는 시작 시 초기화하며 실제 메시지는 커널 작업 구성에 따라 달라집니다. 실행기는 매번 `UEFI/OVMF_VARS.fd`를 임시 디렉터리에 복사하여 원본
 변수 템플릿을 보존합니다. 일반 실행의 디스크는 쓰기 가능하므로 디스크 상태를 보존해야 할 때는 별도 이미지를 사용합니다.
@@ -98,10 +106,16 @@ make -f Makefiles/Makefile -j1
 
 ## 수동 마운트
 
-`./Scripts/Run.sh -mount`는 기존 이미지의 두 파티션을 마운트하고 종료 후에도 유지합니다. `-m`·`-Mount`·`-M`도 사용할 수 있습니다. EFI 파일시스템은 실행 사용자가 접근할 수 있게 연결하고 EXT2는 기존 소유권·권한을 유지합니다. 포맷이나 빌드 파일 복사는 하지 않으며 다른 프로세스가 이미지를 사용 중이면 거부합니다.
+`./Scripts/Run.sh -mount`는 기존 이미지의 두 파티션을 마운트하고 종료 후에도 유지합니다. `-m`·`-Mount`·`-M`도 사용할 수 있습니다. EFI 파일시스템은 실행 사용자가 접근할 수
+있게 연결하고 EXT2는 기존 소유권·권한을 유지합니다. 포맷이나 빌드 파일 복사는 하지 않으며 다른 프로세스가 이미지를 사용 중이면 거부합니다.
 
-이후 `-mount`·이미지 갱신·전체 실행·`-qemu` 실행은 이 관리 경로를 먼저 해제합니다. 디렉터리나 파일을 사용 중이어서 해제할 수 없으면 작업을 중단합니다. `LineOS/Mount/EFI`·`LineOS/Mount/Root` 밖의 마운트는 자동 해제하지 않습니다. `./Scripts/Run.sh -umount`로 관리 마운트와 loop 연결을 직접 해제할 수 있으며 `-u`도 대소문자 구분 없이 지원합니다.
+이후 `-mount`·이미지 갱신·전체 실행·`-qemu` 실행은 이 관리 경로를 먼저 해제합니다. 디렉터리나 파일을 사용 중이어서 해제할 수 없으면 작업을 중단합니다. `LineOS/Mount/EFI`·
+`LineOS/Mount/Root` 밖의 마운트는 자동 해제하지 않습니다. `./Scripts/Run.sh -umount`로 관리 마운트와 loop 연결을 직접 해제할 수 있으며 `-u`도 대소문자 구분 없이
+지원합니다.
 
-전체 실행과 `-qemu`는 QEMU 종료 후 두 경로를 다시 마운트합니다. 실행 오류와 처리 가능한 SIGINT·SIGTERM도 포함하며 QEMU 프로세스를 종료·대기한 뒤 디스크를 마운트합니다. 필요하면 sudo 인증을 갱신하고 결과를 `Logs/Remount.log`에 기록합니다. 재마운트 실패는 오류로 알리며 기존 QEMU 실패 코드는 유지합니다. SIGKILL 같은 강제 종료에서는 정리 코드를 실행할 수 없으므로 남아 있는 QEMU 프로세스를 종료한 뒤 `-umount`로 남은 관리 마운트를 해제하고 다시 실행합니다.
+전체 실행과 `-qemu`는 QEMU 종료 후 두 경로를 다시 마운트합니다. 실행 오류와 처리 가능한 SIGINT·SIGTERM도 포함하며 QEMU 프로세스를 종료·대기한 뒤 디스크를 마운트합니다. 필요하면 sudo
+인증을 갱신하고 결과를 `Logs/Remount.log`에 기록합니다. 재마운트 실패는 오류로 알리며 기존 QEMU 실패 코드는 유지합니다. SIGKILL 같은 강제 종료에서는 정리 코드를 실행할 수 없으므로 남아
+있는 QEMU 프로세스를 종료한 뒤 `-umount`로 남은 관리 마운트를 해제하고 다시 실행합니다.
 
-수동 마운트와 QEMU 종료 후 마운트는 임시 `.Mount.*` 디렉터리에서 두 파티션을 먼저 연결한 뒤 완성된 디렉터리를 `LineOS/Mount`로 교체합니다. IDE 파일 감시가 감지할 수 있는 디렉터리 교체 이벤트를 발생시킵니다. 이전 마운트 경로는 빈 디렉터리만 제거하며 예상하지 못한 파일이 있으면 삭제하지 않고 작업을 중단합니다.
+수동 마운트와 QEMU 종료 후 마운트는 임시 `.Mount.*` 디렉터리에서 두 파티션을 먼저 연결한 뒤 완성된 디렉터리를 `LineOS/Mount`로 교체합니다. IDE 파일 감시가 감지할 수 있는 디렉터리 교체
+이벤트를 발생시킵니다. 이전 마운트 경로는 빈 디렉터리만 제거하며 예상하지 못한 파일이 있으면 삭제하지 않고 작업을 중단합니다.

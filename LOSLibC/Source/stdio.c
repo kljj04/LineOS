@@ -10,7 +10,7 @@
 
 static void FlushOutput(STDIO_OUTPUT *Output)
 {
-    size_t Offset;
+    size_t  Offset;
     ssize_t Written;
 
     if (Output->Failed || Output->Length == 0)
@@ -22,14 +22,9 @@ static void FlushOutput(STDIO_OUTPUT *Output)
 
     while (Offset < Output->Length)
     {
-        Written = write(
-            1,
-            Output->Buffer + Offset,
-            Output->Length - Offset
-        );
+        Written = write(1, Output->Buffer + Offset, Output->Length - Offset);
 
-        if (Written <= 0 ||
-            (size_t) Written > Output->Length - Offset)
+        if (Written <= 0 || (size_t) Written > Output->Length - Offset)
         {
             Output->Failed = 1;
             return;
@@ -75,20 +70,13 @@ static void OutputString(STDIO_OUTPUT *Output, const char *String)
     }
 }
 
-static void OutputUnsigned(
-    STDIO_OUTPUT *Output,
-    uint64_t Value,
-    unsigned int Base,
-    int Uppercase
-)
+static void OutputUnsigned(STDIO_OUTPUT *Output, uint64_t Value, unsigned int Base, int Uppercase)
 {
-    char Digits[32];
+    char        Digits[32];
     const char *Alphabet;
-    size_t Count;
+    size_t      Count;
 
-    Alphabet = Uppercase
-        ? "0123456789ABCDEF"
-        : "0123456789abcdef";
+    Alphabet = Uppercase ? "0123456789ABCDEF" : "0123456789abcdef";
 
     Count = 0;
 
@@ -96,8 +84,7 @@ static void OutputUnsigned(
     {
         Digits[Count++] = Alphabet[Value % Base];
         Value /= Base;
-    }
-    while (Value != 0);
+    } while (Value != 0);
 
     while (Count > 0)
     {
@@ -105,10 +92,7 @@ static void OutputUnsigned(
     }
 }
 
-static void OutputSigned(
-    STDIO_OUTPUT *Output,
-    int64_t Value
-)
+static void OutputSigned(STDIO_OUTPUT *Output, int64_t Value)
 {
     uint64_t Magnitude;
 
@@ -141,10 +125,10 @@ int putchar(int Character)
 
 int puts(const char *String)
 {
-    size_t Length;
-    size_t Offset;
+    size_t  Length;
+    size_t  Offset;
     ssize_t Written;
-    char Newline;
+    char    Newline;
 
     if (String == NULL)
     {
@@ -162,14 +146,9 @@ int puts(const char *String)
 
     while (Offset < Length)
     {
-        Written = write(
-            1,
-            String + Offset,
-            Length - Offset
-        );
+        Written = write(1, String + Offset, Length - Offset);
 
-        if (Written <= 0 ||
-            (size_t) Written > Length - Offset)
+        if (Written <= 0 || (size_t) Written > Length - Offset)
         {
             return EOF;
         }
@@ -190,9 +169,9 @@ int puts(const char *String)
 int printf(const char *Format, ...)
 {
     STDIO_OUTPUT Output = {0};
-    va_list Arguments;
+    va_list      Arguments;
     unsigned int Length;
-    char Specifier;
+    char         Specifier;
 
     if (Format == NULL)
     {
@@ -250,19 +229,13 @@ int printf(const char *Format, ...)
         {
             case 'c':
             {
-                OutputCharacter(
-                    &Output,
-                    (char) va_arg(Arguments, int)
-                );
+                OutputCharacter(&Output, (char) va_arg(Arguments, int));
                 break;
             }
 
             case 's':
             {
-                OutputString(
-                    &Output,
-                    va_arg(Arguments, const char *)
-                );
+                OutputString(&Output, va_arg(Arguments, const char *));
                 break;
             }
 
@@ -296,22 +269,16 @@ int printf(const char *Format, ...)
             case 'x':
             case 'X':
             {
-                uint64_t Value;
+                uint64_t     Value;
                 unsigned int Base;
 
                 if (Length == 2)
                 {
-                    Value = va_arg(
-                        Arguments,
-                        unsigned long long
-                    );
+                    Value = va_arg(Arguments, unsigned long long);
                 }
                 else if (Length == 1)
                 {
-                    Value = va_arg(
-                        Arguments,
-                        unsigned long
-                    );
+                    Value = va_arg(Arguments, unsigned long);
                 }
                 else if (Length == 3)
                 {
@@ -324,12 +291,7 @@ int printf(const char *Format, ...)
 
                 Base = Specifier == 'u' ? 10 : 16;
 
-                OutputUnsigned(
-                    &Output,
-                    Value,
-                    Base,
-                    Specifier == 'X'
-                );
+                OutputUnsigned(&Output, Value, Base, Specifier == 'X');
                 break;
             }
 
@@ -337,10 +299,7 @@ int printf(const char *Format, ...)
             {
                 uintptr_t Value;
 
-                Value = (uintptr_t) va_arg(
-                    Arguments,
-                    void *
-                );
+                Value = (uintptr_t) va_arg(Arguments, void *);
 
                 OutputString(&Output, "0x");
                 OutputUnsigned(&Output, Value, 16, 0);

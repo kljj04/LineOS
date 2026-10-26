@@ -120,34 +120,34 @@ STATIC VOID ReadVirtIOCapability(VIRTIO_PCI_DEVICE *VirtIODevice, UINT8 Capabili
 
     switch (Capability.ConfigType)
     {
-    case VIRTIO_PCI_CAP_COMMON_CFG:
-        VirtIODevice->CommonConfigBAR = Capability.BAR;
-        VirtIODevice->CommonConfigOffset = Capability.Offset;
-        break;
+        case VIRTIO_PCI_CAP_COMMON_CFG:
+            VirtIODevice->CommonConfigBAR = Capability.BAR;
+            VirtIODevice->CommonConfigOffset = Capability.Offset;
+            break;
 
-    case VIRTIO_PCI_CAP_NOTIFY_CFG:
-        VirtIODevice->NotifyBAR = Capability.BAR;
-        VirtIODevice->NotifyOffset = Capability.Offset;
+        case VIRTIO_PCI_CAP_NOTIFY_CFG:
+            VirtIODevice->NotifyBAR = Capability.BAR;
+            VirtIODevice->NotifyOffset = Capability.Offset;
 
-        if (Capability.CapLength >= 20)
-        {
-            VirtIODevice->NotifyMultiplier = ReadCapability32(Device, CapabilityOffset, 16);
-        }
+            if (Capability.CapLength >= 20)
+            {
+                VirtIODevice->NotifyMultiplier = ReadCapability32(Device, CapabilityOffset, 16);
+            }
 
-        break;
+            break;
 
-    case VIRTIO_PCI_CAP_ISR_CFG:
-        VirtIODevice->ISRStatusBAR = Capability.BAR;
-        VirtIODevice->ISRStatusOffset = Capability.Offset;
-        break;
+        case VIRTIO_PCI_CAP_ISR_CFG:
+            VirtIODevice->ISRStatusBAR = Capability.BAR;
+            VirtIODevice->ISRStatusOffset = Capability.Offset;
+            break;
 
-    case VIRTIO_PCI_CAP_DEVICE_CFG:
-        VirtIODevice->DeviceConfigBAR = Capability.BAR;
-        VirtIODevice->DeviceConfigOffset = Capability.Offset;
-        break;
+        case VIRTIO_PCI_CAP_DEVICE_CFG:
+            VirtIODevice->DeviceConfigBAR = Capability.BAR;
+            VirtIODevice->DeviceConfigOffset = Capability.Offset;
+            break;
 
-    default:
-        break;
+        default:
+            break;
     }
 }
 

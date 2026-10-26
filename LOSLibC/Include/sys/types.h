@@ -4,5 +4,5 @@
 
 #pragma once
 
-typedef int pid_t;
+typedef int  pid_t;
 typedef long ssize_t;

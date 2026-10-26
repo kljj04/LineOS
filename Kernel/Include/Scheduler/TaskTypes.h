@@ -9,15 +9,9 @@
 #include <LineOS/Asset.h>
 #include <FS/VFS/VFSTypes.h>
 
-#define TASK_FILE_LIMIT 8U
+#define TASK_FILE_LIMIT 16U
 
-typedef struct
-{
-    CHAR8 *Path;
-    UINT64 Offset;
-    UINT32 Number;
-    UINT32 Partition;
-} TASK_FILE;
+typedef struct OPEN_FILE OPEN_FILE;
 
 typedef struct
 {
@@ -133,5 +127,5 @@ typedef struct TASK
     VFS_CONTEXT       *FileContext;
     BOOLEAN            AssetPublisher;
     TASK_ASSET         Assets[LOS_ASSET_MAPPING_LIMIT];
-    TASK_FILE          Files[TASK_FILE_LIMIT];
+    OPEN_FILE         *Files[TASK_FILE_LIMIT];
 } TASK;

@@ -8,6 +8,7 @@
 #include <Input/VirtIOInput.h>
 #include <Render/GPU/VirtIOGPU.h>
 #include <Input/Input.h>
+#include <Syscall/SyscallTerminal.h>
 
 #include <Debug/Debug.h>
 #include <Scheduler/Task.h>
@@ -205,6 +206,11 @@ VOID InputMouseHandler(VOID)
         return;
     }
 
+    Flags = SpinLockAcquireIRQSave(&MouseStatusLock);
+    MouseStatus.X = GPU->FrameBufferWidth / 2;
+    MouseStatus.Y = GPU->FrameBufferHeight / 2;
+    SpinLockReleaseIRQRestore(&MouseStatusLock, Flags);
+    ShowMouseCursor();
     VirtIOInputGetTabletRange(&MouseMinX, &MouseMaxX, &MouseMinY, &MouseMaxY);
 
     while (TRUE)
@@ -277,6 +283,7 @@ VOID InputKeyboardHandler(VOID)
             KeyboardStatus.KeyCode = KeyEvent.Code;
             KeyboardStatus.Pressed = KeyEvent.Pressed;
             KeyboardStatus.Modifiers = (KeyboardLeftShift || KeyboardRightShift ? 1 : 0) | (KeyboardCapsLock ? 2 : 0) | (KeyboardControl ? 4 : 0);
+            TerminalKey(KeyboardStatus.KeyCode, KeyboardStatus.Pressed, KeyboardStatus.Modifiers);
             KeyboardEvents[KeyboardWriteIndex] = KeyboardStatus;
             KeyboardWriteIndex = (KeyboardWriteIndex + 1) % 256;
 

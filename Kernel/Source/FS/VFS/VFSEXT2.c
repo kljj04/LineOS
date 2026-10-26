@@ -9,35 +9,35 @@ STATIC VFS_ERROR VFSEXT2Error(EXT2_ERROR Error)
 {
     switch (Error)
     {
-    case EXT2_ERROR_NONE:
-        return VFS_OK;
-    case EXT2_ERROR_NOT_FOUND:
-        return VFS_NOT_FOUND;
-    case EXT2_ERROR_PERMISSION:
-        return VFS_PERMISSION;
-    case EXT2_ERROR_ARGUMENT:
-        return VFS_INVALID;
-    case EXT2_ERROR_UNSUPPORTED:
-        return VFS_UNSUPPORTED;
-    case EXT2_ERROR_READ_ONLY:
-        return VFS_READ_ONLY;
-    case EXT2_ERROR_EXISTS:
-        return VFS_EXISTS;
-    case EXT2_ERROR_NO_SPACE:
-        return VFS_NO_SPACE;
-    case EXT2_ERROR_MEMORY:
-    case EXT2_ERROR_LIMIT:
-        return VFS_LIMIT;
-    case EXT2_ERROR_BUSY:
-        return VFS_BUSY;
-    case EXT2_ERROR_LOOP:
-        return VFS_LOOP;
-    case EXT2_ERROR_NOT_EMPTY:
-        return VFS_NOT_EMPTY;
-    case EXT2_ERROR_CLOCK:
-        return VFS_CLOCK_ERROR;
-    default:
-        return VFS_IO;
+        case EXT2_ERROR_NONE:
+            return VFS_OK;
+        case EXT2_ERROR_NOT_FOUND:
+            return VFS_NOT_FOUND;
+        case EXT2_ERROR_PERMISSION:
+            return VFS_PERMISSION;
+        case EXT2_ERROR_ARGUMENT:
+            return VFS_INVALID;
+        case EXT2_ERROR_UNSUPPORTED:
+            return VFS_UNSUPPORTED;
+        case EXT2_ERROR_READ_ONLY:
+            return VFS_READ_ONLY;
+        case EXT2_ERROR_EXISTS:
+            return VFS_EXISTS;
+        case EXT2_ERROR_NO_SPACE:
+            return VFS_NO_SPACE;
+        case EXT2_ERROR_MEMORY:
+        case EXT2_ERROR_LIMIT:
+            return VFS_LIMIT;
+        case EXT2_ERROR_BUSY:
+            return VFS_BUSY;
+        case EXT2_ERROR_LOOP:
+            return VFS_LOOP;
+        case EXT2_ERROR_NOT_EMPTY:
+            return VFS_NOT_EMPTY;
+        case EXT2_ERROR_CLOCK:
+            return VFS_CLOCK_ERROR;
+        default:
+            return VFS_IO;
     }
 }
 
@@ -212,36 +212,36 @@ STATIC VFS_ERROR VFSEXT2Mutate(VOID *Backend, CONST VFS_CREDENTIALS *Credentials
     {
         switch (Mutation->Type)
         {
-        case VFS_MUTATE_CREATE:
-            Result = EXT2Create(Volume, Mutation->Parent, Mutation->Name, Mutation->Directory, Mutation->Mode, Time, &Number);
-            break;
-        case VFS_MUTATE_REMOVE:
-            Result = EXT2Remove(Volume, Mutation->Parent, Mutation->Name, Time);
-            break;
-        case VFS_MUTATE_RENAME:
-            Result = EXT2Rename(Volume, Mutation->Parent, Mutation->Name, Mutation->OtherParent, Mutation->OtherName, Time);
-            break;
-        case VFS_MUTATE_TRUNCATE:
-            Result = EXT2Truncate(Volume, Mutation->Number, Mutation->Size, Time);
-            break;
-        case VFS_MUTATE_LINK:
-            Result = EXT2Link(Volume, Mutation->Parent, Mutation->Name, Mutation->Number, Time);
-            break;
-        case VFS_MUTATE_SYMLINK:
-            Result = EXT2Symlink(Volume, Mutation->Parent, Mutation->Name, Mutation->Target, Time, &Number);
-            break;
-        case VFS_MUTATE_MODE:
-            Result = EXT2SetMode(Volume, Mutation->Number, Mutation->Mode, Time);
-            break;
-        case VFS_MUTATE_TOUCH:
-            Result = EXT2Touch(Volume, Mutation->Number, Time);
-            break;
-        case VFS_MUTATE_OWNER:
-            Result = EXT2SetOwner(Volume, Mutation->Number, Mutation->UID, Mutation->GID, Time);
-            break;
-        default:
-            Volume->Error = EXT2_ERROR_ARGUMENT;
-            break;
+            case VFS_MUTATE_CREATE:
+                Result = EXT2Create(Volume, Mutation->Parent, Mutation->Name, Mutation->Directory, Mutation->Mode, Time, &Number);
+                break;
+            case VFS_MUTATE_REMOVE:
+                Result = EXT2Remove(Volume, Mutation->Parent, Mutation->Name, Time);
+                break;
+            case VFS_MUTATE_RENAME:
+                Result = EXT2Rename(Volume, Mutation->Parent, Mutation->Name, Mutation->OtherParent, Mutation->OtherName, Time);
+                break;
+            case VFS_MUTATE_TRUNCATE:
+                Result = EXT2Truncate(Volume, Mutation->Number, Mutation->Size, Time);
+                break;
+            case VFS_MUTATE_LINK:
+                Result = EXT2Link(Volume, Mutation->Parent, Mutation->Name, Mutation->Number, Time);
+                break;
+            case VFS_MUTATE_SYMLINK:
+                Result = EXT2Symlink(Volume, Mutation->Parent, Mutation->Name, Mutation->Target, Time, &Number);
+                break;
+            case VFS_MUTATE_MODE:
+                Result = EXT2SetMode(Volume, Mutation->Number, Mutation->Mode, Time);
+                break;
+            case VFS_MUTATE_TOUCH:
+                Result = EXT2Touch(Volume, Mutation->Number, Time);
+                break;
+            case VFS_MUTATE_OWNER:
+                Result = EXT2SetOwner(Volume, Mutation->Number, Mutation->UID, Mutation->GID, Time);
+                break;
+            default:
+                Volume->Error = EXT2_ERROR_ARGUMENT;
+                break;
         }
     }
 

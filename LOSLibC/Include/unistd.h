@@ -8,5 +8,5 @@
 #include <sys/types.h>
 
 ssize_t read(int FD, void *Buffer, size_t Count);
-int close(int FD);
+int     close(int FD);
 ssize_t write(int FD, const void *Buffer, size_t Count);

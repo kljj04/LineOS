@@ -524,113 +524,113 @@ STATIC VOID DrawExceptionIcon(UINT64 Vector, UINT32 CenterX, UINT32 CenterY, UIN
 {
     switch (Vector)
     {
-    case 0:
-        DrawDivideIcon(CenterX, CenterY, UIScale);
-        break;
+        case 0:
+            DrawDivideIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 1:
-        DrawDebugIcon(CenterX, CenterY, UIScale);
-        break;
+        case 1:
+            DrawDebugIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 2:
-        DrawNMIIcon(CenterX, CenterY, UIScale);
-        break;
+        case 2:
+            DrawNMIIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 3:
-        DrawBreakpointIcon(CenterX, CenterY, UIScale);
-        break;
+        case 3:
+            DrawBreakpointIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 4:
-        DrawOverflowIcon(CenterX, CenterY, UIScale);
-        break;
+        case 4:
+            DrawOverflowIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 5:
-        DrawBoundIcon(CenterX, CenterY, UIScale);
-        break;
+        case 5:
+            DrawBoundIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 7:
-        DrawDeviceIcon(CenterX, CenterY, UIScale);
-        break;
+        case 7:
+            DrawDeviceIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 8:
-        DrawDoubleFaultIcon(CenterX, CenterY, UIScale);
-        break;
+        case 8:
+            DrawDoubleFaultIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 9:
-        DrawLegacyCoprocessorIcon(CenterX, CenterY, UIScale);
-        break;
+        case 9:
+            DrawLegacyCoprocessorIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 10:
-        DrawTSSIcon(CenterX, CenterY, UIScale);
-        break;
+        case 10:
+            DrawTSSIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 11:
-        DrawSegmentIcon(CenterX, CenterY, UIScale);
-        break;
+        case 11:
+            DrawSegmentIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 12:
-        DrawStackIcon(CenterX, CenterY, UIScale);
-        break;
+        case 12:
+            DrawStackIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case EXCEPTION_GENERAL_PROTECTION:
-        DrawProtectionIcon(CenterX, CenterY, UIScale);
-        break;
+        case EXCEPTION_GENERAL_PROTECTION:
+            DrawProtectionIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case EXCEPTION_PAGE_FAULT:
-        DrawPageFaultIcon(CenterX, CenterY, UIScale);
-        break;
+        case EXCEPTION_PAGE_FAULT:
+            DrawPageFaultIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 15:
-    case 22:
-    case 23:
-    case 24:
-    case 25:
-    case 26:
-    case 27:
-    case 31:
-        DrawReservedIcon(CenterX, CenterY, UIScale);
-        break;
+        case 15:
+        case 22:
+        case 23:
+        case 24:
+        case 25:
+        case 26:
+        case 27:
+        case 31:
+            DrawReservedIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 6:
-        DrawOpcodeIcon(CenterX, CenterY, UIScale);
-        break;
+        case 6:
+            DrawOpcodeIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 16:
-    case 19:
-        DrawFloatingPointIcon(CenterX, CenterY, UIScale);
-        break;
+        case 16:
+        case 19:
+            DrawFloatingPointIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 17:
-        DrawAlignmentIcon(CenterX, CenterY, UIScale);
-        break;
+        case 17:
+            DrawAlignmentIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 18:
-        DrawMachineIcon(CenterX, CenterY, UIScale);
-        break;
+        case 18:
+            DrawMachineIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 20:
-        DrawVirtualizationIcon(CenterX, CenterY, UIScale);
-        break;
+        case 20:
+            DrawVirtualizationIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 21:
-        DrawControlProtectionIcon(CenterX, CenterY, UIScale);
-        break;
+        case 21:
+            DrawControlProtectionIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 28:
-        DrawHypervisorIcon(CenterX, CenterY, UIScale);
-        break;
+        case 28:
+            DrawHypervisorIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 29:
-        DrawCommunicationIcon(CenterX, CenterY, UIScale);
-        break;
+        case 29:
+            DrawCommunicationIcon(CenterX, CenterY, UIScale);
+            break;
 
-    case 30:
-        DrawSecurityKeyIcon(CenterX, CenterY, UIScale);
-        break;
+        case 30:
+            DrawSecurityKeyIcon(CenterX, CenterY, UIScale);
+            break;
 
-    default:
-        DrawDefaultExceptionIcon(CenterX, CenterY, UIScale);
-        break;
+        default:
+            DrawDefaultExceptionIcon(CenterX, CenterY, UIScale);
+            break;
     }
 }
 

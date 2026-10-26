@@ -3,6 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <Syscall/Syscall.h>
+#include <Syscall/SyscallFile.h>
 #include <Scheduler/LBPWRR.h>
 #include <Scheduler/Task.h>
 #include <Debug/Debug.h>
@@ -23,6 +24,7 @@ INT64 SyscallExit(UINT64 ExitCode)
         return -1;
     }
 
+    SyscallFilesRelease(CurrentTask);
     TaskTerminate(CurrentTask);
 
     LBPWRRYield();

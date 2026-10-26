@@ -7,10 +7,8 @@
 #include <Scheduler/LBPWRR.h>
 #include <Scheduler/TaskTypes.h>
 #include <Syscall/SyscallExit.h>
-#include <Syscall/SyscallWrite.h>
 #include <Syscall/SyscallDisplay.h>
 #include <Syscall/SyscallFile.h>
-#include <Syscall/SyscallStream.h>
 #include <Syscall/SyscallSpawn.h>
 #include <Syscall/SyscallAsset.h>
 
@@ -45,12 +43,14 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
 
         case SYSCALL_YIELD:
         {
-            return (UINT64) -1;
+            LBPWRRYield();
+
+            return 0;
         }
 
         case SYSCALL_WRITE:
         {
-            return (UINT64) SyscallWrite(Frame->RDI, (CONST CHAR8 *) Frame->RSI, Frame->RDX);
+            return (UINT64) SyscallFileWrite(Frame->RDI, Frame->RSI, Frame->RDX);
         }
 
         case SYSCALL_GETPID:
@@ -78,11 +78,6 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
         case SYSCALL_DISPLAY_PRESENT_RECT:
         {
             return (UINT64) SyscallDisplayPresentRect(Frame->RDI);
-        }
-
-        case SYSCALL_STREAM_READ:
-        {
-            return (UINT64) SyscallStreamRead(Frame->RDI, Frame->RSI);
         }
 
         case SYSCALL_SPAWN:

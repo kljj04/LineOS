@@ -233,75 +233,75 @@ VOID KPrint(CONST CHAR16 *Msg, UINT32 X, UINT32 Baseline, UINT32 Color, UINT32 P
 
         switch (Ch)
         {
-        case '%':
-            X = KPrintChar('%', X, Baseline, Color, PixelHeight, Font);
-            break;
+            case '%':
+                X = KPrintChar('%', X, Baseline, Color, PixelHeight, Font);
+                break;
 
-        case 'c':
-            X = KPrintChar((UINT16) va_arg(Args, UINT32), X, Baseline, Color, PixelHeight, Font);
-            break;
+            case 'c':
+                X = KPrintChar((UINT16) va_arg(Args, UINT32), X, Baseline, Color, PixelHeight, Font);
+                break;
 
-        case 's':
-        {
-            CONST CHAR16 *String = va_arg(Args, CONST CHAR16 *);
-
-            if (String == NULL)
+            case 's':
             {
-                String = (CONST CHAR16 *) L"(null)";
+                CONST CHAR16 *String = va_arg(Args, CONST CHAR16 *);
+
+                if (String == NULL)
+                {
+                    String = (CONST CHAR16 *) L"(null)";
+                }
+
+                X = KPrintString(String, X, Baseline, Color, PixelHeight, Font);
+                break;
             }
 
-            X = KPrintString(String, X, Baseline, Color, PixelHeight, Font);
-            break;
-        }
+            case 'd':
+            case 'i':
+                if (LongLongValue || LongValue)
+                {
+                    X = KPrintSigned((INT64) va_arg(Args, INT64), Width, Padding, LeftAlign, X, Baseline, Color, PixelHeight, Font);
+                }
+                else
+                {
+                    X = KPrintSigned((INT32) va_arg(Args, INT32), Width, Padding, LeftAlign, X, Baseline, Color, PixelHeight, Font);
+                }
 
-        case 'd':
-        case 'i':
-            if (LongLongValue || LongValue)
-            {
-                X = KPrintSigned((INT64) va_arg(Args, INT64), Width, Padding, LeftAlign, X, Baseline, Color, PixelHeight, Font);
-            }
-            else
-            {
-                X = KPrintSigned((INT32) va_arg(Args, INT32), Width, Padding, LeftAlign, X, Baseline, Color, PixelHeight, Font);
-            }
+                break;
 
-            break;
+            case 'u':
+                if (LongLongValue || LongValue)
+                {
+                    X = KPrintUnsigned(va_arg(Args, UINT64), 10, FALSE, Width, Padding, LeftAlign, X, Baseline, Color, PixelHeight, Font);
+                }
+                else
+                {
+                    X = KPrintUnsigned(va_arg(Args, UINT32), 10, FALSE, Width, Padding, LeftAlign, X, Baseline, Color, PixelHeight, Font);
+                }
 
-        case 'u':
-            if (LongLongValue || LongValue)
-            {
-                X = KPrintUnsigned(va_arg(Args, UINT64), 10, FALSE, Width, Padding, LeftAlign, X, Baseline, Color, PixelHeight, Font);
-            }
-            else
-            {
-                X = KPrintUnsigned(va_arg(Args, UINT32), 10, FALSE, Width, Padding, LeftAlign, X, Baseline, Color, PixelHeight, Font);
-            }
+                break;
 
-            break;
+            case 'x':
+            case 'X':
+                if (LongLongValue || LongValue)
+                {
+                    X = KPrintUnsigned(va_arg(Args, UINT64), 16, Ch == 'X', Width, Padding, LeftAlign, X, Baseline, Color, PixelHeight, Font);
+                }
+                else
+                {
+                    X = KPrintUnsigned(va_arg(Args, UINT32), 16, Ch == 'X', Width, Padding, LeftAlign, X, Baseline, Color, PixelHeight, Font);
+                }
 
-        case 'x':
-        case 'X':
-            if (LongLongValue || LongValue)
-            {
-                X = KPrintUnsigned(va_arg(Args, UINT64), 16, Ch == 'X', Width, Padding, LeftAlign, X, Baseline, Color, PixelHeight, Font);
-            }
-            else
-            {
-                X = KPrintUnsigned(va_arg(Args, UINT32), 16, Ch == 'X', Width, Padding, LeftAlign, X, Baseline, Color, PixelHeight, Font);
-            }
+                break;
 
-            break;
+            case 'p':
+                X = KPrintChar('0', X, Baseline, Color, PixelHeight, Font);
+                X = KPrintChar('x', X, Baseline, Color, PixelHeight, Font);
+                X = KPrintUnsigned((UINT64) va_arg(Args, VOID *), 16, FALSE, 0, ' ', FALSE, X, Baseline, Color, PixelHeight, Font);
+                break;
 
-        case 'p':
-            X = KPrintChar('0', X, Baseline, Color, PixelHeight, Font);
-            X = KPrintChar('x', X, Baseline, Color, PixelHeight, Font);
-            X = KPrintUnsigned((UINT64) va_arg(Args, VOID *), 16, FALSE, 0, ' ', FALSE, X, Baseline, Color, PixelHeight, Font);
-            break;
-
-        default:
-            X = KPrintChar('%', X, Baseline, Color, PixelHeight, Font);
-            X = KPrintChar(Ch, X, Baseline, Color, PixelHeight, Font);
-            break;
+            default:
+                X = KPrintChar('%', X, Baseline, Color, PixelHeight, Font);
+                X = KPrintChar(Ch, X, Baseline, Color, PixelHeight, Font);
+                break;
         }
     }
 

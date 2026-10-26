@@ -8,15 +8,15 @@
 #include <Memory/PMM.h>
 #include <Debug/Debug.h>
 
-#define SPAWN_LIMIT 16U
-#define SPAWN_EMPTY 0U
-#define SPAWN_BUSY 1U
-#define SPAWN_ACTIVE 2U
+#define SPAWN_LIMIT           16U
+#define SPAWN_EMPTY           0U
+#define SPAWN_BUSY            1U
+#define SPAWN_ACTIVE          2U
 #define SPAWN_EXECUTION_PAGES ((sizeof(ELF64_EXECUTION) + 4095U) / 4096U)
 
 typedef struct
 {
-    UINT32 State;
+    UINT32           State;
     ELF64_EXECUTION *Execution;
 } SPAWN_SLOT;
 
@@ -26,8 +26,8 @@ STATIC VOID SpawnReap(VOID)
 {
     for (UINT32 Index = 0; Index < SPAWN_LIMIT; Index++)
     {
-        UINT32 Expected = SPAWN_ACTIVE;
-        SPAWN_SLOT *Slot = &SpawnSlots[Index];
+        UINT32           Expected = SPAWN_ACTIVE;
+        SPAWN_SLOT      *Slot = &SpawnSlots[Index];
         ELF64_EXECUTION *Execution;
 
         if (!ATOMIC_COMPARE_EXCHANGE(&Slot->State, &Expected, SPAWN_BUSY, FALSE, ATOMIC_ACQUIRE, ATOMIC_RELAXED))
@@ -50,12 +50,12 @@ STATIC VOID SpawnReap(VOID)
 
 INT64 SyscallSpawn(UINT64 Path)
 {
-    TASK *Task = LBPWRRGetCurrentTask();
-    CHAR8 *Name;
-    SPAWN_SLOT *Slot = NULL;
+    TASK            *Task = LBPWRRGetCurrentTask();
+    CHAR8           *Name;
+    SPAWN_SLOT      *Slot = NULL;
     ELF64_EXECUTION *Execution;
-    INT64 PID;
-    BOOLEAN Valid = FALSE;
+    INT64            PID;
+    BOOLEAN          Valid = FALSE;
 
     if (Task == NULL || Task->AddressSpace == NULL || Task->FileContext == NULL || Path == 0)
     {

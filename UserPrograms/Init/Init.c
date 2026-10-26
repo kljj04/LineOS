@@ -116,12 +116,26 @@ STATIC BOOLEAN InitPublishFont(CONST char *Path, CONST char *Name)
 
 INT32 _Start(VOID)
 {
+    if (open("/dev/lsh1", O_RDONLY) != 0 || open("/dev/lsh1", O_WRONLY) != 1 || open("/dev/lsh1", O_WRONLY) != 2)
+    {
+        exit(1);
+    }
+
     printf("Init: loading shared assets\n");
 
     if (!InitPublishFont("/sys/fonts/PTDSB.ttf", "Fonts/Pretendard") || !InitPublishFont("/sys/fonts/JBMNFSB.ttf", "Fonts/JetBrainsMono"))
     {
         exit(1);
     }
+
+    INT32 Master = open("/dev/lsh1/master", O_RDWR);
+
+    if (Master != 3 || spawn("/sbin/Terminal.lix") < 0)
+    {
+        puts("Init: Terminal spawn failed");
+        exit(1);
+    }
+    close(Master);
 
     if (spawn("/bin/Shell.lix") < 0)
     {

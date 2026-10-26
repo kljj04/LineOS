@@ -125,12 +125,12 @@ STATIC FONT_INFO *GetFont(TRUE_TYPE_FONT Font, UINT32 Codepoint)
 
     switch (Font)
     {
-    case JETBRAINS_MONO:
-        return &JetBrainsMonoFont;
+        case JETBRAINS_MONO:
+            return &JetBrainsMonoFont;
 
-    case PRETENDARD:
-    default:
-        return &PretendardFont;
+        case PRETENDARD:
+        default:
+            return &PretendardFont;
     }
 }
 

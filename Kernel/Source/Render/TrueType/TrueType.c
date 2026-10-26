@@ -334,18 +334,18 @@ STATIC INT32 InitFontInternal(FONT_INFO *Info, UINT8 *Data, INT32 Fontstart)
         UINT32 EncodingRecord = Cmap + 4 + 8 * I;
         switch (TTUSHORT(Data + EncodingRecord))
         {
-        case 3:
-            switch (TTUSHORT(Data + EncodingRecord + 2))
-            {
-            case 1:
-            case 10:
+            case 3:
+                switch (TTUSHORT(Data + EncodingRecord + 2))
+                {
+                    case 1:
+                    case 10:
+                        Info->IndexMap = Cmap + TTULONG(Data + EncodingRecord + 4);
+                        break;
+                }
+                break;
+            case 0:
                 Info->IndexMap = Cmap + TTULONG(Data + EncodingRecord + 4);
                 break;
-            }
-            break;
-        case 0:
-            Info->IndexMap = Cmap + TTULONG(Data + EncodingRecord + 4);
-            break;
         }
     }
     if (Info->IndexMap == 0)
@@ -910,253 +910,253 @@ STATIC INT32 RunCharstring(CONST FONT_INFO *Info, INT32 GlyphIndex, CS_CONTEXT *
         B0 = BufGet8(&B);
         switch (B0)
         {
-        case 0x13:
-        case 0x14:
-            if (InHeader)
+            case 0x13:
+            case 0x14:
+                if (InHeader)
+                    Maskbits += (Sp / 2);
+                InHeader = 0;
+                BufSkip(&B, (Maskbits + 7) / 8);
+                break;
+            case 0X01:
+            case 0x03:
+            case 0X12:
+            case 0x17:
                 Maskbits += (Sp / 2);
-            InHeader = 0;
-            BufSkip(&B, (Maskbits + 7) / 8);
-            break;
-        case 0X01:
-        case 0x03:
-        case 0X12:
-        case 0x17:
-            Maskbits += (Sp / 2);
-            break;
-        case 0x15:
-            InHeader = 0;
-            if (Sp < 2)
-                return LINEOS_CSERR("rmoveto stack");
-            CsctxRmoveTo(C, S[Sp - 2], S[Sp - 1]);
-            break;
-        case 0x04:
-            InHeader = 0;
-            if (Sp < 1)
-                return LINEOS_CSERR("vmoveto stack");
-            CsctxRmoveTo(C, 0, S[Sp - 1]);
-            break;
-        case 0x16:
-            InHeader = 0;
-            if (Sp < 1)
-                return LINEOS_CSERR("hmoveto stack");
-            CsctxRmoveTo(C, S[Sp - 1], 0);
-            break;
-        case 0x05:
-            if (Sp < 2)
-                return LINEOS_CSERR("rlineto stack");
-            for (; I + 1 < Sp; I += 2)
+                break;
+            case 0x15:
+                InHeader = 0;
+                if (Sp < 2)
+                    return LINEOS_CSERR("rmoveto stack");
+                CsctxRmoveTo(C, S[Sp - 2], S[Sp - 1]);
+                break;
+            case 0x04:
+                InHeader = 0;
+                if (Sp < 1)
+                    return LINEOS_CSERR("vmoveto stack");
+                CsctxRmoveTo(C, 0, S[Sp - 1]);
+                break;
+            case 0x16:
+                InHeader = 0;
+                if (Sp < 1)
+                    return LINEOS_CSERR("hmoveto stack");
+                CsctxRmoveTo(C, S[Sp - 1], 0);
+                break;
+            case 0x05:
+                if (Sp < 2)
+                    return LINEOS_CSERR("rlineto stack");
+                for (; I + 1 < Sp; I += 2)
+                    CsctxRlineTo(C, S[I], S[I + 1]);
+                break;
+            case 0x07:
+                if (Sp < 1)
+                    return LINEOS_CSERR("vlineto stack");
+                goto vlineto;
+            case 0x06:
+                if (Sp < 1)
+                    return LINEOS_CSERR("hlineto stack");
+                for (;;)
+                {
+                    if (I >= Sp)
+                        break;
+                    CsctxRlineTo(C, S[I], 0);
+                    I++;
+                vlineto:
+                    if (I >= Sp)
+                        break;
+                    CsctxRlineTo(C, 0, S[I]);
+                    I++;
+                }
+                break;
+            case 0x1F:
+                if (Sp < 4)
+                    return LINEOS_CSERR("hvcurveto stack");
+                goto hvcurveto;
+            case 0x1E:
+                if (Sp < 4)
+                    return LINEOS_CSERR("vhcurveto stack");
+                for (;;)
+                {
+                    if (I + 3 >= Sp)
+                        break;
+                    CsctxRccurveTo(C, 0, S[I], S[I + 1], S[I + 2], S[I + 3], (Sp - I == 5) ? S[I + 4] : 0.0f);
+                    I += 4;
+                hvcurveto:
+                    if (I + 3 >= Sp)
+                        break;
+                    CsctxRccurveTo(C, S[I], 0, S[I + 1], S[I + 2], (Sp - I == 5) ? S[I + 4] : 0.0f, S[I + 3]);
+                    I += 4;
+                }
+                break;
+            case 0x08:
+                if (Sp < 6)
+                    return LINEOS_CSERR("rcurveline stack");
+                for (; I + 5 < Sp; I += 6)
+                    CsctxRccurveTo(C, S[I], S[I + 1], S[I + 2], S[I + 3], S[I + 4], S[I + 5]);
+                break;
+            case 0x18:
+                if (Sp < 8)
+                    return LINEOS_CSERR("rcurveline stack");
+                for (; I + 5 < Sp - 2; I += 6)
+                    CsctxRccurveTo(C, S[I], S[I + 1], S[I + 2], S[I + 3], S[I + 4], S[I + 5]);
+                if (I + 1 >= Sp)
+                    return LINEOS_CSERR("rcurveline stack");
                 CsctxRlineTo(C, S[I], S[I + 1]);
-            break;
-        case 0x07:
-            if (Sp < 1)
-                return LINEOS_CSERR("vlineto stack");
-            goto vlineto;
-        case 0x06:
-            if (Sp < 1)
-                return LINEOS_CSERR("hlineto stack");
-            for (;;)
-            {
-                if (I >= Sp)
-                    break;
-                CsctxRlineTo(C, S[I], 0);
-                I++;
-            vlineto:
-                if (I >= Sp)
-                    break;
-                CsctxRlineTo(C, 0, S[I]);
-                I++;
-            }
-            break;
-        case 0x1F:
-            if (Sp < 4)
-                return LINEOS_CSERR("hvcurveto stack");
-            goto hvcurveto;
-        case 0x1E:
-            if (Sp < 4)
-                return LINEOS_CSERR("vhcurveto stack");
-            for (;;)
-            {
-                if (I + 3 >= Sp)
-                    break;
-                CsctxRccurveTo(C, 0, S[I], S[I + 1], S[I + 2], S[I + 3], (Sp - I == 5) ? S[I + 4] : 0.0f);
-                I += 4;
-            hvcurveto:
-                if (I + 3 >= Sp)
-                    break;
-                CsctxRccurveTo(C, S[I], 0, S[I + 1], S[I + 2], (Sp - I == 5) ? S[I + 4] : 0.0f, S[I + 3]);
-                I += 4;
-            }
-            break;
-        case 0x08:
-            if (Sp < 6)
-                return LINEOS_CSERR("rcurveline stack");
-            for (; I + 5 < Sp; I += 6)
+                break;
+            case 0x19:
+                if (Sp < 8)
+                    return LINEOS_CSERR("rlinecurve stack");
+                for (; I + 1 < Sp - 6; I += 2)
+                    CsctxRlineTo(C, S[I], S[I + 1]);
+                if (I + 5 >= Sp)
+                    return LINEOS_CSERR("rlinecurve stack");
                 CsctxRccurveTo(C, S[I], S[I + 1], S[I + 2], S[I + 3], S[I + 4], S[I + 5]);
-            break;
-        case 0x18:
-            if (Sp < 8)
-                return LINEOS_CSERR("rcurveline stack");
-            for (; I + 5 < Sp - 2; I += 6)
-                CsctxRccurveTo(C, S[I], S[I + 1], S[I + 2], S[I + 3], S[I + 4], S[I + 5]);
-            if (I + 1 >= Sp)
-                return LINEOS_CSERR("rcurveline stack");
-            CsctxRlineTo(C, S[I], S[I + 1]);
-            break;
-        case 0x19:
-            if (Sp < 8)
-                return LINEOS_CSERR("rlinecurve stack");
-            for (; I + 1 < Sp - 6; I += 2)
-                CsctxRlineTo(C, S[I], S[I + 1]);
-            if (I + 5 >= Sp)
-                return LINEOS_CSERR("rlinecurve stack");
-            CsctxRccurveTo(C, S[I], S[I + 1], S[I + 2], S[I + 3], S[I + 4], S[I + 5]);
-            break;
-        case 0x1A:
-        case 0x1B:
-            if (Sp < 4)
-                return LINEOS_CSERR("(vv|hh)curveto stack");
-            F = 0.0;
-            if (Sp & 1)
-            {
-                F = S[I];
-                I++;
-            }
-            for (; I + 3 < Sp; I += 4)
-            {
-                if (B0 == 0x1B)
-                    CsctxRccurveTo(C, S[I], F, S[I + 1], S[I + 2], S[I + 3], 0.0);
-                else
-                    CsctxRccurveTo(C, F, S[I], S[I + 1], S[I + 2], 0.0, S[I + 3]);
+                break;
+            case 0x1A:
+            case 0x1B:
+                if (Sp < 4)
+                    return LINEOS_CSERR("(vv|hh)curveto stack");
                 F = 0.0;
+                if (Sp & 1)
+                {
+                    F = S[I];
+                    I++;
+                }
+                for (; I + 3 < Sp; I += 4)
+                {
+                    if (B0 == 0x1B)
+                        CsctxRccurveTo(C, S[I], F, S[I + 1], S[I + 2], S[I + 3], 0.0);
+                    else
+                        CsctxRccurveTo(C, F, S[I], S[I + 1], S[I + 2], 0.0, S[I + 3]);
+                    F = 0.0;
+                }
+                break;
+            case 0x0A:
+                if (!HasSubrs)
+                {
+                    if (Info->FdSelect.Size)
+                        Subrs = CidGetGlyphSubrs(Info, GlyphIndex);
+                    HasSubrs = 1;
+                }
+            case 0x1D:
+                if (Sp < 1)
+                    return LINEOS_CSERR("call(g|)subr stack");
+                V = (INT32) S[--Sp];
+                if (SubrStackHeight >= 10)
+                    return LINEOS_CSERR("recursion limit");
+                SubrStack[SubrStackHeight++] = B;
+                B = GetSubr(B0 == 0x0A ? Subrs : Info->GSubrs, V);
+                if (B.Size == 0)
+                    return LINEOS_CSERR("subr not found");
+                B.Cursor = 0;
+                ClearStack = 0;
+                break;
+            case 0x0B:
+                if (SubrStackHeight <= 0)
+                    return LINEOS_CSERR("return outside subr");
+                B = SubrStack[--SubrStackHeight];
+                ClearStack = 0;
+                break;
+            case 0x0E:
+                CsctxCloseShape(C);
+                return 1;
+            case 0x0C:
+            {
+                FLOAT32 Dx1, Dx2, Dx3, Dx4, Dx5, Dx6, Dy1, Dy2, Dy3, Dy4, Dy5, Dy6;
+                FLOAT32 Dx, Dy;
+                INT32   B1 = BufGet8(&B);
+                switch (B1)
+                {
+                    case 0x22:
+                        if (Sp < 7)
+                            return LINEOS_CSERR("hflex stack");
+                        Dx1 = S[0];
+                        Dx2 = S[1];
+                        Dy2 = S[2];
+                        Dx3 = S[3];
+                        Dx4 = S[4];
+                        Dx5 = S[5];
+                        Dx6 = S[6];
+                        CsctxRccurveTo(C, Dx1, 0, Dx2, Dy2, Dx3, 0);
+                        CsctxRccurveTo(C, Dx4, 0, Dx5, -Dy2, Dx6, 0);
+                        break;
+                    case 0X23:
+                        if (Sp < 13)
+                            return LINEOS_CSERR("flex stack");
+                        Dx1 = S[0];
+                        Dy1 = S[1];
+                        Dx2 = S[2];
+                        Dy2 = S[3];
+                        Dx3 = S[4];
+                        Dy3 = S[5];
+                        Dx4 = S[6];
+                        Dy4 = S[7];
+                        Dx5 = S[8];
+                        Dy5 = S[9];
+                        Dx6 = S[10];
+                        Dy6 = S[11];
+                        CsctxRccurveTo(C, Dx1, Dy1, Dx2, Dy2, Dx3, Dy3);
+                        CsctxRccurveTo(C, Dx4, Dy4, Dx5, Dy5, Dx6, Dy6);
+                        break;
+                    case 0x24:
+                        if (Sp < 9)
+                            return LINEOS_CSERR("hflex1 stack");
+                        Dx1 = S[0];
+                        Dy1 = S[1];
+                        Dx2 = S[2];
+                        Dy2 = S[3];
+                        Dx3 = S[4];
+                        Dx4 = S[5];
+                        Dx5 = S[6];
+                        Dy5 = S[7];
+                        Dx6 = S[8];
+                        CsctxRccurveTo(C, Dx1, Dy1, Dx2, Dy2, Dx3, 0);
+                        CsctxRccurveTo(C, Dx4, 0, Dx5, Dy5, Dx6, -(Dy1 + Dy2 + Dy5));
+                        break;
+                    case 0x25:
+                        if (Sp < 11)
+                            return LINEOS_CSERR("flex1 stack");
+                        Dx1 = S[0];
+                        Dy1 = S[1];
+                        Dx2 = S[2];
+                        Dy2 = S[3];
+                        Dx3 = S[4];
+                        Dy3 = S[5];
+                        Dx4 = S[6];
+                        Dy4 = S[7];
+                        Dx5 = S[8];
+                        Dy5 = S[9];
+                        Dx6 = Dy6 = S[10];
+                        Dx = Dx1 + Dx2 + Dx3 + Dx4 + Dx5;
+                        Dy = Dy1 + Dy2 + Dy3 + Dy4 + Dy5;
+                        if (KFAbs(Dx) > KFAbs(Dy))
+                            Dy6 = -Dy;
+                        else
+                            Dx6 = -Dx;
+                        CsctxRccurveTo(C, Dx1, Dy1, Dx2, Dy2, Dx3, Dy3);
+                        CsctxRccurveTo(C, Dx4, Dy4, Dx5, Dy5, Dx6, Dy6);
+                        break;
+                    default:
+                        return LINEOS_CSERR("unimplemented");
+                }
             }
             break;
-        case 0x0A:
-            if (!HasSubrs)
-            {
-                if (Info->FdSelect.Size)
-                    Subrs = CidGetGlyphSubrs(Info, GlyphIndex);
-                HasSubrs = 1;
-            }
-        case 0x1D:
-            if (Sp < 1)
-                return LINEOS_CSERR("call(g|)subr stack");
-            V = (INT32) S[--Sp];
-            if (SubrStackHeight >= 10)
-                return LINEOS_CSERR("recursion limit");
-            SubrStack[SubrStackHeight++] = B;
-            B = GetSubr(B0 == 0x0A ? Subrs : Info->GSubrs, V);
-            if (B.Size == 0)
-                return LINEOS_CSERR("subr not found");
-            B.Cursor = 0;
-            ClearStack = 0;
-            break;
-        case 0x0B:
-            if (SubrStackHeight <= 0)
-                return LINEOS_CSERR("return outside subr");
-            B = SubrStack[--SubrStackHeight];
-            ClearStack = 0;
-            break;
-        case 0x0E:
-            CsctxCloseShape(C);
-            return 1;
-        case 0x0C:
-        {
-            FLOAT32 Dx1, Dx2, Dx3, Dx4, Dx5, Dx6, Dy1, Dy2, Dy3, Dy4, Dy5, Dy6;
-            FLOAT32 Dx, Dy;
-            INT32   B1 = BufGet8(&B);
-            switch (B1)
-            {
-            case 0x22:
-                if (Sp < 7)
-                    return LINEOS_CSERR("hflex stack");
-                Dx1 = S[0];
-                Dx2 = S[1];
-                Dy2 = S[2];
-                Dx3 = S[3];
-                Dx4 = S[4];
-                Dx5 = S[5];
-                Dx6 = S[6];
-                CsctxRccurveTo(C, Dx1, 0, Dx2, Dy2, Dx3, 0);
-                CsctxRccurveTo(C, Dx4, 0, Dx5, -Dy2, Dx6, 0);
-                break;
-            case 0X23:
-                if (Sp < 13)
-                    return LINEOS_CSERR("flex stack");
-                Dx1 = S[0];
-                Dy1 = S[1];
-                Dx2 = S[2];
-                Dy2 = S[3];
-                Dx3 = S[4];
-                Dy3 = S[5];
-                Dx4 = S[6];
-                Dy4 = S[7];
-                Dx5 = S[8];
-                Dy5 = S[9];
-                Dx6 = S[10];
-                Dy6 = S[11];
-                CsctxRccurveTo(C, Dx1, Dy1, Dx2, Dy2, Dx3, Dy3);
-                CsctxRccurveTo(C, Dx4, Dy4, Dx5, Dy5, Dx6, Dy6);
-                break;
-            case 0x24:
-                if (Sp < 9)
-                    return LINEOS_CSERR("hflex1 stack");
-                Dx1 = S[0];
-                Dy1 = S[1];
-                Dx2 = S[2];
-                Dy2 = S[3];
-                Dx3 = S[4];
-                Dx4 = S[5];
-                Dx5 = S[6];
-                Dy5 = S[7];
-                Dx6 = S[8];
-                CsctxRccurveTo(C, Dx1, Dy1, Dx2, Dy2, Dx3, 0);
-                CsctxRccurveTo(C, Dx4, 0, Dx5, Dy5, Dx6, -(Dy1 + Dy2 + Dy5));
-                break;
-            case 0x25:
-                if (Sp < 11)
-                    return LINEOS_CSERR("flex1 stack");
-                Dx1 = S[0];
-                Dy1 = S[1];
-                Dx2 = S[2];
-                Dy2 = S[3];
-                Dx3 = S[4];
-                Dy3 = S[5];
-                Dx4 = S[6];
-                Dy4 = S[7];
-                Dx5 = S[8];
-                Dy5 = S[9];
-                Dx6 = Dy6 = S[10];
-                Dx = Dx1 + Dx2 + Dx3 + Dx4 + Dx5;
-                Dy = Dy1 + Dy2 + Dy3 + Dy4 + Dy5;
-                if (KFAbs(Dx) > KFAbs(Dy))
-                    Dy6 = -Dy;
-                else
-                    Dx6 = -Dx;
-                CsctxRccurveTo(C, Dx1, Dy1, Dx2, Dy2, Dx3, Dy3);
-                CsctxRccurveTo(C, Dx4, Dy4, Dx5, Dy5, Dx6, Dy6);
-                break;
             default:
-                return LINEOS_CSERR("unimplemented");
-            }
-        }
-        break;
-        default:
-            if (B0 != 255 && B0 != 28 && B0 < 32)
-                return LINEOS_CSERR("reserved operator");
-            if (B0 == 255)
-            {
-                F = (FLOAT32) (INT32) BUF_GET32(&B) / 0x10000;
-            }
-            else
-            {
-                BufSkip(&B, -1);
-                F = (FLOAT32) (INT16) CffInt(&B);
-            }
-            if (Sp >= 48)
-                return LINEOS_CSERR("push stack overflow");
-            S[Sp++] = F;
-            ClearStack = 0;
-            break;
+                if (B0 != 255 && B0 != 28 && B0 < 32)
+                    return LINEOS_CSERR("reserved operator");
+                if (B0 == 255)
+                {
+                    F = (FLOAT32) (INT32) BUF_GET32(&B) / 0x10000;
+                }
+                else
+                {
+                    BufSkip(&B, -1);
+                    F = (FLOAT32) (INT16) CffInt(&B);
+                }
+                if (Sp >= 48)
+                    return LINEOS_CSERR("push stack overflow");
+                S[Sp++] = F;
+                ClearStack = 0;
+                break;
         }
         if (ClearStack)
             Sp = 0;
@@ -1284,56 +1284,56 @@ STATIC INT32 GetCoverageIndex(UINT8 *CoverageTable, INT32 Glyph)
     UINT16 CoverageFormat = TTUSHORT(CoverageTable);
     switch (CoverageFormat)
     {
-    case 1:
-    {
-        UINT16 GlyphCount = TTUSHORT(CoverageTable + 2);
-        INT32  L = 0, R = GlyphCount - 1, M;
-        INT32  Straw, Needle = Glyph;
-        while (L <= R)
+        case 1:
         {
-            UINT8 *GlyphArray = CoverageTable + 4;
-            UINT16 GlyphID;
-            M = (L + R) >> 1;
-            GlyphID = TTUSHORT(GlyphArray + 2 * M);
-            Straw = GlyphID;
-            if (Needle < Straw)
-                R = M - 1;
-            else if (Needle > Straw)
-                L = M + 1;
-            else
+            UINT16 GlyphCount = TTUSHORT(CoverageTable + 2);
+            INT32  L = 0, R = GlyphCount - 1, M;
+            INT32  Straw, Needle = Glyph;
+            while (L <= R)
             {
-                return M;
+                UINT8 *GlyphArray = CoverageTable + 4;
+                UINT16 GlyphID;
+                M = (L + R) >> 1;
+                GlyphID = TTUSHORT(GlyphArray + 2 * M);
+                Straw = GlyphID;
+                if (Needle < Straw)
+                    R = M - 1;
+                else if (Needle > Straw)
+                    L = M + 1;
+                else
+                {
+                    return M;
+                }
             }
+            break;
         }
-        break;
-    }
-    case 2:
-    {
-        UINT16 RangeCount = TTUSHORT(CoverageTable + 2);
-        UINT8 *RangeArray = CoverageTable + 4;
-        INT32  L = 0, R = RangeCount - 1, M;
-        INT32  StrawStart, StrawEnd, Needle = Glyph;
-        while (L <= R)
+        case 2:
         {
-            UINT8 *RangeRecord;
-            M = (L + R) >> 1;
-            RangeRecord = RangeArray + 6 * M;
-            StrawStart = TTUSHORT(RangeRecord);
-            StrawEnd = TTUSHORT(RangeRecord + 2);
-            if (Needle < StrawStart)
-                R = M - 1;
-            else if (Needle > StrawEnd)
-                L = M + 1;
-            else
+            UINT16 RangeCount = TTUSHORT(CoverageTable + 2);
+            UINT8 *RangeArray = CoverageTable + 4;
+            INT32  L = 0, R = RangeCount - 1, M;
+            INT32  StrawStart, StrawEnd, Needle = Glyph;
+            while (L <= R)
             {
-                UINT16 StartCoverageIndex = TTUSHORT(RangeRecord + 4);
-                return StartCoverageIndex + Glyph - StrawStart;
+                UINT8 *RangeRecord;
+                M = (L + R) >> 1;
+                RangeRecord = RangeArray + 6 * M;
+                StrawStart = TTUSHORT(RangeRecord);
+                StrawEnd = TTUSHORT(RangeRecord + 2);
+                if (Needle < StrawStart)
+                    R = M - 1;
+                else if (Needle > StrawEnd)
+                    L = M + 1;
+                else
+                {
+                    UINT16 StartCoverageIndex = TTUSHORT(RangeRecord + 4);
+                    return StartCoverageIndex + Glyph - StrawStart;
+                }
             }
+            break;
         }
-        break;
-    }
-    default:
-        return -1;
+        default:
+            return -1;
     }
     return -1;
 }
@@ -1342,39 +1342,39 @@ STATIC INT32 GetGlyphClass(UINT8 *ClassDefTable, INT32 Glyph)
     UINT16 ClassDefFormat = TTUSHORT(ClassDefTable);
     switch (ClassDefFormat)
     {
-    case 1:
-    {
-        UINT16 StartGlyphID = TTUSHORT(ClassDefTable + 2);
-        UINT16 GlyphCount = TTUSHORT(ClassDefTable + 4);
-        UINT8 *ClassDef1ValueArray = ClassDefTable + 6;
-        if (Glyph >= StartGlyphID && Glyph < StartGlyphID + GlyphCount)
-            return (INT32) TTUSHORT(ClassDef1ValueArray + 2 * (Glyph - StartGlyphID));
-        break;
-    }
-    case 2:
-    {
-        UINT16 ClassRangeCount = TTUSHORT(ClassDefTable + 2);
-        UINT8 *ClassRangeRecords = ClassDefTable + 4;
-        INT32  L = 0, R = ClassRangeCount - 1, M;
-        INT32  StrawStart, StrawEnd, Needle = Glyph;
-        while (L <= R)
+        case 1:
         {
-            UINT8 *ClassRangeRecord;
-            M = (L + R) >> 1;
-            ClassRangeRecord = ClassRangeRecords + 6 * M;
-            StrawStart = TTUSHORT(ClassRangeRecord);
-            StrawEnd = TTUSHORT(ClassRangeRecord + 2);
-            if (Needle < StrawStart)
-                R = M - 1;
-            else if (Needle > StrawEnd)
-                L = M + 1;
-            else
-                return (INT32) TTUSHORT(ClassRangeRecord + 4);
+            UINT16 StartGlyphID = TTUSHORT(ClassDefTable + 2);
+            UINT16 GlyphCount = TTUSHORT(ClassDefTable + 4);
+            UINT8 *ClassDef1ValueArray = ClassDefTable + 6;
+            if (Glyph >= StartGlyphID && Glyph < StartGlyphID + GlyphCount)
+                return (INT32) TTUSHORT(ClassDef1ValueArray + 2 * (Glyph - StartGlyphID));
+            break;
         }
-        break;
-    }
-    default:
-        return -1;
+        case 2:
+        {
+            UINT16 ClassRangeCount = TTUSHORT(ClassDefTable + 2);
+            UINT8 *ClassRangeRecords = ClassDefTable + 4;
+            INT32  L = 0, R = ClassRangeCount - 1, M;
+            INT32  StrawStart, StrawEnd, Needle = Glyph;
+            while (L <= R)
+            {
+                UINT8 *ClassRangeRecord;
+                M = (L + R) >> 1;
+                ClassRangeRecord = ClassRangeRecords + 6 * M;
+                StrawStart = TTUSHORT(ClassRangeRecord);
+                StrawEnd = TTUSHORT(ClassRangeRecord + 2);
+                if (Needle < StrawStart)
+                    R = M - 1;
+                else if (Needle > StrawEnd)
+                    L = M + 1;
+                else
+                    return (INT32) TTUSHORT(ClassRangeRecord + 4);
+            }
+            break;
+        }
+        default:
+            return -1;
     }
     return 0;
 }
@@ -1416,77 +1416,77 @@ STATIC INT32 GetGlyphGPOSInfoAdvance(CONST FONT_INFO *Info, INT32 Glyph1, INT32 
                 continue;
             switch (PosFormat)
             {
-            case 1:
-            {
-                INT32  L, R, M;
-                INT32  Straw, Needle;
-                UINT16 ValueFormat1 = TTUSHORT(Table + 4);
-                UINT16 ValueFormat2 = TTUSHORT(Table + 6);
-                if (ValueFormat1 == 4 && ValueFormat2 == 0)
+                case 1:
                 {
-                    INT32  ValueRecordPairSizeInBytes = 2;
-                    UINT16 PairSetCount = TTUSHORT(Table + 8);
-                    UINT16 PairPosOffset = TTUSHORT(Table + 10 + 2 * CoverageIndex);
-                    UINT8 *PairValueTable = Table + PairPosOffset;
-                    UINT16 PairValueCount = TTUSHORT(PairValueTable);
-                    UINT8 *PairValueArray = PairValueTable + 2;
-                    if (CoverageIndex >= PairSetCount)
-                        return 0;
-                    Needle = Glyph2;
-                    R = PairValueCount - 1;
-                    L = 0;
-                    while (L <= R)
+                    INT32  L, R, M;
+                    INT32  Straw, Needle;
+                    UINT16 ValueFormat1 = TTUSHORT(Table + 4);
+                    UINT16 ValueFormat2 = TTUSHORT(Table + 6);
+                    if (ValueFormat1 == 4 && ValueFormat2 == 0)
                     {
-                        UINT16 SecondGlyph;
-                        UINT8 *PairValue;
-                        M = (L + R) >> 1;
-                        PairValue = PairValueArray + (2 + ValueRecordPairSizeInBytes) * M;
-                        SecondGlyph = TTUSHORT(PairValue);
-                        Straw = SecondGlyph;
-                        if (Needle < Straw)
-                            R = M - 1;
-                        else if (Needle > Straw)
-                            L = M + 1;
-                        else
+                        INT32  ValueRecordPairSizeInBytes = 2;
+                        UINT16 PairSetCount = TTUSHORT(Table + 8);
+                        UINT16 PairPosOffset = TTUSHORT(Table + 10 + 2 * CoverageIndex);
+                        UINT8 *PairValueTable = Table + PairPosOffset;
+                        UINT16 PairValueCount = TTUSHORT(PairValueTable);
+                        UINT8 *PairValueArray = PairValueTable + 2;
+                        if (CoverageIndex >= PairSetCount)
+                            return 0;
+                        Needle = Glyph2;
+                        R = PairValueCount - 1;
+                        L = 0;
+                        while (L <= R)
                         {
-                            INT16 XAdvance = TTSHORT(PairValue + 2);
-                            return XAdvance;
+                            UINT16 SecondGlyph;
+                            UINT8 *PairValue;
+                            M = (L + R) >> 1;
+                            PairValue = PairValueArray + (2 + ValueRecordPairSizeInBytes) * M;
+                            SecondGlyph = TTUSHORT(PairValue);
+                            Straw = SecondGlyph;
+                            if (Needle < Straw)
+                                R = M - 1;
+                            else if (Needle > Straw)
+                                L = M + 1;
+                            else
+                            {
+                                INT16 XAdvance = TTSHORT(PairValue + 2);
+                                return XAdvance;
+                            }
                         }
                     }
+                    else
+                        return 0;
+                    break;
                 }
-                else
-                    return 0;
-                break;
-            }
-            case 2:
-            {
-                UINT16 ValueFormat1 = TTUSHORT(Table + 4);
-                UINT16 ValueFormat2 = TTUSHORT(Table + 6);
-                if (ValueFormat1 == 4 && ValueFormat2 == 0)
+                case 2:
                 {
-                    UINT16 ClassDef1Offset = TTUSHORT(Table + 8);
-                    UINT16 ClassDef2Offset = TTUSHORT(Table + 10);
-                    INT32  Glyph1Class = GetGlyphClass(Table + ClassDef1Offset, Glyph1);
-                    INT32  Glyph2Class = GetGlyphClass(Table + ClassDef2Offset, Glyph2);
-                    UINT16 Class1Count = TTUSHORT(Table + 12);
-                    UINT16 Class2Count = TTUSHORT(Table + 14);
-                    UINT8 *Class1Records, *Class2Records;
-                    INT16  XAdvance;
-                    if (Glyph1Class < 0 || Glyph1Class >= Class1Count)
+                    UINT16 ValueFormat1 = TTUSHORT(Table + 4);
+                    UINT16 ValueFormat2 = TTUSHORT(Table + 6);
+                    if (ValueFormat1 == 4 && ValueFormat2 == 0)
+                    {
+                        UINT16 ClassDef1Offset = TTUSHORT(Table + 8);
+                        UINT16 ClassDef2Offset = TTUSHORT(Table + 10);
+                        INT32  Glyph1Class = GetGlyphClass(Table + ClassDef1Offset, Glyph1);
+                        INT32  Glyph2Class = GetGlyphClass(Table + ClassDef2Offset, Glyph2);
+                        UINT16 Class1Count = TTUSHORT(Table + 12);
+                        UINT16 Class2Count = TTUSHORT(Table + 14);
+                        UINT8 *Class1Records, *Class2Records;
+                        INT16  XAdvance;
+                        if (Glyph1Class < 0 || Glyph1Class >= Class1Count)
+                            return 0;
+                        if (Glyph2Class < 0 || Glyph2Class >= Class2Count)
+                            return 0;
+                        Class1Records = Table + 16;
+                        Class2Records = Class1Records + 2 * (Glyph1Class * Class2Count);
+                        XAdvance = TTSHORT(Class2Records + 2 * Glyph2Class);
+                        return XAdvance;
+                    }
+                    else
                         return 0;
-                    if (Glyph2Class < 0 || Glyph2Class >= Class2Count)
-                        return 0;
-                    Class1Records = Table + 16;
-                    Class2Records = Class1Records + 2 * (Glyph1Class * Class2Count);
-                    XAdvance = TTSHORT(Class2Records + 2 * Glyph2Class);
-                    return XAdvance;
+                    break;
                 }
-                else
+                default:
                     return 0;
-                break;
-            }
-            default:
-                return 0;
             }
         }
     }
@@ -2233,26 +2233,26 @@ STATIC POINT *FlattenCurves(VERTEX *Vertices, INT32 NumVerts, FLOAT32 ObjspaceFl
         {
             switch (Vertices[I].Type)
             {
-            case LINEOS_VMOVE:
-                if (N >= 0)
-                    (*ContourLengths)[N] = NumPoints - Start;
-                ++N;
-                Start = NumPoints;
-                X = Vertices[I].X, Y = Vertices[I].Y;
-                AddPoint(Points, NumPoints++, X, Y);
-                break;
-            case LINEOS_VLINE:
-                X = Vertices[I].X, Y = Vertices[I].Y;
-                AddPoint(Points, NumPoints++, X, Y);
-                break;
-            case LINEOS_VCURVE:
-                TesselateCurve(Points, &NumPoints, X, Y, Vertices[I].Cx, Vertices[I].Cy, Vertices[I].X, Vertices[I].Y, ObjspaceFlatnessSquared, 0);
-                X = Vertices[I].X, Y = Vertices[I].Y;
-                break;
-            case LINEOS_VCUBIC:
-                TesselateCubic(Points, &NumPoints, X, Y, Vertices[I].Cx, Vertices[I].Cy, Vertices[I].Cx1, Vertices[I].Cy1, Vertices[I].X, Vertices[I].Y, ObjspaceFlatnessSquared, 0);
-                X = Vertices[I].X, Y = Vertices[I].Y;
-                break;
+                case LINEOS_VMOVE:
+                    if (N >= 0)
+                        (*ContourLengths)[N] = NumPoints - Start;
+                    ++N;
+                    Start = NumPoints;
+                    X = Vertices[I].X, Y = Vertices[I].Y;
+                    AddPoint(Points, NumPoints++, X, Y);
+                    break;
+                case LINEOS_VLINE:
+                    X = Vertices[I].X, Y = Vertices[I].Y;
+                    AddPoint(Points, NumPoints++, X, Y);
+                    break;
+                case LINEOS_VCURVE:
+                    TesselateCurve(Points, &NumPoints, X, Y, Vertices[I].Cx, Vertices[I].Cy, Vertices[I].X, Vertices[I].Y, ObjspaceFlatnessSquared, 0);
+                    X = Vertices[I].X, Y = Vertices[I].Y;
+                    break;
+                case LINEOS_VCUBIC:
+                    TesselateCubic(Points, &NumPoints, X, Y, Vertices[I].Cx, Vertices[I].Cy, Vertices[I].Cx1, Vertices[I].Cy1, Vertices[I].X, Vertices[I].Y, ObjspaceFlatnessSquared, 0);
+                    X = Vertices[I].X, Y = Vertices[I].Y;
+                    break;
             }
         }
         (*ContourLengths)[N] = NumPoints - Start;
@@ -2532,46 +2532,46 @@ STATIC VOID HPrefilter(UINT8 *Pixels, INT32 W, INT32 H, INT32 StrideInBytes, UIN
         Total = 0;
         switch (KernelWidth)
         {
-        case 2:
-            for (I = 0; I <= SafeW; ++I)
-            {
-                Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
-                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
-                Pixels[I] = (UINT8) (Total / 2);
-            }
-            break;
-        case 3:
-            for (I = 0; I <= SafeW; ++I)
-            {
-                Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
-                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
-                Pixels[I] = (UINT8) (Total / 3);
-            }
-            break;
-        case 4:
-            for (I = 0; I <= SafeW; ++I)
-            {
-                Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
-                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
-                Pixels[I] = (UINT8) (Total / 4);
-            }
-            break;
-        case 5:
-            for (I = 0; I <= SafeW; ++I)
-            {
-                Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
-                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
-                Pixels[I] = (UINT8) (Total / 5);
-            }
-            break;
-        default:
-            for (I = 0; I <= SafeW; ++I)
-            {
-                Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
-                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
-                Pixels[I] = (UINT8) (Total / KernelWidth);
-            }
-            break;
+            case 2:
+                for (I = 0; I <= SafeW; ++I)
+                {
+                    Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
+                    Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
+                    Pixels[I] = (UINT8) (Total / 2);
+                }
+                break;
+            case 3:
+                for (I = 0; I <= SafeW; ++I)
+                {
+                    Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
+                    Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
+                    Pixels[I] = (UINT8) (Total / 3);
+                }
+                break;
+            case 4:
+                for (I = 0; I <= SafeW; ++I)
+                {
+                    Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
+                    Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
+                    Pixels[I] = (UINT8) (Total / 4);
+                }
+                break;
+            case 5:
+                for (I = 0; I <= SafeW; ++I)
+                {
+                    Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
+                    Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
+                    Pixels[I] = (UINT8) (Total / 5);
+                }
+                break;
+            default:
+                for (I = 0; I <= SafeW; ++I)
+                {
+                    Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
+                    Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
+                    Pixels[I] = (UINT8) (Total / KernelWidth);
+                }
+                break;
         }
         for (; I < W; ++I)
         {
@@ -2596,46 +2596,46 @@ STATIC VOID VPrefilter(UINT8 *Pixels, INT32 W, INT32 H, INT32 StrideInBytes, UIN
         Total = 0;
         switch (KernelWidth)
         {
-        case 2:
-            for (I = 0; I <= SafeH; ++I)
-            {
-                Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
-                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
-                Pixels[I * StrideInBytes] = (UINT8) (Total / 2);
-            }
-            break;
-        case 3:
-            for (I = 0; I <= SafeH; ++I)
-            {
-                Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
-                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
-                Pixels[I * StrideInBytes] = (UINT8) (Total / 3);
-            }
-            break;
-        case 4:
-            for (I = 0; I <= SafeH; ++I)
-            {
-                Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
-                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
-                Pixels[I * StrideInBytes] = (UINT8) (Total / 4);
-            }
-            break;
-        case 5:
-            for (I = 0; I <= SafeH; ++I)
-            {
-                Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
-                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
-                Pixels[I * StrideInBytes] = (UINT8) (Total / 5);
-            }
-            break;
-        default:
-            for (I = 0; I <= SafeH; ++I)
-            {
-                Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
-                Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
-                Pixels[I * StrideInBytes] = (UINT8) (Total / KernelWidth);
-            }
-            break;
+            case 2:
+                for (I = 0; I <= SafeH; ++I)
+                {
+                    Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
+                    Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
+                    Pixels[I * StrideInBytes] = (UINT8) (Total / 2);
+                }
+                break;
+            case 3:
+                for (I = 0; I <= SafeH; ++I)
+                {
+                    Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
+                    Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
+                    Pixels[I * StrideInBytes] = (UINT8) (Total / 3);
+                }
+                break;
+            case 4:
+                for (I = 0; I <= SafeH; ++I)
+                {
+                    Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
+                    Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
+                    Pixels[I * StrideInBytes] = (UINT8) (Total / 4);
+                }
+                break;
+            case 5:
+                for (I = 0; I <= SafeH; ++I)
+                {
+                    Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
+                    Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
+                    Pixels[I * StrideInBytes] = (UINT8) (Total / 5);
+                }
+                break;
+            default:
+                for (I = 0; I <= SafeH; ++I)
+                {
+                    Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
+                    Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
+                    Pixels[I * StrideInBytes] = (UINT8) (Total / KernelWidth);
+                }
+                break;
         }
         for (; I < H; ++I)
         {

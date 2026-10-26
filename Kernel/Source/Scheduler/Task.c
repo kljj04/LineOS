@@ -3,6 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <Scheduler/Task.h>
+#include <Syscall/SyscallFile.h>
 #include <Scheduler/WaitQueue.h>
 #include <Scheduler/LBPWRRRunQueue.h>
 #include <Scheduler/LBPWRRChunk.h>
@@ -477,13 +478,7 @@ BOOLEAN TaskDestroy(TASK *Task)
         KMemFreePages((VOID *) Task->KernelStackBase, TASK_STACK_PAGES);
     }
 
-    for (UINTN FileIndex = 0; FileIndex < TASK_FILE_LIMIT; FileIndex++)
-    {
-        if (Task->Files[FileIndex].Path != NULL)
-        {
-            KFree(Task->Files[FileIndex].Path);
-        }
-    }
+    SyscallFilesRelease(Task);
     if (Task->FileContext != NULL)
     {
         KFree(Task->FileContext);

@@ -16,7 +16,7 @@ CopyPath=/usr/bin/
 
 ## 유저 TrueType
 
-`Libraries/Include/TrueType`과 `Libraries/Source/TrueType`은 커널 포트를 기반으로 한 유저 전용 TrueType 구현입니다. `Build/Libraries/libtruetype.a`를 생성하며 모든 유저 프로그램 링크에 libc 앞 순서로 추가합니다. 실제 사용한 오브젝트만 ELF에 포함합니다. 커널의 PMM, VirtIO GPU, 잠금, 폰트 심볼을 참조하지 않습니다. 커널 TrueType 및 패닉 출력은 유지합니다. 커널 콘솔은 제거했습니다. `write`는 임시 전역 출력 버퍼에 기록하고 Shell이 `LOSOutputStreamRead`로 읽습니다. 버퍼는 64 KiB이며 가득 차면 일부 기록 또는 실패, 비어 있으면 읽기 실패를 반환합니다.
+`Libraries/Include/TrueType`과 `Libraries/Source/TrueType`은 커널 포트를 기반으로 한 유저 전용 TrueType 구현입니다. `Build/Libraries/libtruetype.a`를 생성하며 모든 유저 프로그램 링크에 libc 앞 순서로 추가합니다. 실제 사용한 오브젝트만 ELF에 포함합니다. 커널의 PMM, VirtIO GPU, 잠금, 폰트 심볼을 참조하지 않습니다. 커널 TrueType 및 패닉 출력은 유지합니다. 커널 콘솔은 제거했습니다. Terminal 유저 프로그램이 터미널 master 디스크립터에서 받은 바이트를 렌더링하며 일반 프로그램은 `read`와 `write`를 사용합니다.
 
 `TrueType/TrueTypeEngine.h`를 포함하고 다음 리소스를 호출자가 준비합니다.
 
@@ -28,13 +28,13 @@ CopyPath=/usr/bin/
 
 렌더링 결과는 CPU 메모리에만 기록됩니다. 기존 `DisplayPresent(Surface.FrameBuffer, (UINT64) Surface.FrameBufferWidth * Surface.FrameBufferHeight * 4)`로 표시할 수 있습니다. 호출자가 Display 화면 크기를 조회하고 크기·피치 및 버퍼 용량을 확인해야 합니다. 라이브러리가 디스플레이 syscall을 직접 호출하거나 커널 화면 소유권을 변경하지 않습니다.
 
-현재 엔진은 프로세스별 단일 화면·할당자 상태를 사용하므로 호출을 직렬화해야 합니다. 신뢰하지 않는 TTF 입력의 길이 검증이나 메모리 부족에서의 완전한 복구는 보장하지 않습니다. 기존 수학 근사와 단일 행 중심 측정 동작을 유지합니다. Shell은 자체 라이브러리 상태를 초기화하며 Init은 에셋 등록만 수행합니다. QEMU/KVM 단일 CPU 실행에서 Shell 출력 화면을 확인했지만 이 결과로 다중 CPU 동작까지 보장하지는 않습니다.
+현재 엔진은 프로세스별 단일 화면·할당자 상태를 사용하므로 호출을 직렬화해야 합니다. 신뢰하지 않는 TTF 입력의 길이 검증이나 메모리 부족에서의 완전한 복구는 보장하지 않습니다. 기존 수학 근사와 단일 행 중심 측정 동작을 유지합니다. Terminal이 자체 라이브러리 상태를 초기화하고 Init이 등록한 폰트를 매핑합니다. Shell은 TrueType이나 디스플레이 API를 사용하지 않습니다.
 
 ## 파일과 프로세스 생성
 
-이미지 갱신 시 `Assets/Fonts/*.ttf`를 EXT2의 `/sys/fonts/`에 같은 이름과 0644 권한으로 복사합니다. 유저 프로그램은 `fcntl.h`의 `open(Path, O_RDONLY)`과 `unistd.h`의 `read`, `close`로 읽을 수 있습니다. 현재 파일 디스크립터는 태스크당 8개이고 읽기 전용입니다. 실패는 -1, EOF는 0을 반환하며 `errno`는 지원하지 않습니다. 파일을 읽을 때 경로를 다시 해석하므로 열린 뒤 이름 변경이나 삭제를 유지하는 POSIX 파일 핸들 동작은 지원하지 않습니다. 접근 권한은 실행 생성 시 전달된 VFS 컨텍스트를 따릅니다. 현재 Init은 관리자 컨텍스트로 실행됩니다.
+이미지 갱신은 `Assets/Fonts/*.ttf`를 EXT2 `/sys/fonts/`에 원래 이름과 0644 권한으로 복사합니다. `fcntl.h`의 `open(Path, O_RDONLY)`와 `unistd.h`의 `read`·`close`로 읽습니다. 태스크당 16개 FD 슬롯에서 파일과 터미널 연결을 함께 관리합니다. 일반 파일은 읽기 전용입니다. 오류는 -1, EOF는 0을 반환하며 `errno`는 제공하지 않습니다. 매번 경로와 노드 식별자를 다시 확인하므로 이름 변경·삭제 이후에도 열린 파일을 유지하는 POSIX 의미론은 구현하지 않았습니다. 실행 시 제공된 VFS 문맥으로 권한을 검사하며 Init은 현재 관리자 문맥을 사용합니다.
 
-`spawn.h`의 `spawn(Path)`은 호출자의 VFS 컨텍스트로 별도 주소 공간의 정적 ELF를 실행하고 자식 PID 또는 실패 시 -1을 반환합니다. 이는 LineOS의 간단한 확장 API이며 POSIX `posix_spawn`은 아닙니다. 인자 전달, 대기, 종료 상태 수집 및 파일 디스크립터 상속은 아직 지원하지 않습니다. 자식 실행 정보는 최대 16개이며 종료된 자원은 이후 spawn 호출 시 스케줄러에서 완전히 빠진 경우 회수합니다. 태스크별 SSE 상태 저장은 아직 구현되지 않아 여러 유저 태스크의 부동소수점/SIMD 작업은 검증되지 않았습니다. TrueType 상태와 글리프 캐시는 프로세스별이며, TTF 원본은 아래 공용 에셋 API로 공유합니다. 에셋 등록 권한은 자식에게 상속하지 않습니다.
+`spawn(Path)`는 호출자의 VFS 문맥으로 별도 주소 공간에 정적 ELF를 실행하고 자식 PID 또는 -1을 반환하는 LineOS 확장입니다. 스케줄링 전에 부모의 열린 객체 참조를 상속하므로 파일 오프셋을 공유하며 한쪽 FD를 닫아도 다른 참조는 유지됩니다. 인자, 프로세스 대기, 종료 상태 회수는 지원하지 않습니다. 최대 16개 자식 실행 기록을 유지하며 이후 spawn에서 스케줄러가 회수한 종료 태스크를 정리합니다. 태스크별 SSE 상태 보존은 구현하지 않았습니다. TrueType 상태와 글리프 캐시는 프로세스별이며 원본 TTF만 공유합니다. Init의 에셋 등록 권한은 상속하지 않습니다.
 
 ## 공용 에셋
 
@@ -59,12 +59,16 @@ if (LOSAssetAcquire("Fonts/JetBrainsMono", &Asset) == 0)
 
 ## 시스템 호출 인터페이스
 
-현재 `int 0x80` 호출은 종료, 읽기, 쓰기, 열기, 닫기, PID 조회, 화면 정보·표시, 출력 스트림 읽기, spawn과 에셋 등록·획득·해제를 제공합니다. yield 번호는 예약되어 있지만 현재 실패를 반환합니다. 파일과 프로세스 인터페이스는 여기서 설명한 부분집합이며 `errno`와 일반적인 디스크립터 상속은 없습니다.
+현재 `int 0x80` 호출은 종료, 읽기, 쓰기, 열기, 닫기, PID 조회, 화면 정보·표시, spawn과 에셋 등록·획득·해제를 제공합니다. yield는 스케줄러에 CPU를 양보하고 성공 시 0을 반환합니다. 파일과 프로세스 인터페이스는 여기서 설명한 부분집합이며 `errno`는 없습니다. 기존 스트림 읽기의 syscall 번호 10은 예약 상태로 -1을 반환하며 `LOSOutputStreamRead`는 제거했습니다.
 
-## 출력과 Shell
+## 터미널과 Shell
 
-libc의 `printf`, `puts`, `putchar`는 stdout에 `write`를 사용합니다. 커널은 디스크립터 1과 2의 바이트를 전역 스트림에 복사하며 현재 시도한 바이트를 debugcon에도 기록합니다. 스트림은 공유되고 읽으면 데이터가 소비됩니다. 프로세스별 라우팅과 블로킹 읽기는 없으며 완전한 터미널, 파이프 또는 POSIX stdio 구현이 아닙니다. debugcon에는 스트림 용량 부족으로 기록되지 않은 바이트도 남을 수 있습니다.
+Init은 `/dev/lsh1`을 `O_RDONLY`로 열어 FD 0에, `O_WRONLY`로 두 번 열어 FD 1과 2에 연결합니다. 폰트를 등록하고 `/dev/lsh1/master`를 `O_RDWR`로 FD 3에 연 뒤 `/sbin/Terminal.lix`를 실행합니다. Init의 master 참조를 닫은 다음 `/bin/Shell.lix`를 실행하므로 Shell과 자식은 프로그램용 연결만 상속합니다. `Program.conf`는 Init과 Terminal을 `/sbin/`, Shell을 `/bin/`에 설치하며 커널은 `/sbin/Init.lix`를 실행합니다.
 
-Init은 Pretendard와 JetBrains Mono를 파일에서 한 번 읽고 `Fonts/Pretendard`, `Fonts/JetBrainsMono`로 등록한 뒤 `/bin/Shell.lix`를 실행하고 종료합니다. Shell은 `Fonts/JetBrainsMono`를 읽기 전용으로 매핑하고 자체 TrueType 화면·할당자·폰트 객체를 초기화합니다. Shell은 출력 스트림의 ASCII·줄바꿈·캐리지 리턴을 처리하고 스크롤 후 프레임버퍼를 표시합니다. 키보드 입력과 명령 해석기는 아직 없습니다. 최대 2560 × 1440 화면을 지원하며 빈 스트림을 반복 확인합니다. yield는 현재 -1을 반환하므로 CPU를 사용할 수 있습니다.
+프로그램 쪽 `read`는 입력을 받고 `write`는 출력을 보냅니다. master 쪽 `read`는 출력을 받고 `write`는 입력을 주입합니다. 독립적인 64 KiB 큐 두 개로 저장 공간을 제한합니다. 빈 큐 읽기와 가득 찬 큐 쓰기는 대기 큐에서 잠들고 반대쪽 전송으로 깨어납니다. 일부 전송 후 복사 또는 대기가 실패하면 전송한 길이를 반환합니다. 수락한 출력만 debugcon에 복제합니다. 일반 프로그램은 프로그램용 장치를 `O_RDONLY`·`O_WRONLY`·`O_RDWR`로 열 수 있습니다. master는 부팅 Init만 열 수 있으며 동시에 하나의 열린 객체만 허용합니다. 상속된 참조가 객체 수명을 유지하며 마지막 master 참조를 닫으면 대기자를 깨웁니다. 남은 입력을 읽은 뒤 EOF가 되고 새 쓰기는 실패합니다. 큐 저장 공간은 재부팅까지 유지합니다.
 
-libc는 제한된 freestanding 부분집합입니다. `open`, `read`, `write`, `printf` 같은 표준 이름이 완전한 C 또는 POSIX 호환성을 의미하지는 않습니다. `spawn`, 디스플레이와 스트림 인터페이스는 LineOS 전용이며 `exec`, 프로세스 대기, 범용 유저 할당자와 터미널 입력은 구현되지 않았습니다.
+장치 경로는 `open`이 인식합니다. 마운트된 devfs, 디렉터리 열거, `stat`, 범용 장치 등록은 구현하지 않았습니다. 첫 버전의 키보드 작업자는 US 배열 키 이벤트를 단일 터미널 입력 큐로 전달합니다. Shift·Caps Lock·알파벳 Ctrl 조합을 지원하며 바이트 단위로 처리합니다. 하드웨어 입력 큐가 가득 차면 새 키를 버립니다. 이후 포커스 관리는 master 연결을 통해 입력을 전달할 수 있습니다.
+
+Terminal은 TrueType 상태, 읽기 전용 JetBrains Mono 매핑과 프레임버퍼를 소유합니다. 최대 2560 × 1440 화면에서 글자 크기 36과 줄 높이 40을 사용하고 가로 이동 폭은 폰트 메트릭으로 계산하며 ASCII·줄바꿈·캐리지 리턴·백스페이스·스크롤을 처리합니다. 출력이 없으면 FD 3 읽기에서 잠듭니다. Shell은 libc 입출력과 LineOS `spawn`만 사용합니다. 길이를 제한한 줄 편집, `help`, 절대 실행 경로의 비동기 실행을 제공합니다. 전경 작업 관리는 없으므로 같은 터미널을 읽는 프로그램끼리는 입력을 경쟁합니다.
+
+libc는 제한된 freestanding 부분집합이며 표준 함수명이 완전한 C·POSIX 호환성을 뜻하지 않습니다. 파이프, FD 복제, `termios`, 정규 입력 모드, 시그널, 작업 제어, 프로세스 대기, 터미널 UTF-8 렌더링과 범용 유저 할당자는 구현 범위에 포함하지 않습니다. 디스플레이와 에셋 API는 LineOS 확장입니다. 사용자 메모리 복사와 관리 주소 공간 연산은 VMM 잠금 대기 중 TLB shootdown 요청을 처리하며 일시적인 잠금 경합을 잘못된 사용자 버퍼나 ELF 매핑 실패로 취급하지 않습니다.

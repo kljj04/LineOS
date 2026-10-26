@@ -2,6 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
+#include <Syscall/SyscallFile.h>
 #include <ELF/ELF64.h>
 #include <Exec/ELF64.h>
 #include <Memory/PMM.h>
@@ -404,7 +405,7 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, ELF6
 
     Execution->Task->AssetPublisher = AssetPublisher;
 
-    if (!LBPWRRAddTask(Execution->Task))
+    if (!SyscallFilesInherit(Execution->Task, AssetPublisher ? NULL : LBPWRRGetCurrentTask()) || !LBPWRRAddTask(Execution->Task))
     {
         DebugWriteLine("ELF64Execute: scheduling failed");
         TaskKill(Execution->Task);

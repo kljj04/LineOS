@@ -34,21 +34,21 @@
 #include <FS/VFS/VFSEXT2.h>
 
 STATIC VFS_REGISTRY RootRegistry;
-STATIC EXT2_VOLUME RootVolume;
-STATIC VFS_CONTEXT RootContext;
-STATIC UINT32 RootPartition;
+STATIC EXT2_VOLUME  RootVolume;
+STATIC VFS_CONTEXT  RootContext;
+STATIC UINT32       RootPartition;
 
 STATIC ELF64_EXECUTION InitExecution;
 
 VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
 {
-    VIRTIO_GPU_INFO *GPU;
+    VIRTIO_GPU_INFO     *GPU;
     VIRTIO_BLOCK_DEVICE *BlockDevice;
-    VFS_NODE RootNode;
-    VFS_CREDENTIALS Credentials = {0, 0, TRUE};
-    CLOCK_TIME ClockTime;
-    UINT32 DisplayWidth;
-    UINT32 DisplayHeight;
+    VFS_NODE             RootNode;
+    VFS_CREDENTIALS      Credentials = {0, 0, TRUE};
+    CLOCK_TIME           ClockTime;
+    UINT32               DisplayWidth;
+    UINT32               DisplayHeight;
 
     CLI();
     CPUEnableSSE();
@@ -106,9 +106,23 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
 {
     InitKernel(BootInfo);
 
+    TASK *KeyboardTask = TaskCreate(InputKeyboardHandler);
+
+    if (KeyboardTask == NULL || !LBPWRRAddTask(KeyboardTask))
+    {
+        Panic(L"Keyboard Task Failed");
+    }
+
+    TASK *MouseTask = TaskCreate(InputMouseHandler);
+
+    if (MouseTask == NULL || !LBPWRRAddTask(MouseTask))
+    {
+        Panic(L"Mouse Task Failed");
+    }
+
     KMemSet(&InitExecution, 0, sizeof(InitExecution));
 
-    if (!ELF64ExecuteInit(&RootContext, (CONST CHAR8 *) "/bin/Init.lix", &InitExecution))
+    if (!ELF64ExecuteInit(&RootContext, (CONST CHAR8 *) "/sbin/Init.lix", &InitExecution))
     {
         Panic(L"Init Failed");
     }
