@@ -574,6 +574,7 @@ STATIC VFS_ERROR VFSLookupMode(VFS_CONTEXT *Context, CONST CHAR8 *Path, VFS_NODE
     if (Error == VFS_OK)
     {
         *Node = Resolved.Node;
+        Node->NamespaceGeneration = Context->Registry->NamespaceGeneration;
         Node->Partition = Resolved.AdministratorRoot ? VFS_INVALID_PARTITION : Resolved.Partition;
     }
 
@@ -670,7 +671,7 @@ STATIC VFS_ERROR VFSData(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 Offset,
     {
         Error = VFS_INVALID;
     }
-    else if (Error == VFS_OK && Expected != NULL && (Resolved.Partition != Expected->Partition || Resolved.Node.Number != Expected->Number))
+    else if (Error == VFS_OK && Expected != NULL && (Resolved.Partition != Expected->Partition || Resolved.Node.Number != Expected->Number || Context->Registry->NamespaceGeneration != Expected->NamespaceGeneration))
     {
         Error = VFS_NOT_FOUND;
     }
@@ -835,6 +836,10 @@ STATIC VFS_ERROR VFSMutate(VFS_CONTEXT *Context, VFS_MUTATION *Mutation, CONST C
     {
         VFS_PARTITION *Partition = VFSPartition(Context, First.Partition);
         Error = Partition->Operations->Mutate == NULL ? VFS_UNSUPPORTED : Partition->Operations->Mutate(Partition->Backend, &Context->Credentials, Mutation);
+        if (Error == VFS_OK && (Mutation->Type == VFS_MUTATE_REMOVE || Mutation->Type == VFS_MUTATE_RENAME))
+        {
+            Context->Registry->NamespaceGeneration++;
+        }
     }
 
     return VFSUnlock(Context->Registry, Error);
@@ -914,4 +919,90 @@ VFS_ERROR VFSTouch(VFS_CONTEXT *Context, CONST CHAR8 *Path)
     VFS_MUTATION Mutation = {0};
     Mutation.Type = VFS_MUTATE_TOUCH;
     return VFSMutate(Context, &Mutation, Path, NULL);
+}
+
+VFS_ERROR VFSWriteChecked(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST VFS_NODE *Expected, UINT64 Offset, CONST VOID *Buffer, UINT32 Length)
+{
+    if (Expected == NULL || Offset > UINT64_MAX - Length)
+    {
+        return VFS_INVALID;
+    }
+    return VFSData(Context, Path, Offset, (VOID *) Buffer, Length, NULL, TRUE, Expected);
+}
+
+VFS_ERROR VFSOpen(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT32 Flags, UINT16 Mode, VFS_NODE *Node)
+{
+    VFS_RESOLVED   Resolved;
+    VFS_PARTITION *Partition;
+    VFS_ERROR      Error;
+    VFS_MUTATION   Mutation = {0};
+    CHAR8          Name[256];
+    UINT32         ReadLength;
+    UINT32         Access = Flags & VFS_OPEN_ACCMODE;
+
+    if (Context == NULL || Context->Registry == NULL || Node == NULL || Access == 3 || (Flags & ~(VFS_OPEN_ACCMODE | VFS_OPEN_CREATE | VFS_OPEN_EXCLUSIVE | VFS_OPEN_TRUNCATE)) != 0 || ((Flags & VFS_OPEN_EXCLUSIVE) != 0 && (Flags & VFS_OPEN_CREATE) == 0) || ((Flags & VFS_OPEN_TRUNCATE) != 0 && Access == 0) || ((Flags & VFS_OPEN_CREATE) != 0 && (Mode & ~0777U) != 0))
+    {
+        return VFS_INVALID;
+    }
+    if (!VFSLock(Context->Registry))
+    {
+        return VFS_BUSY;
+    }
+    Error = VFSResolve(Context, Path, FALSE, &Resolved);
+    if (Error == VFS_OK && (Flags & (VFS_OPEN_CREATE | VFS_OPEN_EXCLUSIVE)) == (VFS_OPEN_CREATE | VFS_OPEN_EXCLUSIVE))
+    {
+        return VFSUnlock(Context->Registry, VFS_EXISTS);
+    }
+    if (Error == VFS_NOT_FOUND && (Flags & VFS_OPEN_CREATE) != 0)
+    {
+        Error = VFSParent(Context, Path, &Resolved, Name);
+        if (Error == VFS_OK)
+        {
+            Partition = VFSPartition(Context, Resolved.Partition);
+            Mutation.Type = VFS_MUTATE_CREATE;
+            Mutation.Parent = Resolved.Node.Number;
+            Mutation.Name = Name;
+            Mutation.Mode = Mode;
+            Error = Partition->Operations->Mutate == NULL ? VFS_UNSUPPORTED : Partition->Operations->Mutate(Partition->Backend, &Context->Credentials, &Mutation);
+            if (Error == VFS_OK)
+            {
+                Error = VFSResolve(Context, Path, FALSE, &Resolved);
+            }
+        }
+    }
+    else if (Error == VFS_OK)
+    {
+        Error = VFSResolve(Context, Path, TRUE, &Resolved);
+    }
+    if (Error == VFS_OK && (Resolved.AdministratorRoot || (Resolved.Node.Mode & VFS_MODE_TYPE) != 0x8000U))
+    {
+        Error = VFS_INVALID;
+    }
+    if (Error == VFS_OK)
+    {
+        Partition = VFSPartition(Context, Resolved.Partition);
+        if (Access != 1)
+        {
+            Error = Partition->Operations->Read == NULL ? VFS_UNSUPPORTED : Partition->Operations->Read(Partition->Backend, &Context->Credentials, Resolved.Node.Number, 0, NULL, 0, &ReadLength);
+        }
+        if (Error == VFS_OK && Access != 0)
+        {
+            Error = Partition->Operations->Write == NULL ? VFS_UNSUPPORTED : Partition->Operations->Write(Partition->Backend, &Context->Credentials, Resolved.Node.Number, 0, NULL, 0);
+        }
+        if (Error == VFS_OK && (Flags & VFS_OPEN_TRUNCATE) != 0)
+        {
+            Mutation.Type = VFS_MUTATE_TRUNCATE;
+            Mutation.Number = Resolved.Node.Number;
+            Mutation.Size = 0;
+            Error = Partition->Operations->Mutate == NULL ? VFS_UNSUPPORTED : Partition->Operations->Mutate(Partition->Backend, &Context->Credentials, &Mutation);
+            Resolved.Node.Size = 0;
+        }
+        if (Error == VFS_OK)
+        {
+            *Node = Resolved.Node;
+            Node->NamespaceGeneration = Context->Registry->NamespaceGeneration;
+            Node->Partition = Resolved.Partition;
+        }
+    }
+    return VFSUnlock(Context->Registry, Error);
 }

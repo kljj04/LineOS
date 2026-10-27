@@ -26,6 +26,21 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
             return (UINT64) SyscallExit(Frame->RDI);
         }
 
+        case SYSCALL_SETUID:
+        {
+            return (UINT64) SyscallSetUID(Frame->RDI);
+        }
+
+        case SYSCALL_SETGID:
+        {
+            return (UINT64) SyscallSetGID(Frame->RDI);
+        }
+
+        case SYSCALL_GETRANDOM:
+        {
+            return (UINT64) SyscallGetRandom(Frame->RDI, Frame->RSI, Frame->RDX);
+        }
+
         case SYSCALL_READ:
         {
             return (UINT64) SyscallRead(Frame->RDI, Frame->RSI, Frame->RDX);
@@ -33,7 +48,22 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
 
         case SYSCALL_OPEN:
         {
-            return (UINT64) SyscallOpen(Frame->RDI, Frame->RSI);
+            return (UINT64) SyscallOpen(Frame->RDI, Frame->RSI, Frame->RDX);
+        }
+
+        case SYSCALL_RENAME:
+        {
+            return (UINT64) SyscallRename(Frame->RDI, Frame->RSI);
+        }
+
+        case SYSCALL_MKDIR:
+        {
+            return (UINT64) SyscallMkdir(Frame->RDI, Frame->RSI);
+        }
+
+        case SYSCALL_REMOVE:
+        {
+            return (UINT64) SyscallRemove(Frame->RDI);
         }
 
         case SYSCALL_CLOSE:
@@ -83,6 +113,11 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
         case SYSCALL_SPAWN:
         {
             return (UINT64) SyscallSpawn(Frame->RDI);
+        }
+
+        case SYSCALL_SPAWNV:
+        {
+            return (UINT64) SyscallSpawnV(Frame->RDI, Frame->RSI);
         }
 
         case SYSCALL_ASSET_PUBLISH:

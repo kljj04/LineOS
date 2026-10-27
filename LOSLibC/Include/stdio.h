@@ -20,3 +20,5 @@ typedef struct
 int printf(const char *Format, ...);
 int puts(const char *String);
 int putchar(int Character);
+int rename(const char *OldPath, const char *NewPath);
+int remove(const char *Path);

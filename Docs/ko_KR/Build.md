@@ -80,7 +80,7 @@ make -f Makefiles/Makefile -j1
 
 이미지가 없으면 임시 raw GPT 디스크를 만들고 1 MiB부터 301 MiB까지 FAT32 ESP 1번 파티션, 나머지 공간에 EXT2 2번 파티션을 준비합니다. 기존 경로를 덮어쓰지 않는 방식으로 새 이미지를
 배치합니다. 기존 이미지는 포맷 없이 재사용합니다. 갱신은 ESP에 `EFI/BOOT/BOOTX64.EFI`와 `KERNEL/LINEOS_KERNEL.ELF`를 복사하고 EXT2에 유저 프로그램과
-`Assets/Fonts/*.ttf`를 배치합니다. 프로그램 위치는 `Program.conf`를 따르며 기본값은 `/bin/`, 폰트 위치는 `/sys/fonts/`입니다. 기존 EXT2는 포맷하지 않습니다. 자세한
+`Assets/Fonts/*.ttf`를 배치합니다. 프로그램 위치는 `Program.cfg`를 따르며 기본값은 `/bin/`, 폰트 위치는 `/sys/fonts/`입니다. 기존 EXT2는 포맷하지 않습니다. 자세한
 내용은 [프로그램 배치](UserLibraries.md)를 참고합니다. `-mount`로 연결한 관리 경로는 갱신 전에 마운트와 loop 연결을 해제합니다. 그 외의 기존 loop 연결은 거부합니다. 정리 단계에서
 마운트와 loop 연결을 해제하며 실패 시 확인할 자원을 출력합니다.
 

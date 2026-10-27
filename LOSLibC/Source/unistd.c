@@ -20,3 +20,13 @@ int close(int FD)
 {
     return (int) LineOSSyscall1(4, (UINT64) FD);
 }
+
+int setuid(uid_t UID)
+{
+    return (int) LineOSSyscall1(20, UID);
+}
+
+int setgid(gid_t GID)
+{
+    return (int) LineOSSyscall1(21, GID);
+}

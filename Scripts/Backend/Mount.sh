@@ -270,7 +270,7 @@ MountOpen()
 MountProgramPath()
 {
     local Program="$1"
-    local Config="$MountRoot/UserPrograms/$Program/Program.conf"
+    local Config="$MountRoot/UserPrograms/$Program/Program.cfg"
     local Line Value="/bin/"
     local Seen=0
 

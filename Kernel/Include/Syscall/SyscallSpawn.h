@@ -7,3 +7,4 @@
 #include <LineOS/TypeInfo.h>
 
 INT64 SyscallSpawn(UINT64 Path);
+INT64 SyscallSpawnV(UINT64 Path, UINT64 Argv);

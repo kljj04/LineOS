@@ -16,7 +16,8 @@
 #define TERMINAL_ALLOCATOR_CAPACITY (8U * 1024U * 1024U)
 #define TERMINAL_FONT_HEIGHT        36U
 #define TERMINAL_LINE_HEIGHT        40U
-#define TERMINAL_CURSOR_WIDTH       2U
+#define TERMINAL_CURSOR_WIDTH       5U
+#define TERMINAL_CURSOR_HEIGHT      30U
 #define TERMINAL_MARGIN             8U
 #define TERMINAL_BACKGROUND         0x00101820U
 #define TERMINAL_FOREGROUND         0x00FFFFFFU
@@ -208,11 +209,11 @@ STATIC TRUE_TYPE_FONT *TerminalMeasure(TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fal
 
 STATIC INT64 TerminalPresent(DISPLAY_INFO *Info, UINT32 X, UINT32 Baseline)
 {
-    UINT32 Saved[TERMINAL_CURSOR_WIDTH * TERMINAL_FONT_HEIGHT];
-    UINT32 Top = Baseline - TERMINAL_FONT_HEIGHT;
+    UINT32 Saved[TERMINAL_CURSOR_WIDTH * TERMINAL_CURSOR_HEIGHT];
+    UINT32 Top = Baseline - TERMINAL_CURSOR_HEIGHT + 5U;
     UINTN  Count = 0;
 
-    for (UINT32 Row = Top; Row < Baseline && Row < Info->Height; Row++)
+    for (UINT32 Row = Top; Row < Top + TERMINAL_CURSOR_HEIGHT && Row < Info->Height; Row++)
     {
         for (UINT32 Column = X; Column < X + TERMINAL_CURSOR_WIDTH && Column < Info->Width; Column++)
         {
@@ -221,9 +222,10 @@ STATIC INT64 TerminalPresent(DISPLAY_INFO *Info, UINT32 X, UINT32 Baseline)
             FrameBuffer[Pixel] = TERMINAL_FOREGROUND;
         }
     }
+
     INT64 Result = DisplayPresent(FrameBuffer, (UINT64) Info->Width * Info->Height * sizeof(UINT32));
     Count = 0;
-    for (UINT32 Row = Top; Row < Baseline && Row < Info->Height; Row++)
+    for (UINT32 Row = Top; Row < Top + TERMINAL_CURSOR_HEIGHT && Row < Info->Height; Row++)
     {
         for (UINT32 Column = X; Column < X + TERMINAL_CURSOR_WIDTH && Column < Info->Width; Column++)
         {

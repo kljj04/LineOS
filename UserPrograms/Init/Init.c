@@ -110,7 +110,6 @@ STATIC BOOLEAN InitPublishFont(CONST char *Path, CONST char *Name)
         return FALSE;
     }
 
-    printf("Init: published %s (%u bytes)\n", Name, (UINT32) Size);
     return TRUE;
 }
 
@@ -120,8 +119,6 @@ INT32 _Start(VOID)
     {
         exit(1);
     }
-
-    printf("Init: loading shared assets\n");
 
     if (!InitPublishFont("/sys/fonts/PTDSB.ttf", "Fonts/Pretendard") || !InitPublishFont("/sys/fonts/JBMNFSB.ttf", "Fonts/JetBrainsMono"))
     {
@@ -137,9 +134,9 @@ INT32 _Start(VOID)
     }
     close(Master);
 
-    if (spawn("/bin/Shell.lix") < 0)
+    if (spawn("/sbin/Login.lix") < 0)
     {
-        printf("Init: Shell spawn failed\n");
+        printf("Init: Login spawn failed\n");
         exit(1);
     }
 

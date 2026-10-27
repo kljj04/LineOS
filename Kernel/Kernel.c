@@ -92,7 +92,10 @@ VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
     BlockDevice = VirtIOBlockGetDevice();
 
     VFSInit(&RootRegistry);
-    VFSMountEXT2(&RootRegistry, (CONST CHAR8 *) "root", &RootVolume, BlockDevice, 2, FALSE, &RootPartition);
+    if (VFSMountEXT2(&RootRegistry, (CONST CHAR8 *) "root", &RootVolume, BlockDevice, 2, TRUE, &RootPartition) != VFS_OK)
+    {
+        Panic(L"Root Filesystem Mount Failed");
+    }
     VFSContextInit(&RootContext, &RootRegistry, RootPartition, Credentials);
     VFSLookup(&RootContext, (CONST CHAR8 *) "/", &RootNode);
 

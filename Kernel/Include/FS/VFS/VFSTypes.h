@@ -6,6 +6,11 @@
 
 #include <LineOS/TypeInfo.h>
 
+#define VFS_OPEN_ACCMODE   3U
+#define VFS_OPEN_CREATE    0x40U
+#define VFS_OPEN_EXCLUSIVE 0x80U
+#define VFS_OPEN_TRUNCATE  0x200U
+
 #define VFS_MAX_PARTITIONS     32U
 #define VFS_MAX_PATH           4096U
 #define VFS_MAX_NAME           255U
@@ -43,6 +48,7 @@ typedef struct
 
 typedef struct
 {
+    UINT64 NamespaceGeneration;
     UINT32 Number;
     UINT32 Partition;
     UINT16 Mode;
@@ -114,6 +120,7 @@ typedef struct
 {
     VFS_PARTITION   Partitions[VFS_MAX_PARTITIONS];
     VOLATILE UINT32 Busy;
+    UINT64          NamespaceGeneration;
 } VFS_REGISTRY;
 
 typedef struct

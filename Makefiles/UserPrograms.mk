@@ -24,13 +24,18 @@ Build/Objects/UserPrograms/%.o: UserPrograms/%.S Makefiles/BuildSettings.mk Make
 		-c $< \
 		-o $@
 
+USER_PROGRAM_EXTRA_AddUser := $(USER_DB_TARGET)
+USER_PROGRAM_EXTRA_DelUser := $(USER_DB_TARGET)
+USER_PROGRAM_EXTRA_UserRescue := $(USER_DB_TARGET)
+USER_PROGRAM_EXTRA_Login := $(USER_DB_TARGET)
+
 define USER_PROGRAM_TEMPLATE
 
 USER_PROGRAM_SRCS_$(1) := $(call RWildcard,$(USER_PROGRAM_ROOT)/$(1),*.c) $(call RWildcard,$(USER_PROGRAM_ROOT)/$(1),*.S)
 USER_PROGRAM_OBJS_$(1) := $$(patsubst $(USER_PROGRAM_ROOT)/$(1)/%.c,Build/Objects/UserPrograms/$(1)/%.o,$$(filter %.c,$$(USER_PROGRAM_SRCS_$(1)))) $$(patsubst $(USER_PROGRAM_ROOT)/$(1)/%.S,Build/Objects/UserPrograms/$(1)/%.o,$$(filter %.S,$$(USER_PROGRAM_SRCS_$(1))))
 USER_PROGRAM_OUTPUT_$(1) := $(USER_PROGRAM_OUTPUT_DIR)/$(1).lix
 
-$$(USER_PROGRAM_OUTPUT_$(1)): $$(USER_PROGRAM_OBJS_$(1)) $(TRUE_TYPE_TARGET) $(LOSLIBC_TARGET) Link/UserProgram.ld Makefiles/UserPrograms.mk
+$$(USER_PROGRAM_OUTPUT_$(1)): $$(USER_PROGRAM_OBJS_$(1)) $(TRUE_TYPE_TARGET) $(LOSLIBC_TARGET) $$(USER_PROGRAM_EXTRA_$(1)) Link/UserProgram.ld Makefiles/UserPrograms.mk
 	@$$(call MKDIR_P,$$(dir $$@))
 	@$$(LD) -static \
 		-T Link/UserProgram.ld \
@@ -38,6 +43,7 @@ $$(USER_PROGRAM_OUTPUT_$(1)): $$(USER_PROGRAM_OBJS_$(1)) $(TRUE_TYPE_TARGET) $(L
 		-o $$@ \
 		$$(USER_PROGRAM_OBJS_$(1)) \
 		$(TRUE_TYPE_TARGET) \
+		$$(USER_PROGRAM_EXTRA_$(1)) \
 		$(LOSLIBC_TARGET)
 
 endef

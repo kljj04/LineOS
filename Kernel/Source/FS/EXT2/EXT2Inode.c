@@ -558,7 +558,7 @@ BOOLEAN EXT2ValidateOwnership(EXT2_VOLUME *Volume)
 
             Type = EXT2Load16(Inode.Raw) & EXT2_MODE_TYPE;
 
-            if (EXT2Load32(Inode.Raw + 104) != 0 || EXT2Load32(Inode.Raw + 112) != 0 || EXT2Load32(Inode.Raw + 36) != 0 || Inode.Raw[116] != 0 || Inode.Raw[117] != 0 || (EXT2Load32(Inode.Raw + 32) & ~0x30FFU) != 0)
+            if (EXT2Load32(Inode.Raw + 104) != 0 || EXT2Load32(Inode.Raw + 112) != 0 || Inode.Raw[116] != 0 || Inode.Raw[117] != 0 || (EXT2Load32(Inode.Raw + 32) & ~0x30FFU) != 0)
             {
                 EXT2Fail(Volume, EXT2_ERROR_UNSUPPORTED);
                 goto Done;

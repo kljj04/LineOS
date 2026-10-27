@@ -1,0 +1,611 @@
+// Libraries/Source/UserDB/Argon2.c
+// LineOS Project
+// Copyright (C) 2026 LineOS Developer kljj04
+// BLAKE2b/Argon2 subset adapted from Monocypher 4.0.3.
+//
+// This file is dual-licensed.  Choose whichever licence you want from
+// the two licences listed below.
+//
+// The first licence is a regular 2-clause BSD licence.  The second licence
+// is the CC-0 from Creative Commons. It is intended to release Monocypher
+// to the public domain.  The BSD licence serves as a fallback option.
+//
+// SPDX-License-Identifier: BSD-2-Clause OR CC0-1.0
+//
+// ------------------------------------------------------------------------
+//
+// Copyright (c) 2017-2020, Loup Vaillant
+// All rights reserved.
+//
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+//    notice, this list of conditions and the following disclaimer in the
+//    documentation and/or other materials provided with the
+//    distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// ------------------------------------------------------------------------
+//
+// Written in 2017-2020 by Loup Vaillant
+//
+// To the extent possible under law, the author(s) have dedicated all copyright
+// and related neighboring rights to this software to the public domain
+// worldwide.  This software is distributed without any warranty.
+//
+// You should have received a copy of the CC0 Public Domain Dedication along
+// with this software.  If not, see
+// <https://creativecommons.org/publicdomain/zero/1.0/>
+
+#include <UserDB/Argon2.h>
+
+#define FOR_T(Type, I, Start, End) for (Type I = (Start); I < (End); I++)
+#define FOR(I, Start, End)         FOR_T(UINTN, I, Start, End)
+#define COPY(Dst, Src, Size)       FOR(CopyIndex, 0, Size)(Dst)[CopyIndex] = (Src)[CopyIndex]
+#define ZERO(Buf, Size)            FOR(CopyIndex, 0, Size)(Buf)[CopyIndex] = 0
+#define WIPE_CTX(Ctx)              CryptoWipe(Ctx, sizeof(*(Ctx)))
+#define WIPE_BUFFER(Buffer)        CryptoWipe(Buffer, sizeof(Buffer))
+#define MIN(A, B)                  ((A) <= (B) ? (A) : (B))
+#define MAX(A, B)                  ((A) >= (B) ? (A) : (B))
+
+STATIC UINTN Gap(UINTN X, UINTN Pow2)
+{
+    return (~X + 1) & (Pow2 - 1);
+}
+
+STATIC UINT32 Load32Le(CONST UINT8 S[4])
+{
+    return ((UINT32) S[0] << 0) | ((UINT32) S[1] << 8) | ((UINT32) S[2] << 16) | ((UINT32) S[3] << 24);
+}
+
+STATIC UINT64 Load64Le(CONST UINT8 S[8])
+{
+    return Load32Le(S) | ((UINT64) Load32Le(S + 4) << 32);
+}
+
+STATIC VOID Store32Le(UINT8 Out[4], UINT32 In)
+{
+    Out[0] = (UINT8) (In);
+    Out[1] = (UINT8) (In >> 8);
+    Out[2] = (UINT8) (In >> 16);
+    Out[3] = (UINT8) (In >> 24);
+}
+
+STATIC VOID Store64Le(UINT8 Out[8], UINT64 In)
+{
+    Store32Le(Out, (UINT32) (In));
+    Store32Le(Out + 4, (UINT32) (In >> 32));
+}
+
+STATIC VOID Load64LeBuf(UINT64 *Dst, CONST UINT8 *Src, UINTN Size)
+{
+    FOR(I, 0, Size)
+    {
+        Dst[I] = Load64Le(Src + I * 8);
+    }
+}
+
+STATIC VOID Store64LeBuf(UINT8 *Dst, CONST UINT64 *Src, UINTN Size)
+{
+    FOR(I, 0, Size)
+    {
+        Store64Le(Dst + I * 8, Src[I]);
+    }
+}
+
+STATIC UINT64 Rotr64(UINT64 X, UINT64 N)
+{
+    return (X >> N) ^ (X << (64 - N));
+}
+
+STATIC INT32 Neq0(UINT64 Diff)
+{
+
+    UINT64 Half = (Diff >> 32) | ((UINT32) Diff);
+    UINT64 Eq0 = 1 & ((Half - 1) >> 32);
+    return (INT32) Eq0 - 1;
+}
+
+STATIC UINT64 X16(CONST UINT8 A[16], CONST UINT8 B[16])
+{
+    return (Load64Le(A + 0) ^ Load64Le(B + 0)) | (Load64Le(A + 8) ^ Load64Le(B + 8));
+}
+STATIC UINT64 X32(CONST UINT8 A[32], CONST UINT8 B[32])
+{
+    return X16(A, B) | X16(A + 16, B + 16);
+}
+STATIC UINT64 X64(CONST UINT8 A[64], CONST UINT8 B[64])
+{
+    return X32(A, B) | X32(A + 32, B + 32);
+}
+INT32 CryptoVerify16(CONST UINT8 A[16], CONST UINT8 B[16])
+{
+    return Neq0(X16(A, B));
+}
+INT32 CryptoVerify32(CONST UINT8 A[32], CONST UINT8 B[32])
+{
+    return Neq0(X32(A, B));
+}
+INT32 CryptoVerify64(CONST UINT8 A[64], CONST UINT8 B[64])
+{
+    return Neq0(X64(A, B));
+}
+
+VOID CryptoWipe(VOID *Secret, UINTN Size)
+{
+    VOLATILE UINT8 *VSecret = (UINT8 *) Secret;
+    ZERO(VSecret, Size);
+}
+
+STATIC CONST UINT64 Iv[8] = {
+    0x6a09e667f3bcc908, 0xbb67ae8584caa73b, 0x3c6ef372fe94f82b, 0xa54ff53a5f1d36f1, 0x510e527fade682d1, 0x9b05688c2b3e6c1f, 0x1f83d9abfb41bd6b, 0x5be0cd19137e2179,
+};
+
+STATIC VOID Blake2bCompress(CRYPTO_BLAKE2B_CONTEXT *Ctx, INT32 IsLastBlock)
+{
+    STATIC CONST UINT8 Sigma[12][16] = {
+        {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}, {14, 10, 4, 8, 9, 15, 13, 6, 1, 12, 0, 2, 11, 7, 5, 3}, {11, 8, 12, 0, 5, 2, 15, 13, 10, 14, 3, 6, 7, 1, 9, 4}, {7, 9, 3, 1, 13, 12, 11, 14, 2, 6, 5, 10, 4, 0, 15, 8}, {9, 0, 5, 7, 2, 4, 10, 15, 14, 1, 11, 12, 6, 8, 3, 13}, {2, 12, 6, 10, 0, 11, 8, 3, 4, 13, 7, 5, 15, 14, 1, 9}, {12, 5, 1, 15, 14, 13, 4, 10, 0, 7, 6, 3, 9, 2, 8, 11}, {13, 11, 7, 14, 12, 1, 3, 9, 5, 0, 15, 4, 8, 6, 2, 10}, {6, 15, 14, 9, 11, 3, 0, 8, 12, 2, 13, 7, 1, 4, 10, 5}, {10, 2, 8, 4, 7, 6, 1, 5, 15, 11, 9, 14, 3, 12, 13, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}, {14, 10, 4, 8, 9, 15, 13, 6, 1, 12, 0, 2, 11, 7, 5, 3},
+    };
+
+    UINT64 *X = Ctx->InputOffset;
+    UINTN   Y = Ctx->InputIdx;
+    X[0] += Y;
+    if (X[0] < Y)
+    {
+        X[1]++;
+    }
+
+    UINT64 V0 = Ctx->Hash[0];
+    UINT64 V8 = Iv[0];
+    UINT64 V1 = Ctx->Hash[1];
+    UINT64 V9 = Iv[1];
+    UINT64 V2 = Ctx->Hash[2];
+    UINT64 V10 = Iv[2];
+    UINT64 V3 = Ctx->Hash[3];
+    UINT64 V11 = Iv[3];
+    UINT64 V4 = Ctx->Hash[4];
+    UINT64 V12 = Iv[4] ^ Ctx->InputOffset[0];
+    UINT64 V5 = Ctx->Hash[5];
+    UINT64 V13 = Iv[5] ^ Ctx->InputOffset[1];
+    UINT64 V6 = Ctx->Hash[6];
+    UINT64 V14 = Iv[6] ^ (UINT64) ~(IsLastBlock - 1);
+    UINT64 V7 = Ctx->Hash[7];
+    UINT64 V15 = Iv[7];
+
+    UINT64 *Input = Ctx->Input;
+#define BLAKE2_G(A, B, C, D, X, Y) \
+    A += B + X; \
+    D = Rotr64(D ^ A, 32); \
+    C += D; \
+    B = Rotr64(B ^ C, 24); \
+    A += B + Y; \
+    D = Rotr64(D ^ A, 16); \
+    C += D; \
+    B = Rotr64(B ^ C, 63)
+#define BLAKE2_ROUND(I) \
+    BLAKE2_G(V0, V4, V8, V12, Input[Sigma[I][0]], Input[Sigma[I][1]]); \
+    BLAKE2_G(V1, V5, V9, V13, Input[Sigma[I][2]], Input[Sigma[I][3]]); \
+    BLAKE2_G(V2, V6, V10, V14, Input[Sigma[I][4]], Input[Sigma[I][5]]); \
+    BLAKE2_G(V3, V7, V11, V15, Input[Sigma[I][6]], Input[Sigma[I][7]]); \
+    BLAKE2_G(V0, V5, V10, V15, Input[Sigma[I][8]], Input[Sigma[I][9]]); \
+    BLAKE2_G(V1, V6, V11, V12, Input[Sigma[I][10]], Input[Sigma[I][11]]); \
+    BLAKE2_G(V2, V7, V8, V13, Input[Sigma[I][12]], Input[Sigma[I][13]]); \
+    BLAKE2_G(V3, V4, V9, V14, Input[Sigma[I][14]], Input[Sigma[I][15]])
+
+#ifdef BLAKE2_NO_UNROLLING
+    FOR(I, 0, 12)
+    {
+        BLAKE2_ROUND(I);
+    }
+#else
+    BLAKE2_ROUND(0);
+    BLAKE2_ROUND(1);
+    BLAKE2_ROUND(2);
+    BLAKE2_ROUND(3);
+    BLAKE2_ROUND(4);
+    BLAKE2_ROUND(5);
+    BLAKE2_ROUND(6);
+    BLAKE2_ROUND(7);
+    BLAKE2_ROUND(8);
+    BLAKE2_ROUND(9);
+    BLAKE2_ROUND(10);
+    BLAKE2_ROUND(11);
+#endif
+
+    Ctx->Hash[0] ^= V0 ^ V8;
+    Ctx->Hash[1] ^= V1 ^ V9;
+    Ctx->Hash[2] ^= V2 ^ V10;
+    Ctx->Hash[3] ^= V3 ^ V11;
+    Ctx->Hash[4] ^= V4 ^ V12;
+    Ctx->Hash[5] ^= V5 ^ V13;
+    Ctx->Hash[6] ^= V6 ^ V14;
+    Ctx->Hash[7] ^= V7 ^ V15;
+}
+
+VOID CryptoBlake2bKeyedInit(CRYPTO_BLAKE2B_CONTEXT *Ctx, UINTN HashSize, CONST UINT8 *Key, UINTN KeySize)
+{
+
+    COPY(Ctx->Hash, Iv, 8);
+    Ctx->Hash[0] ^= 0x01010000 ^ (KeySize << 8) ^ HashSize;
+
+    Ctx->InputOffset[0] = 0;
+    Ctx->InputOffset[1] = 0;
+    Ctx->HashSize = HashSize;
+    Ctx->InputIdx = 0;
+    ZERO(Ctx->Input, 16);
+
+    if (KeySize > 0)
+    {
+        UINT8 KeyBlock[128] = {0};
+        COPY(KeyBlock, Key, KeySize);
+
+        Load64LeBuf(Ctx->Input, KeyBlock, 16);
+        Ctx->InputIdx = 128;
+        WIPE_BUFFER(KeyBlock);
+    }
+}
+
+VOID CryptoBlake2bInit(CRYPTO_BLAKE2B_CONTEXT *Ctx, UINTN HashSize)
+{
+    CryptoBlake2bKeyedInit(Ctx, HashSize, 0, 0);
+}
+
+VOID CryptoBlake2bUpdate(CRYPTO_BLAKE2B_CONTEXT *Ctx, CONST UINT8 *Message, UINTN MessageSize)
+{
+
+    if (MessageSize == 0)
+    {
+        return;
+    }
+
+    if ((Ctx->InputIdx & 7) != 0)
+    {
+        UINTN NbBytes = MIN(Gap(Ctx->InputIdx, 8), MessageSize);
+        UINTN Word = Ctx->InputIdx >> 3;
+        UINTN Byte = Ctx->InputIdx & 7;
+        FOR(I, 0, NbBytes)
+        {
+            Ctx->Input[Word] |= (UINT64) Message[I] << ((Byte + I) << 3);
+        }
+        Ctx->InputIdx += NbBytes;
+        Message += NbBytes;
+        MessageSize -= NbBytes;
+    }
+
+    if ((Ctx->InputIdx & 127) != 0)
+    {
+        UINTN NbWords = MIN(Gap(Ctx->InputIdx, 128), MessageSize) >> 3;
+        Load64LeBuf(Ctx->Input + (Ctx->InputIdx >> 3), Message, NbWords);
+        Ctx->InputIdx += NbWords << 3;
+        Message += NbWords << 3;
+        MessageSize -= NbWords << 3;
+    }
+
+    UINTN NbBlocks = MessageSize >> 7;
+    FOR(I, 0, NbBlocks)
+    {
+        if (Ctx->InputIdx == 128)
+        {
+            Blake2bCompress(Ctx, 0);
+        }
+        Load64LeBuf(Ctx->Input, Message, 16);
+        Message += 128;
+        Ctx->InputIdx = 128;
+    }
+    MessageSize &= 127;
+
+    if (MessageSize != 0)
+    {
+
+        if (Ctx->InputIdx == 128)
+        {
+            Blake2bCompress(Ctx, 0);
+            Ctx->InputIdx = 0;
+        }
+        if (Ctx->InputIdx == 0)
+        {
+            ZERO(Ctx->Input, 16);
+        }
+
+        UINTN NbWords = MessageSize >> 3;
+        Load64LeBuf(Ctx->Input, Message, NbWords);
+        Ctx->InputIdx += NbWords << 3;
+        Message += NbWords << 3;
+        MessageSize -= NbWords << 3;
+
+        FOR(I, 0, MessageSize)
+        {
+            UINTN Word = Ctx->InputIdx >> 3;
+            UINTN Byte = Ctx->InputIdx & 7;
+            Ctx->Input[Word] |= (UINT64) Message[I] << (Byte << 3);
+            Ctx->InputIdx++;
+        }
+    }
+}
+
+VOID CryptoBlake2bFinal(CRYPTO_BLAKE2B_CONTEXT *Ctx, UINT8 *Hash)
+{
+    Blake2bCompress(Ctx, 1);
+    UINTN HashSize = MIN(Ctx->HashSize, 64);
+    UINTN NbWords = HashSize >> 3;
+    Store64LeBuf(Hash, Ctx->Hash, NbWords);
+    FOR(I, NbWords << 3, HashSize)
+    {
+        Hash[I] = (Ctx->Hash[I >> 3] >> (8 * (I & 7))) & 0xff;
+    }
+    WIPE_CTX(Ctx);
+}
+
+VOID CryptoBlake2bKeyed(UINT8 *Hash, UINTN HashSize, CONST UINT8 *Key, UINTN KeySize, CONST UINT8 *Message, UINTN MessageSize)
+{
+    CRYPTO_BLAKE2B_CONTEXT Ctx;
+    CryptoBlake2bKeyedInit(&Ctx, HashSize, Key, KeySize);
+    CryptoBlake2bUpdate(&Ctx, Message, MessageSize);
+    CryptoBlake2bFinal(&Ctx, Hash);
+}
+
+VOID CryptoBlake2b(UINT8 *Hash, UINTN HashSize, CONST UINT8 *Msg, UINTN MsgSize)
+{
+    CryptoBlake2bKeyed(Hash, HashSize, 0, 0, Msg, MsgSize);
+}
+
+typedef struct
+{
+    UINT64 A[128];
+} CRYPTO_ARGON2_BLOCK;
+
+STATIC VOID BlakeUpdate32(CRYPTO_BLAKE2B_CONTEXT *Ctx, UINT32 Input)
+{
+    UINT8 Buf[4];
+    Store32Le(Buf, Input);
+    CryptoBlake2bUpdate(Ctx, Buf, 4);
+    WIPE_BUFFER(Buf);
+}
+
+STATIC VOID BlakeUpdate32Buf(CRYPTO_BLAKE2B_CONTEXT *Ctx, CONST UINT8 *Buf, UINT32 Size)
+{
+    BlakeUpdate32(Ctx, Size);
+    CryptoBlake2bUpdate(Ctx, Buf, Size);
+}
+
+STATIC VOID CopyBlock(CRYPTO_ARGON2_BLOCK *O, CONST CRYPTO_ARGON2_BLOCK *In)
+{
+    FOR(I, 0, 128) O->A[I] = In->A[I];
+}
+STATIC VOID XorBlock(CRYPTO_ARGON2_BLOCK *O, CONST CRYPTO_ARGON2_BLOCK *In)
+{
+    FOR(I, 0, 128) O->A[I] ^= In->A[I];
+}
+
+STATIC VOID ExtendedHash(UINT8 *Digest, UINT32 DigestSize, CONST UINT8 *Input, UINT32 InputSize)
+{
+    CRYPTO_BLAKE2B_CONTEXT Ctx;
+    CryptoBlake2bInit(&Ctx, MIN(DigestSize, 64));
+    BlakeUpdate32(&Ctx, DigestSize);
+    CryptoBlake2bUpdate(&Ctx, Input, InputSize);
+    CryptoBlake2bFinal(&Ctx, Digest);
+
+    if (DigestSize > 64)
+    {
+
+        UINT32 R = (UINT32) (((UINT64) DigestSize + 31) >> 5) - 2;
+        UINT32 I = 1;
+        UINT32 In = 0;
+        UINT32 Out = 32;
+        while (I < R)
+        {
+
+            CryptoBlake2b(Digest + Out, 64, Digest + In, 64);
+            I += 1;
+            In += 32;
+            Out += 32;
+        }
+        CryptoBlake2b(Digest + Out, DigestSize - (32 * R), Digest + In, 64);
+    }
+}
+
+#define LSB(X) ((UINT64) (UINT32) X)
+#define G(A, B, C, D) \
+    A += B + ((LSB(A) * LSB(B)) << 1); \
+    D ^= A; \
+    D = Rotr64(D, 32); \
+    C += D + ((LSB(C) * LSB(D)) << 1); \
+    B ^= C; \
+    B = Rotr64(B, 24); \
+    A += B + ((LSB(A) * LSB(B)) << 1); \
+    D ^= A; \
+    D = Rotr64(D, 16); \
+    C += D + ((LSB(C) * LSB(D)) << 1); \
+    B ^= C; \
+    B = Rotr64(B, 63)
+#define ROUND(V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15) \
+    G(V0, V4, V8, V12); \
+    G(V1, V5, V9, V13); \
+    G(V2, V6, V10, V14); \
+    G(V3, V7, V11, V15); \
+    G(V0, V5, V10, V15); \
+    G(V1, V6, V11, V12); \
+    G(V2, V7, V8, V13); \
+    G(V3, V4, V9, V14)
+
+STATIC VOID GRounds(CRYPTO_ARGON2_BLOCK *B)
+{
+
+    for (INT32 I = 0; I < 128; I += 16)
+    {
+        ROUND(B->A[I], B->A[I + 1], B->A[I + 2], B->A[I + 3], B->A[I + 4], B->A[I + 5], B->A[I + 6], B->A[I + 7], B->A[I + 8], B->A[I + 9], B->A[I + 10], B->A[I + 11], B->A[I + 12], B->A[I + 13], B->A[I + 14], B->A[I + 15]);
+    }
+
+    for (INT32 I = 0; I < 16; I += 2)
+    {
+        ROUND(B->A[I], B->A[I + 1], B->A[I + 16], B->A[I + 17], B->A[I + 32], B->A[I + 33], B->A[I + 48], B->A[I + 49], B->A[I + 64], B->A[I + 65], B->A[I + 80], B->A[I + 81], B->A[I + 96], B->A[I + 97], B->A[I + 112], B->A[I + 113]);
+    }
+}
+
+CONST CRYPTO_ARGON2_EXTRAS CryptoArgon2NoExtras = {0, 0, 0, 0};
+
+VOID CryptoArgon2(UINT8 *Hash, UINT32 HashSize, VOID *WorkArea, CRYPTO_ARGON2_CONFIG Config, CRYPTO_ARGON2_INPUTS Inputs, CRYPTO_ARGON2_EXTRAS Extras)
+{
+    CONST UINT32 SegmentSize = Config.NbBlocks / Config.NbLanes / 4;
+    CONST UINT32 LaneSize = SegmentSize * 4;
+    CONST UINT32 NbBlocks = LaneSize * Config.NbLanes;
+
+    CRYPTO_ARGON2_BLOCK *Blocks = (CRYPTO_ARGON2_BLOCK *) WorkArea;
+    {
+        UINT8                  InitialHash[72];
+        CRYPTO_BLAKE2B_CONTEXT Ctx;
+        CryptoBlake2bInit(&Ctx, 64);
+        BlakeUpdate32(&Ctx, Config.NbLanes);
+        BlakeUpdate32(&Ctx, HashSize);
+        BlakeUpdate32(&Ctx, Config.NbBlocks);
+        BlakeUpdate32(&Ctx, Config.NbPasses);
+        BlakeUpdate32(&Ctx, 0x13);
+        BlakeUpdate32(&Ctx, Config.Algorithm);
+        BlakeUpdate32Buf(&Ctx, Inputs.Pass, Inputs.PassSize);
+        BlakeUpdate32Buf(&Ctx, Inputs.Salt, Inputs.SaltSize);
+        BlakeUpdate32Buf(&Ctx, Extras.Key, Extras.KeySize);
+        BlakeUpdate32Buf(&Ctx, Extras.Ad, Extras.AdSize);
+        CryptoBlake2bFinal(&Ctx, InitialHash);
+
+        UINT8 HashArea[1024];
+        FOR_T(UINT32, L, 0, Config.NbLanes)
+        {
+            FOR_T(UINT32, I, 0, 2)
+            {
+                Store32Le(InitialHash + 64, I);
+                Store32Le(InitialHash + 68, L);
+                ExtendedHash(HashArea, 1024, InitialHash, 72);
+                Load64LeBuf(Blocks[L * LaneSize + I].A, HashArea, 128);
+            }
+        }
+
+        WIPE_BUFFER(InitialHash);
+        WIPE_BUFFER(HashArea);
+    }
+
+    INT32 ConstantTime = Config.Algorithm != CRYPTO_ARGON2_D;
+
+    CRYPTO_ARGON2_BLOCK Tmp;
+    FOR_T(UINT32, Pass, 0, Config.NbPasses)
+    {
+        FOR_T(UINT32, Slice, 0, 4)
+        {
+
+            UINT32 PassOffset = Pass == 0 && Slice == 0 ? 2 : 0;
+            UINT32 SliceOffset = Slice * SegmentSize;
+
+            if (Slice == 2 && Config.Algorithm == CRYPTO_ARGON2_ID)
+            {
+                ConstantTime = 0;
+            }
+
+            FOR_T(UINT32, Segment, 0, Config.NbLanes)
+            {
+                CRYPTO_ARGON2_BLOCK IndexBlock;
+                UINT32              IndexCtr = 1;
+                FOR_T(UINT32, Block, PassOffset, SegmentSize)
+                {
+
+                    UINT32               LaneOffset = Segment * LaneSize;
+                    CRYPTO_ARGON2_BLOCK *SegmentStart = Blocks + LaneOffset + SliceOffset;
+                    CRYPTO_ARGON2_BLOCK *Current = SegmentStart + Block;
+                    CRYPTO_ARGON2_BLOCK *Previous = Block == 0 && SliceOffset == 0 ? SegmentStart + LaneSize - 1 : SegmentStart + Block - 1;
+
+                    UINT64 IndexSeed;
+                    if (ConstantTime)
+                    {
+                        if (Block == PassOffset || (Block % 128) == 0)
+                        {
+
+                            ZERO(IndexBlock.A, 128);
+                            IndexBlock.A[0] = Pass;
+                            IndexBlock.A[1] = Segment;
+                            IndexBlock.A[2] = Slice;
+                            IndexBlock.A[3] = NbBlocks;
+                            IndexBlock.A[4] = Config.NbPasses;
+                            IndexBlock.A[5] = Config.Algorithm;
+                            IndexBlock.A[6] = IndexCtr;
+                            IndexCtr++;
+
+                            CopyBlock(&Tmp, &IndexBlock);
+                            GRounds(&IndexBlock);
+                            XorBlock(&IndexBlock, &Tmp);
+                            CopyBlock(&Tmp, &IndexBlock);
+                            GRounds(&IndexBlock);
+                            XorBlock(&IndexBlock, &Tmp);
+                        }
+                        IndexSeed = IndexBlock.A[Block % 128];
+                    }
+                    else
+                    {
+                        IndexSeed = Previous->A[0];
+                    }
+
+                    UINT32 NextSlice = ((Slice + 1) % 4) * SegmentSize;
+                    UINT32 WindowStart = Pass == 0 ? 0 : NextSlice;
+                    UINT32 NbSegments = Pass == 0 ? Slice : 3;
+                    UINT32 Lane = Pass == 0 && Slice == 0 ? Segment : (UINT32) (IndexSeed >> 32) % Config.NbLanes;
+                    UINT32 WindowSize = NbSegments * SegmentSize + (Lane == Segment ? Block - 1 : Block == 0 ? (UINT32) -1 : 0);
+
+                    UINT64               J1 = IndexSeed & 0xffffffff;
+                    UINT64               X = (J1 * J1) >> 32;
+                    UINT64               Y = (WindowSize * X) >> 32;
+                    UINT64               Z = (WindowSize - 1) - Y;
+                    UINT32               Ref = (UINT32) ((WindowStart + Z) % LaneSize);
+                    UINT32               Index = Lane * LaneSize + Ref;
+                    CRYPTO_ARGON2_BLOCK *Reference = Blocks + Index;
+
+                    CopyBlock(&Tmp, Previous);
+                    XorBlock(&Tmp, Reference);
+                    if (Pass == 0)
+                    {
+                        CopyBlock(Current, &Tmp);
+                    }
+                    else
+                    {
+                        XorBlock(Current, &Tmp);
+                    }
+                    GRounds(&Tmp);
+                    XorBlock(Current, &Tmp);
+                }
+            }
+        }
+    }
+
+    VOLATILE UINT64 *P = Tmp.A;
+    ZERO(P, 128);
+
+    CRYPTO_ARGON2_BLOCK *LastBlock = Blocks + LaneSize - 1;
+    FOR_T(UINT32, Lane, 1, Config.NbLanes)
+    {
+        CRYPTO_ARGON2_BLOCK *NextBlock = LastBlock + LaneSize;
+        XorBlock(NextBlock, LastBlock);
+        LastBlock = NextBlock;
+    }
+
+    UINT8 FinalBlock[1024];
+    Store64LeBuf(FinalBlock, LastBlock->A, 128);
+
+    P = (UINT64 *) WorkArea;
+    ZERO(P, 128 * NbBlocks);
+
+    ExtendedHash(Hash, HashSize, FinalBlock, 1024);
+    WIPE_BUFFER(FinalBlock);
+}
