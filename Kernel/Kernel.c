@@ -2,6 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
+#include <FS/DeviceFS/DeviceFS.h>
 #include <Syscall/Syscall.h>
 #include <Exec/ELF64.h>
 #include <Render/TrueType/Print.h>
@@ -95,6 +96,10 @@ VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
     if (VFSMountEXT2(&RootRegistry, (CONST CHAR8 *) "root", &RootVolume, BlockDevice, 2, TRUE, &RootPartition) != VFS_OK)
     {
         Panic(L"Root Filesystem Mount Failed");
+    }
+    if (DeviceFSMount(&RootRegistry) != VFS_OK)
+    {
+        Panic(L"DeviceFS Mount Failed");
     }
     VFSContextInit(&RootContext, &RootRegistry, RootPartition, Credentials);
     VFSLookup(&RootContext, (CONST CHAR8 *) "/", &RootNode);

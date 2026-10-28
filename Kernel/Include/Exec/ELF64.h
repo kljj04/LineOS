@@ -23,8 +23,9 @@ typedef struct
     CHAR8  Data[ELF64_ARG_MAX_BYTES];
 } ELF64_ARGUMENTS;
 
-typedef struct
+typedef struct ELF64_EXECUTION
 {
+    INT64              Error;
     TASK              *Task;
     VMM_ADDRESS_SPACE *AddressSpace;
     UINT64             PageCount;
@@ -37,3 +38,6 @@ BOOLEAN ELF64Release(ELF64_EXECUTION *Execution);
 BOOLEAN ELF64ExecuteArguments(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST ELF64_ARGUMENTS *Arguments, ELF64_EXECUTION *Execution);
 
 BOOLEAN ELF64ExecuteInit(VFS_CONTEXT *Context, CONST CHAR8 *Path, ELF64_EXECUTION *Execution);
+
+BOOLEAN ELF64PrepareArguments(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST ELF64_ARGUMENTS *Arguments, ELF64_EXECUTION *Execution);
+BOOLEAN ELF64SetEnvironment(ELF64_EXECUTION *Execution, CONST ELF64_ARGUMENTS *Environment);

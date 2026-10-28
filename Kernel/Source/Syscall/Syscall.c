@@ -11,16 +11,93 @@
 #include <Syscall/SyscallFile.h>
 #include <Syscall/SyscallSpawn.h>
 #include <Syscall/SyscallAsset.h>
+#include <Syscall/SyscallMemory.h>
+
+#include <Arch/AMD64/CPU.h>
+#include <Debug/Panic.h>
+#include <LineOS/Errno.h>
+
+typedef struct
+{
+    UINT64 KernelStack;
+    UINT64 UserStack;
+} SYSCALL_CPU;
+
+STATIC_ASSERT(GDT_KERNEL_DATA_SELECTOR == GDT_KERNEL_CODE_SELECTOR + 8, "SYSCALL kernel selectors");
+STATIC_ASSERT(GDT_USER_DATA_SELECTOR == GDT_USER_CODE_SELECTOR - 8, "SYSRET user selectors");
+STATIC_ASSERT(GDT_USER_DATA_SELECTOR == 0x18 && GDT_USER_CODE_SELECTOR == 0x20, "SyscallEntry selectors");
+STATIC_ASSERT(__builtin_offsetof(SYSCALL_CPU, KernelStack) == 0 && __builtin_offsetof(SYSCALL_CPU, UserStack) == 8, "SyscallEntry CPU offsets");
+STATIC_ASSERT(__builtin_offsetof(INTERRUPT_FRAME, RAX) == 112 && __builtin_offsetof(INTERRUPT_FRAME, RIP) == 136 && __builtin_offsetof(INTERRUPT_FRAME, RFLAGS) == 152 && __builtin_offsetof(INTERRUPT_FRAME, RSP) == 160 && sizeof(INTERRUPT_FRAME) == 176, "SyscallEntry frame layout");
+
+STATIC SYSCALL_CPU SyscallCPUs[GDT_MAX_CPUS];
+
+EXTERN VOID SyscallEntry(VOID);
+
+VOID SyscallInitCurrentCPU(UINT32 CPUIndex)
+{
+    UINT32 EAX;
+    UINT32 EBX;
+    UINT32 ECX;
+    UINT32 EDX;
+
+    CPUID(0x80000000U, 0, &EAX, &EBX, &ECX, &EDX);
+    if (CPUIndex >= GDT_MAX_CPUS || EAX < 0x80000001U)
+    {
+        Panic(L"SYSCALL unavailable");
+    }
+    CPUID(0x80000001U, 0, &EAX, &EBX, &ECX, &EDX);
+    if ((EDX & (1U << 11)) == 0)
+    {
+        Panic(L"SYSCALL unavailable");
+    }
+
+    WriteMSR(0xC0000101U, 0);
+    WriteMSR(0xC0000102U, (UINT64) &SyscallCPUs[CPUIndex]);
+    WriteMSR(0xC0000081U, ((UINT64) ((GDT_USER_CODE_SELECTOR - 16) | 3) << 48) | ((UINT64) GDT_KERNEL_CODE_SELECTOR << 32));
+    WriteMSR(0xC0000082U, (UINT64) SyscallEntry);
+    WriteMSR(0xC0000084U, (1ULL << 8) | (1ULL << 9) | (1ULL << 10) | (3ULL << 12) | (1ULL << 14) | (1ULL << 16) | (1ULL << 18));
+    WriteMSR(0xC0000080U, ReadMSR(0xC0000080U) | 1ULL);
+}
+
+VOID SyscallSetKernelStack(UINT32 CPUIndex, UINT64 StackTop)
+{
+    SyscallCPUs[CPUIndex].KernelStack = StackTop;
+}
 
 UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
 {
     if (Frame == NULL)
     {
-        return (UINT64) -1;
+        return (UINT64) -ENOSYS;
     }
 
     switch (Frame->RAX)
     {
+        case SYSCALL_MMAP:
+        {
+            return (UINT64) SyscallMmap(Frame->RDI, Frame->RSI, Frame->RDX, Frame->R10, (INT64) Frame->R8, Frame->R9);
+        }
+        case SYSCALL_MUNMAP:
+        {
+            return (UINT64) SyscallMunmap(Frame->RDI, Frame->RSI);
+        }
+        case SYSCALL_FORK:
+        {
+            return (UINT64) SyscallFork(Frame);
+        }
+        case SYSCALL_EXECVE:
+        {
+            return (UINT64) SyscallExecVE(Frame);
+        }
+        case SYSCALL_GETDENTS64:
+        {
+            return (UINT64) SyscallGetDents64(Frame->RDI, Frame->RSI, Frame->RDX);
+        }
+        case SYSCALL_IOCTL:
+        {
+            return (UINT64) SyscallIoctl(Frame->RDI, Frame->RSI, Frame->RDX);
+        }
+
         case SYSCALL_EXIT:
         {
             return (UINT64) SyscallExit(Frame->RDI);
@@ -89,7 +166,7 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
 
             if (Task == NULL)
             {
-                return (UINT64) -1;
+                return (UINT64) -ESRCH;
             }
 
             return Task->PID;
@@ -137,7 +214,7 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
 
         default:
         {
-            return (UINT64) -1;
+            return (UINT64) -ENOSYS;
         }
     }
 }

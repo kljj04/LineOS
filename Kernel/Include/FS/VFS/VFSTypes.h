@@ -36,7 +36,11 @@ typedef enum
     VFS_LOOP,
     VFS_NOT_EMPTY,
     VFS_CROSS_PARTITION,
-    VFS_CLOCK_ERROR
+    VFS_CLOCK_ERROR,
+    VFS_NOT_DIRECTORY,
+    VFS_IS_DIRECTORY,
+    VFS_NAME_TOO_LONG,
+    VFS_NO_MEMORY
 } VFS_ERROR;
 
 typedef struct
@@ -120,7 +124,10 @@ typedef struct
 {
     VFS_PARTITION   Partitions[VFS_MAX_PARTITIONS];
     VOLATILE UINT32 Busy;
+    UINT64          IRQFlags;
     UINT64          NamespaceGeneration;
+    UINT32          RootPartition;
+    UINT32          DevicePartition;
 } VFS_REGISTRY;
 
 typedef struct
@@ -128,7 +135,6 @@ typedef struct
     VFS_REGISTRY   *Registry;
     VFS_CREDENTIALS Credentials;
     UINT32          Partition;
-    BOOLEAN         AdministratorRoot;
     CHAR8           Cwd[VFS_MAX_PATH];
 } VFS_CONTEXT;
 
@@ -142,7 +148,6 @@ typedef struct
 typedef struct
 {
     UINT32   Partition;
-    BOOLEAN  AdministratorRoot;
     VFS_NODE Node;
     CHAR8    Path[VFS_MAX_PATH];
 } VFS_RESOLVED;

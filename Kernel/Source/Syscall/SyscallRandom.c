@@ -7,6 +7,7 @@
 #include <Memory/VMM.h>
 #include <Memory/PMM.h>
 #include <Scheduler/LBPWRR.h>
+#include <LineOS/Errno.h>
 
 INT64 SyscallGetRandom(UINT64 Buffer, UINT64 Count, UINT64 Flags)
 {
@@ -18,11 +19,19 @@ INT64 SyscallGetRandom(UINT64 Buffer, UINT64 Count, UINT64 Flags)
     UINT32  EDX;
     BOOLEAN Seed;
     BOOLEAN Random;
-    INT64   Result = -1;
+    INT64   Result = -EAGAIN;
 
-    if (Task == NULL || Task->AddressSpace == NULL || Flags != 0 || Count > sizeof(Bytes) || (Count != 0 && (Buffer == 0 || Buffer > UINT64_MAX - Count)))
+    if (Flags != 0)
     {
-        return -1;
+        return -EINVAL;
+    }
+    if (Task == NULL || Task->AddressSpace == NULL)
+    {
+        return -ESRCH;
+    }
+    if (Count != 0 && (Buffer == 0 || Buffer >= (1ULL << 47) || Count > (1ULL << 47) - Buffer))
+    {
+        return -EFAULT;
     }
     if (Count == 0)
     {
@@ -40,7 +49,11 @@ INT64 SyscallGetRandom(UINT64 Buffer, UINT64 Count, UINT64 Flags)
     }
     if (!Seed && !Random)
     {
-        return -1;
+        return -EOPNOTSUPP;
+    }
+    if (Count > sizeof(Bytes))
+    {
+        Count = sizeof(Bytes);
     }
     for (UINT64 Offset = 0; Offset < Count; Offset += 8)
     {
@@ -69,6 +82,7 @@ INT64 SyscallGetRandom(UINT64 Buffer, UINT64 Count, UINT64 Flags)
         KMemCpy(Bytes + Offset, &Value, Length);
         Value = 0;
     }
+    Result = -EFAULT;
     if (VMMCopyToUser(Task->AddressSpace, Buffer, Bytes, Count))
     {
         Result = (INT64) Count;

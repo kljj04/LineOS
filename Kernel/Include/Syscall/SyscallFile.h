@@ -24,3 +24,7 @@ INT64 SyscallGetRandom(UINT64 Buffer, UINT64 Count, UINT64 Flags);
 
 INT64 SyscallSetUID(UINT64 UID);
 INT64 SyscallSetGID(UINT64 GID);
+
+INT64 SyscallIoctl(UINT64 FD, UINT64 Request, UINT64 Argument);
+
+INT64 SyscallGetDents64(UINT64 FD, UINT64 Buffer, UINT64 Count);

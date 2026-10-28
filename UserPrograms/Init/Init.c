@@ -125,7 +125,7 @@ INT32 _Start(VOID)
         exit(1);
     }
 
-    INT32 Master = open("/dev/lsh1/master", O_RDWR);
+    INT32 Master = open("/dev/lsh1-master", O_RDWR);
 
     if (Master != 3 || spawn("/sbin/Terminal.lix") < 0)
     {

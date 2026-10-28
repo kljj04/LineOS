@@ -7,6 +7,7 @@
 #include <Arch/AMD64/SpinLock.h>
 #include <Memory/PMM.h>
 #include <LineOS/Asset.h>
+#include <LineOS/Errno.h>
 
 #define ASSET_LIMIT          16U
 #define ASSET_PAGE_SIZE      4096ULL
@@ -75,11 +76,23 @@ INT64 SyscallAssetPublish(UINT64 Name, UINT64 Data, UINT64 Size)
     UINT64       Flags;
     UINT32       Pages = 0;
     UINT32       Count;
-    INT64        Result = -1;
+    INT64        Result = -ENOMEM;
 
-    if (Task == NULL || Task->AddressSpace == NULL || !Task->AssetPublisher || Data == 0 || Size == 0 || Size > LOS_ASSET_MAX_SIZE || Data >= (1ULL << 47) || Size > (1ULL << 47) - Data || !AssetReadName(Task, Name, Buffer))
+    if (Task == NULL || Task->AddressSpace == NULL)
     {
-        return -1;
+        return -ESRCH;
+    }
+    if (!Task->AssetPublisher)
+    {
+        return -EPERM;
+    }
+    if (Size == 0 || Size > LOS_ASSET_MAX_SIZE)
+    {
+        return -EINVAL;
+    }
+    if (Data == 0 || Data >= (1ULL << 47) || Size > (1ULL << 47) - Data || !AssetReadName(Task, Name, Buffer))
+    {
+        return -EFAULT;
     }
 
     Count = (UINT32) ((Size + ASSET_PAGE_SIZE - 1) / ASSET_PAGE_SIZE);
@@ -89,6 +102,7 @@ INT64 SyscallAssetPublish(UINT64 Name, UINT64 Data, UINT64 Size)
     {
         if (AssetEntries[Index].Pages != NULL && AssetNameEqual(AssetEntries[Index].Name, Buffer))
         {
+            Result = -EEXIST;
             goto Cleanup;
         }
 
@@ -100,6 +114,7 @@ INT64 SyscallAssetPublish(UINT64 Name, UINT64 Data, UINT64 Size)
 
     if (Entry == NULL || Count > ASSET_PAGE_LIMIT - AssetPages)
     {
+        Result = -ENOSPC;
         goto Cleanup;
     }
 
@@ -125,6 +140,7 @@ INT64 SyscallAssetPublish(UINT64 Name, UINT64 Data, UINT64 Size)
 
         if (!VMMCopyFromUser(Task->AddressSpace, Page, Data + Offset, Length))
         {
+            Result = -EFAULT;
             goto Failed;
         }
     }
@@ -158,11 +174,11 @@ INT64 SyscallAssetAcquire(UINT64 Name, UINT64 UserAsset)
     UINT32       Slot = 0;
     UINT64       Flags;
     LOS_ASSET    Asset = {0};
-    INT64        Result = -1;
+    INT64        Result = -ENOENT;
 
     if (Task == NULL || Task->AddressSpace == NULL || UserAsset == 0 || !AssetReadName(Task, Name, Buffer))
     {
-        return -1;
+        return -EFAULT;
     }
 
     Flags = SpinLockAcquireIRQSave(&AssetLock);
@@ -197,7 +213,13 @@ INT64 SyscallAssetAcquire(UINT64 Name, UINT64 UserAsset)
         }
     }
 
-    if (Mapping == NULL || Mapping->References == UINT32_MAX || !VMMCopyToUser(Task->AddressSpace, UserAsset, &Asset, sizeof(Asset)))
+    Result = -ENOSPC;
+    if (Mapping == NULL || Mapping->References == UINT32_MAX)
+    {
+        goto Cleanup;
+    }
+    Result = -EFAULT;
+    if (!VMMCopyToUser(Task->AddressSpace, UserAsset, &Asset, sizeof(Asset)))
     {
         goto Cleanup;
     }
@@ -207,6 +229,7 @@ INT64 SyscallAssetAcquire(UINT64 Name, UINT64 UserAsset)
 
     if (Mapping->Handle == 0)
     {
+        Result = -ENOMEM;
         if (AssetHandle == UINT64_MAX || !VMMMapSharedPages(Task->AddressSpace, (UINT64) Asset.Data, Entry->Pages, Entry->PageCount))
         {
             goto Cleanup;
@@ -218,6 +241,7 @@ INT64 SyscallAssetAcquire(UINT64 Name, UINT64 UserAsset)
 
     Asset.Handle = Mapping->Handle;
 
+    Result = -EFAULT;
     if (!VMMCopyToUser(Task->AddressSpace, UserAsset, &Asset, sizeof(Asset)))
     {
         if (Mapping->References == 0 && VMMUnmapSharedPages(Task->AddressSpace, (UINT64) Asset.Data, Entry->Pages, Entry->PageCount))
@@ -239,11 +263,11 @@ INT64 SyscallAssetRelease(UINT64 Handle)
 {
     TASK  *Task = LBPWRRGetCurrentTask();
     UINT64 Flags;
-    INT64  Result = -1;
+    INT64  Result = -EINVAL;
 
     if (Task == NULL || Task->AddressSpace == NULL || Handle == 0)
     {
-        return -1;
+        return -EINVAL;
     }
 
     Flags = SpinLockAcquireIRQSave(&AssetLock);

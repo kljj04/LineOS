@@ -7,6 +7,7 @@
 #include <Scheduler/Task.h>
 #include <Render/GPU/VirtIOGPU.h>
 #include <Memory/VMM.h>
+#include <LineOS/Errno.h>
 
 INT64 SyscallDisplayInfo(UINT64 UserInfo)
 {
@@ -18,14 +19,14 @@ INT64 SyscallDisplayInfo(UINT64 UserInfo)
 
     if (Task == NULL || Task->AddressSpace == NULL)
     {
-        return -1;
+        return -ESRCH;
     }
 
     GPU = VirtIOGPUGetInfo();
 
     if (GPU == NULL || GPU->FrameBuffer == NULL)
     {
-        return -1;
+        return -ENODEV;
     }
 
     Info.Width = GPU->FrameBufferWidth;
@@ -35,7 +36,7 @@ INT64 SyscallDisplayInfo(UINT64 UserInfo)
 
     if (!VMMCopyToUser(Task->AddressSpace, UserInfo, &Info, sizeof(Info)))
     {
-        return -1;
+        return -EFAULT;
     }
 
     return 0;
@@ -55,26 +56,26 @@ INT64 SyscallDisplayPresent(UINT64 UserBuffer, UINT64 BufferSize)
 
     if (Task == NULL || Task->AddressSpace == NULL)
     {
-        return -1;
+        return -ESRCH;
     }
 
     GPU = VirtIOGPUGetInfo();
 
     if (GPU == NULL || GPU->FrameBuffer == NULL)
     {
-        return -1;
+        return -ENODEV;
     }
 
     RequiredSize = (UINT64) GPU->FrameBufferWidth * GPU->FrameBufferHeight * sizeof(UINT32);
 
     if (RequiredSize == 0 || BufferSize != RequiredSize)
     {
-        return -1;
+        return -EINVAL;
     }
 
     if (UserBuffer >= (1ULL << 47) || RequiredSize > (1ULL << 47) - UserBuffer)
     {
-        return -1;
+        return -EFAULT;
     }
 
     IRQFlags = VirtIOGPUAcquireRenderLock();
@@ -100,10 +101,13 @@ INT64 SyscallDisplayPresent(UINT64 UserBuffer, UINT64 BufferSize)
     if (Offset != 0)
     {
         VirtIOGPUMarkDirty(0, 0, GPU->FrameBufferWidth, GPU->FrameBufferHeight);
-        VirtIOGPUPresent();
+        if (!VirtIOGPUPresent() && Success)
+        {
+            return -EIO;
+        }
     }
 
-    return Success ? 0 : -1;
+    return Success ? 0 : -EFAULT;
 }
 
 INT64 SyscallDisplayPresentRect(UINT64 UserRect)
@@ -122,36 +126,36 @@ INT64 SyscallDisplayPresentRect(UINT64 UserRect)
 
     if (Task == NULL || Task->AddressSpace == NULL)
     {
-        return -1;
+        return -ESRCH;
     }
 
     GPU = VirtIOGPUGetInfo();
 
     if (GPU == NULL || GPU->FrameBuffer == NULL)
     {
-        return -1;
+        return -ENODEV;
     }
 
     if (!VMMCopyFromUser(Task->AddressSpace, &Rect, UserRect, sizeof(Rect)))
     {
-        return -1;
+        return -EFAULT;
     }
 
     if (Rect.Width == 0 || Rect.Height == 0 || Rect.X >= GPU->FrameBufferWidth || Rect.Y >= GPU->FrameBufferHeight)
     {
-        return -1;
+        return -EINVAL;
     }
 
     if (Rect.Width > GPU->FrameBufferWidth - Rect.X || Rect.Height > GPU->FrameBufferHeight - Rect.Y)
     {
-        return -1;
+        return -EINVAL;
     }
 
     RowSize = (UINT64) Rect.Width * sizeof(UINT32);
 
     if (Rect.Buffer >= (1ULL << 47) || (UINT64) Rect.Height * RowSize > (1ULL << 47) - Rect.Buffer)
     {
-        return -1;
+        return -EFAULT;
     }
 
     IRQFlags = VirtIOGPUAcquireRenderLock();
@@ -172,11 +176,9 @@ INT64 SyscallDisplayPresentRect(UINT64 UserRect)
 
     if (!Success)
     {
-        return -1;
+        return -EFAULT;
     }
 
     VirtIOGPUMarkDirty(Rect.X, Rect.Y, Rect.Width, Rect.Height);
-    VirtIOGPUPresent();
-
-    return 0;
+    return VirtIOGPUPresent() ? 0 : -EIO;
 }

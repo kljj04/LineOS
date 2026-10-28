@@ -4,15 +4,16 @@
 
 #include <Asset.h>
 #include <syscall.h>
+#include <errno.h>
 
 INT64 LOSAssetPublish(CONST char *Name, CONST VOID *Data, UINT64 Size)
 {
-    return (INT64) LineOSSyscall3(12, (UINT64) Name, (UINT64) Data, Size);
+    return (INT64) LineOSSyscallResult(LineOSSyscall3(SYSCALL_ASSET_PUBLISH, (UINT64) Name, (UINT64) Data, Size));
 }
 
 INT64 LOSAssetAcquire(CONST char *Name, LOS_ASSET *Asset)
 {
-    return (INT64) LineOSSyscall2(13, (UINT64) Name, (UINT64) Asset);
+    return (INT64) LineOSSyscallResult(LineOSSyscall2(SYSCALL_ASSET_ACQUIRE, (UINT64) Name, (UINT64) Asset));
 }
 
 INT64 LOSAssetRelease(LOS_ASSET *Asset)
@@ -21,10 +22,11 @@ INT64 LOSAssetRelease(LOS_ASSET *Asset)
 
     if (Asset == NULL || Asset->Handle == 0)
     {
+        errno = EINVAL;
         return -1;
     }
 
-    Result = (INT64) LineOSSyscall1(14, Asset->Handle);
+    Result = (INT64) LineOSSyscallResult(LineOSSyscall1(SYSCALL_ASSET_RELEASE, Asset->Handle));
 
     if (Result == 0)
     {

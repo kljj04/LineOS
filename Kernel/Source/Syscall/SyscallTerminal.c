@@ -6,6 +6,7 @@
 #include <Scheduler/WaitQueue.h>
 #include <Arch/AMD64/SpinLock.h>
 #include <Debug/Debug.h>
+#include <LineOS/Errno.h>
 
 #define TERMINAL_CAPACITY 65536U
 #define TERMINAL_CHUNK    256U
@@ -79,7 +80,7 @@ INT64 TerminalRead(TASK *Task, BOOLEAN Master, UINT64 Buffer, UINT64 Count)
         if (!WaitQueueSleep(&Queue->Readers, &Queue->Lock))
         {
             SpinLockReleaseIRQRestore(&Queue->Lock, Flags);
-            return -1;
+            return -EINTR;
         }
     }
     Length = Count > TERMINAL_CHUNK ? TERMINAL_CHUNK : (UINT32) Count;
@@ -99,7 +100,7 @@ INT64 TerminalRead(TASK *Task, BOOLEAN Master, UINT64 Buffer, UINT64 Count)
     if (!VMMCopyToUser(Task->AddressSpace, Buffer, Bytes, Length))
     {
         SpinLockReleaseIRQRestore(&Queue->Lock, Flags);
-        return -1;
+        return -EFAULT;
     }
     Queue->Head = (Queue->Head + Length) % TERMINAL_CAPACITY;
     Queue->Length -= Length;
@@ -120,7 +121,7 @@ INT64 TerminalWrite(TASK *Task, BOOLEAN Master, UINT64 Buffer, UINT64 Count)
         UINT32 Done = 0;
         if (!VMMCopyFromUser(Task->AddressSpace, Bytes, Buffer + Total, Length))
         {
-            return Total != 0 ? (INT64) Total : -1;
+            return Total != 0 ? (INT64) Total : -EFAULT;
         }
         while (Done < Length)
         {
@@ -130,13 +131,13 @@ INT64 TerminalWrite(TASK *Task, BOOLEAN Master, UINT64 Buffer, UINT64 Count)
                 if (!WaitQueueSleep(&Queue->Writers, &Queue->Lock))
                 {
                     SpinLockReleaseIRQRestore(&Queue->Lock, Flags);
-                    return Total != 0 ? (INT64) Total : -1;
+                    return Total != 0 ? (INT64) Total : -EINTR;
                 }
             }
             if (Queue->Closed)
             {
                 SpinLockReleaseIRQRestore(&Queue->Lock, Flags);
-                return Total != 0 ? (INT64) Total : -1;
+                return Total != 0 ? (INT64) Total : -EPIPE;
             }
             UINT32 Chunk = Length - Done;
             if (Chunk > TERMINAL_CAPACITY - Queue->Length)

@@ -3,6 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <Arch/AMD64/CPU.h>
+#include <Syscall/Syscall.h>
 
 #include "Debug/Debug.h"
 
@@ -14,6 +15,7 @@ STATIC UINT64         GDT[GDT_MAX_CPUS][GDT_ENTRY_COUNT];
 STATIC GDT_DESCRIPTOR GDTR[GDT_MAX_CPUS];
 STATIC TSS_64         TSS[GDT_MAX_CPUS];
 STATIC BOOLEAN        GDTInitialized[GDT_MAX_CPUS];
+STATIC UINT8          GDTNMIStacks[GDT_MAX_CPUS][GDT_IST_STACK_SIZE] __attribute__((aligned(16)));
 STATIC UINT8          GDTISTStacks[GDT_MAX_CPUS][GDT_IST_STACK_SIZE] __attribute__((aligned(16)));
 
 VOID HLT()
@@ -108,13 +110,14 @@ VOID GDTInitCurrentCPU(UINT32 CPUID)
     KMemSet(&TSS[CPUIndex], 0, sizeof(TSS[CPUIndex]));
 
     GDT[CPUIndex][0] = 0;
-    GDT[CPUIndex][1] = 0x00CF9A000000FFFFULL;
+    GDT[CPUIndex][1] = 0x00AF9A000000FFFFULL;
     GDT[CPUIndex][2] = 0x00CF92000000FFFFULL;
-    GDT[CPUIndex][3] = 0x00AF9A000000FFFFULL;
+    GDT[CPUIndex][3] = 0x00CFF2000000FFFFULL;
     GDT[CPUIndex][4] = 0x00AFFA000000FFFFULL;
-    GDT[CPUIndex][5] = 0x00CFF2000000FFFFULL;
+    GDT[CPUIndex][5] = 0;
 
     TSS[CPUIndex].IST1 = (UINT64) &GDTISTStacks[CPUIndex][GDT_IST_STACK_SIZE];
+    TSS[CPUIndex].IST2 = (UINT64) &GDTNMIStacks[CPUIndex][GDT_IST_STACK_SIZE];
     TSS[CPUIndex].IOPBOffset = sizeof(TSS_64);
 
     TSSBase = (UINT64) &TSS[CPUIndex];
@@ -143,6 +146,8 @@ VOID GDTInitCurrentCPU(UINT32 CPUID)
         :
         : "m"(GDTR[CPUIndex]), "i"(GDT_KERNEL_DATA_SELECTOR), "i"(GDT_KERNEL_CODE_SELECTOR)
         : "rax", "memory");
+
+    SyscallInitCurrentCPU(CPUIndex);
 }
 
 BOOLEAN GDTSetKernelStack(UINT64 StackTop)
@@ -165,6 +170,7 @@ BOOLEAN GDTSetKernelStack(UINT64 StackTop)
     }
 
     TSS[CPUIndex].RSP0 = StackTop;
+    SyscallSetKernelStack(CPUIndex, StackTop);
 
     CompilerBarrier();
 

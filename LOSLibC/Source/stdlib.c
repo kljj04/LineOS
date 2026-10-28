@@ -6,9 +6,9 @@
 #include <LOSLibC/TypeInfo.h>
 #include <syscall.h>
 
-VOID NORETURN exit(INT8 ErrorCode)
+VOID NORETURN exit(int ErrorCode)
 {
-    LineOSSyscall1(0, (UINT64) ErrorCode);
+    LineOSSyscall1(SYSCALL_EXIT, (UINT64) ErrorCode);
 
     for (;;)
     {

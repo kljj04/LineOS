@@ -6,4 +6,4 @@
 
 #include <LOSLibC/TypeInfo.h>
 
-VOID NORETURN exit(INT8 ErrorCode);
+VOID NORETURN exit(int ErrorCode);

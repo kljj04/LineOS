@@ -4,6 +4,7 @@
 
 #include <Scheduler/Task.h>
 #include <Syscall/SyscallFile.h>
+#include <Syscall/SyscallMemory.h>
 #include <Scheduler/WaitQueue.h>
 #include <Scheduler/LBPWRRRunQueue.h>
 #include <Scheduler/LBPWRRChunk.h>
@@ -198,10 +199,10 @@ STATIC VOID InitTaskContext(TASK *Task, VOID (*Entry)(VOID))
     Task->InitialRSP = (UINT64) ReturnAddress;
 
     Task->Context.RIP = (UINT64) Entry;
-    Task->Context.CS = 0x18;
+    Task->Context.CS = GDT_KERNEL_CODE_SELECTOR;
     Task->Context.RFLAGS = 0x202;
     Task->Context.RSP = Task->InitialRSP;
-    Task->Context.SS = 0x10;
+    Task->Context.SS = GDT_KERNEL_DATA_SELECTOR;
 
     Task->RSP = Task->InitialRSP - sizeof(TASK_CONTEXT);
     KMemCpy((VOID *) Task->RSP, &Task->Context, sizeof(TASK_CONTEXT));
@@ -478,6 +479,7 @@ BOOLEAN TaskDestroy(TASK *Task)
         KMemFreePages((VOID *) Task->KernelStackBase, TASK_STACK_PAGES);
     }
 
+    SyscallMemoryRelease(Task);
     SyscallFilesRelease(Task);
     if (Task->FileContext != NULL)
     {

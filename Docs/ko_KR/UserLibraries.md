@@ -47,17 +47,17 @@ CopyPath=/usr/bin/
 ## 파일과 프로세스 생성
 
 이미지 갱신은 `Assets/Fonts/*.ttf`를 EXT2 `/sys/fonts/`에 원래 이름과 0644 권한으로 복사합니다. `fcntl.h`의 `open(Path, O_RDONLY)`와 `unistd.h`의
-`read`·`close`로 읽습니다. 태스크당 16개 FD 슬롯에서 파일과 터미널 연결을 함께 관리합니다. 일반 파일은 읽기 전용입니다. 오류는 -1, EOF는 0을 반환하며 `errno`는 제공하지 않습니다.
+`read`·`close`로 읽습니다. 태스크당 16개 FD 슬롯에서 파일과 터미널 연결을 함께 관리합니다. 일반 파일은 지원 플래그로 읽기·쓰기·생성·잘라내기를 제공합니다. 오류는 -1과 `errno`, EOF는 0을 반환합니다.
 매번 경로와 노드 식별자를 다시 확인하므로 이름 변경·삭제 이후에도 열린 파일을 유지하는 POSIX 의미론은 구현하지 않았습니다. 실행 시 제공된 VFS 문맥으로 권한을 검사하며 Init은 현재 관리자 문맥을
 사용합니다.
 
 `spawn(Path)`는 호출자의 VFS 문맥으로 별도 주소 공간에 정적 ELF를 실행하고 자식 PID 또는 -1을 반환하는 LineOS 확장입니다. 스케줄링 전에 부모의 열린 객체 참조를 상속하므로 파일 오프셋을
-공유하며 한쪽 FD를 닫아도 다른 참조는 유지됩니다. 인자, 프로세스 대기, 종료 상태 회수는 지원하지 않습니다. 최대 16개 자식 실행 기록을 유지하며 이후 spawn에서 스케줄러가 회수한 종료 태스크를
+공유하며 한쪽 FD를 닫아도 다른 참조는 유지됩니다. `spawnv(Path, Argv)`로 인자도 전달합니다. 프로세스 대기와 종료 상태 회수는 지원하지 않습니다. 최대 16개 자식 실행 기록을 유지하며 이후 spawn에서 스케줄러가 회수한 종료 태스크를
 정리합니다. 태스크별 SSE 상태 보존은 구현하지 않았습니다. TrueType 상태와 글리프 캐시는 프로세스별이며 원본 TTF만 공유합니다. Init의 에셋 등록 권한은 상속하지 않습니다.
 
 ## 공용 에셋
 
-`Asset.h`에서 다음 함수를 제공합니다. 성공은 0, 실패는 -1이며 errno는 없습니다.
+`Asset.h`에서 다음 함수를 제공합니다. 성공은 0이며 실패하면 `errno`를 설정하고 -1을 반환합니다.
 
 - `LOSAssetPublish(Name, Data, Size)`: 부팅 Init만 호출할 수 있습니다. 원본을 커널 소유 페이지로 한 번 복사하므로 반환 후 원본 버퍼를 재사용할 수 있고 Init 종료에도
   유지됩니다. 이름은 비어 있지 않은 최대 63바이트 문자열입니다. 이름은 불변이며 중복 등록과 교체를 거부합니다.
@@ -83,12 +83,48 @@ if (LOSAssetAcquire("Fonts/JetBrainsMono", &Asset) == 0)
 
 ## 시스템 호출 인터페이스
 
-현재 `int 0x80` 호출은 종료, 읽기, 쓰기, 열기, 닫기, PID 조회, 화면 정보·표시, spawn과 에셋 등록·획득·해제를 제공합니다. yield는 스케줄러에 CPU를 양보하고 성공 시 0을 반환합니다.
-파일과 프로세스 인터페이스는 여기서 설명한 부분집합이며 `errno`는 없습니다. 기존 스트림 읽기의 syscall 번호 10은 예약 상태로 -1을 반환하며 `LOSOutputStreamRead`는 제거했습니다.
+현재 `syscall`/`sysretq` 호출은 종료, 읽기, 쓰기, 열기, 닫기, PID 조회, 화면 정보·표시, spawn과 에셋 등록·획득·해제를 제공합니다. yield는 스케줄러에 CPU를 양보하고 성공 시 0을 반환합니다.
+파일과 프로세스 인터페이스는 여기서 설명한 부분집합입니다. 커널은 Linux의 음수 오류 번호를 반환하고 libc는 -4095~-1을 `errno`로 변환하여 -1을 반환합니다. `LOSOutputStreamRead`는 제거했습니다. 번호 10은 Linux `mprotect`용으로 비워 두며 현재는 지원하지 않습니다.
+
+`RAX`는 시스템 호출 번호와 반환값을 전달하며, 인자는 `RDI`, `RSI`, `RDX`, `R10`, `R8`, `R9`를 사용합니다. `RCX`와 `R11`은 보존하지 않습니다.
+각 CPU에서 진입 MSR을 설정하고 현재 태스크의 커널 스택으로 전환합니다. 기존 사용자 호출용 `int 0x80` 게이트는 제거했습니다. 표준 호출 번호는 Linux x86-64와 일치합니다. LineOS 전용 호출은 1024번부터 사용하며, 기존 화면·에셋 호출은 유지합니다. 장치 `ioctl`, 익명 private `mmap`, `/dev/fb0` shared `mmap`을 구현했으며 [DeviceFS와 프로세스 ABI](DeviceFS.md)에 범위를 설명합니다.
+
+| 호출 | 번호 |
+| --- | --- |
+| `read` | 0 |
+| `write` | 1 |
+| `open` | 2 |
+| `close` | 3 |
+| `mmap` | 9 |
+| `munmap` | 11 |
+| `ioctl` | 16 |
+| `sched_yield` | 24 |
+| `getpid` | 39 |
+| `fork` | 57 |
+| `execve` | 59 |
+| `exit` | 60 |
+| `rename` | 82 |
+| `mkdir` | 83 |
+| `setuid` | 105 |
+| `setgid` | 106 |
+| `getdents64` | 217 |
+| `getrandom` | 318 |
+| `display_info` | 1024 |
+| `display_present` | 1025 |
+| `display_present_rect` | 1026 |
+| `asset_publish` | 1027 |
+| `asset_acquire` | 1028 |
+| `asset_release` | 1029 |
+| `spawn (LineOS)` | 1030 |
+| `spawnv (LineOS)` | 1031 |
+| `remove (LineOS)` | 1032 |
+
+`remove`는 파일과 디렉터리를 모두 처리하므로 LineOS 전용 호출로 유지합니다. Linux의 `unlink` 또는 `rmdir`에 해당하지 않습니다.
+지원하는 호출 번호, 오류 번호와 화면 정보 구조체의 바이너리 배치를 맞추었으나 Linux 실행 파일 전체와 호환되는 단계는 아닙니다. [지원 범위와 제한](DeviceFS.md)을 참고합니다.
 
 ## 터미널과 Shell
 
-Init은 `/dev/lsh1`을 `O_RDONLY`로 열어 FD 0에, `O_WRONLY`로 두 번 열어 FD 1과 2에 연결합니다. 폰트를 등록하고 `/dev/lsh1/master`를 `O_RDWR`로 FD 3에
+Init은 `/dev/lsh1`을 `O_RDONLY`로 열어 FD 0에, `O_WRONLY`로 두 번 열어 FD 1과 2에 연결합니다. 폰트를 등록하고 `/dev/lsh1-master`를 `O_RDWR`로 FD 3에
 연 뒤 `/sbin/Terminal.lix`를 실행합니다. Init의 master 참조를 닫은 다음 `/bin/Shell.lix`를 실행하므로 Shell과 자식은 프로그램용 연결만 상속합니다.
 `Program.cfg`는 Init과 Terminal을 `/sbin/`, Shell을 `/bin/`에 설치하며 커널은 `/sbin/Init.lix`를 실행합니다.
 
@@ -97,8 +133,7 @@ Init은 `/dev/lsh1`을 `O_RDONLY`로 열어 FD 0에, `O_WRONLY`로 두 번 열�
 프로그램용 장치를 `O_RDONLY`·`O_WRONLY`·`O_RDWR`로 열 수 있습니다. master는 부팅 Init만 열 수 있으며 동시에 하나의 열린 객체만 허용합니다. 상속된 참조가 객체 수명을 유지하며
 마지막 master 참조를 닫으면 대기자를 깨웁니다. 남은 입력을 읽은 뒤 EOF가 되고 새 쓰기는 실패합니다. 큐 저장 공간은 재부팅까지 유지합니다.
 
-장치 경로는 `open`이 인식합니다. 마운트된 devfs, 디렉터리 열거, `stat`, 범용 장치 등록은 구현하지 않았습니다. 첫 버전의 키보드 작업자는 US 배열 키 이벤트를 단일 터미널 입력 큐로 전달합니다.
-Shift·Caps Lock·알파벳 Ctrl 조합을 지원하며 바이트 단위로 처리합니다. 하드웨어 입력 큐가 가득 차면 새 키를 버립니다. 이후 포커스 관리는 master 연결을 통해 입력을 전달할 수 있습니다.
+DeviceFS는 VFS의 고정 `/dev` 하위 트리로 연결되며 `getdents64`로 디렉터리를 열거합니다. 터미널 FD는 장치 동작 테이블을 사용하고 기존 큐와 상속 동작을 유지합니다. 키보드 작업자는 US 배열 키 이벤트를 터미널 입력 큐에 전달합니다. 자세한 내용은 [DeviceFS](DeviceFS.md)에 설명합니다.
 
 Terminal은 TrueType 상태, 읽기 전용 JetBrains Mono 매핑과 프레임버퍼를 소유합니다. 최대 2560 × 1440 화면에서 글자 크기 36과 줄 높이 40을 사용하고 가로 이동 폭은 폰트
 메트릭으로 계산하며 ASCII·줄바꿈·캐리지 리턴·백스페이스·스크롤을 처리합니다. 출력이 없으면 FD 3 읽기에서 잠듭니다. Shell은 libc 입출력과 LineOS `spawn`만 사용합니다. 길이를 제한한 줄

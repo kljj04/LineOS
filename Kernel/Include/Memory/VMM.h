@@ -31,3 +31,18 @@ BOOLEAN VMMCopyToUser(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Destination, CONST
 
 BOOLEAN VMMMapSharedPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, CONST UINT64 *Pages, UINT32 Count);
 BOOLEAN VMMUnmapSharedPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, CONST UINT64 *Pages, UINT32 Count);
+
+#define VMM_FLAG_NO_EXECUTE (1ULL << 63)
+#define VMM_MMAP_START      0x600000000000ULL
+#define VMM_MMAP_END        0x600100000000ULL
+
+typedef struct
+{
+    UINT64 Address;
+    UINT64 Physical;
+    UINT64 Flags;
+} VMM_USER_PAGE;
+
+BOOLEAN VMMMapUserPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, CONST UINT64 *Pages, UINT32 Count, UINT64 Flags);
+BOOLEAN VMMUnmapUserPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, CONST UINT64 *Pages, UINT32 Count);
+BOOLEAN VMMListUserPages(VMM_ADDRESS_SPACE *AddressSpace, VMM_USER_PAGE *Pages, UINT64 Capacity, UINT64 *Count);

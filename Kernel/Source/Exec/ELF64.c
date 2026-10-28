@@ -2,11 +2,13 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
+#include <Arch/AMD64/CPU.h>
 #include <Syscall/SyscallFile.h>
 #include <ELF/ELF64.h>
 #include <Exec/ELF64.h>
 #include <Memory/PMM.h>
 #include <Debug/Debug.h>
+#include <Syscall/SyscallError.h>
 
 STATIC BOOLEAN ELF64RangeValid(UINT64 Offset, UINT64 Length, UINT64 TotalSize)
 {
@@ -257,6 +259,7 @@ BOOLEAN ELF64Load(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUTION *Execut
     }
 
     KMemSet(Execution, 0, sizeof(*Execution));
+    Execution->Error = -ENOEXEC;
     if (!ELF64Validate(FileData, FileSize))
     {
         return FALSE;
@@ -300,6 +303,7 @@ BOOLEAN ELF64Load(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUTION *Execut
         }
     }
 
+    Execution->Error = -ENOMEM;
     if (!VMMCreateAddressSpace(&Execution->AddressSpace))
     {
         return FALSE;
@@ -348,21 +352,27 @@ BOOLEAN ELF64Load(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUTION *Execut
     }
     TASK *Task = Execution->Task;
     Task->AddressSpace = Execution->AddressSpace;
+    Task->Execution = Execution;
     Task->UserStackBase = ELF64_EXEC_STACK;
     Task->UserStackSize = ELF64_EXEC_STACK_PAGES * ELF64_EXEC_PAGE_SIZE;
     KMemSet(&Task->Context, 0, sizeof(Task->Context));
     Task->Context.RIP = Header.Entry;
-    Task->Context.CS = 0x23;
-    Task->Context.SS = 0x2B;
+    Task->Context.CS = GDT_USER_CODE_SELECTOR | 3;
+    Task->Context.SS = GDT_USER_DATA_SELECTOR | 3;
     Task->Context.RFLAGS = 0x202;
     if (!ELF64SetArguments(Execution, NULL))
     {
         TaskKill(Task);
         goto Failure;
     }
+    Execution->Error = 0;
     return TRUE;
 
 Failure:
+    if (Execution->Task != NULL)
+    {
+        TaskKill(Execution->Task);
+    }
     ELF64Release(Execution);
     return FALSE;
 }
@@ -410,16 +420,30 @@ STATIC BOOLEAN ELF64SetArguments(ELF64_EXECUTION *Execution, CONST ELF64_ARGUMEN
     return TRUE;
 }
 
-STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST ELF64_ARGUMENTS *Arguments, ELF64_EXECUTION *Execution, BOOLEAN AssetPublisher)
+STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST ELF64_ARGUMENTS *Arguments, ELF64_EXECUTION *Execution, BOOLEAN AssetPublisher, BOOLEAN Schedule)
 {
     VFS_NODE Node;
     VOID    *Data;
     UINT32   ReadLength;
     BOOLEAN  Loaded;
 
-    if (Context == NULL || Path == NULL || Execution == NULL || VFSLookup(Context, Path, &Node) != VFS_OK || (Node.Mode & VFS_MODE_TYPE) != 0x8000 || (Node.Mode & 0111) == 0 || Node.Size == 0 || Node.Size > ELF64_EXEC_MAX_FILE)
+    if (Context == NULL || Path == NULL || Execution == NULL)
     {
-        DebugWriteLine("ELF64Execute: lookup or file metadata rejected");
+        return FALSE;
+    }
+    Execution->Error = SyscallVFSError(VFSLookup(Context, Path, &Node));
+    if (Execution->Error != 0)
+    {
+        return FALSE;
+    }
+    Execution->Error = -EACCES;
+    if ((Node.Mode & VFS_MODE_TYPE) != 0x8000 || (Node.Mode & 0111) == 0)
+    {
+        return FALSE;
+    }
+    if (Node.Size == 0 || Node.Size > ELF64_EXEC_MAX_FILE)
+    {
+        Execution->Error = -ENOEXEC;
         return FALSE;
     }
     UINT16 ExecuteBit = Context->Credentials.UID == Node.UID ? 0100 : (Context->Credentials.GID == Node.GID ? 0010 : 0001);
@@ -431,10 +455,20 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONS
     Data = KAlloc(Node.Size);
     if (Data == NULL)
     {
+        Execution->Error = -ENOMEM;
         DebugWriteLine("ELF64Execute: file allocation failed");
         return FALSE;
     }
-    Loaded = VFSRead(Context, Path, 0, Data, (UINT32) Node.Size, &ReadLength) == VFS_OK && ReadLength == Node.Size && ELF64Load(Data, Node.Size, Execution);
+    Execution->Error = SyscallVFSError(VFSRead(Context, Path, 0, Data, (UINT32) Node.Size, &ReadLength));
+    Loaded = Execution->Error == 0 && ReadLength == Node.Size;
+    if (Loaded)
+    {
+        Loaded = ELF64Load(Data, Node.Size, Execution);
+    }
+    else if (Execution->Error == 0)
+    {
+        Execution->Error = -EIO;
+    }
     KFree(Data);
     if (!Loaded)
     {
@@ -450,6 +484,7 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONS
     Execution->Task->FileContext = KAlloc(sizeof(VFS_CONTEXT));
     if (Execution->Task->FileContext == NULL)
     {
+        Execution->Error = -ENOMEM;
         DebugWriteLine("ELF64Execute: context allocation failed");
         TaskKill(Execution->Task);
         ELF64Release(Execution);
@@ -459,8 +494,14 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONS
 
     Execution->Task->AssetPublisher = AssetPublisher;
 
+    if (!Schedule)
+    {
+        return TRUE;
+    }
+
     if (!SyscallFilesInherit(Execution->Task, AssetPublisher ? NULL : LBPWRRGetCurrentTask()) || !LBPWRRAddTask(Execution->Task))
     {
+        Execution->Error = -EAGAIN;
         DebugWriteLine("ELF64Execute: scheduling failed");
         TaskKill(Execution->Task);
         ELF64Release(Execution);
@@ -471,15 +512,46 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONS
 
 BOOLEAN ELF64Execute(VFS_CONTEXT *Context, CONST CHAR8 *Path, ELF64_EXECUTION *Execution)
 {
-    return ELF64ExecuteProgram(Context, Path, NULL, Execution, FALSE);
+    return ELF64ExecuteProgram(Context, Path, NULL, Execution, FALSE, TRUE);
 }
 
 BOOLEAN ELF64ExecuteInit(VFS_CONTEXT *Context, CONST CHAR8 *Path, ELF64_EXECUTION *Execution)
 {
-    return ELF64ExecuteProgram(Context, Path, NULL, Execution, TRUE);
+    return ELF64ExecuteProgram(Context, Path, NULL, Execution, TRUE, TRUE);
 }
 
 BOOLEAN ELF64ExecuteArguments(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST ELF64_ARGUMENTS *Arguments, ELF64_EXECUTION *Execution)
 {
-    return ELF64ExecuteProgram(Context, Path, Arguments, Execution, FALSE);
+    return ELF64ExecuteProgram(Context, Path, Arguments, Execution, FALSE, TRUE);
+}
+
+BOOLEAN ELF64PrepareArguments(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST ELF64_ARGUMENTS *Arguments, ELF64_EXECUTION *Execution)
+{
+    return ELF64ExecuteProgram(Context, Path, Arguments, Execution, FALSE, FALSE);
+}
+
+BOOLEAN ELF64SetEnvironment(ELF64_EXECUTION *Execution, CONST ELF64_ARGUMENTS *Environment)
+{
+    TASK  *Task = Execution->Task;
+    UINT64 Pointers[ELF64_ARG_MAX_COUNT + 1] = {0};
+    UINT32 Count = Environment->Count;
+    UINT32 Bytes = Environment->Bytes;
+    if (Count > ELF64_ARG_MAX_COUNT || Bytes > ELF64_ARG_MAX_BYTES)
+    {
+        return FALSE;
+    }
+    UINT64 Strings = Task->Context.RSP - Bytes;
+    UINT64 Vector = (Strings - (Count + 1) * sizeof(UINT64)) & ~7ULL;
+    for (UINT32 Index = 0; Index < Count; Index++)
+    {
+        Pointers[Index] = Strings + Environment->Offsets[Index];
+    }
+    if (!VMMCopyToUser(Execution->AddressSpace, Vector, Pointers, (Count + 1) * sizeof(UINT64)) || (Bytes != 0 && !VMMCopyToUser(Execution->AddressSpace, Strings, Environment->Data, Bytes)))
+    {
+        return FALSE;
+    }
+    Task->Context.RDX = Vector;
+    Task->Context.RSP = (Vector & ~15ULL) - 8;
+    KMemCpy((VOID *) Task->RSP, &Task->Context, sizeof(Task->Context));
+    return TRUE;
 }

@@ -7,6 +7,7 @@
 #include <Scheduler/LBPWRR.h>
 #include <Scheduler/Task.h>
 #include <Debug/Debug.h>
+#include <LineOS/Errno.h>
 
 INT64 SyscallExit(UINT64 ExitCode)
 {
@@ -21,7 +22,7 @@ INT64 SyscallExit(UINT64 ExitCode)
 
     if (CurrentTask == NULL || CurrentTask->Idle)
     {
-        return -1;
+        return -ESRCH;
     }
 
     SyscallFilesRelease(CurrentTask);
@@ -29,5 +30,5 @@ INT64 SyscallExit(UINT64 ExitCode)
 
     LBPWRRYield();
 
-    return -1;
+    return -EIO;
 }

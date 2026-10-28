@@ -4,6 +4,7 @@
 
 #include <FS/VFS/VFS.h>
 #include <Memory/PMM.h>
+#include <Memory/VMM.h>
 
 STATIC UINT32 VFSLength(CONST CHAR8 *Text, UINT32 Limit)
 {
@@ -35,13 +36,31 @@ STATIC BOOLEAN VFSEqual(CONST CHAR8 *A, CONST CHAR8 *B)
 
 STATIC BOOLEAN VFSLock(VFS_REGISTRY *Registry)
 {
+    UINT64 Flags;
     UINT32 Expected = 0;
-    return Registry != NULL && ATOMIC_COMPARE_EXCHANGE(&Registry->Busy, &Expected, 1, FALSE, ATOMIC_ACQUIRE, ATOMIC_RELAXED);
+    if (Registry == NULL)
+    {
+        return FALSE;
+    }
+    ASM("pushfq; popq %0; cli" : "=r"(Flags) : : "memory");
+    while (!ATOMIC_COMPARE_EXCHANGE(&Registry->Busy, &Expected, 1, FALSE, ATOMIC_ACQUIRE, ATOMIC_RELAXED))
+    {
+        Expected = 0;
+        VMMHandleShootdown();
+        ASM("pause" ::: "memory");
+    }
+    Registry->IRQFlags = Flags;
+    return TRUE;
 }
 
 STATIC VFS_ERROR VFSUnlock(VFS_REGISTRY *Registry, VFS_ERROR Error)
 {
+    UINT64 Flags = Registry->IRQFlags;
     ATOMIC_STORE(&Registry->Busy, 0, ATOMIC_RELEASE);
+    if ((Flags & (1ULL << 9)) != 0)
+    {
+        ASM("sti" ::: "memory");
+    }
     return Error;
 }
 
@@ -73,6 +92,8 @@ VOID VFSInit(VFS_REGISTRY *Registry)
     if (Registry != NULL)
     {
         KMemSet(Registry, 0, sizeof(*Registry));
+        Registry->RootPartition = VFS_INVALID_PARTITION;
+        Registry->DevicePartition = VFS_INVALID_PARTITION;
     }
 }
 
@@ -149,6 +170,15 @@ VFS_ERROR VFSContextInit(VFS_CONTEXT *Context, VFS_REGISTRY *Registry, UINT32 Pa
         return VFSUnlock(Registry, VFS_NOT_FOUND);
     }
 
+    if (Registry->RootPartition == VFS_INVALID_PARTITION)
+    {
+        Registry->RootPartition = Partition;
+    }
+    else if (Registry->RootPartition != Partition)
+    {
+        return VFSUnlock(Registry, VFS_INVALID);
+    }
+
     KMemSet(Context, 0, sizeof(*Context));
     Context->Registry = Registry;
     Context->Credentials = Credentials;
@@ -196,7 +226,6 @@ VFS_ERROR VFSEndCommand(VFS_COMMAND *Command, BOOLEAN KeepLocation)
     if (KeepLocation)
     {
         Command->Session->Partition = Command->Context.Partition;
-        Command->Session->AdministratorRoot = Command->Context.AdministratorRoot;
         KMemCpy(Command->Session->Cwd, Command->Context.Cwd, VFS_MAX_PATH);
     }
 
@@ -216,28 +245,21 @@ VFS_ERROR VFSGetCwd(CONST VFS_CONTEXT *Context, CHAR8 *Buffer, UINT32 Capacity)
         return VFS_INVALID;
     }
 
-    Length = Context->AdministratorRoot ? 1 : VFSLength(Context->Cwd, VFS_MAX_PATH);
+    Length = VFSLength(Context->Cwd, VFS_MAX_PATH);
 
     if (Length >= Capacity || Length == VFS_MAX_PATH)
     {
         return VFS_LIMIT;
     }
 
-    if (Context->AdministratorRoot)
-    {
-        Buffer[0] = '^';
-        Buffer[1] = 0;
-    }
-    else
-    {
-        KMemCpy(Buffer, Context->Cwd, Length + 1);
-    }
+    KMemCpy(Buffer, Context->Cwd, Length + 1);
 
     return VFS_OK;
 }
 
 STATIC VFS_ERROR VFSRoot(VFS_CONTEXT *Context, VFS_RESOLVED *Resolved)
 {
+    Resolved->Partition = Context->Registry->RootPartition;
     VFS_PARTITION *Partition = VFSPartition(Context, Resolved->Partition);
 
     if (Partition == NULL)
@@ -250,7 +272,6 @@ STATIC VFS_ERROR VFSRoot(VFS_CONTEXT *Context, VFS_RESOLVED *Resolved)
         return VFS_UNSUPPORTED;
     }
 
-    Resolved->AdministratorRoot = FALSE;
     Resolved->Path[0] = '/';
     Resolved->Path[1] = 0;
     return Partition->Operations->Root(Partition->Backend, &Context->Credentials, &Resolved->Node);
@@ -267,38 +288,21 @@ STATIC VFS_ERROR VFSResolve(VFS_CONTEXT *Context, CONST CHAR8 *Path, BOOLEAN Fol
 
     if (Length == 0 || Length >= VFS_MAX_PATH)
     {
-        return VFS_INVALID;
-    }
-
-    if ((Path[0] == '^' || (Path[0] != '/' && Context->AdministratorRoot)) && !Context->Credentials.Administrator)
-    {
-        return VFS_NOT_FOUND;
+        return Length == 0 ? VFS_NOT_FOUND : VFS_NAME_TOO_LONG;
     }
 
     Pending = KAlloc(VFS_MAX_PATH * 2);
 
     if (Pending == NULL)
     {
-        return VFS_LIMIT;
+        return VFS_NO_MEMORY;
     }
 
     Target = Pending + VFS_MAX_PATH;
     KMemSet(Resolved, 0, sizeof(*Resolved));
     Resolved->Partition = Context->Partition;
-    Resolved->AdministratorRoot = Path[0] == '^' || (Path[0] != '/' && Context->AdministratorRoot);
 
-    if (Path[0] == '^')
-    {
-        if (Path[1] != 0 && Path[1] != '/')
-        {
-            Error = VFS_NOT_FOUND;
-            goto Done;
-        }
-
-        KMemCpy(Pending, Path + 1, Length);
-        Length--;
-    }
-    else if (Path[0] != '/' && !Resolved->AdministratorRoot)
+    if (Path[0] != '/')
     {
         UINT32 Prefix = VFSLength(Context->Cwd, VFS_MAX_PATH);
 
@@ -318,14 +322,11 @@ STATIC VFS_ERROR VFSResolve(VFS_CONTEXT *Context, CONST CHAR8 *Path, BOOLEAN Fol
         KMemCpy(Pending, Path, Length + 1);
     }
 
-    if (!Resolved->AdministratorRoot)
-    {
-        Error = VFSRoot(Context, Resolved);
+    Error = VFSRoot(Context, Resolved);
 
-        if (Error != VFS_OK)
-        {
-            goto Done;
-        }
+    if (Error != VFS_OK)
+    {
+        goto Done;
     }
 
     for (;;)
@@ -337,9 +338,9 @@ STATIC VFS_ERROR VFSResolve(VFS_CONTEXT *Context, CONST CHAR8 *Path, BOOLEAN Fol
 
         while (Pending[Position] == '/')
         {
-            if (!Resolved->AdministratorRoot && (Resolved->Node.Mode & VFS_MODE_TYPE) != VFS_MODE_DIRECTORY)
+            if ((Resolved->Node.Mode & VFS_MODE_TYPE) != VFS_MODE_DIRECTORY)
             {
-                Error = VFS_INVALID;
+                Error = VFS_NOT_DIRECTORY;
                 goto Done;
             }
 
@@ -348,13 +349,6 @@ STATIC VFS_ERROR VFSResolve(VFS_CONTEXT *Context, CONST CHAR8 *Path, BOOLEAN Fol
 
         if (Pending[Position] == 0)
         {
-            if (Resolved->AdministratorRoot)
-            {
-                Resolved->Path[0] = '^';
-                Resolved->Path[1] = 0;
-                Resolved->Node.Mode = VFS_MODE_DIRECTORY | 0700;
-            }
-
             break;
         }
 
@@ -362,7 +356,7 @@ STATIC VFS_ERROR VFSResolve(VFS_CONTEXT *Context, CONST CHAR8 *Path, BOOLEAN Fol
         {
             if (NameLength == 255)
             {
-                Error = VFS_LIMIT;
+                Error = VFS_NAME_TOO_LONG;
                 goto Done;
             }
 
@@ -371,28 +365,29 @@ STATIC VFS_ERROR VFSResolve(VFS_CONTEXT *Context, CONST CHAR8 *Path, BOOLEAN Fol
 
         Name[NameLength] = 0;
 
-        if (Name[0] == '^')
+        if (Context->Registry->DevicePartition != VFS_INVALID_PARTITION)
         {
-            Error = VFS_NOT_FOUND;
-            goto Done;
-        }
-
-        if (Resolved->AdministratorRoot)
-        {
-            if (VFSEqual(Name, (CONST CHAR8 *) ".") || VFSEqual(Name, (CONST CHAR8 *) ".."))
+            if (Resolved->Partition == Context->Registry->RootPartition && VFSEqual(Resolved->Path, (CONST CHAR8 *) "/") && VFSEqual(Name, (CONST CHAR8 *) "dev"))
             {
+                Resolved->Partition = Context->Registry->DevicePartition;
+                Partition = VFSPartition(Context, Resolved->Partition);
+                Error = Partition->Operations->Root(Partition->Backend, &Context->Credentials, &Resolved->Node);
+                if (Error != VFS_OK)
+                {
+                    goto Done;
+                }
+                KMemCpy(Resolved->Path, "/dev", 5);
                 continue;
             }
-
-            Resolved->Partition = VFSFindPartition(Context->Registry, Name);
-            Error = VFSRoot(Context, Resolved);
-
-            if (Error != VFS_OK)
+            if (Resolved->Partition == Context->Registry->DevicePartition && VFSEqual(Resolved->Path, (CONST CHAR8 *) "/dev") && VFSEqual(Name, (CONST CHAR8 *) ".."))
             {
-                goto Done;
+                Error = VFSRoot(Context, Resolved);
+                if (Error != VFS_OK)
+                {
+                    goto Done;
+                }
+                continue;
             }
-
-            continue;
         }
 
         Partition = VFSPartition(Context, Resolved->Partition);
@@ -424,12 +419,6 @@ STATIC VFS_ERROR VFSResolve(VFS_CONTEXT *Context, CONST CHAR8 *Path, BOOLEAN Fol
             if (TargetLength == 0 || TargetLength + TailLength >= VFS_MAX_PATH)
             {
                 Error = VFS_LIMIT;
-                goto Done;
-            }
-
-            if (Target[0] == '^')
-            {
-                Error = VFS_NOT_FOUND;
                 goto Done;
             }
 
@@ -489,37 +478,6 @@ Done:
     return Error;
 }
 
-VFS_ERROR VFSSelectPartition(VFS_CONTEXT *Context, CONST CHAR8 *Name)
-{
-    CHAR8  Path[35];
-    UINT32 Length = VFSLength(Name, 32);
-
-    if (Context == NULL || Length == 0 || Length >= 32)
-    {
-        return VFS_INVALID;
-    }
-
-    if (!Context->Credentials.Administrator)
-    {
-        return VFS_NOT_FOUND;
-    }
-
-    for (UINT32 Index = 0; Index < Length; Index++)
-    {
-        CHAR8 Ch = Name[Index];
-
-        if (!((Ch >= 'A' && Ch <= 'Z') || (Ch >= 'a' && Ch <= 'z') || (Ch >= '0' && Ch <= '9') || Ch == '_' || Ch == '-'))
-        {
-            return VFS_INVALID;
-        }
-    }
-
-    Path[0] = '^';
-    Path[1] = '/';
-    KMemCpy(Path + 2, Name, Length + 1);
-    return VFSChangeDirectory(Context, Path);
-}
-
 VFS_ERROR VFSChangeDirectory(VFS_CONTEXT *Context, CONST CHAR8 *Path)
 {
     VFS_RESOLVED Resolved;
@@ -537,7 +495,7 @@ VFS_ERROR VFSChangeDirectory(VFS_CONTEXT *Context, CONST CHAR8 *Path)
 
     Error = VFSResolve(Context, Path, TRUE, &Resolved);
 
-    if (Error == VFS_OK && !Resolved.AdministratorRoot)
+    if (Error == VFS_OK)
     {
         VFS_PARTITION *Partition = VFSPartition(Context, Resolved.Partition);
         VFS_NODE       Dot;
@@ -547,7 +505,6 @@ VFS_ERROR VFSChangeDirectory(VFS_CONTEXT *Context, CONST CHAR8 *Path)
     if (Error == VFS_OK)
     {
         Context->Partition = Resolved.Partition;
-        Context->AdministratorRoot = Resolved.AdministratorRoot;
         KMemCpy(Context->Cwd, Resolved.Path, VFS_MAX_PATH);
     }
 
@@ -575,7 +532,7 @@ STATIC VFS_ERROR VFSLookupMode(VFS_CONTEXT *Context, CONST CHAR8 *Path, VFS_NODE
     {
         *Node = Resolved.Node;
         Node->NamespaceGeneration = Context->Registry->NamespaceGeneration;
-        Node->Partition = Resolved.AdministratorRoot ? VFS_INVALID_PARTITION : Resolved.Partition;
+        Node->Partition = Resolved.Partition;
     }
 
     return VFSUnlock(Context->Registry, Error);
@@ -610,23 +567,13 @@ VFS_ERROR VFSReadDirectory(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 *Curs
 
     Error = VFSResolve(Context, Path, TRUE, &Resolved);
 
-    if (Error == VFS_OK && Resolved.AdministratorRoot)
+    BOOLEAN Root = Error == VFS_OK && Resolved.Partition == Context->Registry->RootPartition && VFSEqual(Resolved.Path, (CONST CHAR8 *) "/") && Context->Registry->DevicePartition != VFS_INVALID_PARTITION;
+    if (Root && (*Cursor & (1ULL << 63)) != 0)
     {
-        while (*Cursor < VFS_MAX_PARTITIONS)
-        {
-            VFS_PARTITION *Partition = &Context->Registry->Partitions[(*Cursor)++];
-
-            if (Partition->Registered)
-            {
-                KMemCpy(Entry->Name, Partition->Name, 32);
-                Entry->Node.Mode = VFS_MODE_DIRECTORY | 0700;
-                return VFSUnlock(Context->Registry, VFS_OK);
-            }
-        }
-
         Entry->End = TRUE;
+        return VFSUnlock(Context->Registry, VFS_OK);
     }
-    else if (Error == VFS_OK)
+    if (Error == VFS_OK)
     {
         VFS_PARTITION *Partition = VFSPartition(Context, Resolved.Partition);
         if (Partition->Operations->ReadDirectory == NULL)
@@ -638,10 +585,24 @@ VFS_ERROR VFSReadDirectory(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 *Curs
             do
             {
                 Error = Partition->Operations->ReadDirectory(Partition->Backend, &Context->Credentials, Resolved.Node.Number, Cursor, Entry);
-            } while (Error == VFS_OK && !Entry->End && Entry->Name[0] == '^');
+            } while (Root && Error == VFS_OK && !Entry->End && VFSEqual(Entry->Name, (CONST CHAR8 *) "dev"));
+            if (Root && Error == VFS_OK && Entry->End)
+            {
+                Partition = VFSPartition(Context, Context->Registry->DevicePartition);
+                Error = Partition->Operations->Root(Partition->Backend, &Context->Credentials, &Entry->Node);
+                Entry->Node.Partition = Context->Registry->DevicePartition;
+                KMemCpy(Entry->Name, "dev", 4);
+                Entry->End = FALSE;
+                *Cursor |= 1ULL << 63;
+            }
         }
     }
 
+    if (Error == VFS_OK && !Entry->End)
+    {
+        Entry->Node.NamespaceGeneration = Context->Registry->NamespaceGeneration;
+        Entry->Node.Partition = Root && VFSEqual(Entry->Name, (CONST CHAR8 *) "dev") ? Context->Registry->DevicePartition : Resolved.Partition;
+    }
     return VFSUnlock(Context->Registry, Error);
 }
 
@@ -667,11 +628,7 @@ STATIC VFS_ERROR VFSData(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 Offset,
 
     Error = VFSResolve(Context, Path, TRUE, &Resolved);
 
-    if (Error == VFS_OK && Resolved.AdministratorRoot)
-    {
-        Error = VFS_INVALID;
-    }
-    else if (Error == VFS_OK && Expected != NULL && (Resolved.Partition != Expected->Partition || Resolved.Node.Number != Expected->Number || Context->Registry->NamespaceGeneration != Expected->NamespaceGeneration))
+    if (Error == VFS_OK && Expected != NULL && (Resolved.Partition != Expected->Partition || Resolved.Node.Number != Expected->Number || Context->Registry->NamespaceGeneration != Expected->NamespaceGeneration))
     {
         Error = VFS_NOT_FOUND;
     }
@@ -741,11 +698,6 @@ STATIC VFS_ERROR VFSParent(VFS_CONTEXT *Context, CONST CHAR8 *Path, VFS_RESOLVED
 
     KMemCpy(Name, Path + Start, Length - Start + 1);
 
-    if (Name[0] == '^')
-    {
-        return VFS_NOT_FOUND;
-    }
-
     if (VFSEqual(Name, (CONST CHAR8 *) ".") || VFSEqual(Name, (CONST CHAR8 *) ".."))
     {
         return VFS_INVALID;
@@ -772,7 +724,7 @@ STATIC VFS_ERROR VFSParent(VFS_CONTEXT *Context, CONST CHAR8 *Path, VFS_RESOLVED
     Error = VFSResolve(Context, Parent, TRUE, Resolved);
     KFree(Parent);
 
-    if (Error == VFS_OK && (Resolved->AdministratorRoot || (Resolved->Node.Mode & VFS_MODE_TYPE) != VFS_MODE_DIRECTORY))
+    if (Error == VFS_OK && (Resolved->Node.Mode & VFS_MODE_TYPE) != VFS_MODE_DIRECTORY)
     {
         Error = VFS_INVALID;
     }
@@ -801,11 +753,10 @@ STATIC VFS_ERROR VFSMutate(VFS_CONTEXT *Context, VFS_MUTATION *Mutation, CONST C
 
     Error = Parent ? VFSParent(Context, Path, &First, Name) : VFSResolve(Context, Path, Mutation->Type != VFS_MUTATE_LINK, &First);
 
-    if (Error == VFS_OK && First.AdministratorRoot)
+    if (Error == VFS_OK && Parent && Context->Registry->DevicePartition != VFS_INVALID_PARTITION && First.Partition == Context->Registry->RootPartition && VFSEqual(First.Path, (CONST CHAR8 *) "/") && VFSEqual(Name, (CONST CHAR8 *) "dev"))
     {
-        Error = VFS_INVALID;
+        Error = Mutation->Type == VFS_MUTATE_CREATE || Mutation->Type == VFS_MUTATE_SYMLINK ? VFS_EXISTS : VFS_BUSY;
     }
-
     if (Error == VFS_OK)
     {
         Mutation->Parent = First.Node.Number;
@@ -821,6 +772,10 @@ STATIC VFS_ERROR VFSMutate(VFS_CONTEXT *Context, VFS_MUTATION *Mutation, CONST C
                 Error = VFS_CROSS_PARTITION;
             }
 
+            if (Error == VFS_OK && Context->Registry->DevicePartition != VFS_INVALID_PARTITION && Second.Partition == Context->Registry->RootPartition && VFSEqual(Second.Path, (CONST CHAR8 *) "/") && VFSEqual(OtherName, (CONST CHAR8 *) "dev"))
+            {
+                Error = VFS_BUSY;
+            }
             Mutation->OtherParent = Second.Node.Number;
             Mutation->OtherName = OtherName;
 
@@ -974,9 +929,27 @@ VFS_ERROR VFSOpen(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT32 Flags, UINT16 
     {
         Error = VFSResolve(Context, Path, TRUE, &Resolved);
     }
-    if (Error == VFS_OK && (Resolved.AdministratorRoot || (Resolved.Node.Mode & VFS_MODE_TYPE) != 0x8000U))
+    if (Error == VFS_OK && (Resolved.Node.Mode & VFS_MODE_TYPE) == VFS_MODE_DIRECTORY)
     {
-        Error = VFS_INVALID;
+        if (Access != 0 || (Flags & (VFS_OPEN_CREATE | VFS_OPEN_TRUNCATE)) != 0)
+        {
+            return VFSUnlock(Context->Registry, VFS_IS_DIRECTORY);
+        }
+        *Node = Resolved.Node;
+        Node->NamespaceGeneration = Context->Registry->NamespaceGeneration;
+        Node->Partition = Resolved.Partition;
+        return VFSUnlock(Context->Registry, VFS_OK);
+    }
+    if (Error == VFS_OK && (Resolved.Node.Mode & VFS_MODE_TYPE) == 0x2000U)
+    {
+        *Node = Resolved.Node;
+        Node->NamespaceGeneration = Context->Registry->NamespaceGeneration;
+        Node->Partition = Resolved.Partition;
+        return VFSUnlock(Context->Registry, VFS_OK);
+    }
+    if (Error == VFS_OK && (Resolved.Node.Mode & VFS_MODE_TYPE) != 0x8000U)
+    {
+        Error = (Resolved.Node.Mode & VFS_MODE_TYPE) == VFS_MODE_DIRECTORY ? VFS_IS_DIRECTORY : VFS_INVALID;
     }
     if (Error == VFS_OK)
     {

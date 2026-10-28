@@ -3,7 +3,6 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <Interrupt/IDT.h>
-#include <Syscall/Syscall.h>
 #include <Debug/Debug.h>
 #include <Disk/VirtIOBlock.h>
 #include <Network/VirtIONetwork.h>
@@ -58,7 +57,6 @@ EXTERN VOID ISR67(VOID);
 EXTERN VOID ISR68(VOID);
 EXTERN VOID ISR69(VOID);
 EXTERN VOID ISR70(VOID);
-EXTERN VOID ISR128(VOID);
 
 STATIC VOID (*ISRTable[32])(VOID) = {ISR0, ISR1, ISR2, ISR3, ISR4, ISR5, ISR6, ISR7, ISR8, ISR9, ISR10, ISR11, ISR12, ISR13, ISR14, ISR15, ISR16, ISR17, ISR18, ISR19, ISR20, ISR21, ISR22, ISR23, ISR24, ISR25, ISR26, ISR27, ISR28, ISR29, ISR30, ISR31};
 
@@ -94,7 +92,7 @@ VOID IDTInit(VOID)
     IDTSetGate(68, (UINT64) ISR68, Selector, 0, 0x8E);
     IDTSetGate(69, (UINT64) ISR69, Selector, 0, 0x8E);
     IDTSetGate(70, (UINT64) ISR70, Selector, 0, 0x8E);
-    IDTSetGate(128, (UINT64) ISR128, Selector, 0, 0xEE);
+    IDTSetGate(2, (UINT64) ISR2, Selector, 2, 0x8E);
 }
 
 VOID IDTSetGate(UINT8 Vector, UINT64 Handler, UINT16 Selector, UINT8 IST, UINT8 TypeAttributes)
@@ -188,13 +186,6 @@ UINT64 SYSV_ABI IDTInterruptHandler(INTERRUPT_FRAME *Frame)
     {
         VMMHandleShootdown();
         LAPICEOI();
-    }
-
-    if (Frame->Vector == 128)
-    {
-        Frame->RAX = SyscallDispatch((INTERRUPT_FRAME *) Frame);
-
-        return (UINT64) Frame;
     }
 
     return (UINT64) Frame;

@@ -4,8 +4,9 @@
 
 #include <sys/random.h>
 #include <syscall.h>
+#include <errno.h>
 
 ssize_t getrandom(void *Buffer, size_t Count, unsigned int Flags)
 {
-    return (ssize_t) LineOSSyscall3(19, (UINT64) Buffer, (UINT64) Count, Flags);
+    return (ssize_t) LineOSSyscallResult(LineOSSyscall3(SYSCALL_GETRANDOM, (UINT64) Buffer, (UINT64) Count, Flags));
 }

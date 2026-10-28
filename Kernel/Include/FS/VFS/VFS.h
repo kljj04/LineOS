@@ -12,7 +12,6 @@ VFS_ERROR VFSContextInit(VFS_CONTEXT *Context, VFS_REGISTRY *Registry, UINT32 Pa
 VFS_ERROR VFSBeginCommand(VFS_CONTEXT *Session, BOOLEAN Elevate, BOOLEAN Authorized, VFS_COMMAND *Command);
 VFS_ERROR VFSEndCommand(VFS_COMMAND *Command, BOOLEAN KeepLocation);
 VFS_ERROR VFSGetCwd(CONST VFS_CONTEXT *Context, CHAR8 *Buffer, UINT32 Capacity);
-VFS_ERROR VFSSelectPartition(VFS_CONTEXT *Context, CONST CHAR8 *Name);
 VFS_ERROR VFSChangeDirectory(VFS_CONTEXT *Context, CONST CHAR8 *Path);
 VFS_ERROR VFSLookup(VFS_CONTEXT *Context, CONST CHAR8 *Path, VFS_NODE *Node);
 VFS_ERROR VFSReadDirectory(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 *Cursor, VFS_DIRECTORY_ENTRY *Entry);

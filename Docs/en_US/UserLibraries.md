@@ -46,15 +46,14 @@ published by Init. Shell does not use TrueType or display APIs.
 
 Image updates copy `Assets/Fonts/*.ttf` to EXT2 `/sys/fonts/` with their names and mode 0644. User programs can read
 them with `open(Path, O_RDONLY)` from `fcntl.h` and `read`/`close` from `unistd.h`. Each task has 16 descriptor slots,
-shared by files and terminal endpoints. Regular files currently support read-only opens. Errors return -1 and EOF
-returns 0; `errno` is not implemented. Reads resolve the path again, so POSIX open-file behavior across rename or
+shared by files and terminal endpoints. Regular files support read/write/create/truncate using the documented flags. Errors return -1 with `errno`; EOF returns 0. Reads resolve the path again, so POSIX open-file behavior across rename or
 deletion is not implemented. Access uses the VFS context supplied at execution; Init currently inherits an administrator
 context.
 
 `spawn(Path)` from `spawn.h` starts a static ELF in a separate address space using the caller's VFS context, returning
 the child PID or -1 on failure. This is a simple LineOS extension, not POSIX `posix_spawn`. Children inherit references
 to the parent’s open objects before scheduling, sharing file offsets. Closing one descriptor preserves other references.
-Arguments, wait and exit-status collection are not yet supported. At most 16 child execution records are retained;
+`spawnv(Path, Argv)` also passes arguments. Wait and exit-status collection remain unsupported. At most 16 child execution records are retained;
 terminated records are reclaimed on a later spawn once the scheduler has retired the task. Per-task SSE state
 preservation is not implemented; concurrent userspace floating-point/SIMD has not been validated. TrueType state and
 glyph caches remain per process; original TTF bytes are shared through the asset API below. Publishing authority is not
@@ -62,7 +61,7 @@ inherited by children.
 
 ## Shared assets
 
-Include `Asset.h`. All three functions return 0 on success or -1 on failure, without errno.
+Include `Asset.h`. All three functions return 0 on success or -1 on failure, with `errno` on failure.
 
 - `LOSAssetPublish(Name, Data, Size)` is restricted to the boot Init. It copies original bytes into kernel-owned pages
   once, allowing reuse of the source buffer and preserving assets after Init exits. Names contain 1–63 bytes. Assets are
@@ -94,15 +93,51 @@ objects, glyph caches, allocators and surfaces remain private. The asset API doe
 
 ## System call interface
 
-The current `int 0x80` dispatch exposes exit, read, write, open, close, getpid, display information/presentation, spawn,
+The current `syscall`/`sysretq` dispatch exposes exit, read, write, open, close, getpid, display information/presentation, spawn,
 and asset publication/acquisition/release. Yield hands the CPU to the scheduler and returns 0 on success. File and
-process interfaces expose only the subset described here; there is no `errno`. The former stream-read syscall number 10
-is reserved and returns -1; `LOSOutputStreamRead` has been removed.
+process interfaces expose the subset described here. Raw calls return Linux negative errors; libc returns -1 and sets `errno` for errors in -4095..-1. `LOSOutputStreamRead` has been removed. Number 10 is reserved for Linux `mprotect` and is currently unsupported.
+
+`RAX` carries the syscall number and result. Arguments use `RDI`, `RSI`, `RDX`, `R10`, `R8`, and `R9`.
+`RCX` and `R11` are clobbered. Each CPU configures the entry MSRs and switches to the current task's kernel stack.
+The former user-callable `int 0x80` gate is removed. Standard calls use Linux x86-64 syscall numbers. LineOS extensions start at 1024; display and asset calls remain available. Device `ioctl`, anonymous private `mmap`, and `/dev/fb0` shared `mmap` are implemented; see [DeviceFS and process ABI](DeviceFS.md).
+
+| Call | Number |
+| --- | --- |
+| `read` | 0 |
+| `write` | 1 |
+| `open` | 2 |
+| `close` | 3 |
+| `mmap` | 9 |
+| `munmap` | 11 |
+| `ioctl` | 16 |
+| `sched_yield` | 24 |
+| `getpid` | 39 |
+| `fork` | 57 |
+| `execve` | 59 |
+| `exit` | 60 |
+| `rename` | 82 |
+| `mkdir` | 83 |
+| `setuid` | 105 |
+| `setgid` | 106 |
+| `getdents64` | 217 |
+| `getrandom` | 318 |
+| `display_info` | 1024 |
+| `display_present` | 1025 |
+| `display_present_rect` | 1026 |
+| `asset_publish` | 1027 |
+| `asset_acquire` | 1028 |
+| `asset_release` | 1029 |
+| `spawn (LineOS)` | 1030 |
+| `spawnv (LineOS)` | 1031 |
+| `remove (LineOS)` | 1032 |
+
+`remove` remains a LineOS extension because it handles both files and directories. It is not Linux `unlink` or `rmdir`.
+Matching supported syscall numbers, error values and framebuffer query structures does not provide full Linux binary compatibility. See [supported features and limits](DeviceFS.md).
 
 ## Terminal and Shell
 
 Init opens `/dev/lsh1` as descriptor 0 with `O_RDONLY` and descriptors 1 and 2 with `O_WRONLY`. It publishes the fonts,
-opens `/dev/lsh1/master` with `O_RDWR` as descriptor 3, and starts `/sbin/Terminal.lix`. It closes its master reference
+opens `/dev/lsh1-master` with `O_RDWR` as descriptor 3, and starts `/sbin/Terminal.lix`. It closes its master reference
 before starting `/bin/Shell.lix`, so Shell and its children inherit only the program endpoints. `Program.cfg` installs
 Init and Terminal under `/sbin/`, and Shell under `/bin/`. The kernel starts `/sbin/Init.lix`.
 
@@ -113,8 +148,7 @@ to debugcon. Ordinary programs may open the program endpoint with `O_RDONLY`, `O
 open the master, and only one master object may exist at a time; its inherited references keep it alive. Final master
 close wakes waiters: input drains to EOF and new writes fail. Queue storage persists until reboot.
 
-These device paths are recognized by `open`; a mounted devfs, directory enumeration, `stat` and general device
-registration are not implemented. The initial keyboard worker translates US-layout key events directly into this single
+DeviceFS now provides these nodes through VFS and supports directory enumeration with `getdents64`. `stat` and dynamic device registration remain unsupported. The initial keyboard worker translates US-layout key events directly into this single
 terminal’s input queue. Shift, Caps Lock and alphabetic Ctrl combinations are supported; input is byte-oriented and a
 full hardware-input queue drops new keys. Future focus management can route input through the master endpoint.
 

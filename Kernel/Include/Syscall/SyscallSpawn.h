@@ -8,3 +8,7 @@
 
 INT64 SyscallSpawn(UINT64 Path);
 INT64 SyscallSpawnV(UINT64 Path, UINT64 Argv);
+
+#include <Interrupt/IDT.h>
+INT64 SyscallFork(INTERRUPT_FRAME *Frame);
+INT64 SyscallExecVE(INTERRUPT_FRAME *Frame);

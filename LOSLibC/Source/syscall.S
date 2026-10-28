@@ -11,20 +11,20 @@
 
 LineOSSyscall0:
     movq %rdi, %rax
-    int $0x80
+    syscall
     ret
 
 LineOSSyscall1:
     movq %rdi, %rax
     movq %rsi, %rdi
-    int $0x80
+    syscall
     ret
 
 LineOSSyscall2:
     movq %rdi, %rax
     movq %rsi, %rdi
     movq %rdx, %rsi
-    int $0x80
+    syscall
     ret
 
 LineOSSyscall3:
@@ -32,7 +32,19 @@ LineOSSyscall3:
     movq %rsi, %rdi
     movq %rdx, %rsi
     movq %rcx, %rdx
-    int $0x80
+    syscall
+    ret
+
+.global LineOSSyscall6
+LineOSSyscall6:
+    movq %rdi, %rax
+    movq %rsi, %rdi
+    movq %rdx, %rsi
+    movq %rcx, %rdx
+    movq %r8, %r10
+    movq %r9, %r8
+    movq 8(%rsp), %r9
+    syscall
     ret
 
 .section .note.GNU-stack,"",@progbits
