@@ -9,7 +9,7 @@
 #include <Syscall/SyscallExit.h>
 #include <Syscall/SyscallDisplay.h>
 #include <Syscall/SyscallFile.h>
-#include <Syscall/SyscallSpawn.h>
+#include <Syscall/SyscallProcess.h>
 #include <Syscall/SyscallAsset.h>
 #include <Syscall/SyscallMemory.h>
 
@@ -73,6 +73,15 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
 
     switch (Frame->RAX)
     {
+        case SYSCALL_STAT:
+        case SYSCALL_LSTAT:
+        {
+            return (UINT64) SyscallStat(Frame->RDI, Frame->RSI, Frame->RAX == SYSCALL_STAT);
+        }
+        case SYSCALL_FSTAT:
+        {
+            return (UINT64) SyscallFstat(Frame->RDI, Frame->RSI);
+        }
         case SYSCALL_MMAP:
         {
             return (UINT64) SyscallMmap(Frame->RDI, Frame->RSI, Frame->RDX, Frame->R10, (INT64) Frame->R8, Frame->R9);
@@ -84,6 +93,10 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
         case SYSCALL_FORK:
         {
             return (UINT64) SyscallFork(Frame);
+        }
+        case SYSCALL_WAIT4:
+        {
+            return (UINT64) SyscallWait4((INT64) Frame->RDI, Frame->RSI, Frame->RDX, Frame->R10);
         }
         case SYSCALL_EXECVE:
         {
@@ -128,6 +141,14 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
             return (UINT64) SyscallOpen(Frame->RDI, Frame->RSI, Frame->RDX);
         }
 
+        case SYSCALL_GETCWD:
+        {
+            return (UINT64) SyscallGetCwd(Frame->RDI, Frame->RSI);
+        }
+        case SYSCALL_CHDIR:
+        {
+            return (UINT64) SyscallChdir(Frame->RDI);
+        }
         case SYSCALL_RENAME:
         {
             return (UINT64) SyscallRename(Frame->RDI, Frame->RSI);
@@ -185,16 +206,6 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
         case SYSCALL_DISPLAY_PRESENT_RECT:
         {
             return (UINT64) SyscallDisplayPresentRect(Frame->RDI);
-        }
-
-        case SYSCALL_SPAWN:
-        {
-            return (UINT64) SyscallSpawn(Frame->RDI);
-        }
-
-        case SYSCALL_SPAWNV:
-        {
-            return (UINT64) SyscallSpawnV(Frame->RDI, Frame->RSI);
         }
 
         case SYSCALL_ASSET_PUBLISH:

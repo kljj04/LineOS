@@ -23,15 +23,19 @@ BuildExecute()
     local Total=0
     local Current=0
     local Completed=0
-    local Make=(make -C "$BuildRoot" --no-print-directory --silent -f Makefiles/Makefile -j1)
+    local Make=(make -C "$BuildRoot" --no-print-directory --silent -f Makefiles/Makefile -j$(nproc))
+
+    if [[ -n "${BuildProgram:-}" ]]; then
+        Make+=("Program=$BuildProgram")
+    fi
 
     if [[ ! -f "$BuildRoot/Makefiles/Makefile" ]]; then
         return 1
     fi
 
     case "$Target" in
-        All)
-            if ! Plan=$("${Make[@]}" -n All); then
+        All|UserProgram)
+            if ! Plan=$("${Make[@]}" -n "$Target"); then
                 return 1
             fi
 
@@ -56,7 +60,7 @@ BuildExecute()
 
     if (( Total == 0 )); then
         case "$Target" in
-            All)
+            All|UserProgram)
                 File="Up to date"
                 ;;
             Clean)
@@ -96,7 +100,11 @@ BuildExecute()
 
 BuildRun()
 {
-    BuildExecute All
+    if [[ -n "${BuildProgram:-}" ]]; then
+        BuildExecute UserProgram
+    else
+        BuildExecute All
+    fi
 }
 
 BuildClean()

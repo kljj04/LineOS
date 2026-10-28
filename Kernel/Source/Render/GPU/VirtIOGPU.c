@@ -530,7 +530,7 @@ BOOLEAN VirtIOGPUCreateFrameBuffer(UINT32 Width, UINT32 Height)
         return FALSE;
     }
 
-    if (Width == 0 || Height == 0)
+    if (VirtIOGPUInfo.FrameBuffer != NULL || Width == 0 || Height == 0 || (UINT64) Width * Height > UINT32_MAX / VIRTIO_GPU_BYTES_PER_PIXEL)
     {
         LastError = L"gpu framebuffer size invalid";
         return FALSE;

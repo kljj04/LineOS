@@ -24,6 +24,7 @@ ProgressFormatList:
 
 ProgressCleanList:
 	@if [ -d Build ]; then find Build \( -type f -o -type l \) -print; fi
+	@if [ -d "$(USER_PROGRAM_OUTPUT_DIR)" ]; then find "$(USER_PROGRAM_OUTPUT_DIR)" \( -type f -o -type l \) -print; fi
 	@for File in "$(BOOT_TARGET)" "$(KERN_TARGET)"; do if [ -e "$$File" ] || [ -L "$$File" ]; then printf '%s\n' "$$File"; fi; done
 
 Format:
@@ -31,5 +32,7 @@ Format:
 
 Clean:
 	@if [ -d Build ]; then find Build \( -type f -o -type l \) -exec sh -c 'for File do printf "LOS_PROGRESS\t%s\n" "$$File"; rm -f -- "$$File" || exit; printf "LOS_DONE\t%s\n" "$$File"; done' sh {} +; fi
+	@if [ -d "$(USER_PROGRAM_OUTPUT_DIR)" ]; then find "$(USER_PROGRAM_OUTPUT_DIR)" \( -type f -o -type l \) -exec sh -c 'for File do printf "LOS_PROGRESS\t%s\n" "$$File"; rm -f -- "$$File" || exit; printf "LOS_DONE\t%s\n" "$$File"; done' sh {} +; fi
+	@rm -rf -- "$(USER_PROGRAM_OUTPUT_DIR)"
 	@rm -rf -- Build
 	@set -e; for File in "$(BOOT_TARGET)" "$(KERN_TARGET)"; do if [ -e "$$File" ] || [ -L "$$File" ]; then printf 'LOS_PROGRESS\t%s\n' "$$File"; rm -f -- "$$File"; printf 'LOS_DONE\t%s\n' "$$File"; fi; done

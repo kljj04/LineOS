@@ -2,52 +2,64 @@
 # LineOS Project
 # Copyright (C) 2026 LineOS Developer kljj04
 
-CompileUserPrograms: $(USER_PROGRAM_OBJS)
+USER_PROGRAM_MANIFEST := $(shell bash Scripts/Backend/Programs.sh .)
+ifneq ($(.SHELLSTATUS),0)
+$(error Invalid program configuration)
+endif
 
+Comma := ,
+ProgramFields = $(subst |, ,$(1))
+ProgramLibraries = $(foreach Library,$(subst $(Comma), ,$(1)),$(USER_LIBRARY_$(Library)))
+USER_LIBRARY_TrueType := $(TRUE_TYPE_TARGET)
+USER_LIBRARY_UserDB := $(USER_DB_TARGET)
+USER_LIBRARY_LOSLibC := $(LOSLIBC_TARGET)
+USER_PROGRAMS := $(foreach Row,$(USER_PROGRAM_MANIFEST),$(word 1,$(call ProgramFields,$(Row))))
+
+ifneq ($(strip $(Program)),)
+ifneq ($(filter $(Program),$(USER_PROGRAMS)),$(Program))
+$(error Unknown or disabled program: $(Program))
+endif
+USER_PROGRAMS := $(Program)
+endif
+
+.PHONY: CompileUserPrograms LinkUserPrograms UserProgram PrepareUserPrograms
+
+All CompileUserPrograms LinkUserPrograms UserProgram: PrepareUserPrograms
+
+PrepareUserPrograms:
+	@$(call RM_RF,$(USER_PROGRAM_OUTPUT_DIR))
+
+define USER_PROGRAM_TEMPLATE
+USER_PROGRAM_SRCS_$(1) := $(filter-out -,$(subst $(Comma), ,$(4)))
+USER_PROGRAM_OBJS_$(1) := $$(addprefix Build/Objects/,$$(addsuffix .o,$$(basename $$(USER_PROGRAM_SRCS_$(1)))))
+USER_PROGRAM_OUTPUT_$(1) := $(USER_PROGRAM_OUTPUT_DIR)/$(1)/$(notdir $(1)).lix
+USER_PROGRAM_LIBS_$(1) := $(filter-out $(LOSLIBC_TARGET),$(call ProgramLibraries,$(3))) $(LOSLIBC_TARGET)
+
+$$(USER_PROGRAM_OBJS_$(1)): private USER_PROGRAM_INCLUDE := -I$(USER_PROGRAM_ROOT)/$(1)/Include
+$$(USER_PROGRAM_OBJS_$(1)): $(USER_PROGRAM_ROOT)/$(1)/Program.cfg
+$$(USER_PROGRAM_OUTPUT_$(1)): PrepareUserPrograms $$(USER_PROGRAM_OBJS_$(1)) $$(USER_PROGRAM_LIBS_$(1)) $(USER_PROGRAM_ROOT)/$(1)/Program.cfg $(shell find $(USER_PROGRAM_ROOT)/$(1) -type d) Link/UserProgram.ld Makefiles/UserPrograms.mk Scripts/Backend/Programs.sh
+	@$$(call MKDIR_P,$$(dir $$@))
+	@$$(call BUILD_PROGRESS,$$@)
+	@$$(LD) -static -T Link/UserProgram.ld -e _Start -o $$@ $$(USER_PROGRAM_OBJS_$(1)) --start-group $$(USER_PROGRAM_LIBS_$(1)) --end-group
+	@$$(call BUILD_DONE,$$@)
+endef
+
+$(foreach Row,$(USER_PROGRAM_MANIFEST),$(if $(filter $(word 1,$(call ProgramFields,$(Row))),$(USER_PROGRAMS)),$(eval $(call USER_PROGRAM_TEMPLATE,$(word 1,$(call ProgramFields,$(Row))),$(word 2,$(call ProgramFields,$(Row))),$(word 3,$(call ProgramFields,$(Row))),$(word 4,$(call ProgramFields,$(Row)))))))
+
+CompileUserPrograms: $(USER_PROGRAM_OBJS)
 LinkUserPrograms: $(USER_PROGRAM_OUTPUTS)
+UserProgram: $(USER_PROGRAM_OUTPUTS)
 
 Build/Objects/UserPrograms/%.o: UserPrograms/%.c Makefiles/BuildSettings.mk Makefiles/UserPrograms.mk
 	@$(call MKDIR_P,$(dir $@))
-	@$(CC) $(USER_PROGRAM_CFLAGS) \
-		-IUserPrograms/$(firstword $(subst /, ,$*))/Include \
-		-I$(dir $<) \
-		$(DEPFLAGS) \
-		-c $< \
-		-o $@
+	@$(call BUILD_PROGRESS,$<)
+	@$(CC) $(USER_PROGRAM_CFLAGS) $(USER_PROGRAM_INCLUDE) -I$(dir $<) $(DEPFLAGS) -c $< -o $@
+	@$(call BUILD_DONE,$<)
 
 Build/Objects/UserPrograms/%.o: UserPrograms/%.S Makefiles/BuildSettings.mk Makefiles/UserPrograms.mk
 	@$(call MKDIR_P,$(dir $@))
-	@$(CC) $(USER_PROGRAM_CFLAGS) \
-		-IUserPrograms/$(firstword $(subst /, ,$*))/Include \
-		-I$(dir $<) \
-		$(DEPFLAGS) \
-		-c $< \
-		-o $@
-
-USER_PROGRAM_EXTRA_AddUser := $(USER_DB_TARGET)
-USER_PROGRAM_EXTRA_DelUser := $(USER_DB_TARGET)
-USER_PROGRAM_EXTRA_UserRescue := $(USER_DB_TARGET)
-USER_PROGRAM_EXTRA_Login := $(USER_DB_TARGET)
-
-define USER_PROGRAM_TEMPLATE
-
-USER_PROGRAM_SRCS_$(1) := $(call RWildcard,$(USER_PROGRAM_ROOT)/$(1),*.c) $(call RWildcard,$(USER_PROGRAM_ROOT)/$(1),*.S)
-USER_PROGRAM_OBJS_$(1) := $$(patsubst $(USER_PROGRAM_ROOT)/$(1)/%.c,Build/Objects/UserPrograms/$(1)/%.o,$$(filter %.c,$$(USER_PROGRAM_SRCS_$(1)))) $$(patsubst $(USER_PROGRAM_ROOT)/$(1)/%.S,Build/Objects/UserPrograms/$(1)/%.o,$$(filter %.S,$$(USER_PROGRAM_SRCS_$(1))))
-USER_PROGRAM_OUTPUT_$(1) := $(USER_PROGRAM_OUTPUT_DIR)/$(1).lix
-
-$$(USER_PROGRAM_OUTPUT_$(1)): $$(USER_PROGRAM_OBJS_$(1)) $(TRUE_TYPE_TARGET) $(LOSLIBC_TARGET) $$(USER_PROGRAM_EXTRA_$(1)) Link/UserProgram.ld Makefiles/UserPrograms.mk
-	@$$(call MKDIR_P,$$(dir $$@))
-	@$$(LD) -static \
-		-T Link/UserProgram.ld \
-		-e _Start \
-		-o $$@ \
-		$$(USER_PROGRAM_OBJS_$(1)) \
-		$(TRUE_TYPE_TARGET) \
-		$$(USER_PROGRAM_EXTRA_$(1)) \
-		$(LOSLIBC_TARGET)
-
-endef
-
-$(foreach Program,$(USER_PROGRAMS),$(eval $(call USER_PROGRAM_TEMPLATE,$(Program))))
+	@$(call BUILD_PROGRESS,$<)
+	@$(CC) $(USER_PROGRAM_CFLAGS) $(USER_PROGRAM_INCLUDE) -I$(dir $<) $(DEPFLAGS) -c $< -o $@
+	@$(call BUILD_DONE,$<)
 
 -include $(USER_PROGRAM_DEPS)

@@ -46,10 +46,33 @@ Direct build without the Node.js interface:
 make -f Makefiles/Makefile -j1
 ```
 
-Outputs include `LineOS/EFI/BOOT/BOOTX64.EFI`, `LineOS/KERNEL/LINEOS_KERNEL.ELF`, `LineOS/Programs/<ProgramName>.lix`,
-`Build/Libraries/libtruetype.a` and `Build/Libraries/liblosc.a`; objects and dependency files are under
-`Build/Objects/`. Immediate `UserPrograms/` directories supply program names and their C/assembly sources are linked
-into static ELF64 executables. Building alone neither updates the image nor starts QEMU.
+Outputs include `LineOS/EFI/BOOT/BOOTX64.EFI`, `LineOS/KERNEL/LINEOS_KERNEL.ELF` and
+`LineOS/Programs/<relative program path>/<directory name>.lix`. Objects and dependency files are under `Build/Objects/`.
+The build recursively discovers directories containing `UserPrograms/**/Program.cfg`. Each complete relative path identifies
+one program; sources belonging to nested program roots are excluded from their parent. Executables remain static ELF64.
+
+```ini
+CopyPath = /sbin/
+Dependencies = TrueType, UserDB
+Enable = true
+```
+
+Whitespace around keys, values and commas is allowed. Omitted values default to `CopyPath=/bin/`, an empty dependency
+list and `Enable=true`. LOSLibC is always linked; optional library names are `TrueType`, `UserDB` and `LOSLibC`.
+Unknown keys/dependencies, duplicate keys and invalid values are errors. `Enable=false` excludes a program from both
+build and deployment. Existing installed files are not removed automatically.
+
+```bash
+./Scripts/Run.sh -build System/Shell
+make -f Makefiles/Makefile -j1 UserProgram Program=System/Shell
+```
+
+These commands build only the selected enabled program and its libraries. Deployment uses `CopyPath/<directory name>.lix`;
+all enabled destinations, including ancestor conflicts and font destinations, are checked before disk copies begin.
+Every full or selected build clears `LineOS/Programs/` before linking its target executables again. Objects and libraries
+remain incremental. A selected build leaves only the selected executable.
+Only outputs associated with current enabled configurations are copied. `-clean` also removes `LineOS/Programs/`, including
+stale outputs. Building alone neither updates the image nor starts QEMU.
 
 ## Configuration
 

@@ -399,7 +399,7 @@ class Renderer
 
         Text += "  Options:\n";
         Text += "    (none), -all    Unmount -> build/update -> QEMU -> mount\n";
-        Text += "    -build          Build only (incremental)\n";
+        Text += "    -build [path]   Build all or one program (incremental)\n";
         Text += "    -clean          Make Clean\n";
         Text += "    -format         Make Format\n";
         Text += "    -image          Prepare disk image and boot files\n";

@@ -4,7 +4,6 @@
 
 #include <UserDB/UserDB.h>
 #include <UserDB/Argon2.h>
-#include <spawn.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -66,9 +65,18 @@ STATIC INT32 LoginReadLine(char *Buffer, UINTN Capacity, BOOLEAN Echo)
 STATIC VOID NORETURN LoginRescue(VOID)
 {
     puts("Login: account database unavailable or invalid; entering UserRescue");
-    if (spawn("/sys/rescue/UserRescue.lix") < 0)
+    pid_t Child = fork();
+    if (Child == 0)
     {
-        puts("Login: failed to launch UserRescue");
+        char *Arguments[] = {"/sys/rescue/UserRescue.lix", NULL};
+        char *Environment[] = {NULL};
+        execve(Arguments[0], Arguments, Environment);
+        puts("Login: UserRescue execve failed");
+        exit(127);
+    }
+    if (Child < 0)
+    {
+        puts("Login: UserRescue fork failed");
         exit(1);
     }
     exit(0);
@@ -142,15 +150,26 @@ INT32 _Start(VOID)
         UINT32 UID = Account.UID;
         UINT32 GID = Account.GID;
         CryptoWipe(&Account, sizeof(Account));
+        char UserEnvironment[5 + sizeof(Username)] = "USER=";
+        strcpy(UserEnvironment + 5, Username);
         CryptoWipe(Username, sizeof(Username));
         if (setgid(GID) != 0 || setuid(UID) != 0)
         {
             puts("Login: failed to establish user credentials");
             exit(1);
         }
-        if (spawn("/bin/Shell.lix") < 0)
+        pid_t Child = fork();
+        if (Child == 0)
         {
-            puts("Login: failed to launch Shell");
+            char *Arguments[] = {"/bin/lsh.lix", NULL};
+            char *Environment[] = {UserEnvironment, "PATH=/bin/lsh", NULL};
+            execve(Arguments[0], Arguments, Environment);
+            puts("Login: shell execve failed");
+            exit(127);
+        }
+        if (Child < 0)
+        {
+            puts("Login: shell fork failed");
             exit(1);
         }
         exit(0);

@@ -18,3 +18,7 @@ int   execve(const char *Path, char *const Argv[], char *const Envp[]);
 pid_t getpid(void);
 
 ssize_t getdents64(int FD, void *Buffer, size_t Count);
+
+int chdir(const char *Path);
+
+char *getcwd(char *Buffer, size_t Size);

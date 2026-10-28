@@ -6,11 +6,9 @@
 
 LineOS는 x86_64 UEFI 환경의 모놀리식 커널입니다. 부트로더가 ELF64 커널을 적재하고 UEFI 메모리 맵, ACPI RSDP 등 `LINEOS_BOOT_INFO`를 전달합니다. 커널 진입에는 Microsoft x64 ABI를 사용하며 레거시 BIOS 부팅 경로는 없습니다.
 
-`InitKernel()`은 물리·가상 메모리와 힙, TrueType, PCI와 VirtIO GPU, GDT·IDT, LAPIC·HPET·TSC 타이머, UTC 시계, SMP, LBPWRR, VirtIO 블록·네트워크·입력을 초기화합니다.
+`InitKernel()`은 VFS를 초기화하고 GPT 2번 파티션을 EXT2 루트로, DeviceFS를 /dev에 연결합니다. `KMain()`은 키보드·마우스 소비자를 시작하고 /sbin/Init.lix를 정적 ELF64 유저 태스크로 적재한 뒤 LBPWRR을 시작합니다. Init은 글꼴을 게시하고 터미널 장치를 연 다음 fork와 자식의 execve로 /sbin/Terminal.lix와 /sbin/Login.lix를 실행합니다. Terminal은 /dev/fb0를 매핑하고 FD 3에서 읽은 출력을 표시합니다. Login은 인증 후 /bin/lsh.lix를 실행합니다. 자세한 제한은 [유저 프로그램](UserLibraries.md)을 참고합니다.
 
-`InitKernel()`은 VFS를 초기화하고 GPT 2번 파티션의 EXT2를 루트로 마운트합니다. `KMain()`은 `/bin/Init.lix`를 정적 ELF64 유저 작업으로 적재하고 실패하면 `Init Failed` 패닉을 표시한 뒤, 성공 시 LBPWRR을 시작합니다. Init은 폰트를 공용 에셋으로 등록한 다음 `spawn("/bin/Shell.lix")`를 호출합니다. Shell은 해당 에셋을 읽기 전용으로 매핑하고 공유 출력 스트림을 화면에 표시합니다. 자세한 내용과 제한은 [유저 프로그램](UserLibraries.md)을 참고합니다.
-
-키보드·마우스 소비자, NetworkTask와 ClockNTPTask는 현재 시작 경로에서 등록하지 않습니다. 장치 초기화만으로 해당 작업이 시작되지는 않습니다. Wait Queue와 CPU 회계는 [스케줄러](Scheduler.md)를 참고합니다.
+NetworkTask와 ClockNTPTask는 현재 시작 경로에서 등록하지 않습니다. 장치 초기화만으로 해당 작업이 시작되지는 않습니다. Wait Queue와 CPU 회계는 [스케줄러](Scheduler.md)를 참고합니다.
 
 ## SMP
 

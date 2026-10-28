@@ -8,7 +8,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <UserDB/UserDB.h>
-#include <spawn.h>
 
 #define USER_RESCUE_LINE_SIZE     256U
 #define USER_RESCUE_PASSWORD_SIZE 128U
@@ -134,9 +133,18 @@ INT32 _Start(VOID)
         else if (strcmp(Line, "exit") == 0)
         {
             puts("UserRescue: returning to Login");
-            if (spawn("/sbin/Login.lix") < 0)
+            pid_t Child = fork();
+            if (Child == 0)
             {
-                puts("UserRescue: failed to launch Login");
+                char *Arguments[] = {"/sbin/Login.lix", NULL};
+                char *Environment[] = {NULL};
+                execve(Arguments[0], Arguments, Environment);
+                puts("UserRescue: Login execve failed");
+                exit(127);
+            }
+            if (Child < 0)
+            {
+                puts("UserRescue: Login fork failed");
             }
             else
             {

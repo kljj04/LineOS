@@ -19,7 +19,7 @@ process concurrently edits image contents.
 ## Userspace TrueType
 
 `Libraries/Include/TrueType` and `Libraries/Source/TrueType` contain a user port of the kernel implementation. Make
-builds `Build/Libraries/libtruetype.a` and supplies it before libc on user link commands. Archive members are included
+builds `Build/Libraries/libtruetype.a` and links it for programs listing `TrueType` in `Program.cfg` under `Dependencies`. Archive members are included
 only when referenced. The user library has no PMM, VirtIO GPU, kernel lock or kernel font-symbol dependencies. Kernel
 TrueType and panic output remain intact. The kernel console has been removed. The Terminal user program renders bytes
 received through its terminal master descriptor; ordinary programs use `read` and `write`.
@@ -50,14 +50,7 @@ shared by files and terminal endpoints. Regular files support read/write/create/
 deletion is not implemented. Access uses the VFS context supplied at execution; Init currently inherits an administrator
 context.
 
-`spawn(Path)` from `spawn.h` starts a static ELF in a separate address space using the caller's VFS context, returning
-the child PID or -1 on failure. This is a simple LineOS extension, not POSIX `posix_spawn`. Children inherit references
-to the parent’s open objects before scheduling, sharing file offsets. Closing one descriptor preserves other references.
-`spawnv(Path, Argv)` also passes arguments. Wait and exit-status collection remain unsupported. At most 16 child execution records are retained;
-terminated records are reclaimed on a later spawn once the scheduler has retired the task. Per-task SSE state
-preservation is not implemented; concurrent userspace floating-point/SIMD has not been validated. TrueType state and
-glyph caches remain per process; original TTF bytes are shared through the asset API below. Publishing authority is not
-inherited by children.
+`fork()` duplicates the caller and returns its child PID to the parent and zero to the child. The child calls `execve(Path, Argv, Envp)` to replace its image, keeping PID, inherited file descriptions, credentials and cwd. Init, Login, UserRescue and Shell all use this sequence. The spawn/spawnv extension is removed. Exec failure returns -1 with errno in the child; launch sites report it and exit with 127. waitpid/wait collect child exit status; Shell waits for its external child before printing the next prompt. At most 16 child execution records are retained and terminated records are reclaimed during later fork calls. Publishing authority is not inherited by fork children. Per-task SSE state preservation remains unimplemented; concurrent floating-point/SIMD is not validated. TrueType state and caches remain private; original font assets remain shared.
 
 ## Shared assets
 
@@ -93,7 +86,7 @@ objects, glyph caches, allocators and surfaces remain private. The asset API doe
 
 ## System call interface
 
-The current `syscall`/`sysretq` dispatch exposes exit, read, write, open, close, getpid, display information/presentation, spawn,
+The current `syscall`/`sysretq` dispatch exposes exit, read, write, open, close, getpid, display information/presentation, fork/execve, chdir, stat/lstat/fstat,
 and asset publication/acquisition/release. Yield hands the CPU to the scheduler and returns 0 on success. File and
 process interfaces expose the subset described here. Raw calls return Linux negative errors; libc returns -1 and sets `errno` for errors in -4095..-1. `LOSOutputStreamRead` has been removed. Number 10 is reserved for Linux `mprotect` and is currently unsupported.
 
@@ -107,6 +100,9 @@ The former user-callable `int 0x80` gate is removed. Standard calls use Linux x8
 | `write` | 1 |
 | `open` | 2 |
 | `close` | 3 |
+| `stat` | 4 |
+| `fstat` | 5 |
+| `lstat` | 6 |
 | `mmap` | 9 |
 | `munmap` | 11 |
 | `ioctl` | 16 |
@@ -115,6 +111,9 @@ The former user-callable `int 0x80` gate is removed. Standard calls use Linux x8
 | `fork` | 57 |
 | `execve` | 59 |
 | `exit` | 60 |
+| `wait4` | 61 |
+| `getcwd` | 79 |
+| `chdir` | 80 |
 | `rename` | 82 |
 | `mkdir` | 83 |
 | `setuid` | 105 |
@@ -127,8 +126,6 @@ The former user-callable `int 0x80` gate is removed. Standard calls use Linux x8
 | `asset_publish` | 1027 |
 | `asset_acquire` | 1028 |
 | `asset_release` | 1029 |
-| `spawn (LineOS)` | 1030 |
-| `spawnv (LineOS)` | 1031 |
 | `remove (LineOS)` | 1032 |
 
 `remove` remains a LineOS extension because it handles both files and directories. It is not Linux `unlink` or `rmdir`.
@@ -148,19 +145,28 @@ to debugcon. Ordinary programs may open the program endpoint with `O_RDONLY`, `O
 open the master, and only one master object may exist at a time; its inherited references keep it alive. Final master
 close wakes waiters: input drains to EOF and new writes fail. Queue storage persists until reboot.
 
-DeviceFS now provides these nodes through VFS and supports directory enumeration with `getdents64`. `stat` and dynamic device registration remain unsupported. The initial keyboard worker translates US-layout key events directly into this single
+DeviceFS now provides these nodes through VFS and supports directory enumeration with `getdents64`. `stat/lstat/fstat` report device metadata; dynamic device registration remains unsupported. The initial keyboard worker translates US-layout key events directly into this single
 terminal’s input queue. Shift, Caps Lock and alphabetic Ctrl combinations are supported; input is byte-oriented and a
 full hardware-input queue drops new keys. Future focus management can route input through the master endpoint.
 
 Terminal owns the TrueType state, read-only JetBrains Mono mapping and framebuffer. It renders printable ASCII, newline,
 carriage return, backspace and scrolling, with 36-pixel text, font-derived horizontal advances and 40-pixel line
 spacing, on displays up to 2560 × 1440. It blocks reading descriptor 3 when output is absent. Shell uses only libc
-input/output and the LineOS `spawn` extension: it edits a bounded line, provides `help`, and launches an absolute
-executable path asynchronously. There is no foreground-job arbitration; multiple programs reading the same terminal
+input/output, fork/execve and chdir: it edits a bounded line, provides help and cd [PATH], and launches relative or absolute
+executable paths and waits for completion. It has no built-in ls. There is no foreground-job arbitration; multiple programs reading the same terminal
 compete for input.
 
 The libc interface remains a limited freestanding subset. Standard function names do not imply full C or POSIX
-conformance. Pipes, descriptor duplication, `termios`, canonical mode, signals, job control, process waiting, UTF-8
-terminal rendering and a general userspace allocator remain outside this implementation. Display and asset APIs remain
+conformance. Pipes, descriptor duplication, `termios`, canonical mode, signals, job control and a general userspace allocator remain outside this implementation. Display and asset APIs remain
 LineOS extensions. User-memory copies and managed-address-space operations wait for the VMM lock while servicing pending
 TLB shootdowns; transient lock contention is not treated as an invalid user buffer or failed ELF mapping.
+
+## Terminal ANSI colors
+
+Terminal parses SGR colors across read boundaries: 30–37/40–47, 90–97/100–107, 38;5;N / 48;5;N (256 colors), and 38;2;R;G;B / 48;2;R;G;B (all 24-bit RGB values). SGR 0 or an empty parameter resets attributes; 39/49 restore default foreground/background. SGR 1/22 toggles bright basic foreground colors, and 7/27 toggles inverse. Backgrounds fill each font-metric cell, including spaces; scrolling preserves rendered pixels and fills exposed rows with the current background.
+
+For example, `printf("\033[38;2;145;231;57mColor\033[0m\n");` sets a truecolor foreground. The parser bounds parameter count and numeric values, consumes unsupported CSI commands and OSC strings, and does not print their syntax. Cursor positioning, screen erase, underline, italics and other terminal-emulator features are not implemented by this color extension. Existing UTF-8, fonts, input, cursor and shared-framebuffer presentation remain. See [XTerm control sequences](https://invisible-island.net/xterm/ctlseqs/ctlseqs.html) for SGR conventions.
+
+The prompt uses the original heavy TTF glyphs ┏━ and ┗━>. Background clearing uses the actual font ascent and line height, preserving connecting glyph pixels outside the current row without replacing or stretching the glyph shape. Horizontal advance remains font-derived.
+
+Only the first command word is highlighted: exact builtins help/cd/pwd/echo use RGB(214,122,122); existing executable files resolved through the same PATH lookup as execution use RGB(128,184,136). Missing or unresolved commands use white RGB(255,255,255) on RGB(255,95,95) background. Arguments remain default white. Classification changes redraw through CR/CSI 2 K; normal typing and IME remain incremental, and output resets attributes. External arguments are split on spaces, with at most 64 arguments; quoting and escape parsing are not implemented.

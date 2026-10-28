@@ -51,3 +51,13 @@ ssize_t getdents64(int FD, void *Buffer, size_t Count)
 {
     return (ssize_t) LineOSSyscallResult(LineOSSyscall3(SYSCALL_GETDENTS64, (UINT64) FD, (UINT64) Buffer, Count));
 }
+
+int chdir(const char *Path)
+{
+    return (int) LineOSSyscallResult(LineOSSyscall1(SYSCALL_CHDIR, (UINT64) Path));
+}
+
+char *getcwd(char *Buffer, size_t Size)
+{
+    return LineOSSyscallResult(LineOSSyscall2(SYSCALL_GETCWD, (UINT64) Buffer, Size)) < 0 ? NULL : Buffer;
+}

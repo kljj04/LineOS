@@ -8,9 +8,9 @@ LineOS is a monolithic x86_64 kernel booted through UEFI. The bootloader loads t
 
 `Kernel/Kernel.c` currently initializes physical and virtual memory, the heap, TrueType rendering, PCI and VirtIO GPU, the GDT and IDT, LAPIC/HPET/TSC timers, the UTC clock, SMP, LBPWRR, and VirtIO block/network/input devices.
 
-`InitKernel()` initializes VFS, mounts GPT partition 2 as an EXT2 root and initializes network and input devices. `KMain()` loads `/bin/Init.lix` as a static ELF64 userspace task, panics with `Init Failed` if loading fails, and starts LBPWRR. Init publishes fonts as shared assets before calling `spawn("/bin/Shell.lix")`. Shell maps the font read-only and displays the shared output stream. See [user programs](UserLibraries.md) for details and current limits.
+`InitKernel()` initializes VFS and mounts GPT partition 2 as EXT2 root plus DeviceFS at /dev. `KMain()` starts keyboard/mouse consumers, loads /sbin/Init.lix as a static ELF64 userspace task and starts LBPWRR. Init publishes fonts, opens the terminal endpoints, and uses fork followed by child execve to launch /sbin/Terminal.lix and /sbin/Login.lix. Terminal maps /dev/fb0 and renders output read from descriptor 3. Login launches /bin/lsh.lix after authentication. See [user programs](UserLibraries.md) for limits.
 
-The keyboard and mouse consumers, NetworkTask and ClockNTPTask are not registered by this startup path. Device initialization alone does not start these workers. See [scheduling](Scheduler.md) for Wait Queues and CPU accounting.
+NetworkTask and ClockNTPTask are not registered by this startup path. Device initialization alone does not start these workers. See [scheduling](Scheduler.md) for Wait Queues and CPU accounting.
 
 Application processors enter `APMain()`, initialize their CPU-local facilities, report themselves online, and join the scheduler.
 

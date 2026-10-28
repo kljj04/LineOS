@@ -4,6 +4,7 @@
 
 #include <Syscall/Syscall.h>
 #include <Syscall/SyscallFile.h>
+#include <Syscall/SyscallProcess.h>
 #include <Scheduler/LBPWRR.h>
 #include <Scheduler/Task.h>
 #include <Debug/Debug.h>
@@ -26,6 +27,7 @@ INT64 SyscallExit(UINT64 ExitCode)
     }
 
     SyscallFilesRelease(CurrentTask);
+    SyscallProcessExit(CurrentTask, ExitCode);
     TaskTerminate(CurrentTask);
 
     LBPWRRYield();

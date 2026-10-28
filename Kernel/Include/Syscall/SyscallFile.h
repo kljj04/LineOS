@@ -28,3 +28,10 @@ INT64 SyscallSetGID(UINT64 GID);
 INT64 SyscallIoctl(UINT64 FD, UINT64 Request, UINT64 Argument);
 
 INT64 SyscallGetDents64(UINT64 FD, UINT64 Buffer, UINT64 Count);
+
+INT64 SyscallStat(UINT64 Path, UINT64 Buffer, BOOLEAN Follow);
+INT64 SyscallFstat(UINT64 FD, UINT64 Buffer);
+
+INT64 SyscallChdir(UINT64 Path);
+
+INT64 SyscallGetCwd(UINT64 Buffer, UINT64 Size);

@@ -21,7 +21,7 @@ CopyPath=/usr/bin/
 ## 유저 TrueType
 
 `Libraries/Include/TrueType`과 `Libraries/Source/TrueType`은 커널 포트를 기반으로 한 유저 전용 TrueType 구현입니다.
-`Build/Libraries/libtruetype.a`를 생성하며 모든 유저 프로그램 링크에 libc 앞 순서로 추가합니다. 실제 사용한 오브젝트만 ELF에 포함합니다. 커널의 PMM, VirtIO GPU, 잠금,
+`Build/Libraries/libtruetype.a`를 생성하며 `Program.cfg`의 `Dependencies`에 `TrueType`을 명시한 프로그램에 링크합니다. 실제 사용한 오브젝트만 ELF에 포함합니다. 커널의 PMM, VirtIO GPU, 잠금,
 폰트 심볼을 참조하지 않습니다. 커널 TrueType 및 패닉 출력은 유지합니다. 커널 콘솔은 제거했습니다. Terminal 유저 프로그램이 터미널 master 디스크립터에서 받은 바이트를 렌더링하며 일반 프로그램은
 `read`와 `write`를 사용합니다.
 
@@ -51,9 +51,7 @@ CopyPath=/usr/bin/
 매번 경로와 노드 식별자를 다시 확인하므로 이름 변경·삭제 이후에도 열린 파일을 유지하는 POSIX 의미론은 구현하지 않았습니다. 실행 시 제공된 VFS 문맥으로 권한을 검사하며 Init은 현재 관리자 문맥을
 사용합니다.
 
-`spawn(Path)`는 호출자의 VFS 문맥으로 별도 주소 공간에 정적 ELF를 실행하고 자식 PID 또는 -1을 반환하는 LineOS 확장입니다. 스케줄링 전에 부모의 열린 객체 참조를 상속하므로 파일 오프셋을
-공유하며 한쪽 FD를 닫아도 다른 참조는 유지됩니다. `spawnv(Path, Argv)`로 인자도 전달합니다. 프로세스 대기와 종료 상태 회수는 지원하지 않습니다. 최대 16개 자식 실행 기록을 유지하며 이후 spawn에서 스케줄러가 회수한 종료 태스크를
-정리합니다. 태스크별 SSE 상태 보존은 구현하지 않았습니다. TrueType 상태와 글리프 캐시는 프로세스별이며 원본 TTF만 공유합니다. Init의 에셋 등록 권한은 상속하지 않습니다.
+`fork()`는 호출자를 복제하고 부모에 자식 PID, 자식에 0을 반환합니다. 자식은 `execve(Path, Argv, Envp)`로 이미지를 교체하며 PID, 상속된 열린 파일 객체, 자격 정보와 cwd를 유지합니다. Init, Login, UserRescue와 Shell 모두 이 순서를 사용하며 spawn/spawnv 확장은 제거했습니다. execve 실패는 자식에 -1과 errno를 반환하며 각 호출부는 오류를 출력하고 127로 종료합니다. waitpid/wait로 자식 종료 상태를 수집하며 셸은 외부 자식이 종료된 뒤 프롬프트를 출력합니다. 자식 실행 기록은 최대 16개이며 이후 fork에서 종료 기록을 정리합니다. 에셋 게시 권한은 fork 자식에 상속하지 않습니다. 태스크별 SSE 상태 보존은 미구현이며 동시 부동소수점·SIMD 실행은 검증하지 않았습니다. TrueType 상태와 캐시는 독립적이며 원본 글꼴 에셋은 공유합니다.
 
 ## 공용 에셋
 
@@ -83,7 +81,7 @@ if (LOSAssetAcquire("Fonts/JetBrainsMono", &Asset) == 0)
 
 ## 시스템 호출 인터페이스
 
-현재 `syscall`/`sysretq` 호출은 종료, 읽기, 쓰기, 열기, 닫기, PID 조회, 화면 정보·표시, spawn과 에셋 등록·획득·해제를 제공합니다. yield는 스케줄러에 CPU를 양보하고 성공 시 0을 반환합니다.
+현재 `syscall`/`sysretq` 호출은 종료, 읽기, 쓰기, 열기, 닫기, PID 조회, 화면 정보·표시, fork/execve, chdir, stat/lstat/fstat와 에셋 등록·획득·해제를 제공합니다. yield는 스케줄러에 CPU를 양보하고 성공 시 0을 반환합니다.
 파일과 프로세스 인터페이스는 여기서 설명한 부분집합입니다. 커널은 Linux의 음수 오류 번호를 반환하고 libc는 -4095~-1을 `errno`로 변환하여 -1을 반환합니다. `LOSOutputStreamRead`는 제거했습니다. 번호 10은 Linux `mprotect`용으로 비워 두며 현재는 지원하지 않습니다.
 
 `RAX`는 시스템 호출 번호와 반환값을 전달하며, 인자는 `RDI`, `RSI`, `RDX`, `R10`, `R8`, `R9`를 사용합니다. `RCX`와 `R11`은 보존하지 않습니다.
@@ -95,6 +93,9 @@ if (LOSAssetAcquire("Fonts/JetBrainsMono", &Asset) == 0)
 | `write` | 1 |
 | `open` | 2 |
 | `close` | 3 |
+| `stat` | 4 |
+| `fstat` | 5 |
+| `lstat` | 6 |
 | `mmap` | 9 |
 | `munmap` | 11 |
 | `ioctl` | 16 |
@@ -103,6 +104,9 @@ if (LOSAssetAcquire("Fonts/JetBrainsMono", &Asset) == 0)
 | `fork` | 57 |
 | `execve` | 59 |
 | `exit` | 60 |
+| `wait4` | 61 |
+| `getcwd` | 79 |
+| `chdir` | 80 |
 | `rename` | 82 |
 | `mkdir` | 83 |
 | `setuid` | 105 |
@@ -115,8 +119,6 @@ if (LOSAssetAcquire("Fonts/JetBrainsMono", &Asset) == 0)
 | `asset_publish` | 1027 |
 | `asset_acquire` | 1028 |
 | `asset_release` | 1029 |
-| `spawn (LineOS)` | 1030 |
-| `spawnv (LineOS)` | 1031 |
 | `remove (LineOS)` | 1032 |
 
 `remove`는 파일과 디렉터리를 모두 처리하므로 LineOS 전용 호출로 유지합니다. Linux의 `unlink` 또는 `rmdir`에 해당하지 않습니다.
@@ -136,9 +138,19 @@ Init은 `/dev/lsh1`을 `O_RDONLY`로 열어 FD 0에, `O_WRONLY`로 두 번 열�
 DeviceFS는 VFS의 고정 `/dev` 하위 트리로 연결되며 `getdents64`로 디렉터리를 열거합니다. 터미널 FD는 장치 동작 테이블을 사용하고 기존 큐와 상속 동작을 유지합니다. 키보드 작업자는 US 배열 키 이벤트를 터미널 입력 큐에 전달합니다. 자세한 내용은 [DeviceFS](DeviceFS.md)에 설명합니다.
 
 Terminal은 TrueType 상태, 읽기 전용 JetBrains Mono 매핑과 프레임버퍼를 소유합니다. 최대 2560 × 1440 화면에서 글자 크기 36과 줄 높이 40을 사용하고 가로 이동 폭은 폰트
-메트릭으로 계산하며 ASCII·줄바꿈·캐리지 리턴·백스페이스·스크롤을 처리합니다. 출력이 없으면 FD 3 읽기에서 잠듭니다. Shell은 libc 입출력과 LineOS `spawn`만 사용합니다. 길이를 제한한 줄
-편집, `help`, 절대 실행 경로의 비동기 실행을 제공합니다. 전경 작업 관리는 없으므로 같은 터미널을 읽는 프로그램끼리는 입력을 경쟁합니다.
+메트릭으로 계산하며 ASCII·줄바꿈·캐리지 리턴·백스페이스·스크롤을 처리합니다. 출력이 없으면 FD 3 읽기에서 잠듭니다. Shell은 libc 입출력, fork/execve와 chdir를 사용합니다. 길이를 제한한 줄
+편집, `help`, `cd [PATH]`, 상대·절대 실행 경로의 실행과 종료 대기를 제공하며 ls 내장 명령은 제공하지 않습니다. 전경 작업 관리는 없으므로 같은 터미널을 읽는 프로그램끼리는 입력을 경쟁합니다.
 
-libc는 제한된 freestanding 부분집합이며 표준 함수명이 완전한 C·POSIX 호환성을 뜻하지 않습니다. 파이프, FD 복제, `termios`, 정규 입력 모드, 시그널, 작업 제어, 프로세스 대기,
-터미널 UTF-8 렌더링과 범용 유저 할당자는 구현 범위에 포함하지 않습니다. 디스플레이와 에셋 API는 LineOS 확장입니다. 사용자 메모리 복사와 관리 주소 공간 연산은 VMM 잠금 대기 중 TLB
+libc는 제한된 freestanding 부분집합이며 표준 함수명이 완전한 C·POSIX 호환성을 뜻하지 않습니다. 파이프, FD 복제, `termios`, 정규 입력 모드, 시그널, 작업 제어,
+범용 유저 할당자는 구현 범위에 포함하지 않습니다. 디스플레이와 에셋 API는 LineOS 확장입니다. 사용자 메모리 복사와 관리 주소 공간 연산은 VMM 잠금 대기 중 TLB
 shootdown 요청을 처리하며 일시적인 잠금 경합을 잘못된 사용자 버퍼나 ELF 매핑 실패로 취급하지 않습니다.
+
+## 터미널 ANSI 색상
+
+Terminal은 read 경계에 걸쳐 SGR 색상 코드를 처리합니다. 30–37/40–47, 90–97/100–107, 38;5;N / 48;5;N(256색), 38;2;R;G;B / 48;2;R;G;B(24비트 RGB 전체)를 지원합니다. SGR 0 또는 빈 인자는 속성을 초기화하며 39/49는 기본 글자색·배경색을 복원합니다. 1/22는 기본 글자색의 밝은 색상, 7/27은 반전을 켜고 끕니다. 배경색은 글꼴 메트릭에 따른 영역과 공백에 칠합니다. 스크롤은 표시된 픽셀을 보존하고 새 영역을 현재 배경색으로 채웁니다.
+
+예를 들어 `printf("\033[38;2;145;231;57mColor\033[0m\n");`로 RGB 글자색을 지정합니다. 인자 개수와 수치 범위를 제한하고 미지원 CSI 명령과 OSC 문자열을 소비하여 제어 코드가 글자로 출력되지 않게 합니다. 이 색상 확장에는 커서 위치 이동, 화면 지우기, 밑줄, 이탤릭 등은 포함하지 않습니다. 기존 UTF-8, 글꼴, 입력, 커서와 공유 프레임버퍼 표시는 유지합니다. SGR 규약은 [XTerm 제어 코드](https://invisible-island.net/xterm/ctlseqs/ctlseqs.html)를 참고합니다.
+
+프롬프트는 원래 TTF의 굵은 ┏━와 ┗━> 글리프를 사용합니다. 배경 지우기 영역을 실제 폰트 상승 높이와 줄 높이로 계산하여 현재 줄 바깥의 연결 픽셀을 보존하며 글리프를 교체하거나 늘리지 않습니다. 가로 이동 폭은 글꼴 메트릭을 유지합니다.
+
+첫 명령어만 강조합니다. help/cd/pwd/echo에 정확히 일치하면 RGB(214,122,122), 실행과 같은 PATH 검색으로 찾은 실행 파일이면 RGB(128,184,136)입니다. 없거나 아직 찾지 못한 명령어는 흰색 RGB(255,255,255) 글씨와 RGB(255,95,95) 배경으로 표시합니다. 뒤의 인자는 기본 흰색입니다. 분류가 바뀌면 CR/CSI 2 K로 다시 칠하며 일반 입력과 한글 조합은 점진적으로 표시하고 출력 전에는 속성을 초기화합니다. 외부 명령의 인자는 공백으로 구분해 최대 64개를 전달하며 따옴표·이스케이프 해석은 미구현입니다.

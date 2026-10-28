@@ -155,7 +155,7 @@ STATIC INT64 FramebufferMap(TASK *Task, VOID *State, UINT64 Length, UINT64 Prote
         return -ENODEV;
     }
     UINT64 Size = ((UINT64) GPU->FrameBufferWidth * GPU->FrameBufferHeight * 4 + 4095) & ~4095ULL;
-    if (Offset >= Size || Length > Size - Offset)
+    if (((UINT64) GPU->FrameBuffer & 4095) != 0 || Length == 0 || Length > UINT64_MAX - 4095 || (Offset & 4095) != 0 || Offset >= Size || ((Length + 4095) & ~4095ULL) > Size - Offset)
     {
         return -EINVAL;
     }

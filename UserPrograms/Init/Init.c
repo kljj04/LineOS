@@ -7,7 +7,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <spawn.h>
 #include <stdio.h>
 
 #define INIT_MAX_FONT_SIZE (8U * 1024U * 1024U)
@@ -127,16 +126,39 @@ INT32 _Start(VOID)
 
     INT32 Master = open("/dev/lsh1-master", O_RDWR);
 
-    if (Master != 3 || spawn("/sbin/Terminal.lix") < 0)
+    if (Master != 3)
     {
-        puts("Init: Terminal spawn failed");
+        puts("Init: terminal master open failed");
+        exit(1);
+    }
+    pid_t Terminal = fork();
+    if (Terminal == 0)
+    {
+        char *Arguments[] = {"/sbin/Terminal.lix", NULL};
+        char *Environment[] = {NULL};
+        execve(Arguments[0], Arguments, Environment);
+        puts("Init: Terminal execve failed");
+        exit(127);
+    }
+    if (Terminal < 0)
+    {
+        puts("Init: Terminal fork failed");
         exit(1);
     }
     close(Master);
 
-    if (spawn("/sbin/Login.lix") < 0)
+    pid_t Login = fork();
+    if (Login == 0)
     {
-        printf("Init: Login spawn failed\n");
+        char *Arguments[] = {"/sbin/Login.lix", NULL};
+        char *Environment[] = {NULL};
+        execve(Arguments[0], Arguments, Environment);
+        puts("Init: Login execve failed");
+        exit(127);
+    }
+    if (Login < 0)
+    {
+        puts("Init: Login fork failed");
         exit(1);
     }
 

@@ -5,6 +5,10 @@
 #include <LOSLibC/TypeInfo.h>
 #include <TrueType/TrueTypeEngine.h>
 #include <Display.h>
+#include <ANSI.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
 #include <unistd.h>
 #include <Asset.h>
 #include <stdio.h>
@@ -16,10 +20,10 @@
 #define TERMINAL_ALLOCATOR_CAPACITY (8U * 1024U * 1024U)
 #define TERMINAL_FONT_HEIGHT        36U
 #define TERMINAL_LINE_HEIGHT        40U
-#define TERMINAL_CURSOR_WIDTH       5U
-#define TERMINAL_CURSOR_HEIGHT      30U
+#define TERMINAL_CURSOR_WIDTH       15U
+#define TERMINAL_CURSOR_HEIGHT      40U
 #define TERMINAL_MARGIN             8U
-#define TERMINAL_BACKGROUND         0x00101820U
+#define TERMINAL_BACKGROUND         0x001E1E1EU
 #define TERMINAL_FOREGROUND         0x00FFFFFFU
 
 typedef struct
@@ -40,9 +44,12 @@ typedef struct
 STATIC TERMINAL_GLYPH Glyphs[128];
 STATIC TERMINAL_CELL  LineCells[TERMINAL_MAX_WIDTH];
 
-STATIC UINT32 FrameBuffer[TERMINAL_MAX_WIDTH * TERMINAL_MAX_HEIGHT];
-STATIC UINT8  AllocatorBuffer[TERMINAL_ALLOCATOR_CAPACITY];
-STATIC UINTN  AllocatorUsed;
+STATIC INT32   FramebufferFD = -1;
+STATIC UINT32 *MappedBuffer;
+STATIC UINT32  FrameBuffer[TERMINAL_MAX_WIDTH * TERMINAL_MAX_HEIGHT];
+STATIC UINT8   AllocatorBuffer[TERMINAL_ALLOCATOR_CAPACITY];
+STATIC UINTN   AllocatorUsed;
+STATIC UINT32  CellAscent = TERMINAL_FONT_HEIGHT;
 
 STATIC VOID *TerminalAllocate(UINTN Size, VOID *Context)
 {
@@ -75,7 +82,7 @@ STATIC VOID TerminalFree(VOID *Pointer, VOID *Context)
     (VOID) Context;
 }
 
-STATIC VOID TerminalNewLine(DISPLAY_INFO *Info, UINT32 *X, UINT32 *Baseline)
+STATIC VOID TerminalNewLine(DISPLAY_INFO *Info, UINT32 *X, UINT32 *Baseline, UINT32 Background)
 {
     *X = TERMINAL_MARGIN;
     *Baseline += TERMINAL_LINE_HEIGHT;
@@ -88,14 +95,14 @@ STATIC VOID TerminalNewLine(DISPLAY_INFO *Info, UINT32 *X, UINT32 *Baseline)
 
         for (UINTN Index = Rows * Info->Width; Index < (UINTN) Info->Height * Info->Width; Index++)
         {
-            FrameBuffer[Index] = TERMINAL_BACKGROUND;
+            FrameBuffer[Index] = Background;
         }
 
         *Baseline -= TERMINAL_LINE_HEIGHT;
     }
 }
 
-STATIC VOID TerminalErase(DISPLAY_INFO *Info, TERMINAL_GLYPH *Glyph, UINT32 X, UINT32 Baseline)
+STATIC VOID TerminalErase(DISPLAY_INFO *Info, TERMINAL_GLYPH *Glyph, UINT32 X, UINT32 Baseline, UINT32 Background)
 {
     INT64 Left = (INT64) X + Glyph->Left;
     INT64 Right = (INT64) X + Glyph->Right;
@@ -118,11 +125,29 @@ STATIC VOID TerminalErase(DISPLAY_INFO *Info, TERMINAL_GLYPH *Glyph, UINT32 X, U
     {
         Bottom = Info->Height;
     }
+    INT64 CellTop = (INT64) Baseline - CellAscent;
+    INT64 CellBottom = CellTop + TERMINAL_LINE_HEIGHT;
+    if (Top < CellTop)
+    {
+        Top = CellTop;
+    }
+    if (Bottom > CellBottom)
+    {
+        Bottom = CellBottom;
+    }
+    if (Top < 0)
+    {
+        Top = 0;
+    }
+    if (Bottom > Info->Height)
+    {
+        Bottom = Info->Height;
+    }
     for (INT64 Row = Top; Row < Bottom; Row++)
     {
         for (INT64 Column = Left; Column < Right; Column++)
         {
-            FrameBuffer[(UINTN) Row * Info->Width + Column] = TERMINAL_BACKGROUND;
+            FrameBuffer[(UINTN) Row * Info->Width + Column] = Background;
         }
     }
 }
@@ -210,7 +235,7 @@ STATIC TRUE_TYPE_FONT *TerminalMeasure(TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fal
 STATIC INT64 TerminalPresent(DISPLAY_INFO *Info, UINT32 X, UINT32 Baseline)
 {
     UINT32 Saved[TERMINAL_CURSOR_WIDTH * TERMINAL_CURSOR_HEIGHT];
-    UINT32 Top = Baseline - TERMINAL_CURSOR_HEIGHT + 5U;
+    UINT32 Top = Baseline - TERMINAL_CURSOR_HEIGHT + 12U;
     UINTN  Count = 0;
 
     for (UINT32 Row = Top; Row < Top + TERMINAL_CURSOR_HEIGHT && Row < Info->Height; Row++)
@@ -223,7 +248,8 @@ STATIC INT64 TerminalPresent(DISPLAY_INFO *Info, UINT32 X, UINT32 Baseline)
         }
     }
 
-    INT64 Result = DisplayPresent(FrameBuffer, (UINT64) Info->Width * Info->Height * sizeof(UINT32));
+    memcpy(MappedBuffer, FrameBuffer, (UINT64) Info->Width * Info->Height * sizeof(UINT32));
+    INT64 Result = ioctl(FramebufferFD, LOS_FBIO_FLUSH);
     Count = 0;
     for (UINT32 Row = Top; Row < Top + TERMINAL_CURSOR_HEIGHT && Row < Info->Height; Row++)
     {
@@ -250,10 +276,32 @@ INT32 _Start(VOID)
     UINT32            Cursor = 0;
     UINT32            LineLength = 0;
     TERMINAL_UTF8     Decoder = {0};
+    TERMINAL_ANSI     ANSI;
+    TerminalANSIInit(&ANSI, TERMINAL_FOREGROUND, TERMINAL_BACKGROUND);
 
-    if (DisplayGetInfo(&Info) < 0 || Info.Width < TERMINAL_MARGIN * 2U + TERMINAL_FONT_HEIGHT || Info.Height < TERMINAL_LINE_HEIGHT * 2U || Info.Width > TERMINAL_MAX_WIDTH || Info.Height > TERMINAL_MAX_HEIGHT || Info.Format != DISPLAY_FORMAT_BGRA8888 || LOSAssetAcquire("Fonts/JetBrainsMono", &FontAsset) != 0 || LOSAssetAcquire("Fonts/Pretendard", &FallbackAsset) != 0)
+    FB_VAR_SCREENINFO Variable;
+    FB_FIX_SCREENINFO Fixed;
+    FramebufferFD = open("/dev/fb0", O_RDWR);
+    if (FramebufferFD < 0 || ioctl(FramebufferFD, FBIOGET_VSCREENINFO, &Variable) < 0 || ioctl(FramebufferFD, FBIOGET_FSCREENINFO, &Fixed) < 0 || Variable.BitsPerPixel != 32 || Variable.Red.Offset != 16 || Variable.Green.Offset != 8 || Variable.Blue.Offset != 0 || Variable.Red.Length != 8 || Variable.Green.Length != 8 || Variable.Blue.Length != 8 || Fixed.LineLength != (UINT64) Variable.XRes * sizeof(UINT32) || Fixed.SmemLen != (UINT64) Fixed.LineLength * Variable.YRes)
+    {
+        puts("Terminal: framebuffer initialization failed");
+        exit(1);
+    }
+    Info.Width = Variable.XRes;
+    Info.Height = Variable.YRes;
+    Info.Pitch = Fixed.LineLength;
+    Info.Format = DISPLAY_FORMAT_BGRA8888;
+
+    if (Info.Width < TERMINAL_MARGIN * 2U + TERMINAL_FONT_HEIGHT || Info.Height < TERMINAL_LINE_HEIGHT * 2U || Info.Width > TERMINAL_MAX_WIDTH || Info.Height > TERMINAL_MAX_HEIGHT || Info.Format != DISPLAY_FORMAT_BGRA8888 || LOSAssetAcquire("Fonts/JetBrainsMono", &FontAsset) != 0 || LOSAssetAcquire("Fonts/Pretendard", &FallbackAsset) != 0)
     {
         puts("Terminal: initialization failed");
+        exit(1);
+    }
+
+    MappedBuffer = mmap(NULL, Fixed.SmemLen, PROT_READ | PROT_WRITE, MAP_SHARED, FramebufferFD, 0);
+    if (MappedBuffer == MAP_FAILED)
+    {
+        puts("Terminal: framebuffer mapping failed");
         exit(1);
     }
 
@@ -268,6 +316,11 @@ INT32 _Start(VOID)
     }
 
     FLOAT32 Scale = ScaleForPixelHeight(&Font.Info, TERMINAL_FONT_HEIGHT);
+    INT32   Ascent;
+    INT32   Descent;
+    INT32   LineGap;
+    GetFontVMetrics(&Font.Info, &Ascent, &Descent, &LineGap);
+    CellAscent = (UINT32) TTFFloor(Ascent * Scale + 0.5f);
 
     for (UINT32 Character = 32; Character < 127; Character++)
     {
@@ -304,6 +357,18 @@ INT32 _Start(VOID)
 
         for (ssize_t Index = 0; Index < Count; Index++)
         {
+            if (TerminalANSIConsume(&ANSI, (UINT8) Buffer[Index]))
+            {
+                Decoder.Remaining = 0;
+                if (ANSI.EraseLine)
+                {
+                    TERMINAL_GLYPH Row = {0, 0, -(INT32) CellAscent, (INT32) Info.Width, (INT32) TERMINAL_LINE_HEIGHT - (INT32) CellAscent};
+                    TerminalErase(&Info, &Row, 0, Baseline, TerminalANSIBackground(&ANSI));
+                    LineLength = Cursor;
+                    ANSI.EraseLine = FALSE;
+                }
+                continue;
+            }
             UINT32  Character;
             BOOLEAN Retry;
             if (!TerminalDecode(&Decoder, (UINT8) Buffer[Index], &Character, &Retry))
@@ -317,7 +382,7 @@ INT32 _Start(VOID)
 
             if (Character == '\n')
             {
-                TerminalNewLine(&Info, &X, &Baseline);
+                TerminalNewLine(&Info, &X, &Baseline, TerminalANSIBackground(&ANSI));
                 Cursor = 0;
                 LineLength = 0;
             }
@@ -342,15 +407,32 @@ INT32 _Start(VOID)
 
                 if ((X + Extent > Info.Width - TERMINAL_MARGIN && X != TERMINAL_MARGIN) || Cursor == TERMINAL_MAX_WIDTH)
                 {
-                    TerminalNewLine(&Info, &X, &Baseline);
+                    TerminalNewLine(&Info, &X, &Baseline, TerminalANSIBackground(&ANSI));
                     Cursor = 0;
                     LineLength = 0;
                 }
                 if (Cursor < LineLength)
                 {
                     TERMINAL_CELL *Cell = &LineCells[Cursor];
-                    TerminalErase(&Info, &Cell->Glyph, Cell->X, Baseline);
+                    TerminalErase(&Info, &Cell->Glyph, Cell->X, Baseline, TerminalANSIBackground(&ANSI));
                 }
+                if (Measured.Left > 0)
+                {
+                    Measured.Left = 0;
+                }
+                if (Measured.Right < (INT32) Measured.Advance)
+                {
+                    Measured.Right = (INT32) Measured.Advance;
+                }
+                if (Measured.Top > -(INT32) CellAscent)
+                {
+                    Measured.Top = -(INT32) CellAscent;
+                }
+                if (Measured.Bottom < (INT32) TERMINAL_LINE_HEIGHT - (INT32) CellAscent)
+                {
+                    Measured.Bottom = (INT32) TERMINAL_LINE_HEIGHT - (INT32) CellAscent;
+                }
+                TerminalErase(&Info, &Measured, X, Baseline, TerminalANSIBackground(&ANSI));
                 LineCells[Cursor].X = X;
                 LineCells[Cursor].Glyph = Measured;
                 Cursor++;
@@ -359,7 +441,7 @@ INT32 _Start(VOID)
                     LineLength = Cursor;
                 }
                 AllocatorUsed = 0;
-                X = DrawTrueTypeCodepoint(DrawFont, Character, X, Baseline, TERMINAL_FOREGROUND, TERMINAL_FONT_HEIGHT);
+                X = DrawTrueTypeCodepoint(DrawFont, Character, X, Baseline, TerminalANSIForeground(&ANSI), TERMINAL_FONT_HEIGHT);
             }
         }
 
@@ -369,3 +451,4 @@ INT32 _Start(VOID)
         }
     }
 }
+

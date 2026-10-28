@@ -394,6 +394,7 @@ RunMain()
             return 0
             ;;
         build)
+            local BuildProgram="${2:-}"
             UIHeader
 
             if ! ConfigLoad; then

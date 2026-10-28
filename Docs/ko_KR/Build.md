@@ -32,7 +32,7 @@
 | `-m`, `-mount`       | 기존 이미지의 EFI·루트 파티션을 마운트하며 빌드나 파일 갱신은 하지 않습니다  |
 | `-u`, `-umount`      | 관리 EFI·루트 마운트와 loop 연결을 해제합니다                                |
 | `-qemu`              | 마운트 해제 → QEMU → 재마운트입니다. 빌드·이미지 갱신은 하지 않습니다        |
-| `-clean`             | 빌드 오브젝트와 두 부팅 결과물을 제거합니다. 디스크 이미지는 보존합니다      |
+| `-clean`             | 빌드 오브젝트·프로그램 결과물과 두 부팅 결과물을 제거합니다. 디스크 이미지는 보존합니다      |
 | `-format`            | 번들 EDK2를 제외한 프로젝트 C·헤더 소스를 직접 정렬합니다                    |
 | `-h`, `--help`       | 도움말을 표시합니다                                                          |
 
@@ -44,10 +44,32 @@ Node.js 화면 없이 직접 빌드할 때는 다음 명령을 사용합니다.
 make -f Makefiles/Makefile -j1
 ```
 
-결과물에는 `LineOS/EFI/BOOT/BOOTX64.EFI`, `LineOS/KERNEL/LINEOS_KERNEL.ELF`, `LineOS/Programs/<ProgramName>.lix`,
-`Build/Libraries/libtruetype.a`와 `Build/Libraries/liblosc.a`가 포함됩니다. 오브젝트와 의존성 파일은 `Build/Objects/`에 생성합니다.
-`UserPrograms/` 바로 아래 디렉터리 이름을 프로그램 이름으로 사용하고 그 아래 C·어셈블리 소스를 정적 ELF64 실행 파일로 링크합니다. 빌드만으로 이미지 내부 파일을 갱신하거나 QEMU를 실행하지는
-않습니다.
+결과물에는 `LineOS/EFI/BOOT/BOOTX64.EFI`, `LineOS/KERNEL/LINEOS_KERNEL.ELF`,
+`LineOS/Programs/<프로그램 상대 경로>/<디렉터리명>.lix`가 포함됩니다. 오브젝트와 의존성 파일은 `Build/Objects/`에 생성합니다.
+`UserPrograms/`를 재귀 탐색하여 `Program.cfg`가 있는 디렉터리를 프로그램 루트로 인식합니다. 전체 상대 경로로 구분하며,
+하위 프로그램 루트의 소스는 부모 프로그램에 포함하지 않습니다. 실행 파일은 정적 ELF64 형식을 유지합니다.
+
+```ini
+CopyPath = /sbin/
+Dependencies = TrueType, UserDB
+Enable = true
+```
+
+키·값·쉼표 주변 공백을 허용합니다. 생략 시 `CopyPath=/bin/`, 빈 의존성 목록, `Enable=true`를 사용합니다.
+LOSLibC는 항상 링크하며 선택 가능한 라이브러리 이름은 `TrueType`, `UserDB`, `LOSLibC`입니다.
+알 수 없는 키·의존성, 중복 키, 잘못된 값은 오류로 처리합니다. `Enable=false`는 빌드와 배포에서 제외합니다.
+이미 설치된 파일을 자동 삭제하지는 않습니다.
+
+```bash
+./Scripts/Run.sh -build System/Shell
+make -f Makefiles/Makefile -j1 UserProgram Program=System/Shell
+```
+
+위 명령은 선택한 활성 프로그램과 필요한 라이브러리만 빌드합니다. 설치 경로는 `CopyPath/<디렉터리명>.lix`입니다.
+모든 활성 프로그램 및 폰트의 설치 경로에 대해 동일 경로와 상하위 경로 충돌을 디스크 복사 전에 검사합니다.
+전체·개별 빌드마다 `LineOS/Programs/`를 먼저 비우고 대상 실행 파일을 다시 링크합니다. 오브젝트와 라이브러리는 증분 빌드를 유지합니다.
+개별 빌드 후에는 선택한 프로그램의 실행 파일만 남습니다. 현재 활성 설정에 대응하는 결과물만 복사하며 `-clean`은 오래된 결과물을 포함하여 `LineOS/Programs/`도 삭제합니다.
+빌드만으로 이미지 내부 파일을 갱신하거나 QEMU를 실행하지는 않습니다.
 
 ## 설정 파일과 현재 값
 

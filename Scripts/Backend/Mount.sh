@@ -267,48 +267,7 @@ MountOpen()
     printf 'Root mounted at: %s\n' "$MountBase/Root"
 )
 
-MountProgramPath()
-{
-    local Program="$1"
-    local Config="$MountRoot/UserPrograms/$Program/Program.cfg"
-    local Line Value="/bin/"
-    local Seen=0
-
-    if [[ ! "$Program" =~ ^[A-Za-z0-9_-]+$ || ! -d "$MountRoot/UserPrograms/$Program" || -L "$MountRoot/UserPrograms/$Program" ]]; then
-        printf 'Invalid program directory: %s\n' "$Program" >&2
-        return 1
-    fi
-
-    if [[ -e "$Config" || -L "$Config" ]]; then
-        if [[ ! -f "$Config" || -L "$Config" || ! -r "$Config" ]]; then
-            return 1
-        fi
-
-        while IFS= read -r Line || [[ -n "$Line" ]]; do
-            Line=${Line%$'\r'}
-            if [[ -z "$Line" || "$Line" == \#* ]]; then
-                continue
-            fi
-            if [[ "$Line" != CopyPath=* || "$Seen" == 1 ]]; then
-                printf 'Invalid program configuration: %s\n' "$Config" >&2
-                return 1
-            fi
-            Value=${Line#CopyPath=}
-            Seen=1
-        done < "$Config"
-
-        if (( Seen == 0 )); then
-            return 1
-        fi
-    fi
-
-    if [[ ! "$Value" =~ ^/([A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]*$ || "$Value" == *//* || "/${Value#/}/" == */../* || "/${Value#/}/" == */./* ]]; then
-        printf 'Invalid CopyPath: %s\n' "$Value" >&2
-        return 1
-    fi
-
-    printf '%s\n' "$Value"
-}
+source "$MountDir/Programs.sh"
 
 MountProgramCopy()
 {
@@ -417,31 +376,25 @@ MountUpdate()
         return 1
     fi
 
-    shopt -s nullglob
-    for ProgramFile in "$ProgramsDir"/*.lix; do
-        Program=${ProgramFile##*/}
-        Program=${Program%.lix}
-        if [[ ! -e "$MountRoot/UserPrograms/$Program" && ! -L "$MountRoot/UserPrograms/$Program" ]]; then
-            printf 'Skipping stale user program: %s\n' "$ProgramFile"
-            continue
-        fi
-        ProgramFiles+=("$ProgramFile")
-    done
-
-    if (( ${#ProgramFiles[@]} == 0 )); then
-        printf 'No user programs found in: %s\n' "$ProgramsDir" >&2
+    local Manifest Dependencies Sources Destination
+    local -A Destinations=()
+    if ! Manifest=$(ProgramManifest "$MountRoot"); then
         return 1
     fi
-
-    for ProgramFile in "${ProgramFiles[@]}"; do
-        Program=${ProgramFile##*/}
-        Program=${Program%.lix}
-        if ! CopyPath=$(MountProgramPath "$Program"); then
+    while IFS='|' read -r Program CopyPath Dependencies Sources; do
+        [[ -z "$Program" ]] && continue
+        ProgramFile="$ProgramsDir/$Program/${Program##*/}.lix"
+        if [[ -L "$ProgramFile" || ! -f "$ProgramFile" || ! -r "$ProgramFile" ]]; then
+            printf 'Missing or invalid program output: %s\n' "$ProgramFile" >&2
             return 1
         fi
+        Destination="${CopyPath%/}/${Program##*/}.lix"
+        Destinations[$Destination]=1
+        ProgramFiles+=("$ProgramFile")
         ProgramPaths+=("$CopyPath")
-    done
+    done <<< "$Manifest"
 
+    shopt -s nullglob
     FontFiles=("$MountRoot"/Assets/Fonts/*.ttf)
     if (( ${#FontFiles[@]} == 0 )); then
         printf 'No TTF fonts found in: %s\n' "$MountRoot/Assets/Fonts" >&2
@@ -453,6 +406,12 @@ MountUpdate()
             printf 'Invalid font file: %s\n' "$FontFile" >&2
             return 1
         fi
+    done
+
+    for FontFile in "${FontFiles[@]}"; do
+        Destination="/sys/fonts/${FontFile##*/}"
+        ProgramDestinationCheck "$Destination" "${!Destinations[@]}" || return 1
+        Destinations[$Destination]=1
     done
 
     for Command in sudo losetup findmnt mount umount mktemp install stat; do

@@ -1,13 +1,14 @@
-// Kernel/Source/Syscall/SyscallSpawn.c
+// Kernel/Source/Syscall/SyscallProcess.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <Syscall/SyscallSpawn.h>
+#include <Syscall/SyscallProcess.h>
 #include <Syscall/SyscallError.h>
 #include <Syscall/SyscallMemory.h>
 #include <Syscall/SyscallFile.h>
 #include <Scheduler/LBPWRR.h>
 #include <Scheduler/Task.h>
+#include <Scheduler/WaitQueue.h>
 #include <Exec/ELF64.h>
 #include <Memory/PMM.h>
 #include <Debug/Debug.h>
@@ -16,46 +17,67 @@
 STATIC_ASSERT(sizeof(TASK_CONTEXT) == sizeof(INTERRUPT_FRAME), "fork context size");
 STATIC_ASSERT(__builtin_offsetof(TASK_CONTEXT, RIP) == __builtin_offsetof(INTERRUPT_FRAME, RIP) && __builtin_offsetof(TASK_CONTEXT, RAX) == __builtin_offsetof(INTERRUPT_FRAME, RAX) && __builtin_offsetof(TASK_CONTEXT, RSP) == __builtin_offsetof(INTERRUPT_FRAME, RSP), "fork context offsets");
 
-#define SPAWN_LIMIT           16U
-#define SPAWN_EXECUTION_PAGES ((sizeof(ELF64_EXECUTION) + 4095U) / 4096U)
+#define PROCESS_LIMIT           16U
+#define PROCESS_EXECUTION_PAGES ((sizeof(ELF64_EXECUTION) + 4095U) / 4096U)
 
 typedef struct
 {
     ELF64_EXECUTION *Execution;
-} SPAWN_SLOT;
+    UINT16           ParentPID;
+    BOOLEAN          Exited;
+    BOOLEAN          Waited;
+    INT32            Status;
+} PROCESS_SLOT;
 
-STATIC SPAWN_SLOT SpawnSlots[SPAWN_LIMIT];
-STATIC UINT32     ProcessBusy;
+STATIC PROCESS_SLOT ProcessSlots[PROCESS_LIMIT];
+STATIC UINT32       ProcessBusy;
+STATIC SPIN_LOCK    ProcessLock;
+STATIC WAIT_QUEUE   ProcessWaiters;
 
 STATIC BOOLEAN ProcessBegin(VOID)
 {
-    UINT32 Expected = 0;
-    return ATOMIC_COMPARE_EXCHANGE(&ProcessBusy, &Expected, 1, FALSE, ATOMIC_ACQUIRE, ATOMIC_RELAXED);
+    UINT64 Flags = SpinLockAcquireIRQSave(&ProcessLock);
+    while (ProcessBusy != 0)
+    {
+        if (!WaitQueueSleep(&ProcessWaiters, &ProcessLock))
+        {
+            SpinLockReleaseIRQRestore(&ProcessLock, Flags);
+            return FALSE;
+        }
+    }
+    ProcessBusy = 1;
+    SpinLockReleaseIRQRestore(&ProcessLock, Flags);
+    return TRUE;
 }
 
 STATIC INT64 ProcessEnd(INT64 Result)
 {
-    ATOMIC_STORE(&ProcessBusy, 0, ATOMIC_RELEASE);
+    UINT64 Flags = SpinLockAcquireIRQSave(&ProcessLock);
+    ProcessBusy = 0;
+    WaitQueueWakeAll(&ProcessWaiters);
+    SpinLockReleaseIRQRestore(&ProcessLock, Flags);
     return Result;
 }
 
-STATIC SPAWN_SLOT *SpawnReserve(VOID)
+STATIC PROCESS_SLOT *ProcessReserve(VOID)
 {
-    for (UINT32 Index = 0; Index < SPAWN_LIMIT; Index++)
+    for (UINT32 Index = 0; Index < PROCESS_LIMIT; Index++)
     {
-        SPAWN_SLOT      *Slot = &SpawnSlots[Index];
+        PROCESS_SLOT    *Slot = &ProcessSlots[Index];
         ELF64_EXECUTION *Execution = Slot->Execution;
-        if (Execution != NULL && Execution->Task != NULL && (!Execution->Task->Scheduled || LBPWRRRemoveTask(Execution->Task)) && ELF64Release(Execution))
+        TASK            *Parent = Slot->ParentPID != 0 ? TaskGetByPID(Slot->ParentPID) : NULL;
+        BOOLEAN          Retained = !Slot->Waited && Parent != NULL && Parent->State != TASK_TERMINATED && Parent->State != TASK_KILLED;
+        if (!Retained && Execution != NULL && Execution->Task != NULL && (!Execution->Task->Scheduled || LBPWRRRemoveTask(Execution->Task)) && ELF64Release(Execution))
         {
-            KMemFreePages(Execution, SPAWN_EXECUTION_PAGES);
-            Slot->Execution = NULL;
+            KMemFreePages(Execution, PROCESS_EXECUTION_PAGES);
+            KMemSet(Slot, 0, sizeof(*Slot));
         }
     }
-    for (UINT32 Index = 0; Index < SPAWN_LIMIT; Index++)
+    for (UINT32 Index = 0; Index < PROCESS_LIMIT; Index++)
     {
-        if (SpawnSlots[Index].Execution == NULL)
+        if (ProcessSlots[Index].Execution == NULL)
         {
-            return &SpawnSlots[Index];
+            return &ProcessSlots[Index];
         }
     }
     return NULL;
@@ -111,73 +133,6 @@ STATIC INT64 ProcessCopyArguments(TASK *Task, UINT64 Vector, ELF64_ARGUMENTS *Ar
     return -E2BIG;
 }
 
-STATIC INT64 SpawnExecute(UINT64 Path, UINT64 Argv)
-{
-    TASK  *Task = LBPWRRGetCurrentTask();
-    CHAR8 *Name;
-    if (Task == NULL || Task->AddressSpace == NULL || Task->FileContext == NULL)
-    {
-        return -ESRCH;
-    }
-    INT64 Error = SyscallCopyPath(Task, Path, &Name);
-    if (Error < 0)
-    {
-        return Error;
-    }
-    ELF64_ARGUMENTS *Arguments = KAlloc(sizeof(*Arguments));
-    if (Arguments == NULL)
-    {
-        KFree(Name);
-        return -ENOMEM;
-    }
-    Error = ProcessCopyArguments(Task, Argv, Arguments);
-    SPAWN_SLOT *Slot = Error == 0 ? SpawnReserve() : NULL;
-    if (Error == 0 && Slot == NULL)
-    {
-        Error = -EAGAIN;
-    }
-    ELF64_EXECUTION *Execution = Error == 0 ? KAllocPages(SPAWN_EXECUTION_PAGES) : NULL;
-    if (Error == 0 && Execution == NULL)
-    {
-        Error = -ENOMEM;
-    }
-    if (Error == 0)
-    {
-        if (ELF64ExecuteArguments(Task->FileContext, Name, Arguments, Execution))
-        {
-            Slot->Execution = Execution;
-            Error = Execution->Task->PID;
-            DebugWriteLine("spawn: scheduled");
-        }
-        else
-        {
-            Error = Execution->Error != 0 ? Execution->Error : -ENOEXEC;
-            KMemFreePages(Execution, SPAWN_EXECUTION_PAGES);
-        }
-    }
-    KFree(Arguments);
-    KFree(Name);
-    return Error;
-}
-
-INT64 SyscallSpawn(UINT64 Path)
-{
-    if (!ProcessBegin())
-    {
-        return -EAGAIN;
-    }
-    return ProcessEnd(SpawnExecute(Path, 0));
-}
-
-INT64 SyscallSpawnV(UINT64 Path, UINT64 Argv)
-{
-    if (!ProcessBegin())
-    {
-        return -EAGAIN;
-    }
-    return ProcessEnd(SpawnExecute(Path, Argv));
-}
-
 STATIC VOID ForkUnusedEntry(VOID) {}
 
 INT64 SyscallFork(INTERRUPT_FRAME *Frame)
@@ -193,7 +148,7 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
     {
         return ProcessEnd(-ESRCH);
     }
-    SPAWN_SLOT *Slot = SpawnReserve();
+    PROCESS_SLOT *Slot = ProcessReserve();
     if (Slot == NULL)
     {
         return ProcessEnd(-EAGAIN);
@@ -203,13 +158,13 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
         return ProcessEnd(-EAGAIN);
     }
     VMM_USER_PAGE   *Pages = KAlloc(Count * sizeof(*Pages));
-    ELF64_EXECUTION *Execution = KAllocPages(SPAWN_EXECUTION_PAGES);
+    ELF64_EXECUTION *Execution = KAllocPages(PROCESS_EXECUTION_PAGES);
     if (Pages == NULL || Execution == NULL)
     {
         if (Pages != NULL)
             KFree(Pages);
         if (Execution != NULL)
-            KMemFreePages(Execution, SPAWN_EXECUTION_PAGES);
+            KMemFreePages(Execution, PROCESS_EXECUTION_PAGES);
         return ProcessEnd(-ENOMEM);
     }
     if (!VMMListUserPages(Parent->AddressSpace, Pages, Count, &Count) || !VMMCreateAddressSpace(&Execution->AddressSpace))
@@ -259,6 +214,10 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
         goto Failed;
     }
     Slot->Execution = Execution;
+    Slot->ParentPID = Parent->PID;
+    Slot->Exited = FALSE;
+    Slot->Waited = FALSE;
+    Slot->Status = 0;
     Result = Child->PID;
     if (!LBPWRRAddTask(Child))
     {
@@ -277,7 +236,7 @@ Failed:
     {
         Panic(L"fork cleanup failed");
     }
-    KMemFreePages(Execution, SPAWN_EXECUTION_PAGES);
+    KMemFreePages(Execution, PROCESS_EXECUTION_PAGES);
     KFree(Pages);
     return ProcessEnd(Result);
 }
@@ -300,14 +259,14 @@ INT64 SyscallExecVE(INTERRUPT_FRAME *Frame)
         return ProcessEnd(Result);
     }
     ELF64_ARGUMENTS *Arguments = KAlloc(sizeof(*Arguments) * 2);
-    ELF64_EXECUTION *New = KAllocPages(SPAWN_EXECUTION_PAGES);
+    ELF64_EXECUTION *New = KAllocPages(PROCESS_EXECUTION_PAGES);
     if (Arguments == NULL || New == NULL)
     {
         KFree(Name);
         if (Arguments != NULL)
             KFree(Arguments);
         if (New != NULL)
-            KMemFreePages(New, SPAWN_EXECUTION_PAGES);
+            KMemFreePages(New, PROCESS_EXECUTION_PAGES);
         return ProcessEnd(-ENOMEM);
     }
     Result = ProcessCopyArguments(Task, Frame->RSI, Arguments);
@@ -370,8 +329,93 @@ INT64 SyscallExecVE(INTERRUPT_FRAME *Frame)
     {
         Panic(L"execve cleanup failed");
     }
-    KMemFreePages(New, SPAWN_EXECUTION_PAGES);
+    KMemFreePages(New, PROCESS_EXECUTION_PAGES);
     KFree(Arguments);
     KFree(Name);
     return ProcessEnd(Result);
+}
+
+VOID SyscallProcessExit(TASK *Task, UINT64 Code)
+{
+    if (!ProcessBegin())
+    {
+        return;
+    }
+    for (UINT32 Index = 0; Index < PROCESS_LIMIT; Index++)
+    {
+        PROCESS_SLOT *Slot = &ProcessSlots[Index];
+        if (Slot->Execution != NULL && Slot->Execution->Task == Task)
+        {
+            Slot->Status = (INT32) ((Code & 255) << 8);
+            Slot->Exited = TRUE;
+            break;
+        }
+    }
+    ProcessEnd(0);
+}
+
+INT64 SyscallWait4(INT64 PID, UINT64 Status, UINT64 Options, UINT64 Usage)
+{
+    TASK *Parent = LBPWRRGetCurrentTask();
+    if (Parent == NULL || Parent->AddressSpace == NULL)
+    {
+        return -ESRCH;
+    }
+    if ((Options & ~1ULL) != 0)
+    {
+        return -EINVAL;
+    }
+    if (Usage != 0 || PID == 0 || PID < -1)
+    {
+        return -EOPNOTSUPP;
+    }
+    for (;;)
+    {
+        if (!ProcessBegin())
+        {
+            return -EINTR;
+        }
+        BOOLEAN Found = FALSE;
+        for (UINT32 Index = 0; Index < PROCESS_LIMIT; Index++)
+        {
+            PROCESS_SLOT *Slot = &ProcessSlots[Index];
+            if (Slot->Execution == NULL || Slot->Execution->Task == NULL || Slot->ParentPID != Parent->PID || Slot->Waited)
+            {
+                continue;
+            }
+            TASK *Child = Slot->Execution->Task;
+            if (PID != -1 && PID != Child->PID)
+            {
+                continue;
+            }
+            Found = TRUE;
+            if (Slot->Exited || Child->State == TASK_TERMINATED || Child->State == TASK_KILLED)
+            {
+                INT32 Code = Slot->Exited ? Slot->Status : Child->State == TASK_KILLED ? 9 : 0;
+                if (Status != 0 && !VMMCopyToUser(Parent->AddressSpace, Status, &Code, sizeof(Code)))
+                {
+                    return ProcessEnd(-EFAULT);
+                }
+                Slot->Waited = TRUE;
+                return ProcessEnd(Child->PID);
+            }
+        }
+        if (!Found)
+        {
+            return ProcessEnd(-ECHILD);
+        }
+        if ((Options & 1) != 0)
+        {
+            return ProcessEnd(0);
+        }
+        UINT64 Flags = SpinLockAcquireIRQSave(&ProcessLock);
+        ProcessBusy = 0;
+        WaitQueueWakeAll(&ProcessWaiters);
+        BOOLEAN Slept = WaitQueueSleep(&ProcessWaiters, &ProcessLock);
+        SpinLockReleaseIRQRestore(&ProcessLock, Flags);
+        if (!Slept)
+        {
+            return -EINTR;
+        }
+    }
 }
