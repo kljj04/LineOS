@@ -982,3 +982,40 @@ BOOLEAN EXT2Touch(EXT2_VOLUME *Volume, UINT32 Number, UINT32 Time)
     EXT2Abort(Volume);
     return EXT2Leave(Volume, Result);
 }
+
+BOOLEAN EXT2SetTimes(EXT2_VOLUME *Volume, UINT32 Number, CONST TIME_SPEC Times[2], UINT32 Time)
+{
+    EXT2_INODE Inode;
+    BOOLEAN Result = FALSE;
+    if (!EXT2Enter(Volume))
+    {
+        return FALSE;
+    }
+    if (EXT2Begin(Volume) && EXT2ReadInode(Volume, Number, &Inode))
+    {
+        BOOLEAN Current = Times[0].Nanoseconds == LOS_UTIME_NOW && Times[1].Nanoseconds == LOS_UTIME_NOW;
+        if (EXT2Load32(Inode.Raw + 32) != 0)
+        {
+            EXT2Fail(Volume, EXT2_ERROR_UNSUPPORTED);
+        }
+        else if (Volume->UID != 0 && Volume->UID != EXT2InodeUID(&Inode) && (!Current || !EXT2Access(Volume, &Inode, 2)))
+        {
+            EXT2Fail(Volume, EXT2_ERROR_PERMISSION);
+        }
+        else
+        {
+            for (UINTN Index = 0; Index < 2; Index++)
+            {
+                if (Times[Index].Nanoseconds != LOS_UTIME_OMIT)
+                {
+                    UINT32 Value = Times[Index].Nanoseconds == LOS_UTIME_NOW ? Time : (UINT32) Times[Index].Seconds;
+                    EXT2Store32(Inode.Raw + (Index == 0 ? 8 : 16), Value);
+                }
+            }
+            EXT2Store32(Inode.Raw + 12, Time);
+            Result = EXT2WriteInode(Volume, Number, &Inode, FALSE) && EXT2Commit(Volume);
+        }
+    }
+    EXT2Abort(Volume);
+    return EXT2Leave(Volume, Result);
+}

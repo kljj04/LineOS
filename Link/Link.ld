@@ -8,7 +8,7 @@ SECTIONS
 {
     . = 0x4000000;
 
-    __kernel_start = .;
+    KERNEL_START = .;
 
     .text ALIGN(4096) :
     {
@@ -31,5 +31,5 @@ SECTIONS
         *(.bss*)
     }
 
-    __kernel_end = .;
+    KERNEL_END = .;
 }

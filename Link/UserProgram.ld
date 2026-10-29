@@ -2,7 +2,7 @@
 /* LineOS Project */
 /* Copyright (C) 2026 LineOS Developer kljj04 */
 
-ENTRY(_start)
+ENTRY(_Start)
 
 PHDRS
 {

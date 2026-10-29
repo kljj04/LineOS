@@ -90,10 +90,3 @@ FORMAT_ALL_SRCS = $(call RWildcard,Libraries,*.c) $(call RWildcard,Libraries,*.h
                   $(call RWildcard,UserPrograms,*.c) $(call RWildcard,UserPrograms,*.h)
 
 FORMAT_SRCS = $(filter-out $(FORMAT_EXCLUDE_SRCS),$(FORMAT_ALL_SRCS))
-TRUE_TYPE_TARGET := Build/Libraries/libtruetype.a
-TRUE_TYPE_SRCS = $(call RWildcard,Libraries/Source/TrueType,*.c)
-TRUE_TYPE_OBJS = $(patsubst %.c,Build/Objects/%.o,$(TRUE_TYPE_SRCS))
-
-USER_DB_TARGET := Build/Libraries/libuserdb.a
-USER_DB_SRCS = $(call RWildcard,Libraries/Source/UserDB,*.c)
-USER_DB_OBJS = $(patsubst %.c,Build/Objects/%.o,$(USER_DB_SRCS))

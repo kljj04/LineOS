@@ -3,6 +3,8 @@
 # LineOS Project
 # Copyright (C) 2026 LineOS Developer kljj04
 
+source "$(dirname "${BASH_SOURCE[0]}")/Libraries.sh"
+
 ProgramTrim()
 {
     local Value="$1"
@@ -57,8 +59,13 @@ ProgramRead()
                     for Dependency in "${Items[@]}"; do
                         Dependency=$(ProgramTrim "$Dependency")
                         case "$Dependency" in
-                            TrueType|UserDB|LOSLibC) ;;
-                            *) printf 'Unknown dependency: %s: %s\n' "$Config" "$Dependency" >&2; return 1 ;;
+                            LOSLibC) ;;
+                            *)
+                                if [[ -z "${ProgramLibraryNames[$Dependency]:-}" ]]; then
+                                    printf 'Unknown or disabled dependency: %s: %s\n' "$Config" "$Dependency" >&2
+                                    return 1
+                                fi
+                                ;;
                         esac
                         if [[ "$ProgramDependencies" == - ]]; then
                             ProgramDependencies=$Dependency
@@ -98,7 +105,13 @@ ProgramManifest()
     set -o pipefail
     local Root="$1"
     local Config Program Name Destination Sources Source Owner List
-    local -A Destinations=()
+    local -A Destinations=() ProgramLibraryNames=()
+    local LibraryList LibraryRow
+    LibraryList=$(LibraryManifest "$Root") || return 1
+    while IFS= read -r LibraryRow; do
+        [[ -z "$LibraryRow" ]] && continue
+        ProgramLibraryNames[${LibraryRow%%|*}]=1
+    done <<< "$LibraryList"
     if ! List=$(find "$Root/UserPrograms" -name Program.cfg -print | LC_ALL=C sort); then
         return 1
     fi

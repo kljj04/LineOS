@@ -233,6 +233,17 @@ STATIC VFS_ERROR VFSEXT2Mutate(VOID *Backend, CONST VFS_CREDENTIALS *Credentials
             case VFS_MUTATE_MODE:
                 Result = EXT2SetMode(Volume, Mutation->Number, Mutation->Mode, Time);
                 break;
+            case VFS_MUTATE_TIMES:
+            {
+                TIME_SPEC Times[2];
+                for (UINTN Index = 0; Index < 2; Index++)
+                {
+                    Times[Index].Seconds = Mutation->TimeSeconds[Index];
+                    Times[Index].Nanoseconds = Mutation->TimeNanoseconds[Index];
+                }
+                Result = EXT2SetTimes(Volume, Mutation->Number, Times, Time);
+                break;
+            }
             case VFS_MUTATE_TOUCH:
                 Result = EXT2Touch(Volume, Mutation->Number, Time);
                 break;

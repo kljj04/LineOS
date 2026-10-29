@@ -112,16 +112,16 @@ STATIC BOOLEAN InitPublishFont(CONST char *Path, CONST char *Name)
     return TRUE;
 }
 
-INT32 _Start(VOID)
+INT32 main(VOID)
 {
     if (open("/dev/lsh1", O_RDONLY) != 0 || open("/dev/lsh1", O_WRONLY) != 1 || open("/dev/lsh1", O_WRONLY) != 2)
     {
-        exit(1);
+        return 1;
     }
 
     if (!InitPublishFont("/sys/fonts/PTDSB.ttf", "Fonts/Pretendard") || !InitPublishFont("/sys/fonts/JBMNFSB.ttf", "Fonts/JetBrainsMono"))
     {
-        exit(1);
+        return 1;
     }
 
     INT32 Master = open("/dev/lsh1-master", O_RDWR);
@@ -129,7 +129,7 @@ INT32 _Start(VOID)
     if (Master != 3)
     {
         puts("Init: terminal master open failed");
-        exit(1);
+        return 1;
     }
     pid_t Terminal = fork();
     if (Terminal == 0)
@@ -138,12 +138,12 @@ INT32 _Start(VOID)
         char *Environment[] = {NULL};
         execve(Arguments[0], Arguments, Environment);
         puts("Init: Terminal execve failed");
-        exit(127);
+        return 127;
     }
     if (Terminal < 0)
     {
         puts("Init: Terminal fork failed");
-        exit(1);
+        return 1;
     }
     close(Master);
 
@@ -154,13 +154,13 @@ INT32 _Start(VOID)
         char *Environment[] = {NULL};
         execve(Arguments[0], Arguments, Environment);
         puts("Init: Login execve failed");
-        exit(127);
+        return 127;
     }
     if (Login < 0)
     {
         puts("Init: Login fork failed");
-        exit(1);
+        return 1;
     }
 
-    exit(0);
+    return 0;
 }

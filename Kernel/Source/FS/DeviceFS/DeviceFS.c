@@ -10,6 +10,9 @@
 #include <LineOS/Memory.h>
 #include <Render/GPU/VirtIOGPU.h>
 #include <Memory/PMM.h>
+#include <Timer/Clock.h>
+
+STATIC UINT32 DeviceMountTime;
 
 _Static_assert(sizeof(FB_VAR_SCREENINFO) == 160, "Linux fb_var_screeninfo");
 _Static_assert(sizeof(FB_FIX_SCREENINFO) == 80 && __builtin_offsetof(FB_FIX_SCREENINFO, LineLength) == 48, "Linux x86-64 fb_fix_screeninfo");
@@ -290,6 +293,9 @@ STATIC VOID DeviceFSNode(UINT32 Number, VFS_NODE *Node)
 {
     KMemSet(Node, 0, sizeof(*Node));
     Node->Number = Number;
+    Node->AccessTime = DeviceMountTime;
+    Node->ModifyTime = DeviceMountTime;
+    Node->ChangeTime = DeviceMountTime;
     Node->Mode = Number == 1 ? VFS_MODE_DIRECTORY | 0755 : 0x2000U | DeviceFSGetNode(Number)->Mode;
 }
 
@@ -387,6 +393,7 @@ VFS_ERROR DeviceFSMount(VFS_REGISTRY *Registry)
     VFS_ERROR Error = VFSRegisterPartition(Registry, (CONST CHAR8 *) "dev", 0, (VOID *) DeviceNodes, &DeviceFSOperations, &Partition);
     if (Error == VFS_OK)
     {
+        DeviceMountTime = (UINT32) ClockGetUnixTime();
         Registry->DevicePartition = Partition;
     }
     return Error;

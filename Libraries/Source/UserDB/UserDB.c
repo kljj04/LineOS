@@ -197,6 +197,56 @@ STATIC BOOLEAN UserDBWriteAll(INT32 FD, CONST char *Text, UINTN Length)
     return TRUE;
 }
 
+STATIC BOOLEAN UserDBPublishNames(CONST char *Text, UINTN Length)
+{
+    int FD = open("/etc/passwd.tmp", O_WRONLY | O_CREAT | O_EXCL, 0644U);
+    if (FD < 0)
+    {
+        return FALSE;
+    }
+    BOOLEAN Result = TRUE;
+    UINTN Position = 0;
+    while (Position < Length && Result)
+    {
+        UINTN Start = Position;
+        UINTN Fields[3];
+        UINTN Count = 0;
+        while (Position < Length && Text[Position] != '\n')
+        {
+            if (Text[Position] == ':' && Count < 3)
+            {
+                Fields[Count++] = Position;
+            }
+            Position++;
+        }
+        if (Count != 3)
+        {
+            Result = FALSE;
+            break;
+        }
+        Result = UserDBWriteAll(FD, Text + Start, Fields[0] - Start)
+            && UserDBWriteAll(FD, ":x:", 3)
+            && UserDBWriteAll(FD, Text + Fields[0] + 1, Fields[2] - Fields[0] - 1)
+            && UserDBWriteAll(FD, "::/home/", 8)
+            && UserDBWriteAll(FD, Text + Start, Fields[0] - Start)
+            && UserDBWriteAll(FD, ":/bin/lsh.lix\n", sizeof(":/bin/lsh.lix\n") - 1);
+        if (Position < Length)
+        {
+            Position++;
+        }
+    }
+    if (close(FD) != 0)
+    {
+        Result = FALSE;
+    }
+    if (Result && rename("/etc/passwd.tmp", "/etc/passwd") == 0)
+    {
+        return TRUE;
+    }
+    remove("/etc/passwd.tmp");
+    return FALSE;
+}
+
 STATIC USER_DB_RESULT UserDBSave(UINTN Length, BOOLEAN Initial)
 {
     CONST char *Path = Initial ? USER_DB_PATH : USER_DB_TEMP;
@@ -219,7 +269,7 @@ STATIC USER_DB_RESULT UserDBSave(UINTN Length, BOOLEAN Initial)
     {
         return remove(USER_DB_TEMP) == 0 ? USER_DB_IO : USER_DB_CLEANUP;
     }
-    return USER_DB_OK;
+    return UserDBPublishNames(Replacement, Length) ? USER_DB_OK : USER_DB_COMMITTED_CLEANUP;
 }
 
 STATIC UINTN UserDBDecimal(char *Text, UINT32 Value)
@@ -424,6 +474,10 @@ STATIC VOID UserDBClearSnapshot(VOID)
 USER_DB_RESULT UserDBCheck(VOID)
 {
     USER_DB_RESULT Result = UserDBLoad();
+    if (Result == USER_DB_OK && !UserDBPublishNames(Database, DatabaseLength))
+    {
+        Result = USER_DB_IO;
+    }
     UserDBClearSnapshot();
     return Result;
 }

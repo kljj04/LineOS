@@ -33,3 +33,6 @@ VFS_ERROR VFSLookupNoFollow(VFS_CONTEXT *Context, CONST CHAR8 *Path, VFS_NODE *N
 
 VFS_ERROR VFSOpen(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT32 Flags, UINT16 Mode, VFS_NODE *Node);
 VFS_ERROR VFSWriteChecked(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST VFS_NODE *Expected, UINT64 Offset, CONST VOID *Buffer, UINT32 Length);
+
+#include <LineOS/Time.h>
+VFS_ERROR VFSSetTimes(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST VFS_NODE *Expected, BOOLEAN Follow, CONST TIME_SPEC Times[2]);

@@ -261,7 +261,7 @@ STATIC INT64 TerminalPresent(DISPLAY_INFO *Info, UINT32 X, UINT32 Baseline)
     return Result;
 }
 
-INT32 _Start(VOID)
+INT32 main(VOID)
 {
     DISPLAY_INFO      Info;
     LOS_ASSET         FontAsset = {0};
@@ -285,7 +285,7 @@ INT32 _Start(VOID)
     if (FramebufferFD < 0 || ioctl(FramebufferFD, FBIOGET_VSCREENINFO, &Variable) < 0 || ioctl(FramebufferFD, FBIOGET_FSCREENINFO, &Fixed) < 0 || Variable.BitsPerPixel != 32 || Variable.Red.Offset != 16 || Variable.Green.Offset != 8 || Variable.Blue.Offset != 0 || Variable.Red.Length != 8 || Variable.Green.Length != 8 || Variable.Blue.Length != 8 || Fixed.LineLength != (UINT64) Variable.XRes * sizeof(UINT32) || Fixed.SmemLen != (UINT64) Fixed.LineLength * Variable.YRes)
     {
         puts("Terminal: framebuffer initialization failed");
-        exit(1);
+        return 1;
     }
     Info.Width = Variable.XRes;
     Info.Height = Variable.YRes;
@@ -295,14 +295,14 @@ INT32 _Start(VOID)
     if (Info.Width < TERMINAL_MARGIN * 2U + TERMINAL_FONT_HEIGHT || Info.Height < TERMINAL_LINE_HEIGHT * 2U || Info.Width > TERMINAL_MAX_WIDTH || Info.Height > TERMINAL_MAX_HEIGHT || Info.Format != DISPLAY_FORMAT_BGRA8888 || LOSAssetAcquire("Fonts/JetBrainsMono", &FontAsset) != 0 || LOSAssetAcquire("Fonts/Pretendard", &FallbackAsset) != 0)
     {
         puts("Terminal: initialization failed");
-        exit(1);
+        return 1;
     }
 
     MappedBuffer = mmap(NULL, Fixed.SmemLen, PROT_READ | PROT_WRITE, MAP_SHARED, FramebufferFD, 0);
     if (MappedBuffer == MAP_FAILED)
     {
         puts("Terminal: framebuffer mapping failed");
-        exit(1);
+        return 1;
     }
 
     Surface.FrameBuffer = FrameBuffer;
@@ -312,7 +312,7 @@ INT32 _Start(VOID)
     if (!TrueTypeInit(&Allocator, &Surface) || !TrueTypeRegisterFont(&Font, FontAsset.Data) || !TrueTypeRegisterFont(&Fallback, FallbackAsset.Data))
     {
         puts("Terminal: font initialization failed");
-        exit(1);
+        return 1;
     }
 
     FLOAT32 Scale = ScaleForPixelHeight(&Font.Info, TERMINAL_FONT_HEIGHT);
@@ -330,7 +330,7 @@ INT32 _Start(VOID)
         INT32 Width = TTFFloor((Advance * Scale) + 0.5f);
         if (Width <= 0)
         {
-            exit(1);
+            return 1;
         }
         Glyphs[Character].Advance = (UINT32) Width;
         GetCodepointBitmapBox(&Font.Info, Character, Scale, Scale, &Glyphs[Character].Left, &Glyphs[Character].Top, &Glyphs[Character].Right, &Glyphs[Character].Bottom);
@@ -343,7 +343,7 @@ INT32 _Start(VOID)
 
     if (TerminalPresent(&Info, X, Baseline) < 0)
     {
-        exit(1);
+        return 1;
     }
 
     for (;;)
@@ -352,7 +352,7 @@ INT32 _Start(VOID)
 
         if (Count <= 0)
         {
-            exit(1);
+            return 1;
         }
 
         for (ssize_t Index = 0; Index < Count; Index++)
@@ -447,7 +447,7 @@ INT32 _Start(VOID)
 
         if (TerminalPresent(&Info, X, Baseline) < 0)
         {
-            exit(1);
+            return 1;
         }
     }
 }

@@ -75,7 +75,7 @@ STATIC VOID UserRescueStatus(VOID)
     puts("UserRescue: use adduser root to initialize a missing account database");
 }
 
-INT32 _Start(VOID)
+INT32 main(VOID)
 {
     char Line[USER_RESCUE_LINE_SIZE];
 
@@ -88,7 +88,7 @@ INT32 _Start(VOID)
 
         if (!UserRescueReadLine(Line, sizeof(Line)))
         {
-            exit(1);
+            return 1;
         }
 
         if (Line[0] == 0)
@@ -140,7 +140,7 @@ INT32 _Start(VOID)
                 char *Environment[] = {NULL};
                 execve(Arguments[0], Arguments, Environment);
                 puts("UserRescue: Login execve failed");
-                exit(127);
+                return 127;
             }
             if (Child < 0)
             {
@@ -148,7 +148,7 @@ INT32 _Start(VOID)
             }
             else
             {
-                exit(0);
+                return 0;
             }
         }
         else

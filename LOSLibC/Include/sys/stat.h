@@ -45,3 +45,12 @@ struct stat
 int stat(const char *Path, struct stat *Info);
 int lstat(const char *Path, struct stat *Info);
 int fstat(int FD, struct stat *Info);
+
+#include <time.h>
+#include <LineOS/Time.h>
+
+#define UTIME_NOW LOS_UTIME_NOW
+#define UTIME_OMIT LOS_UTIME_OMIT
+
+int utimensat(int DirFD, const char *Path, const struct timespec Times[2], int Flags);
+int futimens(int FD, const struct timespec Times[2]);

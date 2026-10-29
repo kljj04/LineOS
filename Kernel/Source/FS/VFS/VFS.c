@@ -979,3 +979,35 @@ VFS_ERROR VFSOpen(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT32 Flags, UINT16 
     }
     return VFSUnlock(Context->Registry, Error);
 }
+
+VFS_ERROR VFSSetTimes(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST VFS_NODE *Expected, BOOLEAN Follow, CONST TIME_SPEC Times[2])
+{
+    VFS_RESOLVED Resolved;
+    VFS_MUTATION Mutation = {0};
+    if (Context == NULL || Context->Registry == NULL)
+    {
+        return VFS_INVALID;
+    }
+    if (!VFSLock(Context->Registry))
+    {
+        return VFS_BUSY;
+    }
+    VFS_ERROR Error = VFSResolve(Context, Path, Follow, &Resolved);
+    if (Error == VFS_OK && Expected != NULL && (Resolved.Partition != Expected->Partition || Resolved.Node.Number != Expected->Number || Context->Registry->NamespaceGeneration != Expected->NamespaceGeneration))
+    {
+        Error = VFS_NOT_FOUND;
+    }
+    if (Error == VFS_OK && !(Times[0].Nanoseconds == LOS_UTIME_OMIT && Times[1].Nanoseconds == LOS_UTIME_OMIT))
+    {
+        Mutation.Type = VFS_MUTATE_TIMES;
+        Mutation.Number = Resolved.Node.Number;
+        for (UINTN Index = 0; Index < 2; Index++)
+        {
+            Mutation.TimeSeconds[Index] = Times[Index].Seconds;
+            Mutation.TimeNanoseconds[Index] = Times[Index].Nanoseconds;
+        }
+        VFS_PARTITION *Partition = VFSPartition(Context, Resolved.Partition);
+        Error = Partition->Operations->Mutate == NULL ? VFS_UNSUPPORTED : Partition->Operations->Mutate(Partition->Backend, &Context->Credentials, &Mutation);
+    }
+    return VFSUnlock(Context->Registry, Error);
+}

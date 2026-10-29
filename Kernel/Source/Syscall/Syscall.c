@@ -154,6 +154,8 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
             return (UINT64) SyscallRename(Frame->RDI, Frame->RSI);
         }
 
+        case SYSCALL_UTIMENSAT:
+            return (UINT64) SyscallUtimensat((INT64) Frame->RDI, Frame->RSI, Frame->RDX, Frame->R10);
         case SYSCALL_MKDIR:
         {
             return (UINT64) SyscallMkdir(Frame->RDI, Frame->RSI);

@@ -309,7 +309,7 @@ STATIC CONST char *ShellStyleColor(SHELL_INPUT_STYLE Style)
         }
         case SHELL_INPUT_EXTERNAL:
         {
-            return "\033[0;38;2;128;184;136m";
+            return "\033[0;38;2;104;203;97m";
         }
         case SHELL_INPUT_UNKNOWN:
         {
@@ -324,9 +324,32 @@ STATIC CONST char *ShellStyleColor(SHELL_INPUT_STYLE Style)
 
 STATIC CONST char *ShellArgumentColor(CONST char *Argument, SHELL_INPUT_STYLE Style)
 {
-    if ((Style == SHELL_INPUT_BUILTIN || Style == SHELL_INPUT_EXTERNAL) && Argument[0] == '-')
+    if (Style == SHELL_INPUT_BUILTIN || Style == SHELL_INPUT_EXTERNAL)
     {
-        return "\033[0;38;2;80;227;194m";
+        if (Argument[0] == '-')
+        {
+            return "\033[0;38;2;80;227;194m";
+        }
+        char Path[256];
+        UINTN Length = 0;
+        while (Argument[Length] != 0 && Argument[Length] != ' ' && Length + 1 < sizeof(Path))
+        {
+            Path[Length] = Argument[Length];
+            Length++;
+        }
+        Path[Length] = 0;
+        struct stat Info;
+        if (Length != 0 && (Argument[Length] == 0 || Argument[Length] == ' ') && stat(Path, &Info) == 0)
+        {
+            if (S_ISDIR(Info.st_mode))
+            {
+                return "\033[0;38;2;0;134;255m";
+            }
+            if (S_ISREG(Info.st_mode))
+            {
+                return "\033[0;38;2;104;203;97m";
+            }
+        }
     }
     return "\033[0m";
 }
@@ -365,7 +388,7 @@ STATIC VOID ShellRenderInput(CONST char *Line, IME_STATE *IME, SHELL_INPUT_STYLE
     ShellEcho(IMECodepoint(IME));
 }
 
-INT32 _Start(INT32 Argc, char **Argv, char **Envp)
+INT32 main(INT32 Argc, char **Argv, char **Envp)
 {
     char      Line[256] = {0};
     UINTN     Length = 0;
@@ -391,8 +414,10 @@ INT32 _Start(INT32 Argc, char **Argv, char **Envp)
     {
         if (read(0, &Byte, 1) != 1)
         {
-            exit(1);
+            return 1;
         }
+        CONST char *PreviousArgument = strrchr(Line, ' ');
+        CONST char *PreviousColor = PreviousArgument != NULL ? ShellArgumentColor(PreviousArgument + 1, InputStyle) : ShellStyleColor(InputStyle);
         UINT32  Preedit = IMECodepoint(&IME);
         BOOLEAN Redraw = FALSE;
         if (Byte == 14)
@@ -460,7 +485,7 @@ INT32 _Start(INT32 Argc, char **Argv, char **Envp)
                     {
                         ShellExecute(Line, Envp);
                         printf("%s: %s\n", Line, errno == ENOENT ? "command not found" : "cannot execute");
-                        exit(127);
+                        return 127;
                     }
                     if (Child < 0)
                     {
@@ -517,7 +542,9 @@ INT32 _Start(INT32 Argc, char **Argv, char **Envp)
         if (Redraw)
         {
             SHELL_INPUT_STYLE Style = ShellInputStyle(Line, &IME, Envp);
-            if (Style != InputStyle)
+            CONST char *Argument = strrchr(Line, ' ');
+            CONST char *Color = Argument != NULL ? ShellArgumentColor(Argument + 1, Style) : ShellStyleColor(Style);
+            if (Style != InputStyle || strcmp(PreviousColor, Color) != 0)
             {
                 InputStyle = Style;
                 ShellRenderInput(Line, &IME, InputStyle);

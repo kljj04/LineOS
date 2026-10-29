@@ -62,27 +62,34 @@ STATIC INT32 LoginReadLine(char *Buffer, UINTN Capacity, BOOLEAN Echo)
     }
 }
 
-STATIC VOID NORETURN LoginRescue(VOID)
+STATIC INT32 LoginRescue(VOID)
 {
     puts("Login: account database unavailable or invalid; entering UserRescue");
+
     pid_t Child = fork();
+
     if (Child == 0)
     {
         char *Arguments[] = {"/sys/rescue/UserRescue.lix", NULL};
         char *Environment[] = {NULL};
+
         execve(Arguments[0], Arguments, Environment);
         puts("Login: UserRescue execve failed");
-        exit(127);
+
+        return 127;
     }
+
     if (Child < 0)
     {
         puts("Login: UserRescue fork failed");
-        exit(1);
+
+        return 1;
     }
-    exit(0);
+
+    return 0;
 }
 
-INT32 _Start(VOID)
+INT32 main(VOID)
 {
     char            Username[USER_DB_NAME_MAX + 1];
     char            Password[USER_DB_PASSWORD_MAX + 1];
@@ -103,7 +110,7 @@ INT32 _Start(VOID)
         INT32 Input = LoginReadLine(Username, sizeof(Username), TRUE);
         if (Input < 0)
         {
-            exit(1);
+            return 1;
         }
         if (Input == 0 || !UserDBValidateName(Username))
         {
@@ -116,7 +123,7 @@ INT32 _Start(VOID)
         if (Input < 0)
         {
             CryptoWipe(Password, sizeof(Password));
-            exit(1);
+            return 1;
         }
         if (Input == 0)
         {
@@ -156,7 +163,7 @@ INT32 _Start(VOID)
         if (setgid(GID) != 0 || setuid(UID) != 0)
         {
             puts("Login: failed to establish user credentials");
-            exit(1);
+            return 1;
         }
         pid_t Child = fork();
         if (Child == 0)
@@ -165,13 +172,13 @@ INT32 _Start(VOID)
             char *Environment[] = {UserEnvironment, "PATH=/bin/lsh", NULL};
             execve(Arguments[0], Arguments, Environment);
             puts("Login: shell execve failed");
-            exit(127);
+            return 127;
         }
         if (Child < 0)
         {
             puts("Login: shell fork failed");
-            exit(1);
+            return 1;
         }
-        exit(0);
+        return 0;
     }
 }

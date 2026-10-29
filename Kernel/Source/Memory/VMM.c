@@ -674,7 +674,7 @@ struct VMM_ADDRESS_SPACE
 STATIC VMM_ADDRESS_SPACE *VMMAddressSpaces;
 STATIC VMM_ADDRESS_SPACE *VMMActiveAddressSpaces[SMP_MAX_CPUS];
 
-EXTERN UINT8 __kernel_start[];
+EXTERN UINT8 KERNEL_START[];
 
 STATIC BOOLEAN VMMKernelMappingsIdle(VOID)
 {
@@ -1026,7 +1026,7 @@ STATIC BOOLEAN VMMAddressSpaceCanReplace(UINT64 Address)
         return FALSE;
     }
 
-    if (Address >= (UINT64) __kernel_start)
+    if (Address >= (UINT64) KERNEL_START)
     {
         return FALSE;
     }
@@ -1227,7 +1227,7 @@ BOOLEAN VMMMapAddressSpacePage(VMM_ADDRESS_SPACE *AddressSpace, UINT64 VirtAddr,
         UINT32 Index = (VirtAddr >> 12) & 0x1FF;
         UINT64 Entry = Table[Index];
 
-        if (VirtAddr < (UINT64) __kernel_start)
+        if (VirtAddr < (UINT64) KERNEL_START)
         {
             if (!VMMAddressSpaceCanReplace(VirtAddr))
             {
@@ -1240,7 +1240,7 @@ BOOLEAN VMMMapAddressSpacePage(VMM_ADDRESS_SPACE *AddressSpace, UINT64 VirtAddr,
             }
         }
 
-        if ((Entry & VMM_PAGE_PRESENT) != 0 && ((Entry & (VMM_PAGE_USER | VMM_PAGE_GLOBAL)) != 0 || (Entry & VMM_PAGE_MASK) != VirtAddr || VirtAddr >= (UINT64) __kernel_start))
+        if ((Entry & VMM_PAGE_PRESENT) != 0 && ((Entry & (VMM_PAGE_USER | VMM_PAGE_GLOBAL)) != 0 || (Entry & VMM_PAGE_MASK) != VirtAddr || VirtAddr >= (UINT64) KERNEL_START))
         {
             goto Cleanup;
         }

@@ -16,4 +16,4 @@ include Makefiles/UserPrograms.mk
 
 .PHONY: All Clean Format CompileBoot LinkBoot CompileKernel LinkKernel CompileLOSLibC LinkLOSLibC CompileUserPrograms LinkUserPrograms
 
-All: $(TRUE_TYPE_TARGET) $(BOOT_TARGET) $(KERN_TARGET) $(LOSLIBC_TARGET) $(USER_PROGRAM_OUTPUTS)
+All: $(LIBRARY_TARGETS) $(BOOT_TARGET) $(KERN_TARGET) $(LOSLIBC_TARGET) $(USER_PROGRAM_OUTPUTS)

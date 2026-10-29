@@ -100,14 +100,14 @@ STATIC INT32 CatFile(CONST CHAR8 *Path)
     return Result;
 }
 
-VOID _Start(INT32 Argc, CHAR8 **Argv)
+INT32 main(INT32 Argc, CHAR8 **Argv)
 {
     INT32 Status = 0;
 
     if (Argc <= 1)
     {
         puts("cat: missing file operand");
-        exit(1);
+        return 1;
     }
 
     for (INT32 Index = 1; Index < Argc; Index++)
@@ -119,7 +119,7 @@ VOID _Start(INT32 Argc, CHAR8 **Argv)
             puts("Usage: cat [FILE ...]");
             puts("  FILE  Read and print a file");
             puts("  -     Read standard input");
-            exit(0);
+            return 0;
         }
 
         if (CatFile(Argument) != 0)
@@ -128,5 +128,5 @@ VOID _Start(INT32 Argc, CHAR8 **Argv)
         }
     }
 
-    exit(Status);
+    return Status;
 }

@@ -30,3 +30,6 @@ BOOLEAN EXT2LookupChild(EXT2_VOLUME *Volume, UINT32 Parent, CONST CHAR8 *Name, U
 BOOLEAN EXT2ReadDirectory(EXT2_VOLUME *Volume, UINT32 Number, UINT64 *Cursor, CHAR8 *Name, UINT32 *Child, EXT2_INODE *Inode, BOOLEAN *End);
 
 BOOLEAN EXT2Touch(EXT2_VOLUME *Volume, UINT32 Number, UINT32 Time);
+
+#include <LineOS/Time.h>
+BOOLEAN EXT2SetTimes(EXT2_VOLUME *Volume, UINT32 Number, CONST TIME_SPEC Times[2], UINT32 Time);

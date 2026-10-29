@@ -81,7 +81,8 @@ typedef enum
     VFS_MUTATE_SYMLINK,
     VFS_MUTATE_MODE,
     VFS_MUTATE_OWNER,
-    VFS_MUTATE_TOUCH
+    VFS_MUTATE_TOUCH,
+    VFS_MUTATE_TIMES
 } VFS_MUTATION_TYPE;
 
 typedef struct
@@ -98,6 +99,8 @@ typedef struct
     UINT32            UID;
     UINT32            GID;
     BOOLEAN           Directory;
+    INT64             TimeSeconds[2];
+    INT64             TimeNanoseconds[2];
 } VFS_MUTATION;
 
 typedef struct

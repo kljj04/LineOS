@@ -11,6 +11,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <time.h>
 
 #define LS_BUFFER_SIZE 4096
 #define LS_PATH_SIZE   4096
@@ -149,22 +150,221 @@ STATIC VOID LSPrintEntry(CONST CHAR8 *Name, UINT8 Type, CONST LS_OPTIONS *Option
     printf("%s%s%s\033[0m\n", Color, (CONST char *) Name, Suffix);
 }
 
+typedef struct
+{
+    UINTN Links;
+    UINTN Owner;
+    UINTN Group;
+    UINTN Size;
+    UINT64 Blocks;
+} LS_COLUMNS;
+
+STATIC LS_COLUMNS Columns;
+STATIC char Names[128][33];
+STATIC UINT32 UserIDs[128];
+STATIC UINT32 GroupIDs[128];
+STATIC UINTN NameCount;
+
+STATIC VOID LSLoadNames(VOID)
+{
+    char Line[512];
+    UINTN Length = 0;
+    BOOLEAN Overflow = FALSE;
+    int FD = open("/etc/passwd", O_RDONLY);
+    if (FD < 0)
+    {
+        return;
+    }
+    char Byte;
+    while (read(FD, &Byte, 1) == 1)
+    {
+        if (Byte != '\n')
+        {
+            if (Length + 1 < sizeof(Line))
+            {
+                Line[Length++] = Byte;
+            }
+            else
+            {
+                Overflow = TRUE;
+            }
+            continue;
+        }
+        Line[Length] = 0;
+        char *First = strchr(Line, ':');
+        if (!Overflow && First != NULL && First != Line && (UINTN) (First - Line) <= 32 && NameCount < 128)
+        {
+            char *Position = strchr(First + 1, ':');
+            if (Position == NULL)
+            {
+                memset(Line, 0, sizeof(Line));
+                Length = 0;
+                Overflow = FALSE;
+                continue;
+            }
+            Position++;
+            UINT64 IDs[2] = {0};
+            BOOLEAN Valid = TRUE;
+            for (UINTN Index = 0; Index < 2; Index++)
+            {
+                char *Start = Position;
+                while (*Position >= '0' && *Position <= '9')
+                {
+                    IDs[Index] = IDs[Index] * 10 + *Position++ - '0';
+                    if (IDs[Index] > 0xFFFFFFFFU)
+                    {
+                        Valid = FALSE;
+                        break;
+                    }
+                }
+                if (Position == Start || *Position != ':')
+                {
+                    Valid = FALSE;
+                    break;
+                }
+                Position++;
+            }
+            if (Valid)
+            {
+                memcpy(Names[NameCount], Line, First - Line);
+                Names[NameCount][First - Line] = 0;
+                UserIDs[NameCount] = IDs[0];
+                GroupIDs[NameCount] = IDs[1];
+                NameCount++;
+            }
+        }
+        memset(Line, 0, sizeof(Line));
+        Length = 0;
+        Overflow = FALSE;
+    }
+    memset(Line, 0, sizeof(Line));
+    close(FD);
+}
+
+STATIC VOID LSDecimal(UINT64 Value, char Result[21])
+{
+    char Reverse[20];
+    UINTN Length = 0;
+    do
+    {
+        Reverse[Length++] = '0' + Value % 10;
+        Value /= 10;
+    } while (Value != 0);
+    for (UINTN Index = 0; Index < Length; Index++)
+    {
+        Result[Index] = Reverse[Length - Index - 1];
+    }
+    Result[Length] = 0;
+}
+
+STATIC CONST char *LSIdentity(UINT32 ID, BOOLEAN Group, char Buffer[21])
+{
+    for (UINTN Index = 0; Index < NameCount; Index++)
+    {
+        if ((Group ? GroupIDs[Index] : UserIDs[Index]) == ID)
+        {
+            return Names[Index];
+        }
+    }
+    LSDecimal(ID, Buffer);
+    return Buffer;
+}
+
+STATIC VOID LSField(CONST char *Value, UINTN Width, BOOLEAN Left)
+{
+    UINTN Length = strlen(Value);
+    if (Left)
+    {
+        printf("%s", Value);
+    }
+    while (Length++ < Width)
+    {
+        putchar(' ');
+    }
+    if (!Left)
+    {
+        printf("%s", Value);
+    }
+    putchar(' ');
+}
+
+STATIC VOID LSMeasure(CONST struct stat *Info)
+{
+    char Buffer[21];
+    LSDecimal(Info->st_nlink, Buffer);
+    UINTN Length = strlen(Buffer);
+    if (Length > Columns.Links)
+    {
+        Columns.Links = Length;
+    }
+    Length = strlen(LSIdentity(Info->st_uid, FALSE, Buffer));
+    if (Length > Columns.Owner)
+    {
+        Columns.Owner = Length;
+    }
+    Length = strlen(LSIdentity(Info->st_gid, TRUE, Buffer));
+    if (Length > Columns.Group)
+    {
+        Columns.Group = Length;
+    }
+    LSDecimal(Info->st_size, Buffer);
+    Length = strlen(Buffer);
+    if (S_ISCHR(Info->st_mode))
+    {
+        LSDecimal(Info->st_rdev, Buffer);
+        Length = strlen(Buffer) + 3;
+    }
+    if (Length > Columns.Size)
+    {
+        Columns.Size = Length;
+    }
+    Columns.Blocks += Info->st_blocks;
+}
+
 STATIC VOID LSPrintLongEntry(CONST CHAR8 *Name, CONST struct stat *Info, CONST LS_OPTIONS *Options)
 {
     CHAR8 Mode[11];
-
+    char Buffer[21];
     LSModeString((UINT32) Info->st_mode, Mode);
-
-    printf(
-        "%s %lu %u %u %ld %lu ",
-        (CONST char *) Mode,
-        Info->st_nlink,
-        Info->st_uid,
-        Info->st_gid,
-        Info->st_size,
-        Info->st_mtime
-    );
-
+    printf("%s ", (CONST char *) Mode);
+    LSDecimal(Info->st_nlink, Buffer);
+    LSField(Buffer, Columns.Links, FALSE);
+    LSField(LSIdentity(Info->st_uid, FALSE, Buffer), Columns.Owner, TRUE);
+    LSField(LSIdentity(Info->st_gid, TRUE, Buffer), Columns.Group, TRUE);
+    if (S_ISCHR(Info->st_mode))
+    {
+        LSDecimal(Info->st_rdev, Buffer);
+        UINTN Length = strlen(Buffer) + 3;
+        while (Length++ < Columns.Size)
+        {
+            putchar(' ');
+        }
+        printf("0, %s ", Buffer);
+    }
+    else
+    {
+        LSDecimal(Info->st_size, Buffer);
+        LSField(Buffer, Columns.Size, FALSE);
+    }
+    time_t Modified = (time_t) Info->st_mtime + 9L * 60 * 60;
+    struct tm Date;
+    if (gmtime_r(&Modified, &Date) != NULL)
+    {
+        LSDecimal(Date.tm_mon + 1, Buffer);
+        UINTN Length = strlen(Buffer);
+        while (Length++ < 2)
+        {
+            putchar(' ');
+        }
+        printf("%s월 ", Buffer);
+        LSDecimal(Date.tm_mday, Buffer);
+        LSField(Buffer, 2, FALSE);
+        printf("%c%c:%c%c ", '0' + Date.tm_hour / 10, '0' + Date.tm_hour % 10, '0' + Date.tm_min / 10, '0' + Date.tm_min % 10);
+    }
+    else
+    {
+        printf("?월  ? ??:?? ");
+    }
     LSPrintEntry(Name, LSTypeFromMode((UINT32) Info->st_mode), Options);
 }
 
@@ -223,7 +423,7 @@ STATIC BOOLEAN LSValidEntry(CONST LINUX_DIRENT64 *Entry, UINTN Remaining)
     return FALSE;
 }
 
-STATIC INT32 LSListDirectory(CONST CHAR8 *Path, CONST LS_OPTIONS *Options)
+STATIC INT32 LSListDirectoryPass(CONST CHAR8 *Path, CONST LS_OPTIONS *Options, BOOLEAN Measure)
 {
     UINT8 Buffer[LS_BUFFER_SIZE];
     INT32 Status = 0;
@@ -290,7 +490,14 @@ STATIC INT32 LSListDirectory(CONST CHAR8 *Path, CONST LS_OPTIONS *Options)
                     }
                     else
                     {
-                        LSPrintLongEntry(Entry->Name, &Info, Options);
+                        if (Measure)
+                        {
+                            LSMeasure(&Info);
+                        }
+                        else
+                        {
+                            LSPrintLongEntry(Entry->Name, &Info, Options);
+                        }
                     }
                 }
                 else
@@ -342,6 +549,7 @@ STATIC INT32 LSListPath(CONST CHAR8 *Path, CONST LS_OPTIONS *Options)
 
         if (Options->Long)
         {
+            LSMeasure(&Info);
             LSPrintLongEntry(Name, &Info, Options);
         }
         else
@@ -352,7 +560,17 @@ STATIC INT32 LSListPath(CONST CHAR8 *Path, CONST LS_OPTIONS *Options)
         return 0;
     }
 
-    return LSListDirectory(Path, Options);
+    if (Options->Long)
+    {
+        memset(&Columns, 0, sizeof(Columns));
+        INT32 Result = LSListDirectoryPass(Path, Options, TRUE);
+        if (Result != 0)
+        {
+            return Result;
+        }
+        printf("합계 %lu\n", (unsigned long) ((Columns.Blocks + 1) / 2));
+    }
+    return LSListDirectoryPass(Path, Options, FALSE);
 }
 
 STATIC VOID LSUsage(VOID)
@@ -365,7 +583,7 @@ STATIC VOID LSUsage(VOID)
     puts("  -F  Append / to directories and @ to symlinks");
 }
 
-VOID _Start(INT32 Argc, CHAR8 **Argv)
+INT32 main(INT32 Argc, CHAR8 **Argv)
 {
     LS_OPTIONS Options = {0};
     INT32 FirstPath = 1;
@@ -391,7 +609,7 @@ VOID _Start(INT32 Argc, CHAR8 **Argv)
         if (strcmp((CONST char *) Argument, "--help") == 0)
         {
             LSUsage();
-            exit(0);
+            return 0;
         }
 
         for (UINTN Index = 1; Argument[Index] != 0; Index++)
@@ -433,12 +651,17 @@ VOID _Start(INT32 Argc, CHAR8 **Argv)
                 {
                     printf("ls: invalid option -- '%c'\n", Argument[Index]);
                     LSUsage();
-                    exit(2);
+                    return 2;
                 }
             }
         }
 
         FirstPath++;
+    }
+
+    if (Options.Long)
+    {
+        LSLoadNames();
     }
 
     if (FirstPath == Argc)
@@ -468,5 +691,5 @@ VOID _Start(INT32 Argc, CHAR8 **Argv)
         }
     }
 
-    exit(Status);
+    return Status;
 }
