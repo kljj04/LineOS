@@ -17,7 +17,7 @@
 STATIC_ASSERT(sizeof(TASK_CONTEXT) == sizeof(INTERRUPT_FRAME), "fork context size");
 STATIC_ASSERT(__builtin_offsetof(TASK_CONTEXT, RIP) == __builtin_offsetof(INTERRUPT_FRAME, RIP) && __builtin_offsetof(TASK_CONTEXT, RAX) == __builtin_offsetof(INTERRUPT_FRAME, RAX) && __builtin_offsetof(TASK_CONTEXT, RSP) == __builtin_offsetof(INTERRUPT_FRAME, RSP), "fork context offsets");
 
-#define PROCESS_LIMIT           16U
+#define PROCESS_LIMIT           128U
 #define PROCESS_EXECUTION_PAGES ((sizeof(ELF64_EXECUTION) + 4095U) / 4096U)
 
 typedef struct
@@ -205,6 +205,7 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
     *Child->FileContext = *Parent->FileContext;
     Child->RealUID = Parent->RealUID;
     Child->RealGID = Parent->RealGID;
+    Child->AuthSession = Parent->AuthSession;
     Child->UserStackBase = Parent->UserStackBase;
     Child->UserStackSize = Parent->UserStackSize;
     KMemCpy(Child->Assets, Parent->Assets, sizeof(Child->Assets));

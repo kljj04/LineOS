@@ -17,6 +17,7 @@ INT32 main(INT32 Argc, char **Argv, char **Envp)
     UINT8     Byte;
     BOOLEAN   Korean = FALSE;
     IME_STATE IME;
+    UINT8 EscapeState = 0;
 
     CONST char *Username = ShellGetEnvironment(Envp, "USER");
     if (Username == NULL || *Username == 0)
@@ -26,6 +27,7 @@ INT32 main(INT32 Argc, char **Argv, char **Envp)
     BOOLEAN LoginShell = Argc > 0 && Argv != NULL && Argv[0] != NULL && Argv[0][0] == '-';
 
     IMEReset(&IME);
+    ShellHistoryInit(Envp);
     if (LoginShell)
     {
         CONST char *Clear = "\033[0m\033[2J\033[H";
@@ -39,6 +41,31 @@ INT32 main(INT32 Argc, char **Argv, char **Envp)
         if (read(0, &Byte, 1) != 1)
         {
             return 1;
+        }
+        if (Byte == 27)
+        {
+            EscapeState = 1;
+            continue;
+        }
+        if (EscapeState == 1)
+        {
+            EscapeState = Byte == '[' ? 2 : 0;
+            continue;
+        }
+        if (EscapeState == 2)
+        {
+            EscapeState = 0;
+            if (Byte == 'A' || Byte == 'B')
+            {
+                ShellAppend(Line, &Length, IMECodepoint(&IME));
+                IMEReset(&IME);
+                if (ShellHistoryMove(Byte == 'A', Line, &Length))
+                {
+                    InputStyle = ShellInputStyle(Line, &IME, Envp);
+                    ShellRenderInput(Line, &IME, InputStyle);
+                }
+            }
+            continue;
         }
         UINT8 PreviousColors[260];
         UINTN PreviousLength = strlen(Line);
@@ -77,6 +104,7 @@ INT32 main(INT32 Argc, char **Argv, char **Envp)
             ShellAppend(Line, &Length, Preedit);
             IMEReset(&IME);
             write(1, "\033[0m\n", 5);
+            ShellHistoryAdd(Line);
             SHELL_COMMAND Command = ShellGetCommand(Line);
             switch (Command)
             {
@@ -192,6 +220,7 @@ INT32 main(INT32 Argc, char **Argv, char **Envp)
         }
         if (Redraw)
         {
+            ShellHistoryEdited();
             SHELL_INPUT_STYLE Style = ShellInputStyle(Line, &IME, Envp);
             UINT8 Colors[260];
             ShellInputColors(Line, Style, Colors);

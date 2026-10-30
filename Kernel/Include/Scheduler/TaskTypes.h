@@ -133,4 +133,5 @@ typedef struct TASK
     CHAR8                   Name[16];
     UINT32                  RealUID;
     UINT32                  RealGID;
+    UINT64                  AuthSession;
 } TASK;

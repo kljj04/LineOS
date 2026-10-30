@@ -14,6 +14,7 @@
 #include <Syscall/SyscallMemory.h>
 #include <Syscall/SyscallSysinfo.h>
 #include <Syscall/SyscallTime.h>
+#include <Syscall/SyscallSudo.h>
 
 #include <Arch/AMD64/CPU.h>
 #include <Debug/Panic.h>
@@ -78,6 +79,10 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
         case SYSCALL_CLOCK_GETTIME:
         {
             return (UINT64) SyscallClockGetTime((INT64) Frame->RDI, Frame->RSI);
+        }
+        case SYSCALL_SUDO_CACHE:
+        {
+            return (UINT64) SyscallSudoCache(Frame->RDI);
         }
         case SYSCALL_GETUID:
         case SYSCALL_GETEUID:

@@ -10,7 +10,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#define CAT_BUFFER_SIZE 4096
+#define CAT_BUFFER_SIZE 16384
 
 STATIC INT32 CatWrite(CONST UINT8 *Buffer, UINTN Length)
 {

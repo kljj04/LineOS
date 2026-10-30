@@ -355,7 +355,15 @@ VOID TerminalKey(UINT16 Code, BOOLEAN Pressed, UINT8 Modifiers)
     UINT8              Byte;
     UINT64             Flags;
 
-    if (Code == 100 || Code == 122)
+    if (Code == 103 || Code == 108)
+    {
+        if (!Pressed)
+        {
+            return;
+        }
+        Byte = 27;
+    }
+    else if (Code == 100 || Code == 122)
     {
         UINTN   Index = Code == 100 ? 0 : 1;
         BOOLEAN Previous = TogglePressed[Index];
@@ -387,10 +395,16 @@ VOID TerminalKey(UINT16 Code, BOOLEAN Pressed, UINT8 Modifiers)
         return;
     }
     Flags = SpinLockAcquireIRQSave(&TerminalInput.Lock);
-    if (!TerminalInput.Closed && TerminalInput.Length < TERMINAL_CAPACITY)
+    UINT32 Length = Code == 103 || Code == 108 ? 3U : 1U;
+    if (!TerminalInput.Closed && Length <= TERMINAL_CAPACITY - TerminalInput.Length)
     {
         TerminalInput.Data[(TerminalInput.Head + TerminalInput.Length) % TERMINAL_CAPACITY] = Byte;
         TerminalInput.Length++;
+        if (Length == 3)
+        {
+            TerminalInput.Data[(TerminalInput.Head + TerminalInput.Length++) % TERMINAL_CAPACITY] = '[';
+            TerminalInput.Data[(TerminalInput.Head + TerminalInput.Length++) % TERMINAL_CAPACITY] = Code == 103 ? 'A' : 'B';
+        }
         WaitQueueWakeAll(&TerminalInput.Readers);
     }
     SpinLockReleaseIRQRestore(&TerminalInput.Lock, Flags);

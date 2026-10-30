@@ -10,7 +10,7 @@ INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fall
 {
     UINT32 X = TERMINAL_MARGIN;
     UINT32 Baseline = TERMINAL_MARGIN + TERMINAL_FONT_HEIGHT;
-    CHAR8 Buffer[256];
+    CHAR8 Buffer[8192];
     UINT32 Cursor = 0;
     UINT32 LineLength = 0;
     TERMINAL_UTF8 Decoder = {0};

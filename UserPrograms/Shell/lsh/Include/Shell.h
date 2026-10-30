@@ -45,3 +45,8 @@ VOID ShellApplyInputColor(CONST char *Line, SHELL_INPUT_STYLE Style);
 VOID ShellRenderInput(CONST char *Line, IME_STATE *IME, SHELL_INPUT_STYLE Style);
 
 VOID ShellType(CONST char *Arguments, char **Envp);
+
+VOID ShellHistoryInit(char **Envp);
+VOID ShellHistoryAdd(CONST char *Line);
+BOOLEAN ShellHistoryMove(BOOLEAN Older, char Line[256], UINTN *Length);
+VOID ShellHistoryEdited(VOID);

@@ -7,6 +7,8 @@
 #include <Scheduler/LBPWRR.h>
 #include <LineOS/Errno.h>
 
+STATIC UINT64 NextAuthSession;
+
 INT64 SyscallSetUID(UINT64 UID)
 {
     TASK *Task = LBPWRRGetCurrentTask();
@@ -18,6 +20,10 @@ INT64 SyscallSetUID(UINT64 UID)
     if (Context->Credentials.UID != 0 && Context->Credentials.UID != (UINT32) UID)
     {
         return -EPERM;
+    }
+    if (Task->AuthSession == 0)
+    {
+        Task->AuthSession = ATOMIC_FETCH_ADD(&NextAuthSession, 1, ATOMIC_RELAXED) + 1;
     }
     Task->RealUID = (UINT32) UID;
     Context->Credentials.UID = (UINT32) UID;
