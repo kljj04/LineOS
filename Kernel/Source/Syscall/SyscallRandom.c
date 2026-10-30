@@ -59,6 +59,7 @@ INT64 SyscallGetRandom(UINT64 Buffer, UINT64 Count, UINT64 Flags)
     {
         UINT64 Value = 0;
         UINT8  Ready = 0;
+
         for (UINT32 Attempt = 0; Attempt < 256 && !Ready; Attempt++)
         {
             if (Seed)
@@ -87,6 +88,7 @@ INT64 SyscallGetRandom(UINT64 Buffer, UINT64 Count, UINT64 Flags)
     {
         Result = (INT64) Count;
     }
+
 Cleanup:
     for (UINTN Index = 0; Index < sizeof(Bytes); Index++)
     {

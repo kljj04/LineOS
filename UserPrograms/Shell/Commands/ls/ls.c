@@ -16,6 +16,8 @@
 #define LS_BUFFER_SIZE 4096
 #define LS_PATH_SIZE   4096
 
+#define LS_TYPE_CHARACTER 2
+#define LS_TYPE_BLOCK     6
 #define LS_TYPE_DIRECTORY 4
 #define LS_TYPE_SYMLINK   10
 
@@ -120,6 +122,14 @@ STATIC UINT8 LSTypeFromMode(UINT32 Mode)
         return LS_TYPE_SYMLINK;
     }
 
+    if (S_ISCHR(Mode))
+    {
+        return LS_TYPE_CHARACTER;
+    }
+    if ((Mode & S_IFMT) == 0060000U)
+    {
+        return LS_TYPE_BLOCK;
+    }
     return 0;
 }
 
@@ -147,7 +157,23 @@ STATIC VOID LSPrintEntry(CONST CHAR8 *Name, UINT8 Type, CONST LS_OPTIONS *Option
         }
     }
 
-    printf("%s%s%s\033[0m\n", Color, (CONST char *) Name, Suffix);
+    if (Type == LS_TYPE_CHARACTER || Type == LS_TYPE_BLOCK)
+    {
+        Color = "\033[38;2;215;205;111m";
+    }
+    CONST char *Base = strrchr((CONST char *) Name, '/');
+    if (Base != NULL)
+    {
+        Base++;
+        CONST char *PathColor = "\033[0;38;2;0;134;255m";
+        write(1, PathColor, strlen(PathColor));
+        write(1, Name, Base - (CONST char *) Name);
+    }
+    else
+    {
+        Base = (CONST char *) Name;
+    }
+    printf("%s%s%s\033[0m\n", Color, Base, Suffix);
 }
 
 typedef struct
@@ -321,34 +347,14 @@ STATIC VOID LSMeasure(CONST struct stat *Info)
     Columns.Blocks += Info->st_blocks;
 }
 
-STATIC VOID LSPrintLongEntry(CONST CHAR8 *Name, CONST struct stat *Info, CONST LS_OPTIONS *Options)
+STATIC VOID LSPrintModifiedTime(CONST struct stat *Info)
 {
-    CHAR8 Mode[11];
     char Buffer[21];
-    LSModeString((UINT32) Info->st_mode, Mode);
-    printf("%s ", (CONST char *) Mode);
-    LSDecimal(Info->st_nlink, Buffer);
-    LSField(Buffer, Columns.Links, FALSE);
-    LSField(LSIdentity(Info->st_uid, FALSE, Buffer), Columns.Owner, TRUE);
-    LSField(LSIdentity(Info->st_gid, TRUE, Buffer), Columns.Group, TRUE);
-    if (S_ISCHR(Info->st_mode))
-    {
-        LSDecimal(Info->st_rdev, Buffer);
-        UINTN Length = strlen(Buffer) + 3;
-        while (Length++ < Columns.Size)
-        {
-            putchar(' ');
-        }
-        printf("0, %s ", Buffer);
-    }
-    else
-    {
-        LSDecimal(Info->st_size, Buffer);
-        LSField(Buffer, Columns.Size, FALSE);
-    }
-    time_t Modified = (time_t) Info->st_mtime + 9L * 60 * 60;
+
+    time_t Modified = (time_t) Info->st_mtime;
     struct tm Date;
-    if (gmtime_r(&Modified, &Date) != NULL)
+
+    if (localtime_r(&Modified, &Date) != NULL)
     {
         LSDecimal(Date.tm_mon + 1, Buffer);
         UINTN Length = strlen(Buffer);
@@ -365,6 +371,38 @@ STATIC VOID LSPrintLongEntry(CONST CHAR8 *Name, CONST struct stat *Info, CONST L
     {
         printf("?월  ? ??:?? ");
     }
+}
+
+STATIC VOID LSPrintLongEntry(CONST CHAR8 *Name, CONST struct stat *Info, CONST LS_OPTIONS *Options)
+{
+    CHAR8 Mode[11];
+    char Buffer[21];
+
+    LSModeString((UINT32) Info->st_mode, Mode);
+    printf("%s ", (CONST char *) Mode);
+    LSDecimal(Info->st_nlink, Buffer);
+    LSField(Buffer, Columns.Links, FALSE);
+
+    LSField(LSIdentity(Info->st_uid, FALSE, Buffer), Columns.Owner, TRUE);
+    LSField(LSIdentity(Info->st_gid, TRUE, Buffer), Columns.Group, TRUE);
+
+    if (S_ISCHR(Info->st_mode))
+    {
+        LSDecimal(Info->st_rdev, Buffer);
+        UINTN Length = strlen(Buffer) + 3;
+        while (Length++ < Columns.Size)
+        {
+            putchar(' ');
+        }
+        printf("0, %s ", Buffer);
+    }
+    else
+    {
+        LSDecimal(Info->st_size, Buffer);
+        LSField(Buffer, Columns.Size, FALSE);
+    }
+    LSPrintModifiedTime(Info);
+
     LSPrintEntry(Name, LSTypeFromMode((UINT32) Info->st_mode), Options);
 }
 
@@ -536,16 +574,7 @@ STATIC INT32 LSListPath(CONST CHAR8 *Path, CONST LS_OPTIONS *Options)
 
     if (!S_ISDIR(Info.st_mode))
     {
-        CONST CHAR8 *Name = (CONST CHAR8 *) strrchr((CONST char *) Path, '/');
-
-        if (Name == NULL)
-        {
-            Name = Path;
-        }
-        else
-        {
-            Name++;
-        }
+        CONST CHAR8 *Name = Path;
 
         if (Options->Long)
         {

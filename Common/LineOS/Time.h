@@ -14,3 +14,6 @@ typedef struct
     INT64 Seconds;
     INT64 Nanoseconds;
 } TIME_SPEC;
+
+#define LOS_CLOCK_REALTIME 0
+#define LOS_CLOCK_MONOTONIC 1

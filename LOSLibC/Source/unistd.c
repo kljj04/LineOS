@@ -61,3 +61,18 @@ char *getcwd(char *Buffer, size_t Size)
 {
     return LineOSSyscallResult(LineOSSyscall2(SYSCALL_GETCWD, (UINT64) Buffer, Size)) < 0 ? NULL : Buffer;
 }
+
+int chown(const char *Path, uid_t UID, gid_t GID)
+{
+    return (int) LineOSSyscallResult(LineOSSyscall3(SYSCALL_CHOWN, (UINT64) Path, UID, GID));
+}
+
+uid_t getuid(void)
+{
+    return (uid_t) LineOSSyscallResult(LineOSSyscall0(SYSCALL_GETUID));
+}
+
+uid_t geteuid(void)
+{
+    return (uid_t) LineOSSyscallResult(LineOSSyscall0(SYSCALL_GETEUID));
+}

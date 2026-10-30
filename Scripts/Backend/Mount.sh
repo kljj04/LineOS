@@ -318,7 +318,7 @@ MountProgramCopy()
             return 1
         fi
     fi
-    MountPrivilege install -T -m "$Mode" -- "$Source" "$Destination"
+    MountPrivilege install -T -o 0 -g 0 -m "$Mode" -- "$Source" "$Destination"
 }
 
 MountUpdate()
@@ -333,6 +333,7 @@ MountUpdate()
     local File Command ProgramFile Program CopyPath FontFile
     local -a FontFiles=()
     local -a ProgramPaths=()
+    local -a ProgramModes=()
     local -a ProgramFiles=()
 
     MountCleanup()
@@ -376,12 +377,12 @@ MountUpdate()
         return 1
     fi
 
-    local Manifest Dependencies Sources Destination
+    local Manifest Dependencies Sources Destination ProgramMode
     local -A Destinations=()
     if ! Manifest=$(ProgramManifest "$MountRoot"); then
         return 1
     fi
-    while IFS='|' read -r Program CopyPath Dependencies Sources; do
+    while IFS='|' read -r Program CopyPath Dependencies Sources ProgramMode; do
         [[ -z "$Program" ]] && continue
         ProgramFile="$ProgramsDir/$Program/${Program##*/}.lix"
         if [[ -L "$ProgramFile" || ! -f "$ProgramFile" || ! -r "$ProgramFile" ]]; then
@@ -392,6 +393,7 @@ MountUpdate()
         Destinations[$Destination]=1
         ProgramFiles+=("$ProgramFile")
         ProgramPaths+=("$CopyPath")
+        ProgramModes+=("${ProgramMode:-0755}")
     done <<< "$Manifest"
 
     shopt -s nullglob
@@ -463,10 +465,24 @@ MountUpdate()
 
     Mounted=1
 
+    if ! MountPrivilege test -e "$MountPoint/etc/timezone" && ! MountPrivilege test -L "$MountPoint/etc/timezone"; then
+        if ! MountProgramCopy "$MountRoot/Configs/timezone" "/etc" "$MountPoint" 0644; then
+            printf 'Timezone configuration copy rejected or failed\n' >&2
+            return 1
+        fi
+    fi
+
+    if ! MountPrivilege test -e "$MountPoint/etc/sudoers" && ! MountPrivilege test -L "$MountPoint/etc/sudoers"; then
+        if ! MountProgramCopy "$MountRoot/Configs/sudoers" "/etc" "$MountPoint" 0600; then
+            printf 'Sudo policy copy rejected or failed\n' >&2
+            return 1
+        fi
+    fi
+
     local Index=0
 
     for ProgramFile in "${ProgramFiles[@]}"; do
-        if ! MountProgramCopy "$ProgramFile" "${ProgramPaths[$Index]}" "$MountPoint"; then
+        if ! MountProgramCopy "$ProgramFile" "${ProgramPaths[$Index]}" "$MountPoint" "${ProgramModes[$Index]}"; then
             printf 'Program copy rejected or failed: %s\n' "$ProgramFile" >&2
             return 1
         fi

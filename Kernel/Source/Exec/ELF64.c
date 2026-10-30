@@ -492,6 +492,14 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONS
     }
     KMemCpy(Execution->Task->FileContext, Context, sizeof(VFS_CONTEXT));
 
+    Execution->Task->RealUID = Context->Credentials.UID;
+    Execution->Task->RealGID = Context->Credentials.GID;
+    if ((Node.Mode & 04000U) != 0)
+    {
+        Execution->Task->FileContext->Credentials.UID = Node.UID;
+        Execution->Task->FileContext->Credentials.Administrator = Node.UID == 0;
+    }
+
     Execution->Task->AssetPublisher = AssetPublisher;
 
     if (!Schedule)

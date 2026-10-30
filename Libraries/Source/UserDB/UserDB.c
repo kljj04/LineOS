@@ -482,6 +482,31 @@ USER_DB_RESULT UserDBCheck(VOID)
     return Result;
 }
 
+STATIC VOID UserDBCopyAccount(CONST USER_DB_RECORD *Record, USER_DB_ACCOUNT *Account)
+{
+    UINTN  Position = Record->Start;
+    UINT32 Separators = 0;
+    while (Position < Record->End && Separators < 3)
+    {
+        if (Database[Position++] == ':')
+        {
+            Separators++;
+        }
+    }
+    memcpy(Account->Salt, Database + Position, USER_DB_SALT_TEXT_SIZE - 1);
+    Account->Salt[USER_DB_SALT_TEXT_SIZE - 1] = 0;
+    Position += USER_DB_SALT_TEXT_SIZE;
+    UINTN Length = Record->End - Position;
+    if (Length != 0 && Database[Record->End - 1] == '\n')
+    {
+        Length--;
+    }
+    memcpy(Account->Hash, Database + Position, Length);
+    Account->Hash[Length] = 0;
+    Account->UID = Record->UID;
+    Account->GID = Record->GID;
+}
+
 USER_DB_RESULT UserDBLookup(CONST char *Username, USER_DB_ACCOUNT *Account)
 {
     if (Account == NULL)
@@ -504,29 +529,36 @@ USER_DB_RESULT UserDBLookup(CONST char *Username, USER_DB_ACCOUNT *Account)
             {
                 continue;
             }
-            UINTN  Position = Record->Start;
-            UINT32 Separators = 0;
-            while (Position < Record->End && Separators < 3)
-            {
-                if (Database[Position++] == ':')
-                {
-                    Separators++;
-                }
-            }
-            memcpy(Account->Salt, Database + Position, USER_DB_SALT_TEXT_SIZE - 1);
-            Account->Salt[USER_DB_SALT_TEXT_SIZE - 1] = 0;
-            Position += USER_DB_SALT_TEXT_SIZE;
-            UINTN Length = Record->End - Position;
-            if (Length != 0 && Database[Record->End - 1] == '\n')
-            {
-                Length--;
-            }
-            memcpy(Account->Hash, Database + Position, Length);
-            Account->Hash[Length] = 0;
-            Account->UID = Record->UID;
-            Account->GID = Record->GID;
+            UserDBCopyAccount(Record, Account);
             Result = USER_DB_OK;
             break;
+        }
+    }
+    UserDBClearSnapshot();
+    return Result;
+}
+
+USER_DB_RESULT UserDBLookupUID(UINT32 UID, char Username[USER_DB_NAME_MAX + 1], USER_DB_ACCOUNT *Account)
+{
+    if (Username == NULL || Account == NULL)
+    {
+        return USER_DB_INVALID;
+    }
+    Username[0] = 0;
+    memset(Account, 0, sizeof(*Account));
+    USER_DB_RESULT Result = UserDBLoad();
+    if (Result == USER_DB_OK)
+    {
+        Result = USER_DB_NOT_FOUND;
+        for (UINT32 Index = 0; Index < RecordCount; Index++)
+        {
+            if (Records[Index].UID == UID)
+            {
+                strcpy(Username, Records[Index].Name);
+                UserDBCopyAccount(&Records[Index], Account);
+                Result = USER_DB_OK;
+                break;
+            }
         }
     }
     UserDBClearSnapshot();

@@ -22,6 +22,7 @@ ProgramRead()
     ProgramCopyPath=/bin
     ProgramDependencies=-
     ProgramEnable=true
+    ProgramMode=0755
 
     while IFS= read -r Line || [[ -n "$Line" ]]; do
         Line=$(ProgramTrim "$Line")
@@ -74,6 +75,13 @@ ProgramRead()
                         fi
                     done
                 fi
+                ;;
+            Mode)
+                if [[ ! "$Value" =~ ^[0-7]{4}$ ]]; then
+                    printf 'Invalid Mode: %s: %s\n' "$Config" "$Value" >&2
+                    return 1
+                fi
+                ProgramMode=$Value
                 ;;
             Enable)
                 if [[ "$Value" != true && "$Value" != false ]]; then
@@ -143,7 +151,7 @@ ProgramManifest()
             fi
             if [[ "$Sources" == - ]]; then Sources=$Source; else Sources+=",$Source"; fi
         done < <(find "$Root/UserPrograms/$Program" -type f \( -name '*.c' -o -name '*.S' \) | LC_ALL=C sort)
-        printf '%s|%s|%s|%s\n' "$Program" "${ProgramCopyPath:-/}" "$ProgramDependencies" "$Sources"
+        printf '%s|%s|%s|%s|%s\n' "$Program" "${ProgramCopyPath:-/}" "$ProgramDependencies" "$Sources" "$ProgramMode"
     done <<< "$List"
 )
 

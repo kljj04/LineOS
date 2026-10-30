@@ -130,4 +130,7 @@ typedef struct TASK
     BOOLEAN                 AssetPublisher;
     TASK_ASSET              Assets[LOS_ASSET_MAPPING_LIMIT];
     OPEN_FILE              *Files[TASK_FILE_LIMIT];
+    CHAR8                   Name[16];
+    UINT32                  RealUID;
+    UINT32                  RealGID;
 } TASK;

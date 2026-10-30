@@ -38,3 +38,32 @@ UINT128 __udivti3(UINT128 Dividend, UINT128 Divisor)
 
     return Quotient;
 }
+
+UINT128 __umodti3(UINT128 Dividend, UINT128 Divisor)
+{
+    UINT128 Bit = 1;
+
+    if (Divisor == 0)
+    {
+        return 0;
+    }
+
+    while ((Divisor << 1) > Divisor && (Divisor << 1) <= Dividend)
+    {
+        Divisor <<= 1;
+        Bit <<= 1;
+    }
+
+    while (Bit != 0)
+    {
+        if (Dividend >= Divisor)
+        {
+            Dividend -= Divisor;
+        }
+
+        Divisor >>= 1;
+        Bit >>= 1;
+    }
+
+    return Dividend;
+}

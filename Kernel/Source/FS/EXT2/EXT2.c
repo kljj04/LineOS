@@ -810,7 +810,7 @@ STATIC BOOLEAN EXT2SetAttributes(EXT2_VOLUME *Volume, UINT32 Number, UINT16 Mode
         {
             if (Owner)
             {
-                EXT2InodeOwner(&Inode, UID, GID);
+                EXT2InodeOwner(&Inode, UID == UINT32_MAX ? EXT2InodeUID(&Inode) : UID, GID == UINT32_MAX ? EXT2InodeGID(&Inode) : GID);
                 EXT2Store16(Inode.Raw, EXT2Load16(Inode.Raw) & ~06000U);
             }
             else

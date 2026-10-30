@@ -27,6 +27,8 @@ typedef struct
     UINT32              DefaultBackground;
     UINT32              ForegroundIndex;
     BOOLEAN             EraseLine;
+    BOOLEAN             EraseScreen;
+    BOOLEAN             CursorHome;
     BOOLEAN             Invalid;
     BOOLEAN             Bold;
     BOOLEAN             Inverse;

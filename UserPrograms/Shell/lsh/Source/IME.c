@@ -1,4 +1,4 @@
-// UserPrograms/Shell/IME.c
+// UserPrograms/Shell/lsh/Source/IME.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

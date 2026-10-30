@@ -203,6 +203,8 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
         goto Failed;
     }
     *Child->FileContext = *Parent->FileContext;
+    Child->RealUID = Parent->RealUID;
+    Child->RealGID = Parent->RealGID;
     Child->UserStackBase = Parent->UserStackBase;
     Child->UserStackSize = Parent->UserStackSize;
     KMemCpy(Child->Assets, Parent->Assets, sizeof(Child->Assets));
@@ -310,6 +312,7 @@ INT64 SyscallExecVE(INTERRUPT_FRAME *Frame)
             Owner->AddressSpace = New->AddressSpace;
             Owner->PageCount = New->PageCount;
             KMemCpy(Owner->Pages, New->Pages, New->PageCount * sizeof(VOID *));
+            Task->FileContext->Credentials = New->Task->FileContext->Credentials;
             Task->AddressSpace = New->AddressSpace;
             Task->UserStackBase = New->Task->UserStackBase;
             Task->UserStackSize = New->Task->UserStackSize;
@@ -418,4 +421,53 @@ INT64 SyscallWait4(INT64 PID, UINT64 Status, UINT64 Options, UINT64 Usage)
             return -EINTR;
         }
     }
+}
+
+INT64 SyscallParentChdir(UINT64 Path)
+{
+    TASK *Task = LBPWRRGetCurrentTask();
+    if (Task == NULL || Task->FileContext == NULL)
+    {
+        return -ESRCH;
+    }
+    if (Task->FileContext->Credentials.UID != 0)
+    {
+        return -EPERM;
+    }
+    CHAR8 *Name;
+    INT64 Result = SyscallCopyPath(Task, Path, &Name);
+    if (Result < 0)
+    {
+        return Result;
+    }
+    if (!ProcessBegin())
+    {
+        KFree(Name);
+        return -EAGAIN;
+    }
+    Result = -ESRCH;
+    for (UINT32 Index = 0; Index < PROCESS_LIMIT; Index++)
+    {
+        PROCESS_SLOT *Slot = &ProcessSlots[Index];
+        if (Slot->Execution == NULL || Slot->Execution->Task != Task)
+        {
+            continue;
+        }
+        TASK *Parent = TaskGetByPID(Slot->ParentPID);
+        if (Parent == NULL || Parent->FileContext == NULL || Parent->RealUID != Task->RealUID)
+        {
+            break;
+        }
+        VFS_CONTEXT Context = *Parent->FileContext;
+        Context.Credentials = Task->FileContext->Credentials;
+        Result = SyscallVFSError(VFSChangeDirectory(&Context, Name));
+        if (Result == 0)
+        {
+            Parent->FileContext->Partition = Context.Partition;
+            KMemCpy(Parent->FileContext->Cwd, Context.Cwd, sizeof(Context.Cwd));
+        }
+        break;
+    }
+    KFree(Name);
+    return ProcessEnd(Result);
 }

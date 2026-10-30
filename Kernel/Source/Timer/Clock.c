@@ -515,3 +515,20 @@ VOID ClockNTPTask(VOID)
         TaskSleepMls(1000);
     }
 }
+
+BOOLEAN ClockGetMonotonicTime(CLOCK_TIME *Time)
+{
+    if (Time == NULL || ClockBootFrequency == 0)
+    {
+        return FALSE;
+    }
+    UINT64 Now = HPETReadCounter();
+    if (Now < ClockBootCounter)
+    {
+        return FALSE;
+    }
+    UINT128 Nanoseconds = (UINT128) (Now - ClockBootCounter) * CLOCK_NS_PER_SECOND / ClockBootFrequency;
+    Time->Seconds = (UINT64) (Nanoseconds / CLOCK_NS_PER_SECOND);
+    Time->Nanoseconds = (UINT32) (Nanoseconds % CLOCK_NS_PER_SECOND);
+    return TRUE;
+}

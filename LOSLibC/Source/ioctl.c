@@ -9,7 +9,14 @@
 int ioctl(int FD, unsigned long Request, ...)
 {
     UINT64 Argument = 0;
-    if (_IOC_DIR(Request) != 0 || Request == FBIOGET_VSCREENINFO || Request == FBIOGET_FSCREENINFO)
+    if (Request == LOS_TIO_WAIT_READ)
+    {
+        va_list Arguments;
+        va_start(Arguments, Request);
+        Argument = va_arg(Arguments, UINT64);
+        va_end(Arguments);
+    }
+    else if (_IOC_DIR(Request) != 0 || Request == FBIOGET_VSCREENINFO || Request == FBIOGET_FSCREENINFO)
     {
         va_list Arguments;
         va_start(Arguments, Request);

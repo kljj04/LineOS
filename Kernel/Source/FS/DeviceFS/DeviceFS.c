@@ -276,11 +276,29 @@ STATIC INT64 FramebufferIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
     return VirtIOGPUPresent() ? 0 : -EIO;
 }
 
+STATIC INT64 DeviceMasterIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Argument, UINT32 Access)
+{
+    (VOID) Task;
+    (VOID) State;
+    (VOID) Access;
+
+    if (Request != LOS_TIO_WAIT_READ)
+    {
+        return -ENOTTY;
+    }
+    if (Argument > 1000)
+    {
+        return -EINVAL;
+    }
+
+    return TerminalWaitOutput((UINT32) Argument);
+}
+
 STATIC CONST DEVICE_OPERATIONS NullOperations = {DeviceOpen, DeviceNullRead, DeviceDiscard, DeviceClose, NULL, DeviceNoIoctl};
 STATIC CONST DEVICE_OPERATIONS ZeroOperations = {DeviceOpen, DeviceZeroRead, DeviceDiscard, DeviceClose, NULL, DeviceNoIoctl};
 STATIC CONST DEVICE_OPERATIONS FullOperations = {DeviceOpen, DeviceZeroRead, DeviceFullWrite, DeviceClose, NULL, DeviceNoIoctl};
 STATIC CONST DEVICE_OPERATIONS TerminalOperations = {DeviceOpen, DeviceTerminalRead, DeviceTerminalWrite, DeviceClose, NULL, DeviceNoIoctl};
-STATIC CONST DEVICE_OPERATIONS MasterOperations = {DeviceMasterOpen, DeviceMasterRead, DeviceMasterWrite, DeviceMasterClose, NULL, DeviceNoIoctl};
+STATIC CONST DEVICE_OPERATIONS MasterOperations = {DeviceMasterOpen, DeviceMasterRead, DeviceMasterWrite, DeviceMasterClose, NULL, DeviceMasterIoctl};
 STATIC CONST DEVICE_OPERATIONS FramebufferOperations = {FramebufferOpen, FramebufferRead, FramebufferWrite, DeviceClose, FramebufferMap, FramebufferIoctl};
 STATIC CONST DEVICE_NODE       DeviceNodes[] = {{(CONST CHAR8 *) "null", 0666, FALSE, &NullOperations}, {(CONST CHAR8 *) "zero", 0666, FALSE, &ZeroOperations}, {(CONST CHAR8 *) "full", 0666, FALSE, &FullOperations}, {(CONST CHAR8 *) "lsh1", 0666, FALSE, &TerminalOperations}, {(CONST CHAR8 *) "lsh1-master", 0600, FALSE, &MasterOperations}, {(CONST CHAR8 *) "fb0", 0666, TRUE, &FramebufferOperations}};
 

@@ -92,3 +92,5 @@ typedef struct
 #define LOS_FBIO_PRESENT      _IOW('L', 1, LOS_FB_PRESENT)
 #define LOS_FBIO_PRESENT_RECT _IOW('L', 2, LOS_FB_RECT)
 #define LOS_FBIO_FLUSH        _IO('L', 3)
+
+#define LOS_TIO_WAIT_READ _IO('L', 4)

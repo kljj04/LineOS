@@ -50,3 +50,5 @@ UINT64  ClockGetUptimeMls(VOID);
 BOOLEAN ClockSyncNTP(CONST CHAR8 *Server, UINT32 TimeoutMls);
 VOID    ClockGetNTPStatus(CLOCK_NTP_STATUS *Status);
 VOID    ClockNTPTask(VOID);
+
+BOOLEAN ClockGetMonotonicTime(CLOCK_TIME *Time);

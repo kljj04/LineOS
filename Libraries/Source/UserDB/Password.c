@@ -6,8 +6,9 @@
 #include <UserDB/Argon2.h>
 #include <sys/random.h>
 #include <string.h>
+#include <sys/mman.h>
 
-STATIC UINT64     PasswordWork[65536U * 128U];
+#define PASSWORD_WORK_SIZE (65536U * 128U * sizeof(UINT64))
 STATIC CONST char HexDigits[] = "0123456789abcdef";
 
 STATIC INT32 PasswordHexValue(char Character)
@@ -59,10 +60,18 @@ STATIC BOOLEAN PasswordDerive(CONST char *Password, CONST UINT8 Salt[16], UINT8 
     {
         return FALSE;
     }
+    VOID *PasswordWork = mmap(NULL, PASSWORD_WORK_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (PasswordWork == MAP_FAILED)
+    {
+        return FALSE;
+    }
+
     CRYPTO_ARGON2_CONFIG Config = {CRYPTO_ARGON2_ID, 65536, 3, 1};
     CRYPTO_ARGON2_INPUTS Inputs = {(CONST UINT8 *) Password, Salt, (UINT32) Length, 16};
     CryptoArgon2(Hash, 32, PasswordWork, Config, Inputs, CryptoArgon2NoExtras);
-    return TRUE;
+    CryptoWipe(PasswordWork, PASSWORD_WORK_SIZE);
+
+    return munmap(PasswordWork, PASSWORD_WORK_SIZE) == 0;
 }
 
 BOOLEAN UserDBHashPassword(CONST char *Password, char Salt[USER_DB_SALT_TEXT_SIZE], char Hash[USER_DB_HASH_TEXT_SIZE])

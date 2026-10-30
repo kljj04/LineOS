@@ -37,3 +37,7 @@ INT64 SyscallChdir(UINT64 Path);
 INT64 SyscallGetCwd(UINT64 Buffer, UINT64 Size);
 
 INT64 SyscallUtimensat(INT64 DirFD, UINT64 Path, UINT64 Times, UINT64 Flags);
+
+INT64 SyscallChown(UINT64 Path, UINT64 UID, UINT64 GID);
+
+INT64 SyscallGetUID(BOOLEAN Effective);

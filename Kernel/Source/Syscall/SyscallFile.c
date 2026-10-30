@@ -719,3 +719,24 @@ INT64 SyscallUtimensat(INT64 DirFD, UINT64 Path, UINT64 TimesAddress, UINT64 Fla
     KFree(Name);
     return Result;
 }
+
+INT64 SyscallChown(UINT64 Path, UINT64 UID, UINT64 GID)
+{
+    TASK *Task = LBPWRRGetCurrentTask();
+    CHAR8 *Name;
+    if (Task == NULL || Task->FileContext == NULL)
+    {
+        return -ESRCH;
+    }
+    if (UID > UINT32_MAX || GID > UINT32_MAX)
+    {
+        return -EINVAL;
+    }
+    INT64 Result = SyscallCopyPath(Task, Path, &Name);
+    if (Result == 0)
+    {
+        Result = SyscallVFSError(VFSSetOwner(Task->FileContext, Name, (UINT32) UID, (UINT32) GID));
+        KFree(Name);
+    }
+    return Result;
+}

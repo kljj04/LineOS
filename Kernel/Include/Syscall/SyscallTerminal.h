@@ -11,3 +11,5 @@ VOID  TerminalKey(UINT16 Code, BOOLEAN Pressed, UINT8 Modifiers);
 
 BOOLEAN TerminalAttach(VOID);
 VOID    TerminalDetach(VOID);
+
+INT64 TerminalWaitOutput(UINT32 TimeoutMls);

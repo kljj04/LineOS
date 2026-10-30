@@ -1,4 +1,4 @@
-// UserPrograms/Terminal/Terminal/ANSI.c
+// UserPrograms/Terminal/Terminal/Source/ANSI.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
@@ -191,6 +191,14 @@ BOOLEAN TerminalANSIConsume(TERMINAL_ANSI *ANSI, UINT8 Byte)
         else if (Byte == 'K' && !ANSI->Invalid && ANSI->Count == 1 && ANSI->Parameters[0] == 2)
         {
             ANSI->EraseLine = TRUE;
+        }
+        else if (Byte == 'J' && !ANSI->Invalid && ANSI->Count == 1 && ANSI->Parameters[0] == 2)
+        {
+            ANSI->EraseScreen = TRUE;
+        }
+        else if ((Byte == 'H' || Byte == 'f') && !ANSI->Invalid && ANSI->Count <= 2 && ANSI->Parameters[0] <= 1 && (ANSI->Count == 1 || ANSI->Parameters[1] <= 1))
+        {
+            ANSI->CursorHome = TRUE;
         }
         ANSI->State = TERMINAL_ANSI_TEXT;
     }

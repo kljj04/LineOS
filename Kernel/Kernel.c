@@ -128,6 +128,18 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
         Panic(L"Mouse Task Failed");
     }
 
+    TASK *NTPTask = TaskCreate(ClockNTPTask);
+
+    if (NTPTask == NULL)
+    {
+        Panic(L"NTP Task Failed");
+    }
+    KMemCpy(NTPTask->Name, "ntpk", sizeof("ntpk"));
+    if (!LBPWRRAddTask(NTPTask))
+    {
+        Panic(L"NTP Task Failed");
+    }
+
     KMemSet(&InitExecution, 0, sizeof(InitExecution));
 
     if (!ELF64ExecuteInit(&RootContext, (CONST CHAR8 *) "/sbin/Init.lix", &InitExecution))

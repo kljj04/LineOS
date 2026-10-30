@@ -12,6 +12,8 @@
 #include <Syscall/SyscallProcess.h>
 #include <Syscall/SyscallAsset.h>
 #include <Syscall/SyscallMemory.h>
+#include <Syscall/SyscallSysinfo.h>
+#include <Syscall/SyscallTime.h>
 
 #include <Arch/AMD64/CPU.h>
 #include <Debug/Panic.h>
@@ -26,8 +28,8 @@ typedef struct
 STATIC_ASSERT(GDT_KERNEL_DATA_SELECTOR == GDT_KERNEL_CODE_SELECTOR + 8, "SYSCALL kernel selectors");
 STATIC_ASSERT(GDT_USER_DATA_SELECTOR == GDT_USER_CODE_SELECTOR - 8, "SYSRET user selectors");
 STATIC_ASSERT(GDT_USER_DATA_SELECTOR == 0x18 && GDT_USER_CODE_SELECTOR == 0x20, "SyscallEntry selectors");
-STATIC_ASSERT(__builtin_offsetof(SYSCALL_CPU, KernelStack) == 0 && __builtin_offsetof(SYSCALL_CPU, UserStack) == 8, "SyscallEntry CPU offsets");
-STATIC_ASSERT(__builtin_offsetof(INTERRUPT_FRAME, RAX) == 112 && __builtin_offsetof(INTERRUPT_FRAME, RIP) == 136 && __builtin_offsetof(INTERRUPT_FRAME, RFLAGS) == 152 && __builtin_offsetof(INTERRUPT_FRAME, RSP) == 160 && sizeof(INTERRUPT_FRAME) == 176, "SyscallEntry frame layout");
+STATIC_ASSERT(OFFSET_OF(SYSCALL_CPU, KernelStack) == 0 && OFFSET_OF(SYSCALL_CPU, UserStack) == 8, "SyscallEntry CPU offsets");
+STATIC_ASSERT(OFFSET_OF(INTERRUPT_FRAME, RAX) == 112 && OFFSET_OF(INTERRUPT_FRAME, RIP) == 136 && OFFSET_OF(INTERRUPT_FRAME, RFLAGS) == 152 && OFFSET_OF(INTERRUPT_FRAME, RSP) == 160 && sizeof(INTERRUPT_FRAME) == 176, "SyscallEntry frame layout");
 
 STATIC SYSCALL_CPU SyscallCPUs[GDT_MAX_CPUS];
 
@@ -73,6 +75,19 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
 
     switch (Frame->RAX)
     {
+        case SYSCALL_CLOCK_GETTIME:
+        {
+            return (UINT64) SyscallClockGetTime((INT64) Frame->RDI, Frame->RSI);
+        }
+        case SYSCALL_GETUID:
+        case SYSCALL_GETEUID:
+        {
+            return (UINT64) SyscallGetUID(Frame->RAX == SYSCALL_GETEUID);
+        }
+        case SYSCALL_PARENT_CHDIR:
+        {
+            return (UINT64) SyscallParentChdir(Frame->RDI);
+        }
         case SYSCALL_STAT:
         case SYSCALL_LSTAT:
         {
@@ -116,6 +131,8 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
             return (UINT64) SyscallExit(Frame->RDI);
         }
 
+        case SYSCALL_CHOWN:
+            return (UINT64) SyscallChown(Frame->RDI, Frame->RSI, Frame->RDX);
         case SYSCALL_SETUID:
         {
             return (UINT64) SyscallSetUID(Frame->RDI);
@@ -155,10 +172,18 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
         }
 
         case SYSCALL_UTIMENSAT:
+        {
             return (UINT64) SyscallUtimensat((INT64) Frame->RDI, Frame->RSI, Frame->RDX, Frame->R10);
+        }
+
         case SYSCALL_MKDIR:
         {
             return (UINT64) SyscallMkdir(Frame->RDI, Frame->RSI);
+        }
+
+        case SYSCALL_SYSINFO:
+        {
+            return SyscallSysInfo(Frame->RDI);
         }
 
         case SYSCALL_REMOVE:

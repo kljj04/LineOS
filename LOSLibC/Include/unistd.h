@@ -22,3 +22,8 @@ ssize_t getdents64(int FD, void *Buffer, size_t Count);
 int chdir(const char *Path);
 
 char *getcwd(char *Buffer, size_t Size);
+
+int chown(const char *Path, uid_t UID, gid_t GID);
+
+uid_t getuid(void);
+uid_t geteuid(void);

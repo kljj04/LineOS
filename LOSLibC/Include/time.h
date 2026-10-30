@@ -23,6 +23,18 @@ struct tm
     int tm_wday;
     int tm_yday;
     int tm_isdst;
+    long tm_gmtoff;
+    const char *tm_zone;
 };
 
 struct tm *gmtime_r(const time_t *Timer, struct tm *Result);
+struct tm *localtime_r(const time_t *Timer, struct tm *Result);
+
+#include <LineOS/Time.h>
+
+typedef int clockid_t;
+
+#define CLOCK_REALTIME LOS_CLOCK_REALTIME
+#define CLOCK_MONOTONIC LOS_CLOCK_MONOTONIC
+
+int clock_gettime(clockid_t ClockID, struct timespec *Time);

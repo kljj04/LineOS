@@ -50,3 +50,5 @@ typedef struct
 
 USER_DB_RESULT UserDBCheck(VOID);
 USER_DB_RESULT UserDBLookup(CONST char *Username, USER_DB_ACCOUNT *Account);
+
+USER_DB_RESULT UserDBLookupUID(UINT32 UID, char Username[USER_DB_NAME_MAX + 1], USER_DB_ACCOUNT *Account);

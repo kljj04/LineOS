@@ -19,6 +19,7 @@ INT64 SyscallSetUID(UINT64 UID)
     {
         return -EPERM;
     }
+    Task->RealUID = (UINT32) UID;
     Context->Credentials.UID = (UINT32) UID;
     Context->Credentials.Administrator = UID == 0;
     return 0;
@@ -36,6 +37,17 @@ INT64 SyscallSetGID(UINT64 GID)
     {
         return -EPERM;
     }
+    Task->RealGID = (UINT32) GID;
     Credentials->GID = (UINT32) GID;
     return 0;
+}
+
+INT64 SyscallGetUID(BOOLEAN Effective)
+{
+    TASK *Task = LBPWRRGetCurrentTask();
+    if (Task == NULL || Task->FileContext == NULL)
+    {
+        return -ESRCH;
+    }
+    return Effective ? Task->FileContext->Credentials.UID : Task->RealUID;
 }
