@@ -3,8 +3,8 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <Scheduler/Task.h>
-#include <Syscall/SyscallFile.h>
-#include <Syscall/SyscallMemory.h>
+#include <Syscall/File/SyscallFile.h>
+#include <Syscall/Memory/SyscallMemory.h>
 #include <Scheduler/WaitQueue.h>
 #include <Scheduler/LBPWRRRunQueue.h>
 #include <Scheduler/LBPWRRChunk.h>
@@ -578,4 +578,52 @@ VOID TaskSampleCPUUsage(UINT64 IntervalTSC)
         }
         ATOMIC_STORE(&Task->CPUUsage, (UINT32) Percent, ATOMIC_RELEASE);
     }
+}
+UINT32 TaskGetSnapshot(SYSTEM_TASK_INFO *Entries, UINT32 Capacity)
+{
+    UINT32 Count = 0;
+    for (UINT32 Pass = 0; Pass < 2; Pass++)
+    {
+        for (UINTN Index = 0; Index < LBPWRR_MAX_TASKS && Count < Capacity; Index++)
+        {
+            if (!ATOMIC_LOAD(&TaskUsed[Index], ATOMIC_ACQUIRE))
+            {
+                continue;
+            }
+            TASK *Task = &TaskPool[Index];
+            if ((Task->Idle ? 1U : 0U) != Pass)
+            {
+                continue;
+            }
+            UINT16 PID = Task->PID;
+            SYSTEM_TASK_INFO Entry = {0};
+            Entry.PID = PID;
+            Entry.UID = Task->RealUID;
+            Entry.CPU = Task->CPUID;
+            Entry.Usage = ATOMIC_LOAD(&Task->CPUUsage, ATOMIC_ACQUIRE);
+            Entry.State = Task->State;
+            Entry.Kernel = Task->AddressSpace == NULL;
+            Entry.Idle = Task->Idle;
+            KMemCpy(Entry.Name, Task->Name, sizeof(Entry.Name) - 1);
+            if (!ATOMIC_LOAD(&TaskUsed[Index], ATOMIC_ACQUIRE) || Task->PID != PID)
+            {
+                continue;
+            }
+            Entries[Count++] = Entry;
+        }
+    }
+    return Count;
+}
+
+UINT32 TaskGetIdleCount(VOID)
+{
+    UINT32 Count = 0;
+    for (UINTN Index = 0; Index < LBPWRR_MAX_TASKS; Index++)
+    {
+        if (ATOMIC_LOAD(&TaskUsed[Index], ATOMIC_ACQUIRE) && TaskPool[Index].Idle)
+        {
+            Count++;
+        }
+    }
+    return Count;
 }

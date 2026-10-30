@@ -30,7 +30,7 @@ struct tm
 struct tm *gmtime_r(const time_t *Timer, struct tm *Result);
 struct tm *localtime_r(const time_t *Timer, struct tm *Result);
 
-#include <LineOS/Time.h>
+#include <Syscall/Time/Time.h>
 
 typedef int clockid_t;
 
@@ -38,3 +38,5 @@ typedef int clockid_t;
 #define CLOCK_MONOTONIC LOS_CLOCK_MONOTONIC
 
 int clock_gettime(clockid_t ClockID, struct timespec *Time);
+
+int nanosleep(const struct timespec *Duration, struct timespec *Remaining);

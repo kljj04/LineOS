@@ -10,6 +10,7 @@
 #define VFS_OPEN_CREATE    0x40U
 #define VFS_OPEN_EXCLUSIVE 0x80U
 #define VFS_OPEN_TRUNCATE  0x200U
+#define VFS_OPEN_APPEND    0x400U
 
 #define VFS_MAX_PARTITIONS     32U
 #define VFS_MAX_PATH           4096U

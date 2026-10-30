@@ -34,19 +34,21 @@ VOID ShellEcho(UINT32 Codepoint);
 VOID ShellAppend(char *Line, UINTN *Length, UINT32 Codepoint);
 VOID ShellPrompt(CONST char *Username);
 SHELL_COMMAND ShellGetCommand(CONST char *Line);
-VOID ShellCD(CONST char *Path, char **Envp);
-VOID ShellPWD(VOID);
+INT32 ShellCD(CONST char *Path, char **Envp);
+INT32 ShellPWD(VOID);
 CONST char *ShellGetEnvironment(char **Envp, CONST char *Name);
 BOOLEAN ShellFindCommand(CONST char *Command, char **Envp, char Path[4096]);
-VOID ShellExecute(char *Line, char **Envp);
+VOID ShellExecute(char *Line, char **Envp, INT32 Status);
 SHELL_INPUT_STYLE ShellInputStyle(CONST char *Line, IME_STATE *IME, char **Envp);
 VOID ShellInputColors(CONST char *Line, SHELL_INPUT_STYLE Style, UINT8 Colors[260]);
 VOID ShellApplyInputColor(CONST char *Line, SHELL_INPUT_STYLE Style);
 VOID ShellRenderInput(CONST char *Line, IME_STATE *IME, SHELL_INPUT_STYLE Style);
 
-VOID ShellType(CONST char *Arguments, char **Envp);
+INT32 ShellType(CONST char *Arguments, char **Envp);
 
 VOID ShellHistoryInit(char **Envp);
 VOID ShellHistoryAdd(CONST char *Line);
 BOOLEAN ShellHistoryMove(BOOLEAN Older, char Line[256], UINTN *Length);
 VOID ShellHistoryEdited(VOID);
+
+BOOLEAN ShellReadCommand(char Line[256], char **Envp);

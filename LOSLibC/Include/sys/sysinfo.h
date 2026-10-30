@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <LineOS/Sysinfo.h>
+#include <Syscall/System/Sysinfo.h>
 #include <LOSLibC/TypeInfo.h>
 
 INT32 sysinfo(SYS_INFO *Info);

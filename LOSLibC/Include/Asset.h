@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <LineOS/Asset.h>
+#include <Syscall/Asset/Asset.h>
 
 INT64 LOSAssetPublish(CONST char *Name, CONST VOID *Data, UINT64 Size);
 INT64 LOSAssetAcquire(CONST char *Name, LOS_ASSET *Asset);

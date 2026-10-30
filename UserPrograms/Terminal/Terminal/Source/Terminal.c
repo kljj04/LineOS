@@ -84,6 +84,17 @@ INT32 main(VOID)
         GetCodepointBitmapBox(&Font.Info, Character, Scale, Scale, &Glyphs[Character].Left, &Glyphs[Character].Top, &Glyphs[Character].Right, &Glyphs[Character].Bottom);
     }
 
+    struct winsize Size;
+    Size.ws_row = (Info.Height - TERMINAL_MARGIN - TERMINAL_FONT_HEIGHT) / TERMINAL_LINE_HEIGHT + 1;
+    Size.ws_col = (Info.Width - TERMINAL_MARGIN * 2U) / Glyphs[' '].Advance;
+    Size.ws_xpixel = Info.Width;
+    Size.ws_ypixel = Info.Height;
+    if (ioctl(3, TIOCSWINSZ, &Size) < 0)
+    {
+        puts("Terminal: cannot publish terminal size");
+        return 1;
+    }
+
     for (UINTN Index = 0; Index < (UINTN) Info.Width * Info.Height; Index++)
     {
         FrameBuffer[Index] = TERMINAL_BACKGROUND;

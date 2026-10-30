@@ -3,8 +3,8 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <LOSLibC/TypeInfo.h>
-#include <LineOS/Sysinfo.h>
-#include <LineOS/Syscall.h>
+#include <Syscall/System/Sysinfo.h>
+#include <Syscall/Numbers.h>
 #include <syscall.h>
 
 INT32 sysinfo(SYS_INFO *Info)

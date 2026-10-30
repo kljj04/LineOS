@@ -3,22 +3,32 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <Interrupt/IDT.h>
+#include <Syscall/File/SyscallDirectory.h>
+#include <Syscall/File/SyscallStat.h>
+#include <Syscall/File/SyscallPath.h>
+#include <Syscall/File/SyscallOwnership.h>
+#include <Syscall/Time/SyscallFileTime.h>
+#include <Syscall/Device/SyscallIoctl.h>
+#include <Syscall/System/SyscallRandom.h>
+#include <Syscall/Process/SyscallIdentity.h>
+#include <Syscall/Security/SyscallParentChdir.h>
 #include <Syscall/Syscall.h>
 #include <Scheduler/LBPWRR.h>
 #include <Scheduler/TaskTypes.h>
-#include <Syscall/SyscallExit.h>
-#include <Syscall/SyscallDisplay.h>
-#include <Syscall/SyscallFile.h>
-#include <Syscall/SyscallProcess.h>
-#include <Syscall/SyscallAsset.h>
-#include <Syscall/SyscallMemory.h>
-#include <Syscall/SyscallSysinfo.h>
-#include <Syscall/SyscallTime.h>
-#include <Syscall/SyscallSudo.h>
+#include <Syscall/Process/SyscallExit.h>
+#include <Syscall/Device/SyscallDisplay.h>
+#include <Syscall/File/SyscallFile.h>
+#include <Syscall/Process/SyscallProcess.h>
+#include <Syscall/Asset/SyscallAsset.h>
+#include <Syscall/Memory/SyscallMemory.h>
+#include <Syscall/System/SyscallSysinfo.h>
+#include <Syscall/Time/SyscallTime.h>
+#include <Syscall/Security/SyscallSudo.h>
+#include <Syscall/System/SyscallMonitor.h>
 
 #include <Arch/AMD64/CPU.h>
 #include <Debug/Panic.h>
-#include <LineOS/Errno.h>
+#include <Syscall/Errno.h>
 
 typedef struct
 {
@@ -76,9 +86,17 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
 
     switch (Frame->RAX)
     {
+        case SYSCALL_NANOSLEEP:
+        {
+            return (UINT64) SyscallNanosleep(Frame->RDI, Frame->RSI);
+        }
         case SYSCALL_CLOCK_GETTIME:
         {
             return (UINT64) SyscallClockGetTime((INT64) Frame->RDI, Frame->RSI);
+        }
+        case SYSCALL_SYSTEM_MONITOR:
+        {
+            return (UINT64) SyscallSystemMonitor(Frame->RDI, Frame->RSI);
         }
         case SYSCALL_SUDO_CACHE:
         {

@@ -2,7 +2,7 @@
 
 ## Errors
 
-`Common/LineOS/Errno.h` defines Linux x86-64 error numbers. Kernel calls return negative errors and unknown syscall numbers return -ENOSYS. Libc translates -4095..-1 to errno and -1 (MAP_FAILED for mmap), preserving errno on success. The raw LineOSSyscall entry functions preserve raw results.
+`Common/Syscall/Errno.h` defines Linux x86-64 error numbers. Kernel calls return negative errors and unknown syscall numbers return -ENOSYS. Libc translates -4095..-1 to errno and -1 (MAP_FAILED for mmap), preserving errno on success. The raw LineOSSyscall entry functions preserve raw results.
 
 `__errno_location()` accesses an internal LIBC_THREAD_STATE. Storage is currently private to each single-threaded process, copied by fork and reset by a new image. Thread support must replace the accessor with TLS selection before shared-address-space threads are enabled; this is not a pthread-safe TLS implementation.
 

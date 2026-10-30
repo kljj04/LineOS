@@ -5,7 +5,7 @@
 #pragma once
 #include <stddef.h>
 #include <sys/types.h>
-#include <LineOS/Memory.h>
+#include <Syscall/Memory/Memory.h>
 
 void *mmap(void *Address, size_t Length, int Protection, int Flags, int FD, long Offset);
 int   munmap(void *Address, size_t Length);

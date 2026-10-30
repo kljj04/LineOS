@@ -5,6 +5,7 @@
 #include <Terminal.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#include <time.h>
 
 INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fallback)
 {
@@ -15,27 +16,55 @@ INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fall
     UINT32 LineLength = 0;
     TERMINAL_UTF8 Decoder = {0};
     BOOLEAN CursorVisible = TRUE;
+    BOOLEAN GraphicsActive = FALSE;
+    UINT64 LastBlink = 0;
     TERMINAL_ANSI ANSI;
     TerminalANSIInit(&ANSI, TERMINAL_FOREGROUND, TERMINAL_BACKGROUND);
 
     for (;;)
     {
-        INT32 Ready = ioctl(3, LOS_TIO_WAIT_READ, (UINT64) 500);
+        INT32 Ready = ioctl(3, LOS_TIO_WAIT_READ, (UINT64) 20);
 
         if (Ready < 0)
         {
             return 1;
         }
-        if (Ready == 0)
+        if (Ready == 2)
         {
-            CursorVisible = !CursorVisible;
-            if (TerminalPresent(Info, X, Baseline, CursorVisible) < 0)
+            GraphicsActive = TRUE;
+            continue;
+        }
+        struct timespec Time;
+        UINT64 Now = LastBlink;
+        if (clock_gettime(CLOCK_MONOTONIC, &Time) == 0)
+        {
+            Now = (UINT64) Time.tv_sec * 1000 + Time.tv_nsec / 1000000;
+        }
+        if (GraphicsActive)
+        {
+            GraphicsActive = FALSE;
+            CursorVisible = TRUE;
+            if (TerminalPresent(Info, X, Baseline, !ANSI.CursorHidden) < 0)
             {
                 return 1;
+            }
+        }
+        TerminalMousePoll(Info, Baseline, LineLength, ANSI.MouseReporting);
+        if (Ready == 0)
+        {
+            if (!ANSI.Synchronized && !ANSI.CursorHidden && Now - LastBlink >= 500)
+            {
+                LastBlink = Now;
+                CursorVisible = !CursorVisible;
+                if (TerminalPresent(Info, X, Baseline, CursorVisible && !ANSI.CursorHidden) < 0)
+                {
+                    return 1;
+                }
             }
             continue;
         }
 
+        LastBlink = Now;
         CursorVisible = TRUE;
         ssize_t Count = read(3, Buffer, sizeof(Buffer));
 
@@ -67,6 +96,44 @@ INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fall
                     Cursor = 0;
                     LineLength = 0;
                     ANSI.CursorHome = FALSE;
+                }
+                if (ANSI.CursorPosition)
+                {
+                    UINT32 Row = ANSI.CursorRow - 1;
+                    UINT32 Maximum = (Info->Height - TERMINAL_MARGIN - TERMINAL_FONT_HEIGHT) / TERMINAL_LINE_HEIGHT;
+                    if (Row > Maximum)
+                    {
+                        Row = Maximum;
+                    }
+                    UINT32 Target = TERMINAL_MARGIN + TERMINAL_FONT_HEIGHT + Row * TERMINAL_LINE_HEIGHT;
+                    if (Target != Baseline)
+                    {
+                        Baseline = Target;
+                        LineLength = 0;
+                        Cursor = 0;
+                    }
+                    ANSI.CursorPosition = FALSE;
+                }
+                if (ANSI.CursorColumn != 0)
+                {
+                    Cursor = ANSI.CursorColumn - 1;
+                    if (Cursor > LineLength)
+                    {
+                        Cursor = LineLength;
+                    }
+                    if (Cursor < LineLength)
+                    {
+                        X = LineCells[Cursor].X;
+                    }
+                    else if (Cursor != 0)
+                    {
+                        X = LineCells[Cursor - 1].X + LineCells[Cursor - 1].Glyph.Advance;
+                    }
+                    else
+                    {
+                        X = TERMINAL_MARGIN;
+                    }
+                    ANSI.CursorColumn = 0;
                 }
                 if (ANSI.EraseLine)
                 {
@@ -153,7 +220,7 @@ INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fall
             }
         }
 
-        if (TerminalPresent(Info, X, Baseline, CursorVisible) < 0)
+        if (!ANSI.Synchronized && TerminalPresent(Info, X, Baseline, CursorVisible && !ANSI.CursorHidden) < 0)
         {
             return 1;
         }

@@ -19,8 +19,10 @@ STATIC UINTN HistoryPosition;
 STATIC char HistoryDraft[SHELL_HISTORY_LINE_SIZE];
 STATIC char HistoryPath[4096];
 STATIC char HistoryTemporary[4096];
+STATIC char HistoryOutput[SHELL_HISTORY_LIMIT * SHELL_HISTORY_LINE_SIZE];
+STATIC BOOLEAN HistoryDirty;
 
-STATIC VOID ShellHistoryStore(CONST char *Line)
+STATIC BOOLEAN ShellHistoryStore(CONST char *Line)
 {
     CONST char *Text = Line;
     while (*Text == ' ')
@@ -29,11 +31,11 @@ STATIC VOID ShellHistoryStore(CONST char *Line)
     }
     if (*Text == 0)
     {
-        return;
+        return FALSE;
     }
     if (HistoryCount != 0 && strcmp(History[HistoryCount - 1], Line) == 0)
     {
-        return;
+        return FALSE;
     }
     if (HistoryCount == SHELL_HISTORY_LIMIT)
     {
@@ -41,11 +43,11 @@ STATIC VOID ShellHistoryStore(CONST char *Line)
         HistoryCount--;
     }
     strcpy(History[HistoryCount++], Line);
+    return TRUE;
 }
 
-STATIC BOOLEAN ShellHistoryWrite(INT32 FD, CONST char *Text)
+STATIC BOOLEAN ShellHistoryWrite(INT32 FD, CONST char *Text, UINTN Length)
 {
-    UINTN Length = strlen(Text);
     UINTN Position = 0;
     while (Position < Length)
     {
@@ -63,11 +65,11 @@ STATIC BOOLEAN ShellHistoryWrite(INT32 FD, CONST char *Text)
     return TRUE;
 }
 
-STATIC VOID ShellHistorySave(VOID)
+STATIC BOOLEAN ShellHistorySave(VOID)
 {
     if (HistoryPath[0] == 0)
     {
-        return;
+        return FALSE;
     }
     struct stat Info;
     if (lstat(HistoryPath, &Info) == 0)
@@ -75,39 +77,40 @@ STATIC VOID ShellHistorySave(VOID)
         if (!S_ISREG(Info.st_mode) || Info.st_uid != getuid())
         {
             puts("lsh: history file is not owned by this user");
-            return;
+            return FALSE;
         }
     }
     else if (errno != ENOENT)
     {
         puts("lsh: cannot access history file");
-        return;
+        return FALSE;
     }
     INT32 FD = open(HistoryTemporary, O_WRONLY | O_CREAT | O_EXCL, 0600);
     if (FD < 0)
     {
         puts("lsh: cannot create history temporary file");
-        return;
+        return FALSE;
     }
-    BOOLEAN Saved = TRUE;
+    UINTN Length = 0;
     for (UINTN Index = 0; Index < HistoryCount; Index++)
     {
-        if (!ShellHistoryWrite(FD, History[Index]) || !ShellHistoryWrite(FD, "\n"))
-        {
-            Saved = FALSE;
-            break;
-        }
+        UINTN EntryLength = strlen(History[Index]);
+        memcpy(HistoryOutput + Length, History[Index], EntryLength);
+        Length += EntryLength;
+        HistoryOutput[Length++] = '\n';
     }
+    BOOLEAN Saved = ShellHistoryWrite(FD, HistoryOutput, Length);
     if (close(FD) != 0)
     {
         Saved = FALSE;
     }
     if (Saved && rename(HistoryTemporary, HistoryPath) == 0)
     {
-        return;
+        return TRUE;
     }
     remove(HistoryTemporary);
     puts("lsh: cannot save command history");
+    return FALSE;
 }
 
 VOID ShellHistoryInit(char **Envp)
@@ -186,10 +189,20 @@ VOID ShellHistoryInit(char **Envp)
 
 VOID ShellHistoryAdd(CONST char *Line)
 {
-    ShellHistoryStore(Line);
+    if (ShellHistoryStore(Line))
+    {
+        HistoryDirty = TRUE;
+    }
     HistoryPosition = HistoryCount;
     HistoryDraft[0] = 0;
-    ShellHistorySave();
+
+    if (HistoryDirty && HistoryPath[0] != 0)
+    {
+        if (ShellHistorySave())
+        {
+            HistoryDirty = FALSE;
+        }
+    }
 }
 
 BOOLEAN ShellHistoryMove(BOOLEAN Older, char Line[256], UINTN *Length)

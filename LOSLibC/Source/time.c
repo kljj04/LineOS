@@ -118,3 +118,8 @@ int clock_gettime(clockid_t ClockID, struct timespec *Time)
 {
     return (int) LineOSSyscallResult(LineOSSyscall2(SYSCALL_CLOCK_GETTIME, (UINT64) ClockID, (UINT64) Time));
 }
+
+int nanosleep(const struct timespec *Duration, struct timespec *Remaining)
+{
+    return (int) LineOSSyscallResult(LineOSSyscall2(SYSCALL_NANOSLEEP, (UINT64) Duration, (UINT64) Remaining));
+}

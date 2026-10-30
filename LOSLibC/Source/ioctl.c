@@ -16,7 +16,7 @@ int ioctl(int FD, unsigned long Request, ...)
         Argument = va_arg(Arguments, UINT64);
         va_end(Arguments);
     }
-    else if (_IOC_DIR(Request) != 0 || Request == FBIOGET_VSCREENINFO || Request == FBIOGET_FSCREENINFO)
+    else if (_IOC_DIR(Request) != 0 || Request == FBIOGET_VSCREENINFO || Request == FBIOGET_FSCREENINFO || Request == FIONREAD || Request == TIOCGWINSZ || Request == TIOCSWINSZ)
     {
         va_list Arguments;
         va_start(Arguments, Request);

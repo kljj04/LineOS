@@ -8,7 +8,7 @@
 #include <Input/VirtIOInput.h>
 #include <Render/GPU/VirtIOGPU.h>
 #include <Input/Input.h>
-#include <Syscall/SyscallTerminal.h>
+#include <Syscall/Device/SyscallTerminal.h>
 
 #include <Debug/Debug.h>
 #include <Scheduler/Task.h>

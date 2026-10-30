@@ -5,7 +5,7 @@
 #pragma once
 
 #include <LOSLibC/TypeInfo.h>
-#include <LineOS/Syscall.h>
+#include <Syscall/Numbers.h>
 
 UINT64 LineOSSyscall0(UINT64 Number);
 UINT64 LineOSSyscall1(UINT64 Number, UINT64 Arg1);

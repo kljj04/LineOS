@@ -20,3 +20,7 @@ BOOLEAN TaskDestroy(TASK *Task);
 TASK   *TaskGetByPID(UINT16 PID);
 UINTN   TaskGetCount(VOID);
 VOID    TaskSampleCPUUsage(UINT64 IntervalTSC);
+#include <Syscall/System/SystemMonitor.h>
+UINT32 TaskGetSnapshot(SYSTEM_TASK_INFO *Entries, UINT32 Capacity);
+
+UINT32 TaskGetIdleCount(VOID);

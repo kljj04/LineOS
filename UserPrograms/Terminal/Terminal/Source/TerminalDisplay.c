@@ -26,8 +26,27 @@ INT64 TerminalPresent(DISPLAY_INFO *Info, UINT32 X, UINT32 Baseline, BOOLEAN Cur
         }
     }
 
-    memcpy(MappedBuffer, FrameBuffer, (UINT64) Info->Width * Info->Height * sizeof(UINT32));
-    INT64 Result = ioctl(FramebufferFD, LOS_FBIO_FLUSH);
+    UINT32 First = Info->Height;
+    UINT32 Last = 0;
+    UINTN RowBytes = (UINTN) Info->Width * sizeof(UINT32);
+    for (UINT32 Row = 0; Row < Info->Height; Row++)
+    {
+        UINTN Offset = (UINTN) Row * Info->Width;
+        if (memcmp(MappedBuffer + Offset, FrameBuffer + Offset, RowBytes) != 0)
+        {
+            if (First == Info->Height)
+            {
+                First = Row;
+            }
+            Last = Row + 1;
+        }
+    }
+    INT64 Result = 0;
+    if (First < Last)
+    {
+        LOS_FB_RECT Rect = {0, First, Info->Width, Last - First, (UINT64) (FrameBuffer + (UINTN) First * Info->Width)};
+        Result = ioctl(FramebufferFD, LOS_FBIO_PRESENT_RECT, &Rect);
+    }
     Count = 0;
     for (UINT32 Row = Top; CursorVisible && Row < Top + TERMINAL_CURSOR_HEIGHT && Row < Info->Height; Row++)
     {

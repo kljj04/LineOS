@@ -17,6 +17,8 @@
 
 STATIC BUDDY_BLOCK *FreeLists[BUDDY_MAX_ORDER + 1];
 STATIC UINT64       TotalPages = 0;
+STATIC UINT64       ManagedPages;
+STATIC UINT64       FreePages;
 STATIC SPIN_LOCK    BuddyLock;
 
 STATIC HEAP_BLOCK *HeapHead = NULL;
@@ -106,6 +108,7 @@ STATIC VOID BuddyPush(UINTN Order, UINT64 Address)
     Block = (BUDDY_BLOCK *) Address;
     Block->Next = FreeLists[Order];
     FreeLists[Order] = Block;
+    FreePages += 1ULL << Order;
 }
 
 STATIC BUDDY_BLOCK *BuddyPop(UINTN Order)
@@ -125,6 +128,7 @@ STATIC BUDDY_BLOCK *BuddyPop(UINTN Order)
     }
 
     FreeLists[Order] = Block->Next;
+    FreePages -= 1ULL << Order;
     Block->Next = NULL;
 
     return Block;
@@ -155,6 +159,7 @@ STATIC BOOLEAN BuddyRemove(UINTN Order, UINT64 Address)
                 Previous->Next = Block->Next;
             }
 
+            FreePages -= 1ULL << Order;
             Block->Next = NULL;
             return TRUE;
         }
@@ -407,6 +412,8 @@ BOOLEAN KMemoryInit(LINEOS_BOOT_INFO *BootInfo)
         return FALSE;
     }
 
+    ManagedPages = 0;
+    FreePages = 0;
     SpinLockInit(&BuddyLock);
     SpinLockInit(&HeapLock);
 
@@ -440,6 +447,7 @@ BOOLEAN KMemoryInit(LINEOS_BOOT_INFO *BootInfo)
         BuddyAddUsableRangeExcept(Descriptor->PhysicalStart, Descriptor->NumberOfPages, KernelStart, KernelEnd);
     }
 
+    ManagedPages = FreePages;
     return TRUE;
 }
 
@@ -833,4 +841,12 @@ VOID KFree(VOID *Address)
 BOOLEAN KMemoryPanicLocksAvailable(VOID)
 {
     return ATOMIC_LOAD(&HeapLock.Locked, ATOMIC_ACQUIRE) == 0 && ATOMIC_LOAD(&BuddyLock.Locked, ATOMIC_ACQUIRE) == 0;
+}
+
+VOID KGetManagedMemory(UINT64 *Managed, UINT64 *Free)
+{
+    UINT64 Flags = SpinLockAcquireIRQSave(&BuddyLock);
+    *Managed = ManagedPages * PAGE_SIZE;
+    *Free = FreePages * PAGE_SIZE;
+    SpinLockReleaseIRQRestore(&BuddyLock, Flags);
 }

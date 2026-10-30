@@ -8,7 +8,7 @@
 
 int mkdir(const char *Path, mode_t Mode);
 
-#include <LineOS/Stat.h>
+#include <Syscall/File/Stat.h>
 
 #define S_IFMT        0170000U
 #define S_IFDIR       0040000U
@@ -47,7 +47,7 @@ int lstat(const char *Path, struct stat *Info);
 int fstat(int FD, struct stat *Info);
 
 #include <time.h>
-#include <LineOS/Time.h>
+#include <Syscall/Time/Time.h>
 
 #define UTIME_NOW LOS_UTIME_NOW
 #define UTIME_OMIT LOS_UTIME_OMIT

@@ -3,14 +3,15 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <FS/DeviceFS/DeviceFS.h>
-#include <Syscall/SyscallTerminal.h>
-#include <Syscall/SyscallDisplay.h>
-#include <LineOS/Errno.h>
-#include <LineOS/Ioctl.h>
-#include <LineOS/Memory.h>
+#include <Syscall/Device/SyscallTerminal.h>
+#include <Syscall/Device/SyscallDisplay.h>
+#include <Syscall/Errno.h>
+#include <Syscall/Device/Ioctl.h>
+#include <Syscall/Memory/Memory.h>
 #include <Render/GPU/VirtIOGPU.h>
 #include <Memory/PMM.h>
 #include <Timer/Clock.h>
+#include <Input/Input.h>
 
 STATIC UINT32 DeviceMountTime;
 
@@ -276,12 +277,26 @@ STATIC INT64 FramebufferIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
     return VirtIOGPUPresent() ? 0 : -EIO;
 }
 
+STATIC INT64 DevicePointerIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Argument, UINT32 Access);
+
 STATIC INT64 DeviceMasterIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Argument, UINT32 Access)
 {
     (VOID) Task;
     (VOID) State;
     (VOID) Access;
 
+    if (Request == TIOCGWINSZ || Request == TIOCSWINSZ)
+    {
+        return TerminalWindowSize(Task, Argument, Request == TIOCSWINSZ);
+    }
+    if (Request == FIONREAD)
+    {
+        return TerminalPending(Task, TRUE, Argument);
+    }
+    if (Request == LOS_TIO_GET_POINTER)
+    {
+        return DevicePointerIoctl(Task, State, Request, Argument, Access);
+    }
     if (Request != LOS_TIO_WAIT_READ)
     {
         return -ENOTTY;
@@ -294,10 +309,76 @@ STATIC INT64 DeviceMasterIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 A
     return TerminalWaitOutput((UINT32) Argument);
 }
 
+STATIC INT64 DeviceTerminalOpen(TASK *Task, UINT64 Flags, VOID **State)
+{
+    (VOID) Flags;
+    *State = Task;
+    return 0;
+}
+
+STATIC INT64 DeviceTerminalClose(VOID *State)
+{
+    TerminalGraphicsRelease(State);
+    return 0;
+}
+
+STATIC INT64 DevicePointerIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Argument, UINT32 Access)
+{
+    (VOID) State;
+    if (Request != LOS_TIO_GET_POINTER)
+    {
+        return -ENOTTY;
+    }
+    if ((Access & 1U) == 0)
+    {
+        return -EACCES;
+    }
+    MOUSE_STATUS Status = GetMouseStatus();
+    POINTER_INFO Info = {Status.X, Status.Y, 0, Status.Wheel};
+    if (Status.LeftButton)
+    {
+        Info.Buttons |= 1;
+    }
+    if (Status.RightButton)
+    {
+        Info.Buttons |= 2;
+    }
+    if (Status.MiddleButton)
+    {
+        Info.Buttons |= 4;
+    }
+    return VMMCopyToUser(Task->AddressSpace, Argument, &Info, sizeof(Info)) ? 0 : -EFAULT;
+}
+
+STATIC INT64 DeviceTerminalIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Argument, UINT32 Access)
+{
+    if (Request == TIOCGWINSZ)
+    {
+        return TerminalWindowSize(Task, Argument, FALSE);
+    }
+    if (Request == FIONREAD)
+    {
+        if ((Access & 1U) == 0)
+        {
+            return -EACCES;
+        }
+        return TerminalPending(Task, FALSE, Argument);
+    }
+    if (Request == LOS_TIO_GRAPHICS_BEGIN || Request == LOS_TIO_GRAPHICS_END)
+    {
+        if (State != Task || (Access & 2U) == 0)
+        {
+            return -EACCES;
+        }
+        return TerminalGraphics(Task, Request == LOS_TIO_GRAPHICS_BEGIN);
+    }
+    return DevicePointerIoctl(Task, State, Request, Argument, Access);
+}
+
 STATIC CONST DEVICE_OPERATIONS NullOperations = {DeviceOpen, DeviceNullRead, DeviceDiscard, DeviceClose, NULL, DeviceNoIoctl};
 STATIC CONST DEVICE_OPERATIONS ZeroOperations = {DeviceOpen, DeviceZeroRead, DeviceDiscard, DeviceClose, NULL, DeviceNoIoctl};
 STATIC CONST DEVICE_OPERATIONS FullOperations = {DeviceOpen, DeviceZeroRead, DeviceFullWrite, DeviceClose, NULL, DeviceNoIoctl};
-STATIC CONST DEVICE_OPERATIONS TerminalOperations = {DeviceOpen, DeviceTerminalRead, DeviceTerminalWrite, DeviceClose, NULL, DeviceNoIoctl};
+STATIC CONST DEVICE_OPERATIONS TerminalOperations = {DeviceTerminalOpen, DeviceTerminalRead, DeviceTerminalWrite, DeviceTerminalClose, NULL, DeviceTerminalIoctl};
 STATIC CONST DEVICE_OPERATIONS MasterOperations = {DeviceMasterOpen, DeviceMasterRead, DeviceMasterWrite, DeviceMasterClose, NULL, DeviceMasterIoctl};
 STATIC CONST DEVICE_OPERATIONS FramebufferOperations = {FramebufferOpen, FramebufferRead, FramebufferWrite, DeviceClose, FramebufferMap, FramebufferIoctl};
 STATIC CONST DEVICE_NODE       DeviceNodes[] = {{(CONST CHAR8 *) "null", 0666, FALSE, &NullOperations}, {(CONST CHAR8 *) "zero", 0666, FALSE, &ZeroOperations}, {(CONST CHAR8 *) "full", 0666, FALSE, &FullOperations}, {(CONST CHAR8 *) "lsh1", 0666, FALSE, &TerminalOperations}, {(CONST CHAR8 *) "lsh1-master", 0600, FALSE, &MasterOperations}, {(CONST CHAR8 *) "fb0", 0666, TRUE, &FramebufferOperations}};

@@ -121,12 +121,16 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
         Panic(L"Keyboard Task Failed");
     }
 
+    KMemCpy(KeyboardTask->Name, "keyboardk", sizeof("keyboardk"));
+
     TASK *MouseTask = TaskCreate(InputMouseHandler);
 
     if (MouseTask == NULL || !LBPWRRAddTask(MouseTask))
     {
         Panic(L"Mouse Task Failed");
     }
+
+    KMemCpy(MouseTask->Name, "mousek", sizeof("mousek"));
 
     TASK *NTPTask = TaskCreate(ClockNTPTask);
 

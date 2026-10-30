@@ -176,15 +176,40 @@ BOOLEAN TerminalANSIConsume(TERMINAL_ANSI *ANSI, UINT8 Byte)
         ANSI->Count = 1;
         ANSI->Parameters[0] = 0;
         ANSI->Invalid = FALSE;
+        ANSI->Private = FALSE;
         return TRUE;
     }
     if (Byte < 32)
     {
         return FALSE;
     }
+    if (Byte == '?' && ANSI->Count == 1 && ANSI->Parameters[0] == 0 && !ANSI->Private)
+    {
+        ANSI->Private = TRUE;
+        return TRUE;
+    }
     if (Byte >= 0x40 && Byte <= 0x7E)
     {
-        if (Byte == 'm' && !ANSI->Invalid)
+        if (ANSI->Private)
+        {
+            if (!ANSI->Invalid && ANSI->Count == 1 && ANSI->Parameters[0] == 1000 && (Byte == 'h' || Byte == 'l'))
+            {
+                ANSI->MouseReporting = Byte == 'h';
+            }
+            else if (!ANSI->Invalid && ANSI->Count == 1 && ANSI->Parameters[0] == 25 && (Byte == 'h' || Byte == 'l'))
+            {
+                ANSI->CursorHidden = Byte == 'l';
+            }
+            else if (!ANSI->Invalid && ANSI->Count == 1 && ANSI->Parameters[0] == 2026 && (Byte == 'h' || Byte == 'l'))
+            {
+                ANSI->Synchronized = Byte == 'h';
+            }
+        }
+        else if (Byte == 'G' && !ANSI->Invalid && ANSI->Count == 1)
+        {
+            ANSI->CursorColumn = ANSI->Parameters[0] == 0 ? 1 : ANSI->Parameters[0];
+        }
+        else if (Byte == 'm' && !ANSI->Invalid)
         {
             ANSIApply(ANSI);
         }
@@ -196,9 +221,11 @@ BOOLEAN TerminalANSIConsume(TERMINAL_ANSI *ANSI, UINT8 Byte)
         {
             ANSI->EraseScreen = TRUE;
         }
-        else if ((Byte == 'H' || Byte == 'f') && !ANSI->Invalid && ANSI->Count <= 2 && ANSI->Parameters[0] <= 1 && (ANSI->Count == 1 || ANSI->Parameters[1] <= 1))
+        else if ((Byte == 'H' || Byte == 'f') && !ANSI->Invalid && ANSI->Count <= 2)
         {
-            ANSI->CursorHome = TRUE;
+            ANSI->CursorRow = ANSI->Parameters[0] == 0 ? 1 : ANSI->Parameters[0];
+            ANSI->CursorColumn = ANSI->Count < 2 || ANSI->Parameters[1] == 0 ? 1 : ANSI->Parameters[1];
+            ANSI->CursorPosition = TRUE;
         }
         ANSI->State = TERMINAL_ANSI_TEXT;
     }

@@ -3,7 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <Arch/AMD64/CPU.h>
-#include <Syscall/SyscallFile.h>
+#include <Syscall/File/SyscallFile.h>
 #include <ELF/ELF64.h>
 #include <Exec/ELF64.h>
 #include <Memory/PMM.h>
@@ -492,6 +492,21 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONS
     }
     KMemCpy(Execution->Task->FileContext, Context, sizeof(VFS_CONTEXT));
 
+    CONST CHAR8 *ProgramName = Path;
+    for (CONST CHAR8 *Position = Path; *Position != 0; Position++)
+    {
+        if (*Position == '/')
+        {
+            ProgramName = Position + 1;
+        }
+    }
+    UINTN NameLength = 0;
+    while (ProgramName[NameLength] != 0 && NameLength + 1 < sizeof(Execution->Task->Name))
+    {
+        Execution->Task->Name[NameLength] = ProgramName[NameLength];
+        NameLength++;
+    }
+    Execution->Task->Name[NameLength] = 0;
     Execution->Task->RealUID = Context->Credentials.UID;
     Execution->Task->RealGID = Context->Credentials.GID;
     if ((Node.Mode & 04000U) != 0)

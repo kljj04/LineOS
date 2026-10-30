@@ -29,6 +29,13 @@ typedef struct
     BOOLEAN             EraseLine;
     BOOLEAN             EraseScreen;
     BOOLEAN             CursorHome;
+    BOOLEAN             MouseReporting;
+    BOOLEAN             Private;
+    UINT32              CursorColumn;
+    UINT32              CursorRow;
+    BOOLEAN             CursorPosition;
+    BOOLEAN             Synchronized;
+    BOOLEAN             CursorHidden;
     BOOLEAN             Invalid;
     BOOLEAN             Bold;
     BOOLEAN             Inverse;

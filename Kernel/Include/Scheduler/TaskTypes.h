@@ -6,7 +6,7 @@
 
 #include <LineOS/TypeInfo.h>
 #include <Memory/VMM.h>
-#include <LineOS/Asset.h>
+#include <Syscall/Asset/Asset.h>
 #include <FS/VFS/VFSTypes.h>
 
 #define TASK_FILE_LIMIT 16U

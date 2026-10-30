@@ -606,7 +606,7 @@ VFS_ERROR VFSReadDirectory(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 *Curs
     return VFSUnlock(Context->Registry, Error);
 }
 
-STATIC VFS_ERROR VFSData(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 Offset, VOID *Buffer, UINT32 Length, UINT32 *ReadLength, BOOLEAN Write, CONST VFS_NODE *Expected)
+STATIC VFS_ERROR VFSData(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 Offset, VOID *Buffer, UINT32 Length, UINT32 *ReadLength, BOOLEAN Write, CONST VFS_NODE *Expected, BOOLEAN Append, UINT64 *EndOffset)
 {
     VFS_RESOLVED Resolved;
     VFS_ERROR    Error;
@@ -638,7 +638,22 @@ STATIC VFS_ERROR VFSData(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 Offset,
 
         if (Write)
         {
-            Error = Partition->Operations->Write == NULL ? VFS_UNSUPPORTED : Partition->Operations->Write(Partition->Backend, &Context->Credentials, Resolved.Node.Number, Offset, Buffer, Length);
+            if (Append)
+            {
+                Offset = Resolved.Node.Size;
+            }
+            if (Offset > UINT64_MAX - Length)
+            {
+                Error = VFS_LIMIT;
+            }
+            else
+            {
+                Error = Partition->Operations->Write == NULL ? VFS_UNSUPPORTED : Partition->Operations->Write(Partition->Backend, &Context->Credentials, Resolved.Node.Number, Offset, Buffer, Length);
+            }
+            if (Error == VFS_OK && EndOffset != NULL)
+            {
+                *EndOffset = Offset + Length;
+            }
         }
         else
         {
@@ -651,7 +666,7 @@ STATIC VFS_ERROR VFSData(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 Offset,
 
 VFS_ERROR VFSRead(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 Offset, VOID *Buffer, UINT32 Length, UINT32 *ReadLength)
 {
-    return VFSData(Context, Path, Offset, Buffer, Length, ReadLength, FALSE, NULL);
+    return VFSData(Context, Path, Offset, Buffer, Length, ReadLength, FALSE, NULL, FALSE, NULL);
 }
 
 VFS_ERROR VFSReadChecked(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST VFS_NODE *Expected, UINT64 Offset, VOID *Buffer, UINT32 Length, UINT32 *ReadLength)
@@ -666,12 +681,12 @@ VFS_ERROR VFSReadChecked(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST VFS_NODE
         return VFS_INVALID;
     }
 
-    return VFSData(Context, Path, Offset, Buffer, Length, ReadLength, FALSE, Expected);
+    return VFSData(Context, Path, Offset, Buffer, Length, ReadLength, FALSE, Expected, FALSE, NULL);
 }
 
 VFS_ERROR VFSWrite(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 Offset, CONST VOID *Buffer, UINT32 Length)
 {
-    return VFSData(Context, Path, Offset, (VOID *) Buffer, Length, NULL, TRUE, NULL);
+    return VFSData(Context, Path, Offset, (VOID *) Buffer, Length, NULL, TRUE, NULL, FALSE, NULL);
 }
 
 STATIC VFS_ERROR VFSParent(VFS_CONTEXT *Context, CONST CHAR8 *Path, VFS_RESOLVED *Resolved, CHAR8 *Name)
@@ -882,7 +897,7 @@ VFS_ERROR VFSWriteChecked(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST VFS_NOD
     {
         return VFS_INVALID;
     }
-    return VFSData(Context, Path, Offset, (VOID *) Buffer, Length, NULL, TRUE, Expected);
+    return VFSData(Context, Path, Offset, (VOID *) Buffer, Length, NULL, TRUE, Expected, FALSE, NULL);
 }
 
 VFS_ERROR VFSOpen(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT32 Flags, UINT16 Mode, VFS_NODE *Node)
@@ -895,7 +910,7 @@ VFS_ERROR VFSOpen(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT32 Flags, UINT16 
     UINT32         ReadLength;
     UINT32         Access = Flags & VFS_OPEN_ACCMODE;
 
-    if (Context == NULL || Context->Registry == NULL || Node == NULL || Access == 3 || (Flags & ~(VFS_OPEN_ACCMODE | VFS_OPEN_CREATE | VFS_OPEN_EXCLUSIVE | VFS_OPEN_TRUNCATE)) != 0 || ((Flags & VFS_OPEN_EXCLUSIVE) != 0 && (Flags & VFS_OPEN_CREATE) == 0) || ((Flags & VFS_OPEN_TRUNCATE) != 0 && Access == 0) || ((Flags & VFS_OPEN_CREATE) != 0 && (Mode & ~0777U) != 0))
+    if (Context == NULL || Context->Registry == NULL || Node == NULL || Access == 3 || (Flags & ~(VFS_OPEN_ACCMODE | VFS_OPEN_CREATE | VFS_OPEN_EXCLUSIVE | VFS_OPEN_TRUNCATE | VFS_OPEN_APPEND)) != 0 || ((Flags & VFS_OPEN_EXCLUSIVE) != 0 && (Flags & VFS_OPEN_CREATE) == 0) || ((Flags & VFS_OPEN_TRUNCATE) != 0 && Access == 0) || ((Flags & VFS_OPEN_CREATE) != 0 && (Mode & ~0777U) != 0))
     {
         return VFS_INVALID;
     }
@@ -1010,4 +1025,13 @@ VFS_ERROR VFSSetTimes(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST VFS_NODE *E
         Error = Partition->Operations->Mutate == NULL ? VFS_UNSUPPORTED : Partition->Operations->Mutate(Partition->Backend, &Context->Credentials, &Mutation);
     }
     return VFSUnlock(Context->Registry, Error);
+}
+
+VFS_ERROR VFSAppendChecked(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST VFS_NODE *Expected, CONST VOID *Buffer, UINT32 Length, UINT64 *EndOffset)
+{
+    if (Expected == NULL || EndOffset == NULL)
+    {
+        return VFS_INVALID;
+    }
+    return VFSData(Context, Path, 0, (VOID *) Buffer, Length, NULL, TRUE, Expected, TRUE, EndOffset);
 }

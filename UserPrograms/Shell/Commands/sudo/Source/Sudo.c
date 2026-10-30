@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <syscall.h>
-#include <LineOS/Sudo.h>
+#include <Syscall/Security/Sudo.h>
 
 INT32 main(INT32 Argc, char **Argv)
 {

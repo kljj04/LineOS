@@ -14,3 +14,5 @@ VOID   UsageSample(UINT32 CPUID);
 VOID   UsageSampleTasks(VOID);
 UINTN  UsageGetCPU(UINT32 CPUID);
 UINTN  UsageGetTotal(VOID);
+
+VOID UsageGetCounters(UINT32 CPUID, UINT64 *Busy, UINT64 *Idle);

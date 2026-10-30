@@ -3,6 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <Shell.h>
+#include <ShellParse.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
@@ -48,7 +49,7 @@ SHELL_COMMAND ShellGetCommand(CONST char *Line)
 
 STATIC char PreviousDirectory[4096];
 
-VOID ShellCD(CONST char *Path, char **Envp)
+INT32 ShellCD(CONST char *Path, char **Envp)
 {
     while (*Path == ' ')
     {
@@ -61,7 +62,7 @@ VOID ShellCD(CONST char *Path, char **Envp)
         if (Home == NULL || *Home == 0)
         {
             puts("cd: HOME is not set");
-            return;
+            return 1;
         }
         CONST char *Suffix = *Path == 0 ? "" : Path + 1;
         UINTN HomeLength = strlen(Home);
@@ -69,7 +70,7 @@ VOID ShellCD(CONST char *Path, char **Envp)
         if (HomeLength + SuffixLength >= sizeof(Expanded))
         {
             puts("cd: path too long");
-            return;
+            return 1;
         }
         memcpy(Expanded, Home, HomeLength);
         memcpy(Expanded + HomeLength, Suffix, SuffixLength + 1);
@@ -79,35 +80,37 @@ VOID ShellCD(CONST char *Path, char **Envp)
     if (Previous && PreviousDirectory[0] == 0)
     {
         puts("cd: previous directory is not set");
-        return;
+        return 1;
     }
     char Current[4096];
     if (getcwd(Current, sizeof(Current)) == NULL)
     {
         puts("cd: cannot get current directory");
-        return;
+        return 1;
     }
     if (chdir(Previous ? PreviousDirectory : *Path == 0 ? "/" : Path) < 0)
     {
         puts("cd: cannot change directory");
-        return;
+        return 1;
     }
     memcpy(PreviousDirectory, Current, strlen(Current) + 1);
     if (Previous)
     {
         ShellPWD();
     }
+    return 0;
 }
 
-VOID ShellPWD(VOID)
+INT32 ShellPWD(VOID)
 {
     char Path[4096];
     if (getcwd(Path, sizeof(Path)) == NULL)
     {
         puts("pwd: cannot get current directory");
-        return;
+        return 1;
     }
     puts(Path);
+    return 0;
 }
 
 CONST char *ShellGetEnvironment(char **Envp, CONST char *Name)
@@ -213,46 +216,40 @@ BOOLEAN ShellFindCommand(CONST char *Command, char **Envp, char Path[4096])
     return FALSE;
 }
 
-VOID ShellExecute(char *Line, char **Envp)
+VOID ShellExecute(char *Line, char **Envp, INT32 Status)
 {
-    char  *Arguments[65];
-    UINT32 Count = 0;
-    char  *Position = Line;
-    while (*Position != 0)
+    SHELL_PARSE Parse;
+    if (!ShellParseLine(Line, Envp, Status, &Parse))
     {
-        while (*Position == ' ')
+        errno = EINVAL;
+        return;
+    }
+    if (Parse.Count > 64)
+    {
+        errno = E2BIG;
+        return;
+    }
+    char *Arguments[65];
+    for (UINTN Index = 0; Index < Parse.Count; Index++)
+    {
+        if (Parse.Tokens[Index].Type != SHELL_TOKEN_WORD)
         {
-            Position++;
-        }
-        if (*Position == 0)
-        {
-            break;
-        }
-        if (Count == 64)
-        {
-            errno = E2BIG;
+            errno = EOPNOTSUPP;
             return;
         }
-        Arguments[Count++] = Position;
-        while (*Position != 0 && *Position != ' ')
-        {
-            Position++;
-        }
-        if (*Position != 0)
-        {
-            *Position++ = 0;
-        }
+        Arguments[Index] = (char *) Parse.Tokens[Index].Text;
     }
-    Arguments[Count] = NULL;
+    Arguments[Parse.Count] = NULL;
     char Path[4096];
-    if (Count != 0 && ShellFindCommand(Arguments[0], Envp, Path))
+    if (Parse.Count != 0 && ShellFindCommand(Arguments[0], Envp, Path))
     {
         execve(Path, Arguments, Envp);
     }
 }
 
-VOID ShellType(CONST char *Arguments, char **Envp)
+INT32 ShellType(CONST char *Arguments, char **Envp)
 {
+    INT32 Status = 0;
     while (*Arguments != 0)
     {
         while (*Arguments == ' ')
@@ -297,9 +294,11 @@ VOID ShellType(CONST char *Arguments, char **Envp)
                 else
                 {
                     printf("type: %s: not found\n", Command);
+                    Status = 1;
                 }
                 break;
             }
         }
     }
+    return Status;
 }

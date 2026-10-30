@@ -84,11 +84,11 @@ UINT64 UsageAccount(UINT32 CPUID, BOOLEAN Idle)
 
     if (Idle)
     {
-        Usage->IdleTSC += Delta;
+        ATOMIC_FETCH_ADD(&Usage->IdleTSC, Delta, ATOMIC_RELAXED);
     }
     else
     {
-        Usage->BusyTSC += Delta;
+        ATOMIC_FETCH_ADD(&Usage->BusyTSC, Delta, ATOMIC_RELAXED);
     }
 
     return Delta;
@@ -186,4 +186,15 @@ UINTN UsageGetTotal(VOID)
     }
 
     return Total / ActiveCPUCount;
+}
+
+VOID UsageGetCounters(UINT32 CPUID, UINT64 *Busy, UINT64 *Idle)
+{
+    *Busy = 0;
+    *Idle = 0;
+    if (CPUID < ActiveCPUCount)
+    {
+        *Busy = ATOMIC_LOAD(&CPUUsages[CPUID].BusyTSC, ATOMIC_ACQUIRE);
+        *Idle = ATOMIC_LOAD(&CPUUsages[CPUID].IdleTSC, ATOMIC_ACQUIRE);
+    }
 }
