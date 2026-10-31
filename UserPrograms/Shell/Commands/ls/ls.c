@@ -2,6 +2,8 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
+#include <libintl.h>
+
 #include <LOSLibC/TypeInfo.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -12,9 +14,25 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <time.h>
+#include <locale.h>
 
 #define LS_BUFFER_SIZE 4096
 #define LS_PATH_SIZE   4096
+
+STATIC VOID LSError(CONST char *Path, INT32 Error)
+{
+    char Prefix[LS_PATH_SIZE + 8];
+
+    strcpy(Prefix, "ls: ");
+
+    if (strlen(Path) < LS_PATH_SIZE)
+    {
+        strcat(Prefix, Path);
+    }
+
+    errno = Error;
+    perror(Prefix);
+}
 
 #define LS_TYPE_CHARACTER 2
 #define LS_TYPE_BLOCK     6
@@ -126,10 +144,12 @@ STATIC UINT8 LSTypeFromMode(UINT32 Mode)
     {
         return LS_TYPE_CHARACTER;
     }
+
     if ((Mode & S_IFMT) == 0060000U)
     {
         return LS_TYPE_BLOCK;
     }
+
     return 0;
 }
 
@@ -161,11 +181,15 @@ STATIC VOID LSPrintEntry(CONST CHAR8 *Name, UINT8 Type, CONST LS_OPTIONS *Option
     {
         Color = "\033[38;2;215;205;111m";
     }
+
     CONST char *Base = strrchr((CONST char *) Name, '/');
+
     if (Base != NULL)
     {
         Base++;
+
         CONST char *PathColor = "\033[0;38;2;0;134;255m";
+
         write(1, PathColor, strlen(PathColor));
         write(1, Name, Base - (CONST char *) Name);
     }
@@ -173,35 +197,39 @@ STATIC VOID LSPrintEntry(CONST CHAR8 *Name, UINT8 Type, CONST LS_OPTIONS *Option
     {
         Base = (CONST char *) Name;
     }
+
     printf("%s%s%s\033[0m\n", Color, Base, Suffix);
 }
 
 typedef struct
 {
-    UINTN Links;
-    UINTN Owner;
-    UINTN Group;
-    UINTN Size;
+    UINTN  Links;
+    UINTN  Owner;
+    UINTN  Group;
+    UINTN  Size;
     UINT64 Blocks;
 } LS_COLUMNS;
 
 STATIC LS_COLUMNS Columns;
-STATIC char Names[128][33];
-STATIC UINT32 UserIDs[128];
-STATIC UINT32 GroupIDs[128];
-STATIC UINTN NameCount;
+STATIC char       Names[128][33];
+STATIC UINT32     UserIDs[128];
+STATIC UINT32     GroupIDs[128];
+STATIC UINTN      NameCount;
 
 STATIC VOID LSLoadNames(VOID)
 {
-    char Line[512];
-    UINTN Length = 0;
+    char    Line[512];
+    UINTN   Length = 0;
     BOOLEAN Overflow = FALSE;
-    int FD = open("/etc/passwd", O_RDONLY);
+    int     FD = open("/etc/passwd", O_RDONLY);
+
     if (FD < 0)
     {
         return;
     }
+
     char Byte;
+
     while (read(FD, &Byte, 1) == 1)
     {
         if (Byte != '\n')
@@ -214,13 +242,18 @@ STATIC VOID LSLoadNames(VOID)
             {
                 Overflow = TRUE;
             }
+
             continue;
         }
+
         Line[Length] = 0;
+
         char *First = strchr(Line, ':');
+
         if (!Overflow && First != NULL && First != Line && (UINTN) (First - Line) <= 32 && NameCount < 128)
         {
             char *Position = strchr(First + 1, ':');
+
             if (Position == NULL)
             {
                 memset(Line, 0, sizeof(Line));
@@ -228,28 +261,36 @@ STATIC VOID LSLoadNames(VOID)
                 Overflow = FALSE;
                 continue;
             }
+
             Position++;
-            UINT64 IDs[2] = {0};
+
+            UINT64  IDs[2] = {0};
             BOOLEAN Valid = TRUE;
+
             for (UINTN Index = 0; Index < 2; Index++)
             {
                 char *Start = Position;
+
                 while (*Position >= '0' && *Position <= '9')
                 {
                     IDs[Index] = IDs[Index] * 10 + *Position++ - '0';
+
                     if (IDs[Index] > 0xFFFFFFFFU)
                     {
                         Valid = FALSE;
                         break;
                     }
                 }
+
                 if (Position == Start || *Position != ':')
                 {
                     Valid = FALSE;
                     break;
                 }
+
                 Position++;
             }
+
             if (Valid)
             {
                 memcpy(Names[NameCount], Line, First - Line);
@@ -259,27 +300,32 @@ STATIC VOID LSLoadNames(VOID)
                 NameCount++;
             }
         }
+
         memset(Line, 0, sizeof(Line));
         Length = 0;
         Overflow = FALSE;
     }
+
     memset(Line, 0, sizeof(Line));
     close(FD);
 }
 
 STATIC VOID LSDecimal(UINT64 Value, char Result[21])
 {
-    char Reverse[20];
+    char  Reverse[20];
     UINTN Length = 0;
+
     do
     {
         Reverse[Length++] = '0' + Value % 10;
         Value /= 10;
     } while (Value != 0);
+
     for (UINTN Index = 0; Index < Length; Index++)
     {
         Result[Index] = Reverse[Length - Index - 1];
     }
+
     Result[Length] = 0;
 }
 
@@ -292,91 +338,99 @@ STATIC CONST char *LSIdentity(UINT32 ID, BOOLEAN Group, char Buffer[21])
             return Names[Index];
         }
     }
+
     LSDecimal(ID, Buffer);
+
     return Buffer;
 }
 
 STATIC VOID LSField(CONST char *Value, UINTN Width, BOOLEAN Left)
 {
     UINTN Length = strlen(Value);
+
     if (Left)
     {
         printf("%s", Value);
     }
+
     while (Length++ < Width)
     {
         putchar(' ');
     }
+
     if (!Left)
     {
         printf("%s", Value);
     }
+
     putchar(' ');
 }
 
 STATIC VOID LSMeasure(CONST struct stat *Info)
 {
     char Buffer[21];
+
     LSDecimal(Info->st_nlink, Buffer);
+
     UINTN Length = strlen(Buffer);
+
     if (Length > Columns.Links)
     {
         Columns.Links = Length;
     }
+
     Length = strlen(LSIdentity(Info->st_uid, FALSE, Buffer));
+
     if (Length > Columns.Owner)
     {
         Columns.Owner = Length;
     }
+
     Length = strlen(LSIdentity(Info->st_gid, TRUE, Buffer));
+
     if (Length > Columns.Group)
     {
         Columns.Group = Length;
     }
+
     LSDecimal(Info->st_size, Buffer);
     Length = strlen(Buffer);
+
     if (S_ISCHR(Info->st_mode))
     {
         LSDecimal(Info->st_rdev, Buffer);
         Length = strlen(Buffer) + 3;
     }
+
     if (Length > Columns.Size)
     {
         Columns.Size = Length;
     }
+
     Columns.Blocks += Info->st_blocks;
 }
 
 STATIC VOID LSPrintModifiedTime(CONST struct stat *Info)
 {
-    char Buffer[21];
+    char        Buffer[64];
+    time_t      Modified = (time_t) Info->st_mtime;
+    struct tm   Date;
+    CONST char *Format = strcmp(setlocale(LC_TIME, NULL), "ko_KR.UTF-8") == 0 ? "%_m월 %e %H:%M" : "%b %e %H:%M";
 
-    time_t Modified = (time_t) Info->st_mtime;
-    struct tm Date;
-
-    if (localtime_r(&Modified, &Date) != NULL)
+    if (localtime_r(&Modified, &Date) != NULL && strftime(Buffer, sizeof(Buffer), Format, &Date) != 0)
     {
-        LSDecimal(Date.tm_mon + 1, Buffer);
-        UINTN Length = strlen(Buffer);
-        while (Length++ < 2)
-        {
-            putchar(' ');
-        }
-        printf("%s월 ", Buffer);
-        LSDecimal(Date.tm_mday, Buffer);
-        LSField(Buffer, 2, FALSE);
-        printf("%c%c:%c%c ", '0' + Date.tm_hour / 10, '0' + Date.tm_hour % 10, '0' + Date.tm_min / 10, '0' + Date.tm_min % 10);
+        printf("%s ", Buffer);
     }
     else
     {
-        printf("?월  ? ??:?? ");
+        printf("???  ? ??:?? ");
     }
 }
 
 STATIC VOID LSPrintLongEntry(CONST CHAR8 *Name, CONST struct stat *Info, CONST LS_OPTIONS *Options)
 {
     CHAR8 Mode[11];
-    char Buffer[21];
+    char  Buffer[21];
 
     LSModeString((UINT32) Info->st_mode, Mode);
     printf("%s ", (CONST char *) Mode);
@@ -389,11 +443,14 @@ STATIC VOID LSPrintLongEntry(CONST CHAR8 *Name, CONST struct stat *Info, CONST L
     if (S_ISCHR(Info->st_mode))
     {
         LSDecimal(Info->st_rdev, Buffer);
+
         UINTN Length = strlen(Buffer) + 3;
+
         while (Length++ < Columns.Size)
         {
             putchar(' ');
         }
+
         printf("0, %s ", Buffer);
     }
     else
@@ -401,6 +458,7 @@ STATIC VOID LSPrintLongEntry(CONST CHAR8 *Name, CONST struct stat *Info, CONST L
         LSDecimal(Info->st_size, Buffer);
         LSField(Buffer, Columns.Size, FALSE);
     }
+
     LSPrintModifiedTime(Info);
 
     LSPrintEntry(Name, LSTypeFromMode((UINT32) Info->st_mode), Options);
@@ -408,10 +466,10 @@ STATIC VOID LSPrintLongEntry(CONST CHAR8 *Name, CONST struct stat *Info, CONST L
 
 STATIC BOOLEAN LSBuildPath(CONST CHAR8 *Directory, CONST CHAR8 *Name, CHAR8 *Result, UINTN Capacity)
 {
-    UINTN DirectoryLength = strlen((CONST char *) Directory);
-    UINTN NameLength = strlen((CONST char *) Name);
+    UINTN   DirectoryLength = strlen((CONST char *) Directory);
+    UINTN   NameLength = strlen((CONST char *) Name);
     BOOLEAN Separator = DirectoryLength != 0 && Directory[DirectoryLength - 1] != '/';
-    UINTN Required = DirectoryLength + (Separator ? 1 : 0) + NameLength + 1;
+    UINTN   Required = DirectoryLength + (Separator ? 1 : 0) + NameLength + 1;
 
     if (Required > Capacity)
     {
@@ -442,8 +500,7 @@ STATIC BOOLEAN LSValidEntry(CONST LINUX_DIRENT64 *Entry, UINTN Remaining)
         return FALSE;
     }
 
-    if (Entry->RecordLength < HeaderSize + 1 ||
-        Entry->RecordLength > Remaining)
+    if (Entry->RecordLength < HeaderSize + 1 || Entry->RecordLength > Remaining)
     {
         return FALSE;
     }
@@ -469,7 +526,8 @@ STATIC INT32 LSListDirectoryPass(CONST CHAR8 *Path, CONST LS_OPTIONS *Options, B
 
     if (FD < 0)
     {
-        printf("ls: cannot open '%s'\n", (CONST char *) Path);
+        LSError((CONST char *) Path, errno);
+
         return 1;
     }
 
@@ -484,14 +542,14 @@ STATIC INT32 LSListDirectoryPass(CONST CHAR8 *Path, CONST LS_OPTIONS *Options, B
 
         if (Count < 0)
         {
-            printf("ls: cannot read '%s'\n", (CONST char *) Path);
+            LSError((CONST char *) Path, errno);
             Status = 1;
             break;
         }
 
         if ((UINT64) Count > sizeof(Buffer))
         {
-            printf("ls: invalid directory data in '%s'\n", (CONST char *) Path);
+            printf(gettext("ls: invalid directory data in '%s'\n"), (CONST char *) Path);
             Status = 1;
             break;
         }
@@ -504,7 +562,7 @@ STATIC INT32 LSListDirectoryPass(CONST CHAR8 *Path, CONST LS_OPTIONS *Options, B
 
             if (!LSValidEntry(Entry, (UINTN) Count - Position))
             {
-                printf("ls: invalid directory entry in '%s'\n", (CONST char *) Path);
+                printf(gettext("ls: invalid directory entry in '%s'\n"), (CONST char *) Path);
                 Status = 1;
                 break;
             }
@@ -513,17 +571,17 @@ STATIC INT32 LSListDirectoryPass(CONST CHAR8 *Path, CONST LS_OPTIONS *Options, B
             {
                 if (Options->Long)
                 {
-                    CHAR8 FullPath[LS_PATH_SIZE];
+                    CHAR8       FullPath[LS_PATH_SIZE];
                     struct stat Info;
 
                     if (!LSBuildPath(Path, Entry->Name, FullPath, sizeof(FullPath)))
                     {
-                        printf("ls: path too long: '%s'\n", (CONST char *) Entry->Name);
+                        printf(gettext("ls: path too long: '%s'\n"), (CONST char *) Entry->Name);
                         Status = 1;
                     }
                     else if (lstat((CONST char *) FullPath, &Info) < 0)
                     {
-                        printf("ls: cannot access '%s'\n", (CONST char *) FullPath);
+                        LSError((CONST char *) FullPath, errno);
                         Status = 1;
                     }
                     else
@@ -555,7 +613,7 @@ STATIC INT32 LSListDirectoryPass(CONST CHAR8 *Path, CONST LS_OPTIONS *Options, B
 
     if (close(FD) < 0)
     {
-        printf("ls: cannot close '%s'\n", (CONST char *) Path);
+        LSError((CONST char *) Path, errno);
         Status = 1;
     }
 
@@ -568,7 +626,8 @@ STATIC INT32 LSListPath(CONST CHAR8 *Path, CONST LS_OPTIONS *Options)
 
     if (lstat((CONST char *) Path, &Info) < 0)
     {
-        printf("ls: cannot access '%s'\n", (CONST char *) Path);
+        LSError((CONST char *) Path, errno);
+
         return 1;
     }
 
@@ -592,32 +651,41 @@ STATIC INT32 LSListPath(CONST CHAR8 *Path, CONST LS_OPTIONS *Options)
     if (Options->Long)
     {
         memset(&Columns, 0, sizeof(Columns));
+
         INT32 Result = LSListDirectoryPass(Path, Options, TRUE);
+
         if (Result != 0)
         {
             return Result;
         }
-        printf("합계 %lu\n", (unsigned long) ((Columns.Blocks + 1) / 2));
+
+        printf(gettext("total %lu\n"), (unsigned long) ((Columns.Blocks + 1) / 2));
     }
+
     return LSListDirectoryPass(Path, Options, FALSE);
 }
 
 STATIC VOID LSUsage(VOID)
 {
-    puts("Usage: ls [-aAlF1] [PATH ...]");
-    puts("  -a  Show all entries");
-    puts("  -A  Show hidden entries except . and ..");
-    puts("  -l  Use a long listing format");
-    puts("  -1  Print one entry per line");
-    puts("  -F  Append / to directories and @ to symlinks");
+    puts(gettext("Usage: ls [-aAlF1] [PATH ...]"));
+    puts(gettext("  -a  Show all entries"));
+    puts(gettext("  -A  Show hidden entries except . and .."));
+    puts(gettext("  -l  Use a long listing format"));
+    puts(gettext("  -1  Print one entry per line"));
+    puts(gettext("  -F  Append / to directories and @ to symlinks"));
 }
 
 INT32 main(INT32 Argc, CHAR8 **Argv)
 {
+    if (setlocale(LC_ALL, "") == NULL)
+    {
+        setlocale(LC_ALL, "C");
+    }
+
     LS_OPTIONS Options = {0};
-    INT32 FirstPath = 1;
-    INT32 Status = 0;
-    BOOLEAN EndOptions = FALSE;
+    INT32      FirstPath = 1;
+    INT32      Status = 0;
+    BOOLEAN    EndOptions = FALSE;
 
     while (FirstPath < Argc)
     {
@@ -638,6 +706,7 @@ INT32 main(INT32 Argc, CHAR8 **Argv)
         if (strcmp((CONST char *) Argument, "--help") == 0)
         {
             LSUsage();
+
             return 0;
         }
 
@@ -678,8 +747,9 @@ INT32 main(INT32 Argc, CHAR8 **Argv)
 
                 default:
                 {
-                    printf("ls: invalid option -- '%c'\n", Argument[Index]);
+                    printf(gettext("ls: invalid option -- '%c'\n"), Argument[Index]);
                     LSUsage();
+
                     return 2;
                 }
             }

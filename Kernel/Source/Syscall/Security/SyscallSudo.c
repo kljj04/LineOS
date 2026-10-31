@@ -19,41 +19,47 @@ typedef struct
 } SUDO_CACHE_ENTRY;
 
 STATIC SUDO_CACHE_ENTRY SudoCache[SUDO_CACHE_LIMIT];
-STATIC SPIN_LOCK SudoCacheLock;
+STATIC SPIN_LOCK        SudoCacheLock;
 
 INT64 SyscallSudoCache(UINT64 Operation)
 {
     TASK *Task = LBPWRRGetCurrentTask();
+
     if (Task == NULL || Task->FileContext == NULL)
     {
         return -ESRCH;
     }
+
     if (Operation > SUDO_CACHE_CLEAR)
     {
         return -EINVAL;
     }
+
     if (Operation == SUDO_CACHE_RECORD && Task->FileContext->Credentials.UID != 0)
     {
         return -EPERM;
     }
+
     if (Task->AuthSession == 0)
     {
         return 0;
     }
 
-    UINT64 Now = ClockGetUptimeMls();
-    UINT64 Flags = SpinLockAcquireIRQSave(&SudoCacheLock);
+    UINT64            Now = ClockGetUptimeMls();
+    UINT64            Flags = SpinLockAcquireIRQSave(&SudoCacheLock);
     SUDO_CACHE_ENTRY *Found = NULL;
     SUDO_CACHE_ENTRY *Oldest = &SudoCache[0];
 
     for (UINTN Index = 0; Index < SUDO_CACHE_LIMIT; Index++)
     {
         SUDO_CACHE_ENTRY *Entry = &SudoCache[Index];
+
         if (Entry->Session == Task->AuthSession && Entry->UID == Task->RealUID)
         {
             Found = Entry;
             break;
         }
+
         if (Entry->Expires < Oldest->Expires)
         {
             Oldest = Entry;
@@ -61,6 +67,7 @@ INT64 SyscallSudoCache(UINT64 Operation)
     }
 
     INT64 Result = 0;
+
     switch (Operation)
     {
         case SUDO_CACHE_CHECK:
@@ -69,19 +76,23 @@ INT64 SyscallSudoCache(UINT64 Operation)
             {
                 Result = 1;
             }
+
             break;
         }
+
         case SUDO_CACHE_RECORD:
         {
             if (Found == NULL)
             {
                 Found = Oldest;
             }
+
             Found->Session = Task->AuthSession;
             Found->UID = Task->RealUID;
             Found->Expires = Now + SUDO_CACHE_TIMEOUT_MLS;
             break;
         }
+
         case SUDO_CACHE_CLEAR:
         {
             if (Found != NULL)
@@ -89,11 +100,12 @@ INT64 SyscallSudoCache(UINT64 Operation)
                 Found->Session = 0;
                 Found->Expires = 0;
             }
+
             break;
         }
     }
 
     SpinLockReleaseIRQRestore(&SudoCacheLock, Flags);
+
     return Result;
 }
-

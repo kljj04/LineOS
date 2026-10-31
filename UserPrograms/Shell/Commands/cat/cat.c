@@ -2,8 +2,11 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
+#include <libintl.h>
+
 #include <LOSLibC/TypeInfo.h>
 #include <errno.h>
+#include <locale.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,6 +14,41 @@
 #include <unistd.h>
 
 #define CAT_BUFFER_SIZE 16384
+
+STATIC VOID CatErrorText(CONST char *Text)
+{
+    UINTN Length = strlen(Text);
+
+    while (Length != 0)
+    {
+        ssize_t Count = write(2, Text, Length);
+
+        if (Count < 0 && errno == EINTR)
+        {
+            continue;
+        }
+
+        if (Count <= 0)
+        {
+            break;
+        }
+
+        Text += Count;
+        Length -= (UINTN) Count;
+    }
+}
+
+STATIC VOID CatError(CONST char *Name)
+{
+    INT32 Error = errno;
+
+    CatErrorText("cat: ");
+    CatErrorText(Name);
+    CatErrorText(": ");
+    CatErrorText(strerror(Error));
+    CatErrorText("\n");
+    errno = Error;
+}
 
 STATIC INT32 CatWrite(CONST UINT8 *Buffer, UINTN Length)
 {
@@ -27,13 +65,16 @@ STATIC INT32 CatWrite(CONST UINT8 *Buffer, UINTN Length)
                 continue;
             }
 
-            puts("cat: write failed");
+            CatError("stdout");
+
             return 1;
         }
 
         if (Written == 0)
         {
-            puts("cat: write returned zero");
+            errno = EIO;
+            CatError("stdout");
+
             return 1;
         }
 
@@ -63,7 +104,8 @@ STATIC INT32 CatRead(INT32 FD, CONST CHAR8 *Name)
                 continue;
             }
 
-            printf("cat: cannot read '%s'\n", Name);
+            CatError((CONST char *) Name);
+
             return 1;
         }
 
@@ -85,7 +127,8 @@ STATIC INT32 CatFile(CONST CHAR8 *Path)
 
     if (FD < 0)
     {
-        printf("cat: cannot open '%s'\n", Path);
+        CatError((CONST char *) Path);
+
         return 1;
     }
 
@@ -93,7 +136,7 @@ STATIC INT32 CatFile(CONST CHAR8 *Path)
 
     if (close(FD) < 0)
     {
-        printf("cat: cannot close '%s'\n", Path);
+        CatError((CONST char *) Path);
         Result = 1;
     }
 
@@ -104,9 +147,15 @@ INT32 main(INT32 Argc, CHAR8 **Argv)
 {
     INT32 Status = 0;
 
+    if (setlocale(LC_ALL, "") == NULL)
+    {
+        setlocale(LC_ALL, "C");
+    }
+
     if (Argc <= 1)
     {
-        puts("cat: missing file operand");
+        puts(gettext("cat: missing file operand"));
+
         return 1;
     }
 
@@ -116,9 +165,10 @@ INT32 main(INT32 Argc, CHAR8 **Argv)
 
         if (strcmp(Argument, "--help") == 0)
         {
-            puts("Usage: cat [FILE ...]");
-            puts("  FILE  Read and print a file");
-            puts("  -     Read standard input");
+            puts(gettext("Usage: cat [FILE ...]"));
+            puts(gettext("  FILE  Read and print a file"));
+            puts(gettext("  -     Read standard input"));
+
             return 0;
         }
 

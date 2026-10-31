@@ -176,6 +176,7 @@ STATIC BOOLEAN ScanCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
     if ((PCIConfigRead16(Device, 0x06) & PCI_STATUS_CAPABILITIES) == 0)
     {
         LastError = L"pci capability list missing";
+
         return FALSE;
     }
 
@@ -202,6 +203,7 @@ STATIC BOOLEAN ScanCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
     if (VirtIODevice->CommonConfigBAR == 0xFF || VirtIODevice->NotifyBAR == 0xFF || VirtIODevice->ISRStatusBAR == 0xFF || VirtIODevice->DeviceConfigBAR == 0xFF)
     {
         LastError = L"virtio pci caps incomplete";
+
         return FALSE;
     }
 
@@ -219,6 +221,7 @@ STATIC BOOLEAN MapCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
     if (VirtIODevice->CommonConfig == NULL || VirtIODevice->NotifyBase == NULL || VirtIODevice->ISRStatus == NULL || VirtIODevice->DeviceConfig == NULL)
     {
         LastError = L"virtio pci cap address invalid";
+
         return FALSE;
     }
 
@@ -270,6 +273,7 @@ BOOLEAN VirtIOPCIInitDevice(VIRTIO_PCI_DEVICE *VirtIODevice, PCI_DEVICE *Device)
     if (VirtIODevice == NULL || Device == NULL)
     {
         LastError = L"virtio pci args invalid";
+
         return FALSE;
     }
 
@@ -292,6 +296,7 @@ BOOLEAN VirtIOPCIInitDevice(VIRTIO_PCI_DEVICE *VirtIODevice, PCI_DEVICE *Device)
     EnablePCIDevice(Device);
 
     LastError = L"ok";
+
     return TRUE;
 }
 
@@ -306,6 +311,7 @@ BOOLEAN VirtIOPCIStartDeviceWithFeatures(VIRTIO_PCI_DEVICE *VirtIODevice, UINT32
     if (VirtIODevice == NULL || VirtIODevice->CommonConfig == NULL)
     {
         LastError = L"virtio common cfg missing";
+
         return FALSE;
     }
 
@@ -324,6 +330,7 @@ BOOLEAN VirtIOPCIStartDeviceWithFeatures(VIRTIO_PCI_DEVICE *VirtIODevice, UINT32
     {
         CommonConfig->DeviceStatus |= VIRTIO_STATUS_FAILED;
         LastError = L"virtio version 1 unsupported";
+
         return FALSE;
     }
 
@@ -336,7 +343,7 @@ BOOLEAN VirtIOPCIStartDeviceWithFeatures(VIRTIO_PCI_DEVICE *VirtIODevice, UINT32
     CommonConfig->DriverFeatureSelect = 1;
     CommonConfig->DriverFeature = AcceptedFeaturesHigh;
 
-    ASM("" ::: "memory");
+    ASM("" :: : "memory");
 
     CommonConfig->DeviceStatus |= VIRTIO_STATUS_FEATURES_OK;
 
@@ -344,6 +351,7 @@ BOOLEAN VirtIOPCIStartDeviceWithFeatures(VIRTIO_PCI_DEVICE *VirtIODevice, UINT32
     {
         CommonConfig->DeviceStatus |= VIRTIO_STATUS_FAILED;
         LastError = L"virtio features rejected";
+
         return FALSE;
     }
 
@@ -351,6 +359,7 @@ BOOLEAN VirtIOPCIStartDeviceWithFeatures(VIRTIO_PCI_DEVICE *VirtIODevice, UINT32
     VirtIODevice->NegotiatedFeaturesHigh = AcceptedFeaturesHigh;
 
     LastError = L"ok";
+
     return TRUE;
 }
 
@@ -364,6 +373,7 @@ VOID VirtIOPCIReadyDevice(VIRTIO_PCI_DEVICE *VirtIODevice)
     if (VirtIODevice == NULL || VirtIODevice->CommonConfig == NULL)
     {
         LastError = L"virtio common cfg missing";
+
         return;
     }
 
@@ -379,18 +389,21 @@ BOOLEAN VirtIOPCIEnableQueueMSIX(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 QueueIn
     if (VirtIODevice == NULL || VirtIODevice->CommonConfig == NULL)
     {
         LastError = L"virtio common cfg missing";
+
         return FALSE;
     }
 
     if (VirtIODevice->MSIXCapOffset == 0 || VirtIODevice->MSIXTable == NULL || VirtIODevice->MSIXTableSize == 0)
     {
         LastError = L"pci msix cap missing";
+
         return FALSE;
     }
 
     if (VirtIODevice->MSIXTableBAR >= 6 || VirtIODevice->MSIXTableSize <= VIRTIO_PCI_MSIX_ENTRY)
     {
         LastError = L"pci msix table invalid";
+
         return FALSE;
     }
 
@@ -400,6 +413,7 @@ BOOLEAN VirtIOPCIEnableQueueMSIX(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 QueueIn
     if (CommonConfig->QueueSize == 0)
     {
         LastError = L"virtqueue missing";
+
         return FALSE;
     }
 
@@ -410,12 +424,14 @@ BOOLEAN VirtIOPCIEnableQueueMSIX(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 QueueIn
     if (CommonConfig->QueueMSIXVector == VIRTIO_PCI_MSIX_NO_VECTOR)
     {
         LastError = L"virtqueue msix vector rejected";
+
         return FALSE;
     }
 
     EnableMSIXCapability(VirtIODevice);
 
     LastError = L"ok";
+
     return TRUE;
 }
 

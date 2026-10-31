@@ -10,9 +10,10 @@
 #include <Syscall/Device/Ioctl.h>
 #include <Timer/Clock.h>
 #include <Scheduler/Task.h>
+#include <Syscall/IPC/SyscallIPC.h>
 
 #define TERMINAL_CAPACITY 65536U
-#define TERMINAL_CHUNK    256U
+#define TERMINAL_CHUNK    4096U
 
 typedef struct
 {
@@ -26,11 +27,52 @@ typedef struct
 } TERMINAL_QUEUE;
 
 STATIC TERMINAL_QUEUE TerminalInput;
+STATIC TERMINAL_QUEUE TerminalWindowInput;
 STATIC TERMINAL_QUEUE TerminalOutput;
 STATIC SPIN_LOCK      TerminalControlLock;
 STATIC BOOLEAN        TerminalMasterActive;
 STATIC TASK          *TerminalGraphicsOwner;
 STATIC BOOLEAN        TerminalGraphicsPaused;
+
+STATIC UINT64 TerminalCompositorEndpoint;
+
+STATIC TERMINAL_QUEUE *TerminalReadQueue(TASK *Task, BOOLEAN Master)
+{
+    TASK *Owner = __atomic_load_n(&TerminalGraphicsOwner, __ATOMIC_ACQUIRE);
+
+    return Master ? &TerminalOutput : Owner != NULL && Owner != Task ? &TerminalWindowInput : &TerminalInput;
+}
+
+STATIC VOID TerminalSetGraphicsOwner(TASK *Owner)
+{
+    SpinLockAcquire(&TerminalInput.Lock);
+    __atomic_store_n(&TerminalGraphicsOwner, Owner, __ATOMIC_RELEASE);
+
+    if (Owner == NULL)
+    {
+        TerminalCompositorEndpoint = 0;
+    }
+    SpinLockAcquire(&TerminalWindowInput.Lock);
+
+    if (Owner == NULL)
+    {
+        TerminalInput.Head = 0;
+        TerminalInput.Length = 0;
+
+        while (TerminalWindowInput.Length != 0 && TerminalInput.Length < TERMINAL_CAPACITY)
+        {
+            TerminalInput.Data[(TerminalInput.Head + TerminalInput.Length++) % TERMINAL_CAPACITY] = TerminalWindowInput.Data[TerminalWindowInput.Head];
+            TerminalWindowInput.Head = (TerminalWindowInput.Head + 1) % TERMINAL_CAPACITY;
+            TerminalWindowInput.Length--;
+        }
+    }
+
+    WaitQueueWakeAll(&TerminalWindowInput.Readers);
+    WaitQueueWakeAll(&TerminalWindowInput.Writers);
+    SpinLockRelease(&TerminalWindowInput.Lock);
+    WaitQueueWakeAll(&TerminalInput.Readers);
+    SpinLockRelease(&TerminalInput.Lock);
+}
 
 typedef enum
 {
@@ -43,10 +85,10 @@ typedef enum
 } TERMINAL_DEBUG_STATE;
 
 STATIC TERMINAL_DEBUG_STATE TerminalDebugState;
-STATIC char TerminalDebugLine[4096];
-STATIC UINTN TerminalDebugLength;
-STATIC UINTN TerminalDebugCursor;
-STATIC UINT32 TerminalDebugParameter;
+STATIC char                 TerminalDebugLine[4096];
+STATIC UINTN                TerminalDebugLength;
+STATIC UINTN                TerminalDebugCursor;
+STATIC UINT32               TerminalDebugParameter;
 
 STATIC VOID TerminalDebugText(UINT8 Byte)
 {
@@ -57,13 +99,17 @@ STATIC VOID TerminalDebugText(UINT8 Byte)
         DebugWrite("\n");
         TerminalDebugLength = 0;
         TerminalDebugCursor = 0;
+
         return;
     }
+
     if (Byte == '\r')
     {
         TerminalDebugCursor = 0;
+
         return;
     }
+
     if (Byte == '\b' || Byte == 0x7F)
     {
         if (TerminalDebugCursor != 0)
@@ -73,38 +119,47 @@ STATIC VOID TerminalDebugText(UINT8 Byte)
                 TerminalDebugCursor--;
             } while (TerminalDebugCursor != 0 && ((UINT8) TerminalDebugLine[TerminalDebugCursor] & 0xC0) == 0x80);
         }
+
         return;
     }
+
     if (Byte < 0x20 && Byte != '\t')
     {
         return;
     }
+
     if ((Byte & 0xC0) != 0x80 && TerminalDebugCursor < TerminalDebugLength)
     {
         UINTN End = TerminalDebugCursor + 1;
+
         while (End < TerminalDebugLength && ((UINT8) TerminalDebugLine[End] & 0xC0) == 0x80)
         {
             End++;
         }
+
         UINTN Removed = End - TerminalDebugCursor;
+
         for (UINTN Index = End; Index < TerminalDebugLength; Index++)
         {
             TerminalDebugLine[Index - Removed] = TerminalDebugLine[Index];
         }
+
         TerminalDebugLength -= Removed;
     }
+
     if (TerminalDebugLength + 1 >= sizeof(TerminalDebugLine))
     {
         return;
     }
+
     for (UINTN Index = TerminalDebugLength; Index > TerminalDebugCursor; Index--)
     {
         TerminalDebugLine[Index] = TerminalDebugLine[Index - 1];
     }
+
     TerminalDebugLine[TerminalDebugCursor++] = (char) Byte;
     TerminalDebugLength++;
 }
-
 
 STATIC VOID TerminalDebugByte(UINT8 Byte)
 {
@@ -115,11 +170,15 @@ STATIC VOID TerminalDebugByte(UINT8 Byte)
             if (Byte == 0x1B)
             {
                 TerminalDebugState = TERMINAL_DEBUG_ESCAPE;
+
                 return;
             }
+
             TerminalDebugText(Byte);
+
             return;
         }
+
         case TERMINAL_DEBUG_ESCAPE:
         {
             if (Byte == '[')
@@ -139,8 +198,10 @@ STATIC VOID TerminalDebugByte(UINT8 Byte)
             {
                 TerminalDebugState = TERMINAL_DEBUG_TEXT;
             }
+
             return;
         }
+
         case TERMINAL_DEBUG_CSI:
         {
             if (Byte >= '0' && Byte <= '9')
@@ -166,12 +227,16 @@ STATIC VOID TerminalDebugByte(UINT8 Byte)
                     {
                         TerminalDebugLine[Index] = ' ';
                     }
+
                     TerminalDebugLength = TerminalDebugCursor;
                 }
+
                 TerminalDebugState = TERMINAL_DEBUG_TEXT;
             }
+
             return;
         }
+
         case TERMINAL_DEBUG_INTERMEDIATE:
         {
             if (Byte == 0x1B)
@@ -182,8 +247,10 @@ STATIC VOID TerminalDebugByte(UINT8 Byte)
             {
                 TerminalDebugState = TERMINAL_DEBUG_TEXT;
             }
+
             return;
         }
+
         case TERMINAL_DEBUG_STRING:
         {
             if (Byte == 0x07 || Byte == 0x18 || Byte == 0x1A)
@@ -194,8 +261,10 @@ STATIC VOID TerminalDebugByte(UINT8 Byte)
             {
                 TerminalDebugState = TERMINAL_DEBUG_STRING_ESCAPE;
             }
+
             return;
         }
+
         case TERMINAL_DEBUG_STRING_ESCAPE:
         {
             if (Byte == '\\' || Byte == 0x07 || Byte == 0x18 || Byte == 0x1A)
@@ -206,6 +275,7 @@ STATIC VOID TerminalDebugByte(UINT8 Byte)
             {
                 TerminalDebugState = TERMINAL_DEBUG_STRING;
             }
+
             return;
         }
     }
@@ -214,14 +284,20 @@ STATIC VOID TerminalDebugByte(UINT8 Byte)
 BOOLEAN TerminalAttach(VOID)
 {
     UINT64 Flags = SpinLockAcquireIRQSave(&TerminalControlLock);
+
     if (TerminalMasterActive)
     {
         SpinLockReleaseIRQRestore(&TerminalControlLock, Flags);
+
         return FALSE;
     }
+
     TerminalMasterActive = TRUE;
     SpinLockAcquire(&TerminalInput.Lock);
     TerminalInput.Closed = FALSE;
+    SpinLockAcquire(&TerminalWindowInput.Lock);
+    TerminalWindowInput.Closed = FALSE;
+    SpinLockRelease(&TerminalWindowInput.Lock);
     SpinLockRelease(&TerminalInput.Lock);
     SpinLockAcquire(&TerminalOutput.Lock);
     TerminalOutput.Closed = FALSE;
@@ -230,29 +306,33 @@ BOOLEAN TerminalAttach(VOID)
     TerminalDebugCursor = 0;
     SpinLockRelease(&TerminalOutput.Lock);
     SpinLockReleaseIRQRestore(&TerminalControlLock, Flags);
+
     return TRUE;
 }
 
 VOID TerminalDetach(VOID)
 {
     UINT64          Flags = SpinLockAcquireIRQSave(&TerminalControlLock);
-    TERMINAL_QUEUE *Queues[2] = {&TerminalInput, &TerminalOutput};
+    TERMINAL_QUEUE *Queues[3] = {&TerminalInput, &TerminalWindowInput, &TerminalOutput};
+
     for (UINTN Index = 0; Index < 2; Index++)
     {
         TERMINAL_QUEUE *Queue = Queues[Index];
+
         SpinLockAcquire(&Queue->Lock);
         Queue->Closed = TRUE;
         WaitQueueWakeAll(&Queue->Readers);
         WaitQueueWakeAll(&Queue->Writers);
         SpinLockRelease(&Queue->Lock);
     }
+
     TerminalMasterActive = FALSE;
     SpinLockReleaseIRQRestore(&TerminalControlLock, Flags);
 }
 
 INT64 TerminalRead(TASK *Task, BOOLEAN Master, UINT64 Buffer, UINT64 Count)
 {
-    TERMINAL_QUEUE *Queue = Master ? &TerminalOutput : &TerminalInput;
+    TERMINAL_QUEUE *Queue;
     UINT8           Bytes[TERMINAL_CHUNK];
     UINT64          Flags;
     UINT32          Length;
@@ -261,44 +341,70 @@ INT64 TerminalRead(TASK *Task, BOOLEAN Master, UINT64 Buffer, UINT64 Count)
     {
         return 0;
     }
+
+Retry:
+    Queue = TerminalReadQueue(Task, Master);
     Flags = SpinLockAcquireIRQSave(&Queue->Lock);
+
     while (Queue->Length == 0 && !Queue->Closed)
     {
         if (!WaitQueueSleep(&Queue->Readers, &Queue->Lock))
         {
             SpinLockReleaseIRQRestore(&Queue->Lock, Flags);
+
             return -EINTR;
         }
+
+        if (Queue != TerminalReadQueue(Task, Master))
+        {
+            SpinLockReleaseIRQRestore(&Queue->Lock, Flags);
+            goto Retry;
+        }
     }
+
+    if (Queue != TerminalReadQueue(Task, Master))
+    {
+        SpinLockReleaseIRQRestore(&Queue->Lock, Flags);
+        goto Retry;
+    }
+
     Length = Count > TERMINAL_CHUNK ? TERMINAL_CHUNK : (UINT32) Count;
+
     if (Length > Queue->Length)
     {
         Length = Queue->Length;
     }
+
     if (Length == 0)
     {
         SpinLockReleaseIRQRestore(&Queue->Lock, Flags);
+
         return 0;
     }
+
     for (UINT32 Index = 0; Index < Length; Index++)
     {
         Bytes[Index] = Queue->Data[(Queue->Head + Index) % TERMINAL_CAPACITY];
     }
+
     if (!VMMCopyToUser(Task->AddressSpace, Buffer, Bytes, Length))
     {
         SpinLockReleaseIRQRestore(&Queue->Lock, Flags);
+
         return -EFAULT;
     }
+
     Queue->Head = (Queue->Head + Length) % TERMINAL_CAPACITY;
     Queue->Length -= Length;
     WaitQueueWakeAll(&Queue->Writers);
     SpinLockReleaseIRQRestore(&Queue->Lock, Flags);
+
     return Length;
 }
 
 INT64 TerminalWrite(TASK *Task, BOOLEAN Master, UINT64 Buffer, UINT64 Count)
 {
-    TERMINAL_QUEUE *Queue = Master ? &TerminalInput : &TerminalOutput;
+    TERMINAL_QUEUE *Queue = Master ? (__atomic_load_n(&TerminalGraphicsOwner, __ATOMIC_ACQUIRE) != NULL ? &TerminalWindowInput : &TerminalInput) : &TerminalOutput;
     UINT8           Bytes[TERMINAL_CHUNK];
     UINT64          Total = 0;
 
@@ -306,40 +412,64 @@ INT64 TerminalWrite(TASK *Task, BOOLEAN Master, UINT64 Buffer, UINT64 Count)
     {
         UINT32 Length = Count - Total > TERMINAL_CHUNK ? TERMINAL_CHUNK : (UINT32) (Count - Total);
         UINT32 Done = 0;
+
         if (!VMMCopyFromUser(Task->AddressSpace, Bytes, Buffer + Total, Length))
         {
             return Total != 0 ? (INT64) Total : -EFAULT;
         }
+
         while (Done < Length)
         {
             UINT64 Flags = SpinLockAcquireIRQSave(&Queue->Lock);
+
+            if (Master)
+            {
+                TERMINAL_QUEUE *Expected = __atomic_load_n(&TerminalGraphicsOwner, __ATOMIC_ACQUIRE) != NULL ? &TerminalWindowInput : &TerminalInput;
+
+                if (Expected != Queue)
+                {
+                    SpinLockReleaseIRQRestore(&Queue->Lock, Flags);
+                    Queue = Expected;
+                    continue;
+                }
+            }
+
             while (Queue->Length == TERMINAL_CAPACITY && !Queue->Closed)
             {
                 if (!WaitQueueSleep(&Queue->Writers, &Queue->Lock))
                 {
                     SpinLockReleaseIRQRestore(&Queue->Lock, Flags);
+
                     return Total != 0 ? (INT64) Total : -EINTR;
                 }
             }
+
             if (Queue->Closed)
             {
                 SpinLockReleaseIRQRestore(&Queue->Lock, Flags);
+
                 return Total != 0 ? (INT64) Total : -EPIPE;
             }
+
             UINT32 Chunk = Length - Done;
+
             if (Chunk > TERMINAL_CAPACITY - Queue->Length)
             {
                 Chunk = TERMINAL_CAPACITY - Queue->Length;
             }
+
             for (UINT32 Index = 0; Index < Chunk; Index++)
             {
                 UINT8 Byte = Bytes[Done + Index];
+
                 Queue->Data[(Queue->Head + Queue->Length + Index) % TERMINAL_CAPACITY] = Byte;
+
                 if (!Master)
                 {
                     TerminalDebugByte(Byte);
                 }
             }
+
             Queue->Length += Chunk;
             Done += Chunk;
             Total += Chunk;
@@ -347,6 +477,7 @@ INT64 TerminalWrite(TASK *Task, BOOLEAN Master, UINT64 Buffer, UINT64 Count)
             SpinLockReleaseIRQRestore(&Queue->Lock, Flags);
         }
     }
+
     return (INT64) Total;
 }
 
@@ -364,17 +495,21 @@ VOID TerminalKey(UINT16 Code, BOOLEAN Pressed, UINT8 Modifiers)
         {
             return;
         }
+
         Byte = 27;
     }
     else if (Code == 100 || Code == 122)
     {
         UINTN   Index = Code == 100 ? 0 : 1;
         BOOLEAN Previous = TogglePressed[Index];
+
         TogglePressed[Index] = Pressed;
+
         if (!Pressed || Previous)
         {
             return;
         }
+
         Byte = 14;
     }
     else
@@ -383,23 +518,30 @@ VOID TerminalKey(UINT16 Code, BOOLEAN Pressed, UINT8 Modifiers)
         {
             return;
         }
+
         Byte = (Modifiers & 1) != 0 ? Shift[Code] : Plain[Code];
+
         if ((Modifiers & 2) != 0 && ((Byte >= 'a' && Byte <= 'z') || (Byte >= 'A' && Byte <= 'Z')))
         {
             Byte ^= 32;
         }
+
         if ((Modifiers & 4) != 0 && ((Byte >= 'a' && Byte <= 'z') || (Byte >= 'A' && Byte <= 'Z')))
         {
             Byte &= 31;
         }
     }
+
     if (Byte == 0)
     {
         return;
     }
+
     Flags = SpinLockAcquireIRQSave(&TerminalInput.Lock);
+
     UINT32 Length = 1;
-    UINT8 Final = 0;
+    UINT8  Final = 0;
+
     switch (Code)
     {
         case 103:
@@ -407,56 +549,68 @@ VOID TerminalKey(UINT16 Code, BOOLEAN Pressed, UINT8 Modifiers)
             Final = 'A';
             break;
         }
+
         case 108:
         {
             Final = 'B';
             break;
         }
+
         case 106:
         {
             Final = 'C';
             break;
         }
+
         case 105:
         {
             Final = 'D';
             break;
         }
+
         case 102:
         {
             Final = 'H';
             break;
         }
+
         case 107:
         {
             Final = 'F';
             break;
         }
+
         case 111:
         {
             Final = '3';
             break;
         }
     }
+
     if (Final != 0)
     {
         Length = Code == 111 ? 4 : 3;
     }
+
     if (!TerminalInput.Closed && Length <= TERMINAL_CAPACITY - TerminalInput.Length)
     {
         TerminalInput.Data[(TerminalInput.Head + TerminalInput.Length) % TERMINAL_CAPACITY] = Byte;
         TerminalInput.Length++;
+
         if (Length > 1)
         {
             TerminalInput.Data[(TerminalInput.Head + TerminalInput.Length++) % TERMINAL_CAPACITY] = '[';
             TerminalInput.Data[(TerminalInput.Head + TerminalInput.Length++) % TERMINAL_CAPACITY] = Final;
+
             if (Length == 4)
             {
                 TerminalInput.Data[(TerminalInput.Head + TerminalInput.Length++) % TERMINAL_CAPACITY] = '~';
             }
         }
+
         WaitQueueWakeAll(&TerminalInput.Readers);
     }
+
     SpinLockReleaseIRQRestore(&TerminalInput.Lock, Flags);
 }
 
@@ -466,36 +620,44 @@ INT64 TerminalWaitOutput(UINT32 TimeoutMls)
 
     for (;;)
     {
-        UINT64 ControlFlags = SpinLockAcquireIRQSave(&TerminalControlLock);
+        UINT64  ControlFlags = SpinLockAcquireIRQSave(&TerminalControlLock);
         BOOLEAN Graphics = TerminalGraphicsOwner != NULL;
+
         TerminalGraphicsPaused = Graphics;
         SpinLockReleaseIRQRestore(&TerminalControlLock, ControlFlags);
+
         if (Graphics)
         {
             TaskSleepMls(20);
+
             return 2;
         }
-        UINT64 Flags = SpinLockAcquireIRQSave(&TerminalOutput.Lock);
+
+        UINT64  Flags = SpinLockAcquireIRQSave(&TerminalOutput.Lock);
         BOOLEAN Ready = TerminalOutput.Length != 0;
         BOOLEAN Closed = TerminalOutput.Closed;
+
         SpinLockReleaseIRQRestore(&TerminalOutput.Lock, Flags);
 
         if (Ready)
         {
             return 1;
         }
+
         if (Closed)
         {
             return -EPIPE;
         }
 
         UINT64 Elapsed = ClockGetUptimeMls() - Started;
+
         if (Elapsed >= TimeoutMls)
         {
             return 0;
         }
 
         UINT64 Remaining = TimeoutMls - Elapsed;
+
         TaskSleepMls(Remaining < 20 ? Remaining : 20);
     }
 }
@@ -503,7 +665,8 @@ INT64 TerminalWaitOutput(UINT32 TimeoutMls)
 INT64 TerminalGraphics(TASK *Task, BOOLEAN Begin)
 {
     UINT64 Flags = SpinLockAcquireIRQSave(&TerminalControlLock);
-    INT64 Result = 0;
+    INT64  Result = 0;
+
     if (Begin)
     {
         if (TerminalGraphicsOwner != NULL && TerminalGraphicsOwner != Task)
@@ -513,7 +676,7 @@ INT64 TerminalGraphics(TASK *Task, BOOLEAN Begin)
         else
         {
             TerminalGraphicsPaused = FALSE;
-            TerminalGraphicsOwner = Task;
+            TerminalSetGraphicsOwner(Task);
         }
     }
     else if (TerminalGraphicsOwner != Task)
@@ -522,68 +685,86 @@ INT64 TerminalGraphics(TASK *Task, BOOLEAN Begin)
     }
     else
     {
-        TerminalGraphicsOwner = NULL;
+        TerminalSetGraphicsOwner(NULL);
     }
+
     SpinLockReleaseIRQRestore(&TerminalControlLock, Flags);
+
     if (Begin && Result == 0)
     {
         UINT64 Started = ClockGetUptimeMls();
+
         for (;;)
         {
             Flags = SpinLockAcquireIRQSave(&TerminalControlLock);
+
             BOOLEAN Ready = TerminalGraphicsPaused;
             BOOLEAN Active = TerminalMasterActive;
+
             SpinLockReleaseIRQRestore(&TerminalControlLock, Flags);
+
             if (Ready && Active)
             {
                 break;
             }
+
             if (!Active || ClockGetUptimeMls() - Started >= 1000)
             {
                 TerminalGraphicsRelease(Task);
+
                 return -EBUSY;
             }
+
             TaskSleepMls(1);
         }
     }
+
     return Result;
 }
 
 VOID TerminalGraphicsRelease(VOID *Owner)
 {
     UINT64 Flags = SpinLockAcquireIRQSave(&TerminalControlLock);
+
     if (TerminalGraphicsOwner == Owner)
     {
-        TerminalGraphicsOwner = NULL;
+        TerminalSetGraphicsOwner(NULL);
     }
+
     SpinLockReleaseIRQRestore(&TerminalControlLock, Flags);
 }
 
 INT64 TerminalPending(TASK *Task, BOOLEAN Master, UINT64 UserCount)
 {
-    TERMINAL_QUEUE *Queue = Master ? &TerminalOutput : &TerminalInput;
-    UINT64 Flags = SpinLockAcquireIRQSave(&Queue->Lock);
-    INT32 Count = (INT32) Queue->Length;
+    TERMINAL_QUEUE *Queue = TerminalReadQueue(Task, Master);
+    UINT64          Flags = SpinLockAcquireIRQSave(&Queue->Lock);
+    INT32           Count = (INT32) Queue->Length;
+
     SpinLockReleaseIRQRestore(&Queue->Lock, Flags);
+
     return VMMCopyToUser(Task->AddressSpace, UserCount, &Count, sizeof(Count)) ? 0 : -EFAULT;
 }
 
 INT64 TerminalWindowSize(TASK *Task, UINT64 UserSize, BOOLEAN Set)
 {
     STATIC struct winsize Size = {24, 80, 0, 0};
-    struct winsize Value;
+    struct winsize        Value;
+
     if (Set)
     {
         if (!VMMCopyFromUser(Task->AddressSpace, &Value, UserSize, sizeof(Value)))
         {
             return -EFAULT;
         }
+
         if (Value.ws_row == 0 || Value.ws_col == 0)
         {
             return -EINVAL;
         }
     }
+
     UINT64 Flags = SpinLockAcquireIRQSave(&TerminalControlLock);
+
     if (Set)
     {
         Size = Value;
@@ -592,10 +773,93 @@ INT64 TerminalWindowSize(TASK *Task, UINT64 UserSize, BOOLEAN Set)
     {
         Value = Size;
     }
+
     SpinLockReleaseIRQRestore(&TerminalControlLock, Flags);
+
     if (!Set && !VMMCopyToUser(Task->AddressSpace, UserSize, &Value, sizeof(Value)))
     {
         return -EFAULT;
     }
+
     return 0;
+}
+
+INT64 TerminalCompositor(TASK *Task, UINT64 UserEndpoint, BOOLEAN Set)
+{
+    UINT64 Endpoint = 0;
+
+    if (Set && (!VMMCopyFromUser(Task->AddressSpace, &Endpoint, UserEndpoint, sizeof(Endpoint)) || !SyscallIPCOwns(Task, Endpoint)))
+    {
+        return -EINVAL;
+    }
+
+    UINT64 Flags = SpinLockAcquireIRQSave(&TerminalControlLock);
+    INT64 Result = 0;
+
+    if (Set)
+    {
+        if (TerminalGraphicsOwner != Task)
+        {
+            Result = -EPERM;
+        }
+        else
+        {
+            TerminalCompositorEndpoint = Endpoint;
+        }
+    }
+    else
+    {
+        Endpoint = TerminalCompositorEndpoint;
+    }
+
+    SpinLockReleaseIRQRestore(&TerminalControlLock, Flags);
+
+    if (Result == 0 && !Set && !VMMCopyToUser(Task->AddressSpace, UserEndpoint, &Endpoint, sizeof(Endpoint)))
+    {
+        return -EFAULT;
+    }
+
+    return Result;
+}
+
+INT64 TerminalInjectCLI(TASK *Task, UINT64 UserByte)
+{
+    UINT8 Byte;
+
+    if (!VMMCopyFromUser(Task->AddressSpace, &Byte, UserByte, sizeof(Byte)))
+    {
+        return -EFAULT;
+    }
+
+    UINT64 Flags = SpinLockAcquireIRQSave(&TerminalControlLock);
+    INT64 Result = 0;
+
+    if (TerminalGraphicsOwner != Task)
+    {
+        Result = -EPERM;
+    }
+    else
+    {
+        SpinLockAcquire(&TerminalWindowInput.Lock);
+
+        if (TerminalWindowInput.Closed)
+        {
+            Result = -EPIPE;
+        }
+        else if (TerminalWindowInput.Length == TERMINAL_CAPACITY)
+        {
+            Result = -EAGAIN;
+        }
+        else
+        {
+            TerminalWindowInput.Data[(TerminalWindowInput.Head + TerminalWindowInput.Length++) % TERMINAL_CAPACITY] = Byte;
+            WaitQueueWakeAll(&TerminalWindowInput.Readers);
+        }
+
+        SpinLockRelease(&TerminalWindowInput.Lock);
+    }
+
+    SpinLockReleaseIRQRestore(&TerminalControlLock, Flags);
+
+    return Result;
 }

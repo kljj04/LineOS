@@ -60,18 +60,21 @@ UINT16 NetworkChecksum(CONST UINT8 *Data, UINT32 Length, UINT32 Sum)
 UINT16 NetworkTransportChecksum(UINT32 Source, UINT32 Destination, UINT8 Protocol, CONST UINT8 *Data, UINT32 Length)
 {
     UINT32 Sum = (Source >> 16) + (Source & 0xFFFF) + (Destination >> 16) + (Destination & 0xFFFF) + Protocol + Length;
+
     return NetworkChecksum(Data, Length, Sum);
 }
 
 UINT64 NetworkNow(VOID)
 {
     UINT64 Frequency = HPETGetFrequency();
+
     return Frequency == 0 ? 0 : (UINT64) ((UINT128) HPETReadCounter() * 1000 / Frequency);
 }
 
 UINT32 NetworkRemaining(UINT64 Start, UINT32 TimeoutMls)
 {
     UINT64 Elapsed = NetworkNow() - Start;
+
     return Elapsed >= TimeoutMls ? 0 : TimeoutMls - (UINT32) Elapsed;
 }
 
@@ -83,6 +86,7 @@ BOOLEAN NetworkExpired(UINT64 Start, UINT32 TimeoutMls)
 BOOLEAN NetworkError(CONST CHAR16 *Error)
 {
     ATOMIC_STORE(&LastError, Error, ATOMIC_RELEASE);
+
     return FALSE;
 }
 
@@ -116,6 +120,7 @@ VOID NetworkEnd(VOID)
 STATIC BOOLEAN IsUnicast(UINT32 Address)
 {
     UINT8 First = Address >> 24;
+
     return First != 0 && First != 127 && First < 224 && Address != UINT32_MAX;
 }
 
@@ -159,6 +164,7 @@ STATIC BOOLEAN IsValidDestination(UINT32 Address)
 STATIC BOOLEAN IsBroadcastMAC(CONST UINT8 *MAC)
 {
     STATIC CONST UINT8 Broadcast[6] = {255, 255, 255, 255, 255, 255};
+
     return EqualMAC(MAC, Broadcast);
 }
 
@@ -202,6 +208,7 @@ STATIC BOOLEAN SendFrame(CONST UINT8 *MAC, UINT16 Type, CONST UINT8 *Payload, UI
     }
 
     NetworkState.Stats.Transmitted++;
+
     return TRUE;
 }
 
@@ -224,6 +231,7 @@ STATIC BOOLEAN SendARP(UINT16 Operation, UINT32 Address, CONST UINT8 *MAC)
     }
 
     NetworkWrite32(Packet + 24, Address);
+
     return SendFrame(MAC == NULL ? Broadcast : MAC, 0x0806, Packet, sizeof(Packet));
 }
 
@@ -236,6 +244,7 @@ STATIC VOID HandleARP(CONST UINT8 *SourceMAC, CONST UINT8 *Packet, UINT32 Length
     if (Length < 28 || NetworkRead16(Packet) != 1 || NetworkRead16(Packet + 2) != 0x0800 || Packet[4] != 6 || Packet[5] != 4 || !EqualMAC(Packet + 8, SourceMAC) || !IsValidMAC(SourceMAC) || NetworkRead32(Packet + 24) != NetworkState.Config.Address)
     {
         NetworkState.Stats.Dropped++;
+
         return;
     }
 
@@ -245,6 +254,7 @@ STATIC VOID HandleARP(CONST UINT8 *SourceMAC, CONST UINT8 *Packet, UINT32 Length
     if ((Operation != 1 && Operation != 2) || !IsUnicast(Address) || Address == NetworkState.Config.Address || (Address & NetworkState.Config.Netmask) != (NetworkState.Config.Address & NetworkState.Config.Netmask) || (Operation == 2 && !EqualMAC(Packet + 18, NetworkState.Device->MAC)))
     {
         NetworkState.Stats.Dropped++;
+
         return;
     }
 
@@ -296,6 +306,7 @@ BOOLEAN NetworkSendIPv4Locked(UINT32 Address, UINT8 Protocol, CONST UINT8 *Paylo
     NetworkWrite32(Packet + 16, Address);
     NetworkWrite16(Packet + 10, NetworkChecksum(Packet, 20, 0));
     KMemCpy(Packet + 20, Payload, Length);
+
     return SendFrame(Broadcast ? BroadcastMAC : Entry->MAC, 0x0800, Packet, Length + 20);
 }
 
@@ -304,6 +315,7 @@ STATIC VOID HandleICMP(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
     if (Length < 8 || Packet[1] != 0 || NetworkChecksum(Packet, Length, 0) != 0)
     {
         NetworkState.Stats.Dropped++;
+
         return;
     }
 
@@ -343,12 +355,14 @@ STATIC VOID HandleIPv4(CONST UINT8 *Packet, UINT32 Length)
     if (Length < 20)
     {
         NetworkState.Stats.Dropped++;
+
         return;
     }
 
     HeaderLength = (Packet[0] & 15) * 4;
     TotalLength = NetworkRead16(Packet + 2);
     Source = NetworkRead32(Packet + 12);
+
     UINT32  Destination = NetworkRead32(Packet + 16);
     BOOLEAN Broadcast = Destination == UINT32_MAX || (NetworkState.Configured && Destination == (NetworkState.Config.Address | ~NetworkState.Config.Netmask));
     BOOLEAN DHCP = Packet[9] == 17 && TotalLength >= HeaderLength + 8 && TotalLength <= Length && HeaderLength <= Length && NetworkRead16(Packet + HeaderLength + 2) == 68;
@@ -356,6 +370,7 @@ STATIC VOID HandleIPv4(CONST UINT8 *Packet, UINT32 Length)
     if ((Packet[0] >> 4) != 4 || HeaderLength < 20 || HeaderLength > Length || TotalLength < HeaderLength || TotalLength > Length || TotalLength > NETWORK_MTU || Packet[8] == 0 || (NetworkRead16(Packet + 6) & 0xBFFF) != 0 || NetworkChecksum(Packet, HeaderLength, 0) != 0 || (!Broadcast && ((!NetworkState.Configured && !DHCP) || (NetworkState.Configured && Destination != NetworkState.Config.Address))) || (Broadcast && Packet[9] != 17) || (!NetworkState.Configured && !DHCP) || !IsUnicast(Source))
     {
         NetworkState.Stats.Dropped++;
+
         return;
     }
 
@@ -464,6 +479,7 @@ BOOLEAN NetworkResolve(UINT32 Address, UINT32 TimeoutMls)
         if (!NetworkState.Configured || !IsValidDestination(Address))
         {
             SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
             return NetworkError(L"invalid destination or unconfigured network");
         }
 
@@ -472,6 +488,7 @@ BOOLEAN NetworkResolve(UINT32 Address, UINT32 TimeoutMls)
         if (FindARP(Hop) != NULL)
         {
             SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
             return TRUE;
         }
 
@@ -512,6 +529,7 @@ BOOLEAN NetworkSetConfigLocked(CONST NETWORK_CONFIG *Config)
 
     NetworkState.Config = *Config;
     NetworkState.Configured = TRUE;
+
     return TRUE;
 }
 
@@ -539,6 +557,7 @@ BOOLEAN NetworkConfigure(CONST NETWORK_CONFIG *Config)
     {
         SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
         NetworkEnd();
+
         return NetworkError(L"TCP connection active");
     }
 
@@ -551,6 +570,7 @@ BOOLEAN NetworkConfigure(CONST NETWORK_CONFIG *Config)
 
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
     NetworkEnd();
+
     return Result;
 }
 
@@ -571,6 +591,7 @@ BOOLEAN NetworkInit(VOID)
     NetworkState.NextPort = 49152 + (RDTSC() % 10000);
     NetworkState.Ready = TRUE;
     NetworkError(L"ok");
+
     return TRUE;
 }
 
@@ -585,8 +606,11 @@ BOOLEAN NetworkGetConfig(NETWORK_CONFIG *Config)
 
     Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
     *Config = NetworkState.Config;
+
     BOOLEAN Result = NetworkState.Configured;
+
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
     return Result;
 }
 
@@ -623,6 +647,7 @@ BOOLEAN NetworkPing(UINT32 Address, UINT32 TimeoutMls, UINT32 *RoundTripMls)
     if (!NetworkResolve(Address, TimeoutMls))
     {
         NetworkEnd();
+
         return FALSE;
     }
 
@@ -663,5 +688,6 @@ BOOLEAN NetworkPing(UINT32 Address, UINT32 TimeoutMls, UINT32 *RoundTripMls)
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
     NetworkEnd();
     NetworkError(Result ? L"ok" : L"ICMP echo timeout");
+
     return Result;
 }

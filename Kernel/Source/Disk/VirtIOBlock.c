@@ -16,7 +16,7 @@ STATIC CONST CHAR16       *LastError = L"not initialized";
 
 STATIC VOID MemoryBarrier(VOID)
 {
-    ASM("" ::: "memory");
+    ASM("" :: : "memory");
 }
 
 STATIC BOOLEAN IsDMABufferValid(CONST VOID *Buffer, UINT64 Length)
@@ -69,6 +69,7 @@ STATIC BOOLEAN ReadCapacity(VIRTIO_BLOCK_DEVICE *Device)
     if (Device == NULL || Device->Device.DeviceConfig == NULL || Device->Device.CommonConfig == NULL)
     {
         LastError = L"block device config missing";
+
         return FALSE;
     }
 
@@ -94,6 +95,7 @@ STATIC BOOLEAN ReadCapacity(VIRTIO_BLOCK_DEVICE *Device)
             if (Capacity == 0)
             {
                 LastError = L"block device capacity is zero";
+
                 return FALSE;
             }
 
@@ -102,6 +104,7 @@ STATIC BOOLEAN ReadCapacity(VIRTIO_BLOCK_DEVICE *Device)
     }
 
     LastError = L"block capacity changed repeatedly";
+
     return FALSE;
 }
 
@@ -114,6 +117,7 @@ STATIC BOOLEAN AllocateRequestPool(VIRTIO_BLOCK_DEVICE *Device)
     if (RequestBytes > VIRTIO_BLOCK_PAGE_SIZE)
     {
         LastError = L"block request pool too large";
+
         return FALSE;
     }
 
@@ -123,6 +127,7 @@ STATIC BOOLEAN AllocateRequestPool(VIRTIO_BLOCK_DEVICE *Device)
     if (Device->Requests == NULL || Device->RequestByHead == NULL)
     {
         LastError = L"block request pool allocation failed";
+
         return FALSE;
     }
 
@@ -149,6 +154,7 @@ STATIC VIRTIO_BLOCK_REQUEST *AllocateRequest(VIRTIO_BLOCK_DEVICE *Device)
     }
 
     LastError = L"block request pool exhausted";
+
     return NULL;
 }
 
@@ -169,6 +175,7 @@ STATIC BOOLEAN SubmitRequest(VIRTIO_BLOCK_DEVICE *Device, UINT32 Type, UINT64 Se
     if (Device == NULL || !Device->Initialized || OutRequest == NULL)
     {
         LastError = L"block device unavailable";
+
         return FALSE;
     }
 
@@ -177,6 +184,7 @@ STATIC BOOLEAN SubmitRequest(VIRTIO_BLOCK_DEVICE *Device, UINT32 Type, UINT64 Se
         if (SectorCount == 0 || SectorCount > UINT32_MAX / VIRTIO_BLOCK_SECTOR_SIZE)
         {
             LastError = L"block sector count invalid";
+
             return FALSE;
         }
 
@@ -185,12 +193,14 @@ STATIC BOOLEAN SubmitRequest(VIRTIO_BLOCK_DEVICE *Device, UINT32 Type, UINT64 Se
         if (!IsDMABufferValid(Buffer, DataLength))
         {
             LastError = L"block DMA buffer invalid";
+
             return FALSE;
         }
 
         if (Sector >= Device->Capacity || SectorCount > Device->Capacity - Sector)
         {
             LastError = L"block request out of range";
+
             return FALSE;
         }
     }
@@ -199,6 +209,7 @@ STATIC BOOLEAN SubmitRequest(VIRTIO_BLOCK_DEVICE *Device, UINT32 Type, UINT64 Se
         if (!Device->FlushSupported)
         {
             LastError = L"block flush unsupported";
+
             return FALSE;
         }
 
@@ -212,6 +223,7 @@ STATIC BOOLEAN SubmitRequest(VIRTIO_BLOCK_DEVICE *Device, UINT32 Type, UINT64 Se
     if (Request == NULL)
     {
         SpinLockReleaseIRQRestore(&Device->QueueLock, Flags);
+
         return FALSE;
     }
 
@@ -247,6 +259,7 @@ STATIC BOOLEAN SubmitRequest(VIRTIO_BLOCK_DEVICE *Device, UINT32 Type, UINT64 Se
         LastError = VirtQueueGetLastError();
         Request->State = VIRTIO_BLOCK_REQUEST_FREE;
         SpinLockReleaseIRQRestore(&Device->QueueLock, Flags);
+
         return FALSE;
     }
 
@@ -262,6 +275,7 @@ STATIC BOOLEAN SubmitRequest(VIRTIO_BLOCK_DEVICE *Device, UINT32 Type, UINT64 Se
         VirtQueueFreeChain(&Device->Queue, Head);
         Request->State = VIRTIO_BLOCK_REQUEST_FREE;
         SpinLockReleaseIRQRestore(&Device->QueueLock, Flags);
+
         return FALSE;
     }
 
@@ -269,6 +283,7 @@ STATIC BOOLEAN SubmitRequest(VIRTIO_BLOCK_DEVICE *Device, UINT32 Type, UINT64 Se
     LastError = L"ok";
 
     SpinLockReleaseIRQRestore(&Device->QueueLock, Flags);
+
     return TRUE;
 }
 
@@ -301,7 +316,7 @@ STATIC BOOLEAN SubmitRequestSync(VIRTIO_BLOCK_DEVICE *Device, UINT32 Type, UINT6
             break;
         }
 
-        ASM("pause" ::: "memory");
+        ASM("pause" :: : "memory");
     }
 
     Result = State == VIRTIO_BLOCK_REQUEST_COMPLETED;
@@ -328,12 +343,14 @@ BOOLEAN VirtIOBlockInit(VOID)
     if (PCIDevice == NULL)
     {
         LastError = L"virtio block pci device missing";
+
         return FALSE;
     }
 
     if (!VirtIOPCIInitDevice(&VirtIOBlockInfo.Device, PCIDevice))
     {
         LastError = VirtIOPCIGetLastError();
+
         return FALSE;
     }
 
@@ -343,6 +360,7 @@ BOOLEAN VirtIOBlockInit(VOID)
     if (!VirtIOPCIStartDeviceWithFeatures(&VirtIOBlockInfo.Device, FeaturesLow, FeaturesHigh))
     {
         LastError = VirtIOPCIGetLastError();
+
         return FALSE;
     }
 
@@ -351,6 +369,7 @@ BOOLEAN VirtIOBlockInit(VOID)
     if (!VirtQueueInit(&VirtIOBlockInfo.Device, &VirtIOBlockInfo.Queue, VIRTIO_BLOCK_QUEUE_INDEX, 64))
     {
         LastError = VirtQueueGetLastError();
+
         return FALSE;
     }
 
@@ -369,6 +388,7 @@ BOOLEAN VirtIOBlockInit(VOID)
     if (!VirtIOPCIEnableQueueMSIX(&VirtIOBlockInfo.Device, VIRTIO_BLOCK_QUEUE_INDEX, VIRTIO_BLOCK_IRQ_VECTOR))
     {
         LastError = VirtIOPCIGetLastError();
+
         return FALSE;
     }
 
@@ -475,6 +495,7 @@ BOOLEAN VirtIOBlockWait(VIRTIO_BLOCK_DEVICE *Device, VIRTIO_BLOCK_REQUEST *Reque
     if (Device == NULL || Request == NULL)
     {
         LastError = L"block wait args invalid";
+
         return FALSE;
     }
 
@@ -485,6 +506,7 @@ BOOLEAN VirtIOBlockWait(VIRTIO_BLOCK_DEVICE *Device, VIRTIO_BLOCK_REQUEST *Reque
         if (State == VIRTIO_BLOCK_REQUEST_COMPLETED)
         {
             LastError = L"ok";
+
             return TRUE;
         }
 
@@ -493,10 +515,11 @@ BOOLEAN VirtIOBlockWait(VIRTIO_BLOCK_DEVICE *Device, VIRTIO_BLOCK_REQUEST *Reque
             return FALSE;
         }
 
-        ASM("pause" ::: "memory");
+        ASM("pause" :: : "memory");
     }
 
     LastError = L"block request wait timeout";
+
     return FALSE;
 }
 
@@ -508,6 +531,7 @@ BOOLEAN VirtIOBlockReleaseRequest(VIRTIO_BLOCK_DEVICE *Device, VIRTIO_BLOCK_REQU
     if (Device == NULL || Request == NULL || Device->Requests == NULL)
     {
         LastError = L"block release args invalid";
+
         return FALSE;
     }
 
@@ -516,6 +540,7 @@ BOOLEAN VirtIOBlockReleaseRequest(VIRTIO_BLOCK_DEVICE *Device, VIRTIO_BLOCK_REQU
     if (RequestIndex >= VIRTIO_BLOCK_MAX_REQUESTS)
     {
         LastError = L"block request pointer invalid";
+
         return FALSE;
     }
 
@@ -525,6 +550,7 @@ BOOLEAN VirtIOBlockReleaseRequest(VIRTIO_BLOCK_DEVICE *Device, VIRTIO_BLOCK_REQU
     {
         LastError = L"block request not completed";
         SpinLockReleaseIRQRestore(&Device->QueueLock, Flags);
+
         return FALSE;
     }
 
@@ -534,6 +560,7 @@ BOOLEAN VirtIOBlockReleaseRequest(VIRTIO_BLOCK_DEVICE *Device, VIRTIO_BLOCK_REQU
     SpinLockReleaseIRQRestore(&Device->QueueLock, Flags);
 
     LastError = L"ok";
+
     return TRUE;
 }
 

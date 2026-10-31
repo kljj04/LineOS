@@ -7,3 +7,5 @@
 #include <LOSLibC/TypeInfo.h>
 
 VOID NORETURN exit(int ErrorCode);
+extern char **environ;
+char         *getenv(const char *Name);

@@ -122,6 +122,7 @@ STATIC BOOLEAN FinishClose(NETWORK_TCP_CONNECTION *Connection)
             Entry->ReceiveNext = Connection->ReceiveNext;
             Entry->Expires = NetworkNow() + 120000;
             ResetConnection(Connection);
+
             return TRUE;
         }
     }
@@ -141,6 +142,7 @@ STATIC VOID HandleTimeWait(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
         }
 
         UINT8 Reply[20] = {0};
+
         NetworkWrite16(Reply, Entry->LocalPort);
         NetworkWrite16(Reply + 2, Entry->Port);
         NetworkWrite32(Reply + 4, Entry->SendNext);
@@ -150,6 +152,7 @@ STATIC VOID HandleTimeWait(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
         NetworkWrite16(Reply + 16, NetworkTransportChecksum(NetworkState.Config.Address, Address, 6, Reply, sizeof(Reply)));
         NetworkSendIPv4Locked(Address, 6, Reply, sizeof(Reply));
         Entry->Expires = NetworkNow() + 120000;
+
         return;
     }
 }
@@ -185,6 +188,7 @@ STATIC BOOLEAN SendSegment(NETWORK_TCP_CONNECTION *Connection, UINT32 Sequence, 
     }
 
     NetworkWrite16(Packet + 16, NetworkTransportChecksum(NetworkState.Config.Address, Connection->Address, 6, Packet, Length + HeaderLength));
+
     return NetworkSendIPv4Locked(Connection->Address, 6, Packet, Length + HeaderLength);
 }
 
@@ -213,6 +217,7 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
     if (Length < 20 || NetworkTransportChecksum(Address, NetworkState.Config.Address, 6, Packet, Length) != 0)
     {
         NetworkState.Stats.Dropped++;
+
         return;
     }
 
@@ -221,6 +226,7 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
     if (HeaderLength < 20 || HeaderLength > Length || (Packet[12] & 15) != 0)
     {
         NetworkState.Stats.Dropped++;
+
         return;
     }
 
@@ -238,6 +244,7 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
     if (Connection == NULL)
     {
         HandleTimeWait(Address, Packet, Length);
+
         return;
     }
 
@@ -257,6 +264,7 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
         if ((Flags & NETWORK_TCP_RST) != 0)
         {
             Connection->Reset = TRUE;
+
             return;
         }
 
@@ -313,6 +321,7 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
         Connection->WindowACK = Acknowledgment;
         Connection->Connected = TRUE;
         SendSegment(Connection, Connection->SendNext, NETWORK_TCP_ACK, NULL, 0);
+
         return;
     }
 
@@ -333,6 +342,7 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
     if ((Flags & NETWORK_TCP_SYN) != 0)
     {
         SendSegment(Connection, Connection->SendNext, NETWORK_TCP_ACK, NULL, 0);
+
         return;
     }
 
@@ -344,6 +354,7 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
     if (SequenceBefore(Connection->ReceiveNext, Sequence) || (SequenceBefore(Sequence, Connection->ReceiveNext) && Connection->ReceiveNext - Sequence > DataLength + ((Flags & NETWORK_TCP_FIN) != 0)))
     {
         SendSegment(Connection, Connection->SendNext, NETWORK_TCP_ACK, NULL, 0);
+
         return;
     }
 
@@ -370,6 +381,7 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
             if (Connection->PeerFIN || Connection->Count == NETWORK_TCP_BUFFER_SIZE)
             {
                 SendSegment(Connection, Connection->SendNext, NETWORK_TCP_ACK, NULL, 0);
+
                 return;
             }
 
@@ -412,9 +424,11 @@ STATIC BOOLEAN SendReliable(NETWORK_TCP_CONNECTION *Connection, UINT8 SegmentFla
     }
 
     Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+
     if (!Connection->Active || Connection->Reset)
     {
         SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
         return NetworkError(L"TCP connection reset");
     }
 
@@ -426,6 +440,7 @@ STATIC BOOLEAN SendReliable(NETWORK_TCP_CONNECTION *Connection, UINT8 SegmentFla
     {
         Connection->SendNext = Sequence;
         SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
         return FALSE;
     }
 
@@ -439,12 +454,14 @@ STATIC BOOLEAN SendReliable(NETWORK_TCP_CONNECTION *Connection, UINT8 SegmentFla
         if (!Connection->Active || Connection->Reset)
         {
             SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
             return NetworkError(L"TCP connection reset");
         }
 
         if (Connection->SendUnacknowledged == End)
         {
             SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
             return TRUE;
         }
 
@@ -490,6 +507,7 @@ STATIC VOID AbortConnectionLocked(NETWORK_TCP_CONNECTION *Connection)
 STATIC VOID AbortConnection(NETWORK_TCP_CONNECTION *Connection)
 {
     UINT64 Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+
     AbortConnectionLocked(Connection);
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
 }
@@ -501,10 +519,12 @@ STATIC BOOLEAN Connect(NETWORK_TCP_CONNECTION *Connection, UINT32 TimeoutMls)
     if (!NetworkResolve(Connection->Address, TimeoutMls) || !SendReliable(Connection, NETWORK_TCP_SYN, NULL, 0, NetworkRemaining(Start, TimeoutMls)))
     {
         AbortConnection(Connection);
+
         return FALSE;
     }
 
     NetworkError(L"ok");
+
     return TRUE;
 }
 
@@ -524,6 +544,7 @@ STATIC BOOLEAN Send(NETWORK_TCP_CONNECTION *Connection, CONST VOID *Buffer, UINT
     {
         UINT64  Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
         BOOLEAN Writable = Connection->Active && Connection->Connected && !Connection->Reset && !Connection->FINSent;
+
         SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
 
         if (!Writable)
@@ -540,6 +561,7 @@ STATIC BOOLEAN Send(NETWORK_TCP_CONNECTION *Connection, CONST VOID *Buffer, UINT
         if (!Connection->Active || !Connection->Connected || Connection->Reset || Connection->FINSent)
         {
             SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
             return NetworkError(L"TCP connection not writable");
         }
 
@@ -560,6 +582,7 @@ STATIC BOOLEAN Send(NETWORK_TCP_CONNECTION *Connection, CONST VOID *Buffer, UINT
         if (NetworkExpired(Start, TimeoutMls))
         {
             AbortConnection(Connection);
+
             return NetworkError(L"TCP send window or total timeout");
         }
 
@@ -572,9 +595,11 @@ STATIC BOOLEAN Send(NETWORK_TCP_CONNECTION *Connection, CONST VOID *Buffer, UINT
             else if (NetworkNow() >= ProbeAt)
             {
                 Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+
                 if (!Connection->Active || Connection->Reset)
                 {
                     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
                     return NetworkError(L"TCP connection reset during probe");
                 }
 
@@ -594,6 +619,7 @@ STATIC BOOLEAN Send(NETWORK_TCP_CONNECTION *Connection, CONST VOID *Buffer, UINT
         if (Elapsed >= TimeoutMls || !SendReliable(Connection, NETWORK_TCP_ACK | NETWORK_TCP_PSH, Data + Offset, Count, TimeoutMls - (UINT32) Elapsed))
         {
             AbortConnection(Connection);
+
             return FALSE;
         }
 
@@ -606,6 +632,7 @@ STATIC BOOLEAN Send(NETWORK_TCP_CONNECTION *Connection, CONST VOID *Buffer, UINT
     }
 
     NetworkError(L"ok");
+
     return TRUE;
 }
 
@@ -623,12 +650,14 @@ STATIC BOOLEAN Receive(NETWORK_TCP_CONNECTION *Connection, VOID *Buffer, UINT32 
     do
     {
         UINT64 Flags;
+
         NetworkWait();
         Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
 
         if (!Connection->Active || !Connection->Connected || Connection->Reset)
         {
             SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
             return NetworkError(L"TCP connection closed or reset");
         }
 
@@ -647,6 +676,7 @@ STATIC BOOLEAN Receive(NETWORK_TCP_CONNECTION *Connection, VOID *Buffer, UINT32 
             SendSegment(Connection, Connection->SendNext, NETWORK_TCP_ACK, NULL, 0);
             SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
             NetworkError(L"ok");
+
             return TRUE;
         }
 
@@ -654,6 +684,7 @@ STATIC BOOLEAN Receive(NETWORK_TCP_CONNECTION *Connection, VOID *Buffer, UINT32 
         {
             SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
             NetworkError(L"ok");
+
             return TRUE;
         }
 
@@ -671,6 +702,7 @@ STATIC BOOLEAN Close(NETWORK_TCP_CONNECTION *Connection, UINT32 TimeoutMls)
     if (!Connection->Active)
     {
         SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
         return TRUE;
     }
 
@@ -678,34 +710,41 @@ STATIC BOOLEAN Close(NETWORK_TCP_CONNECTION *Connection, UINT32 TimeoutMls)
     {
         SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
         AbortConnection(Connection);
+
         return NetworkError(L"TCP close unavailable");
     }
 
     if (Connection->Count != 0)
     {
         SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
         return NetworkError(L"TCP unread data must be drained before close");
     }
 
     BOOLEAN SendFIN = !Connection->FINSent;
+
     Connection->FINSent = TRUE;
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
 
     if (SendFIN && !SendReliable(Connection, NETWORK_TCP_ACK | NETWORK_TCP_FIN, NULL, 0, TimeoutMls))
     {
         AbortConnection(Connection);
+
         return FALSE;
     }
 
     do
     {
         BOOLEAN Closed;
+
         NetworkWait();
         Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+
         if (!Connection->Active || Connection->Reset)
         {
             SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
             AbortConnection(Connection);
+
             return NetworkError(L"TCP connection reset during close");
         }
 
@@ -719,16 +758,19 @@ STATIC BOOLEAN Close(NETWORK_TCP_CONNECTION *Connection, UINT32 TimeoutMls)
             if (Connection->Count != 0)
             {
                 SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
                 return NetworkError(L"TCP received data during close; drain it and close again");
             }
 
             if (!Connection->Active || Connection->Reset)
             {
                 SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
                 return NetworkError(L"TCP connection reset during close");
             }
 
             BOOLEAN Result = FinishClose(Connection);
+
             SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
 
             if (Result)
@@ -741,6 +783,7 @@ STATIC BOOLEAN Close(NETWORK_TCP_CONNECTION *Connection, UINT32 TimeoutMls)
     } while (!NetworkExpired(Start, TimeoutMls));
 
     AbortConnection(Connection);
+
     return NetworkError(L"TCP FIN timeout");
 }
 
@@ -768,6 +811,7 @@ BOOLEAN NetworkTCPConnect(UINT32 Address, UINT16 Port, UINT32 *Socket, UINT32 Ti
     if (!NetworkState.Ready || !NetworkState.Configured)
     {
         SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
         return NetworkError(L"TCP network unavailable or unconfigured");
     }
 
@@ -784,6 +828,7 @@ BOOLEAN NetworkTCPConnect(UINT32 Address, UINT16 Port, UINT32 *Socket, UINT32 Ti
     if (Reserved >= NETWORK_TCP_TIME_WAIT_COUNT)
     {
         SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
         return NetworkError(L"TCP TIME_WAIT capacity exhausted");
     }
 
@@ -794,6 +839,7 @@ BOOLEAN NetworkTCPConnect(UINT32 Address, UINT16 Port, UINT32 *Socket, UINT32 Ti
         if (!Entry->Active && !Entry->Writing && !Entry->Reading && !Entry->Closing)
         {
             UINT32 Generation = (Entry->Generation + 1) & 0xFFFFFF;
+
             KMemSet(Entry, 0, sizeof(*Entry));
             Entry->Generation = Generation == 0 ? 1 : Generation;
             Connection = Entry;
@@ -804,6 +850,7 @@ BOOLEAN NetworkTCPConnect(UINT32 Address, UINT16 Port, UINT32 *Socket, UINT32 Ti
     if (Connection == NULL)
     {
         SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
         return NetworkError(L"TCP socket table full");
     }
 
@@ -820,12 +867,16 @@ BOOLEAN NetworkTCPConnect(UINT32 Address, UINT16 Port, UINT32 *Socket, UINT32 Ti
         ResetConnection(Connection);
         Connection->Writing = FALSE;
         SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
         return NetworkError(L"TCP ports exhausted");
     }
 
     UINT32 Handle = (Connection->Generation << 8) | Index;
+
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
     BOOLEAN Result = Connect(Connection, TimeoutMls);
+
     Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
     Result = Result && Connection->Active && !Connection->Reset;
     Connection->Writing = FALSE;
@@ -836,6 +887,7 @@ BOOLEAN NetworkTCPConnect(UINT32 Address, UINT16 Port, UINT32 *Socket, UINT32 Ti
     }
 
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
     return Result;
 }
 
@@ -847,15 +899,19 @@ BOOLEAN NetworkTCPSend(UINT32 Socket, CONST VOID *Buffer, UINT32 Length, UINT32 
     if (Connection == NULL || Connection->Writing || Connection->Closing)
     {
         SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
         return NetworkError(L"TCP handle invalid or writer busy");
     }
 
     Connection->Writing = TRUE;
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
     BOOLEAN Result = Send(Connection, Buffer, Length, TimeoutMls);
+
     Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
     Connection->Writing = FALSE;
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
     return Result;
 }
 
@@ -872,15 +928,19 @@ BOOLEAN NetworkTCPReceive(UINT32 Socket, VOID *Buffer, UINT32 Capacity, UINT32 *
     if (Connection == NULL || Connection->Reading || Connection->Closing || !Connection->Connected)
     {
         SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
         return NetworkError(L"TCP handle invalid or reader busy");
     }
 
     Connection->Reading = TRUE;
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
     BOOLEAN Result = Receive(Connection, Buffer, Capacity, Length, TimeoutMls);
+
     Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
     Connection->Reading = FALSE;
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
     return Result;
 }
 
@@ -892,15 +952,19 @@ BOOLEAN NetworkTCPClose(UINT32 Socket, UINT32 TimeoutMls)
     if (Connection == NULL || Connection->Closing || Connection->Writing || Connection->Reading)
     {
         SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
         return NetworkError(L"TCP handle invalid or operations busy");
     }
 
     Connection->Closing = TRUE;
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
     BOOLEAN Result = Close(Connection, TimeoutMls);
+
     Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
     Connection->Closing = FALSE;
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
     return Result;
 }
 
@@ -912,10 +976,12 @@ BOOLEAN NetworkTCPAbort(UINT32 Socket)
     if (Connection == NULL)
     {
         SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
         return NetworkError(L"TCP handle invalid");
     }
 
     AbortConnectionLocked(Connection);
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
     return TRUE;
 }

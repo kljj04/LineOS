@@ -22,6 +22,7 @@ BOOLEAN EXT2ReadData(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT64 Offset, VOID
     {
         Length = (UINT32) (Size - Offset);
     }
+
     while (*ReadLength < Length)
     {
         UINT32 Physical;
@@ -82,6 +83,7 @@ BOOLEAN EXT2ReadData(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT64 Offset, VOID
             if (MappingFailed)
             {
                 *ReadLength += Count;
+
                 return FALSE;
             }
         }
@@ -136,6 +138,7 @@ BOOLEAN EXT2WriteData(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT64 Offset, CON
             KMemSet(Data + OldSize % Volume->BlockSize, 0, Volume->BlockSize - OldSize % Volume->BlockSize);
         }
     }
+
     while (Done < Length)
     {
         UINT32 Physical;

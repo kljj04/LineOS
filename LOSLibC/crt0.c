@@ -5,15 +5,15 @@
 #include <LOSLibC/TypeInfo.h>
 #include <stdlib.h>
 
-EXTERN INT32 main(INT32 Argc, CHAR8 **Argv);
+EXTERN INT32 main(INT32 Argc, char **Argv, char **Envp);
 
-VOID NORETURN _Start(INT32 Argc, CHAR8 **Argv, CHAR8 **Envp)
+VOID NORETURN _Start(INT32 Argc, char **Argv, char **Envp)
 {
     INT32 Status;
 
-    (VOID) Envp;
+    environ = Envp;
 
-    Status = main(Argc, Argv);
+    Status = main(Argc, Argv, Envp);
 
     exit(Status);
 }

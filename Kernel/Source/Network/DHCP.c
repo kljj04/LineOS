@@ -124,6 +124,7 @@ VOID NetworkDHCPTick(VOID)
     if (!DHCP.Enabled)
     {
         SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+
         return;
     }
 
@@ -227,15 +228,21 @@ VOID NetworkDHCPInputLocked(UINT32 Source, CONST UINT8 *Packet, UINT32 Length)
         {
             if (Size != 4)
                 return;
+
             UINT32 Value = NetworkRead32(Packet + Offset);
+
             if (Option == 1)
                 Config.Netmask = Value;
+
             if (Option == 54)
                 Server = Value;
+
             if (Option == 51)
                 Lease = Value;
+
             if (Option == 58)
                 T1 = Value;
+
             if (Option == 59)
                 T2 = Value;
         }
@@ -243,6 +250,7 @@ VOID NetworkDHCPInputLocked(UINT32 Source, CONST UINT8 *Packet, UINT32 Length)
         {
             if (Size < 4 || Size % 4 != 0)
                 return;
+
             if (Option == 3)
                 Config.Gateway = NetworkRead32(Packet + Offset);
             else
@@ -261,6 +269,7 @@ VOID NetworkDHCPInputLocked(UINT32 Source, CONST UINT8 *Packet, UINT32 Length)
     {
         NetworkClearConfigLocked();
         StartDiscover();
+
         return;
     }
 
@@ -294,12 +303,15 @@ VOID NetworkDHCPInputLocked(UINT32 Source, CONST UINT8 *Packet, UINT32 Length)
 
         if (T1 == 0 || T1 >= Lease)
             T1 = Lease / 2;
+
         if (T2 <= T1 || T2 >= Lease)
             T2 = (UINT32) ((UINT64) Lease * 7 / 8);
         DHCP.Offer = Config;
         DHCP.Server = Server;
         DHCP.State = NETWORK_DHCP_BOUND;
+
         UINT64 Now = NetworkNow();
+
         DHCP.RenewAt = Now + (UINT64) T1 * 1000;
         DHCP.RebindAt = Now + (UINT64) T2 * 1000;
         DHCP.Expires = Now + (UINT64) Lease * 1000;
@@ -316,6 +328,7 @@ BOOLEAN NetworkDHCPConfigure(UINT32 TimeoutMls)
     }
 
     UINT64 Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+
     DHCP.Enabled = TRUE;
 
     if (DHCP.State == NETWORK_DHCP_OFF)
@@ -331,16 +344,20 @@ BOOLEAN NetworkDHCPConfigure(UINT32 TimeoutMls)
         NetworkDHCPTick();
         NetworkWait();
         Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+
         BOOLEAN Configured = NetworkState.Configured && DHCP.State == NETWORK_DHCP_BOUND;
+
         SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
 
         if (Configured)
         {
             NetworkEnd();
+
             return TRUE;
         }
     } while (!NetworkExpired(Start, TimeoutMls));
 
     NetworkEnd();
+
     return NetworkError(L"DHCP timeout; background discovery remains enabled");
 }

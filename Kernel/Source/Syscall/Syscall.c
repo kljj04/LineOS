@@ -25,6 +25,7 @@
 #include <Syscall/Time/SyscallTime.h>
 #include <Syscall/Security/SyscallSudo.h>
 #include <Syscall/System/SyscallMonitor.h>
+#include <Syscall/IPC/SyscallIPC.h>
 
 #include <Arch/AMD64/CPU.h>
 #include <Debug/Panic.h>
@@ -54,11 +55,14 @@ VOID SyscallInitCurrentCPU(UINT32 CPUIndex)
     UINT32 EDX;
 
     CPUID(0x80000000U, 0, &EAX, &EBX, &ECX, &EDX);
+
     if (CPUIndex >= GDT_MAX_CPUS || EAX < 0x80000001U)
     {
         Panic(L"SYSCALL unavailable");
     }
+
     CPUID(0x80000001U, 0, &EAX, &EBX, &ECX, &EDX);
+
     if ((EDX & (1U << 11)) == 0)
     {
         Panic(L"SYSCALL unavailable");
@@ -90,60 +94,79 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
         {
             return (UINT64) SyscallNanosleep(Frame->RDI, Frame->RSI);
         }
+
         case SYSCALL_CLOCK_GETTIME:
         {
             return (UINT64) SyscallClockGetTime((INT64) Frame->RDI, Frame->RSI);
         }
+
+        case SYSCALL_IPC:
+        {
+            return (UINT64) SyscallIPC(Frame->RDI, Frame->RSI, Frame->RDX);
+        }
+
         case SYSCALL_SYSTEM_MONITOR:
         {
             return (UINT64) SyscallSystemMonitor(Frame->RDI, Frame->RSI);
         }
+
         case SYSCALL_SUDO_CACHE:
         {
             return (UINT64) SyscallSudoCache(Frame->RDI);
         }
+
         case SYSCALL_GETUID:
         case SYSCALL_GETEUID:
         {
             return (UINT64) SyscallGetUID(Frame->RAX == SYSCALL_GETEUID);
         }
+
         case SYSCALL_PARENT_CHDIR:
         {
             return (UINT64) SyscallParentChdir(Frame->RDI);
         }
+
         case SYSCALL_STAT:
         case SYSCALL_LSTAT:
         {
             return (UINT64) SyscallStat(Frame->RDI, Frame->RSI, Frame->RAX == SYSCALL_STAT);
         }
+
         case SYSCALL_FSTAT:
         {
             return (UINT64) SyscallFstat(Frame->RDI, Frame->RSI);
         }
+
         case SYSCALL_MMAP:
         {
             return (UINT64) SyscallMmap(Frame->RDI, Frame->RSI, Frame->RDX, Frame->R10, (INT64) Frame->R8, Frame->R9);
         }
+
         case SYSCALL_MUNMAP:
         {
             return (UINT64) SyscallMunmap(Frame->RDI, Frame->RSI);
         }
+
         case SYSCALL_FORK:
         {
             return (UINT64) SyscallFork(Frame);
         }
+
         case SYSCALL_WAIT4:
         {
             return (UINT64) SyscallWait4((INT64) Frame->RDI, Frame->RSI, Frame->RDX, Frame->R10);
         }
+
         case SYSCALL_EXECVE:
         {
             return (UINT64) SyscallExecVE(Frame);
         }
+
         case SYSCALL_GETDENTS64:
         {
             return (UINT64) SyscallGetDents64(Frame->RDI, Frame->RSI, Frame->RDX);
         }
+
         case SYSCALL_IOCTL:
         {
             return (UINT64) SyscallIoctl(Frame->RDI, Frame->RSI, Frame->RDX);
@@ -156,6 +179,7 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
 
         case SYSCALL_CHOWN:
             return (UINT64) SyscallChown(Frame->RDI, Frame->RSI, Frame->RDX);
+
         case SYSCALL_SETUID:
         {
             return (UINT64) SyscallSetUID(Frame->RDI);
@@ -185,10 +209,12 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
         {
             return (UINT64) SyscallGetCwd(Frame->RDI, Frame->RSI);
         }
+
         case SYSCALL_CHDIR:
         {
             return (UINT64) SyscallChdir(Frame->RDI);
         }
+
         case SYSCALL_RENAME:
         {
             return (UINT64) SyscallRename(Frame->RDI, Frame->RSI);

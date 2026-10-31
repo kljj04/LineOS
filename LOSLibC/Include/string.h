@@ -18,3 +18,4 @@ char  *strncpy(char *Destination, const char *Source, size_t Size);
 char  *strcat(char *Destination, const char *Source);
 char  *strchr(const char *String, int Character);
 char  *strrchr(const char *String, int Character);
+char  *strerror(int Error);

@@ -6,7 +6,7 @@ CC = clang
 LD = ld.lld
 AR = llvm-ar
 LINK_EFI = lld-link
-CLANG_FORMAT = clang-format
+CLANG_FORMAT = clang-format-21
 PYTHON = python3
 
 EFI_TYPE_TARGET := x86_64-unknown-windows

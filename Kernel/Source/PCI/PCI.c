@@ -151,6 +151,7 @@ STATIC ACPI_SDT_HEADER *FindACPITable(LINEOS_BOOT_INFO *BootInfo, UINT32 Signatu
     }
 
     RSDP = (ACPI_RSDP *) BootInfo->RSDP;
+
     if (!RSDPValid(RSDP))
     {
         return NULL;
@@ -159,6 +160,7 @@ STATIC ACPI_SDT_HEADER *FindACPITable(LINEOS_BOOT_INFO *BootInfo, UINT32 Signatu
     if (RSDP->Revision >= 2 && RSDP->XSDTAddress != 0)
     {
         Table = FindTableInXSDT((ACPI_SDT_HEADER *) RSDP->XSDTAddress, Signature);
+
         if (Table != NULL)
         {
             return Table;
@@ -283,6 +285,7 @@ STATIC UINT32 PCIMakeIOAddress(UINT8 Bus, UINT8 Device, UINT8 Function, UINT8 Of
 STATIC UINT32 PCIRead32IOUnlocked(UINT8 Bus, UINT8 Device, UINT8 Function, UINT8 Offset)
 {
     OUTL(PCI_CONFIG_ADDRESS, PCIMakeIOAddress(Bus, Device, Function, Offset));
+
     return INL(PCI_CONFIG_DATA);
 }
 
@@ -401,6 +404,7 @@ BOOLEAN PCIInit(LINEOS_BOOT_INFO *BootInfo)
     if (DeviceCount == 0)
     {
         LastError = L"no pci devices";
+
         return FALSE;
     }
 
@@ -553,21 +557,25 @@ BOOLEAN PCIGetBAR(PCI_DEVICE *Device, UINT8 Index, PCI_BAR *BAR)
     {
         BAR->Type = PCI_BAR_TYPE_IO;
         BAR->Address = Low & 0xFFFFFFFCULL;
+
         return TRUE;
     }
 
     BAR->Prefetchable = (Low & 8) != 0;
+
     if ((Low & 6) == 4 && Index < 5)
     {
         UINT32 High = PCIConfigRead32(Device, (UINT8) (Offset + 4));
 
         BAR->Type = PCI_BAR_TYPE_MEMORY64;
         BAR->Address = ((UINT64) High << 32) | (Low & 0xFFFFFFF0ULL);
+
         return TRUE;
     }
 
     BAR->Type = PCI_BAR_TYPE_MEMORY32;
     BAR->Address = Low & 0xFFFFFFF0ULL;
+
     return TRUE;
 }
 

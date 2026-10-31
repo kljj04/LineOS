@@ -9,21 +9,21 @@ typedef long time_t;
 struct timespec
 {
     time_t tv_sec;
-    long tv_nsec;
+    long   tv_nsec;
 };
 
 struct tm
 {
-    int tm_sec;
-    int tm_min;
-    int tm_hour;
-    int tm_mday;
-    int tm_mon;
-    int tm_year;
-    int tm_wday;
-    int tm_yday;
-    int tm_isdst;
-    long tm_gmtoff;
+    int         tm_sec;
+    int         tm_min;
+    int         tm_hour;
+    int         tm_mday;
+    int         tm_mon;
+    int         tm_year;
+    int         tm_wday;
+    int         tm_yday;
+    int         tm_isdst;
+    long        tm_gmtoff;
     const char *tm_zone;
 };
 
@@ -34,9 +34,13 @@ struct tm *localtime_r(const time_t *Timer, struct tm *Result);
 
 typedef int clockid_t;
 
-#define CLOCK_REALTIME LOS_CLOCK_REALTIME
+#define CLOCK_REALTIME  LOS_CLOCK_REALTIME
 #define CLOCK_MONOTONIC LOS_CLOCK_MONOTONIC
 
 int clock_gettime(clockid_t ClockID, struct timespec *Time);
 
 int nanosleep(const struct timespec *Duration, struct timespec *Remaining);
+
+#include <stddef.h>
+
+size_t strftime(char *Buffer, size_t Capacity, const char *Format, const struct tm *Time);

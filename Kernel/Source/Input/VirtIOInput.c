@@ -130,6 +130,7 @@ STATIC BOOLEAN PostEventBuffers(VIRTIO_INPUT_DEVICE_INFO *InputDevice)
         if (!VirtQueuePostBuffer(&InputDevice->Device, &InputDevice->EventQueue, &InputDevice->EventBuffers[Index].Event, sizeof(VIRTIO_INPUT_EVENT), VIRTQ_DESC_F_WRITE, &InputDevice->EventBuffers[Index].Head))
         {
             LastError = VirtQueueGetLastError();
+
             return FALSE;
         }
     }
@@ -148,12 +149,14 @@ STATIC BOOLEAN InitInputDevice(PCI_DEVICE *PCIDevice, VIRTIO_INPUT_DEVICE_INFO *
     if (!VirtIOPCIInitDevice(&InputDevice->Device, PCIDevice))
     {
         LastError = VirtIOPCIGetLastError();
+
         return FALSE;
     }
 
     if (!VirtIOPCIStartDevice(&InputDevice->Device))
     {
         LastError = VirtIOPCIGetLastError();
+
         return FALSE;
     }
 
@@ -162,12 +165,14 @@ STATIC BOOLEAN InitInputDevice(PCI_DEVICE *PCIDevice, VIRTIO_INPUT_DEVICE_INFO *
     if (InputDevice->Type == VIRTIO_INPUT_DEVICE_UNKNOWN)
     {
         LastError = L"unknown virtio input device";
+
         return FALSE;
     }
 
     if (!VirtQueueInit(&InputDevice->Device, &InputDevice->EventQueue, VIRTIO_INPUT_EVENT_QUEUE, VIRTIO_INPUT_QUEUE_SIZE))
     {
         LastError = VirtQueueGetLastError();
+
         return FALSE;
     }
 
@@ -176,6 +181,7 @@ STATIC BOOLEAN InitInputDevice(PCI_DEVICE *PCIDevice, VIRTIO_INPUT_DEVICE_INFO *
     if (!VirtIOPCIEnableQueueMSIX(&InputDevice->Device, VIRTIO_INPUT_EVENT_QUEUE, Vector))
     {
         LastError = VirtIOPCIGetLastError();
+
         return FALSE;
     }
 
@@ -184,6 +190,7 @@ STATIC BOOLEAN InitInputDevice(PCI_DEVICE *PCIDevice, VIRTIO_INPUT_DEVICE_INFO *
         if (!ReadABSInfo(InputDevice, VIRTIO_INPUT_ABS_X, &XInfo) || !ReadABSInfo(InputDevice, VIRTIO_INPUT_ABS_Y, &YInfo))
         {
             LastError = L"tablet abs info missing";
+
             return FALSE;
         }
 
@@ -203,6 +210,7 @@ STATIC BOOLEAN InitInputDevice(PCI_DEVICE *PCIDevice, VIRTIO_INPUT_DEVICE_INFO *
     InputDevice->Found = TRUE;
 
     LastError = L"ok";
+
     return TRUE;
 }
 
@@ -241,6 +249,7 @@ STATIC VOID PushKeyEvent(UINT16 Code, BOOLEAN Pressed)
     if (NextIndex == KeyReadIndex)
     {
         SpinLockReleaseIRQRestore(&KeyEventLock, Flags);
+
         return;
     }
 
@@ -263,6 +272,7 @@ STATIC VOID PushPointerEvent(VIRTIO_INPUT_DEVICE_INFO *InputDevice)
     if (NextIndex == PointerReadIndex)
     {
         SpinLockReleaseIRQRestore(&PointerEventLock, Flags);
+
         return;
     }
 
@@ -462,6 +472,7 @@ STATIC VOID ProcessInputQueue(VIRTIO_INPUT_DEVICE_INFO *InputDevice, SPIN_LOCK *
         {
             LastError = VirtQueueGetLastError();
             SpinLockReleaseIRQRestore(QueueLock, Flags);
+
             return;
         }
     }
@@ -527,10 +538,12 @@ BOOLEAN VirtIOInputInit(VOID)
     if (!Keyboard.Found && !Tablet.Found)
     {
         LastError = L"virtio input devices not found";
+
         return FALSE;
     }
 
     LastError = L"ok";
+
     return TRUE;
 }
 
@@ -585,9 +598,11 @@ BOOLEAN VirtIOInputGetKeyEvent(VIRTIO_KEY_EVENT *Event)
     }
 
     Flags = SpinLockAcquireIRQSave(&KeyEventLock);
+
     if (KeyReadIndex == KeyWriteIndex)
     {
         SpinLockReleaseIRQRestore(&KeyEventLock, Flags);
+
         return FALSE;
     }
 
@@ -595,6 +610,7 @@ BOOLEAN VirtIOInputGetKeyEvent(VIRTIO_KEY_EVENT *Event)
     KeyReadIndex = (KeyReadIndex + 1) % VIRTIO_INPUT_KEY_QUEUE_SIZE;
 
     SpinLockReleaseIRQRestore(&KeyEventLock, Flags);
+
     return TRUE;
 }
 
@@ -608,9 +624,11 @@ BOOLEAN VirtIOInputGetPointerEvent(VIRTIO_POINTER_EVENT *Event)
     }
 
     Flags = SpinLockAcquireIRQSave(&PointerEventLock);
+
     if (PointerReadIndex == PointerWriteIndex)
     {
         SpinLockReleaseIRQRestore(&PointerEventLock, Flags);
+
         return FALSE;
     }
 
@@ -618,6 +636,7 @@ BOOLEAN VirtIOInputGetPointerEvent(VIRTIO_POINTER_EVENT *Event)
     PointerReadIndex = (PointerReadIndex + 1) % VIRTIO_INPUT_POINTER_QUEUE_SIZE;
 
     SpinLockReleaseIRQRestore(&PointerEventLock, Flags);
+
     return TRUE;
 }
 

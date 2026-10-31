@@ -24,3 +24,5 @@ VOID    TaskSampleCPUUsage(UINT64 IntervalTSC);
 UINT32 TaskGetSnapshot(SYSTEM_TASK_INFO *Entries, UINT32 Capacity);
 
 UINT32 TaskGetIdleCount(VOID);
+
+UINT32 TaskGetLiveCount(VOID);

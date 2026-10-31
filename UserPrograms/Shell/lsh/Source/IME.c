@@ -30,10 +30,12 @@ UINT32 IMECodepoint(CONST IME_STATE *State)
     {
         return 0xAC00U + (UINT32) ((State->Lead * 21 + State->Vowel) * 28 + State->Final);
     }
+
     if (State->Lead >= 0)
     {
         return LeadJamo[State->Lead];
     }
+
     return State->Vowel >= 0 ? 0x314FU + (UINT32) State->Vowel : 0;
 }
 
@@ -46,6 +48,7 @@ STATIC INT32 IMECombine(CONST IME_PAIR *Pairs, UINTN Count, INT32 First, INT32 S
             return Pairs[Index].Combined;
         }
     }
+
     return -1;
 }
 
@@ -55,51 +58,70 @@ STATIC INT32 IMELead(UINT8 Byte)
     {
         case 'r':
             return 0;
+
         case 'R':
             return 1;
+
         case 's':
         case 'S':
             return 2;
+
         case 'e':
             return 3;
+
         case 'E':
             return 4;
+
         case 'f':
         case 'F':
             return 5;
+
         case 'a':
         case 'A':
             return 6;
+
         case 'q':
             return 7;
+
         case 'Q':
             return 8;
+
         case 't':
             return 9;
+
         case 'T':
             return 10;
+
         case 'd':
         case 'D':
             return 11;
+
         case 'w':
             return 12;
+
         case 'W':
             return 13;
+
         case 'c':
         case 'C':
             return 14;
+
         case 'z':
         case 'Z':
             return 15;
+
         case 'x':
         case 'X':
             return 16;
+
         case 'v':
         case 'V':
             return 17;
+
         case 'g':
         case 'G':
             return 18;
+
         default:
             return -1;
     }
@@ -112,41 +134,55 @@ STATIC INT32 IMEVowel(UINT8 Byte)
         case 'k':
         case 'K':
             return 0;
+
         case 'o':
             return 1;
+
         case 'i':
         case 'I':
             return 2;
+
         case 'O':
             return 3;
+
         case 'j':
         case 'J':
             return 4;
+
         case 'p':
             return 5;
+
         case 'u':
         case 'U':
             return 6;
+
         case 'P':
             return 7;
+
         case 'h':
         case 'H':
             return 8;
+
         case 'y':
         case 'Y':
             return 12;
+
         case 'n':
         case 'N':
             return 13;
+
         case 'b':
         case 'B':
             return 17;
+
         case 'm':
         case 'M':
             return 18;
+
         case 'l':
         case 'L':
             return 20;
+
         default:
             return -1;
     }
@@ -159,10 +195,12 @@ BOOLEAN IMEFeed(IME_STATE *State, UINT8 Byte, UINT32 *Committed)
     INT32 Combined;
 
     *Committed = 0;
+
     if (Lead < 0 && Vowel < 0)
     {
         return FALSE;
     }
+
     if (Lead >= 0)
     {
         if (State->Lead >= 0 && State->Vowel >= 0 && LeadFinals[Lead] != 0)
@@ -170,29 +208,40 @@ BOOLEAN IMEFeed(IME_STATE *State, UINT8 Byte, UINT32 *Committed)
             if (State->Final == 0)
             {
                 State->Final = LeadFinals[Lead];
+
                 return TRUE;
             }
+
             Combined = IMECombine(Finals, sizeof(Finals) / sizeof(Finals[0]), State->Final, LeadFinals[Lead]);
+
             if (Combined >= 0)
             {
                 State->Final = Combined;
+
                 return TRUE;
             }
         }
+
         *Committed = IMECodepoint(State);
         IMEReset(State);
         State->Lead = Lead;
+
         return TRUE;
     }
+
     if (State->Vowel < 0)
     {
         State->Vowel = Vowel;
+
         return TRUE;
     }
+
     if (State->Final != 0)
     {
         INT32 NextFinal = State->Final;
+
         State->Final = 0;
+
         for (UINTN Index = 0; Index < sizeof(Finals) / sizeof(Finals[0]); Index++)
         {
             if (Finals[Index].Combined == NextFinal)
@@ -202,21 +251,28 @@ BOOLEAN IMEFeed(IME_STATE *State, UINT8 Byte, UINT32 *Committed)
                 break;
             }
         }
+
         *Committed = IMECodepoint(State);
         State->Lead = FinalLeads[NextFinal];
         State->Vowel = Vowel;
         State->Final = 0;
+
         return TRUE;
     }
+
     Combined = IMECombine(Vowels, sizeof(Vowels) / sizeof(Vowels[0]), State->Vowel, Vowel);
+
     if (Combined >= 0)
     {
         State->Vowel = Combined;
+
         return TRUE;
     }
+
     *Committed = IMECodepoint(State);
     IMEReset(State);
     State->Vowel = Vowel;
+
     return TRUE;
 }
 
@@ -229,12 +285,16 @@ VOID IMEBackspace(IME_STATE *State)
             if (Finals[Index].Combined == State->Final)
             {
                 State->Final = Finals[Index].First;
+
                 return;
             }
         }
+
         State->Final = 0;
+
         return;
     }
+
     if (State->Vowel >= 0)
     {
         for (UINTN Index = 0; Index < sizeof(Vowels) / sizeof(Vowels[0]); Index++)
@@ -242,11 +302,15 @@ VOID IMEBackspace(IME_STATE *State)
             if (Vowels[Index].Combined == State->Vowel)
             {
                 State->Vowel = Vowels[Index].First;
+
                 return;
             }
         }
+
         State->Vowel = -1;
+
         return;
     }
+
     State->Lead = -1;
 }

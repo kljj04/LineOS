@@ -465,6 +465,13 @@ MountUpdate()
 
     Mounted=1
 
+    if ! MountPrivilege test -e "$MountPoint/etc/locale" && ! MountPrivilege test -L "$MountPoint/etc/locale"; then
+        if ! MountProgramCopy "$MountRoot/Configs/locale" "/etc" "$MountPoint" 0644; then
+            printf 'Locale configuration copy rejected or failed\n' >&2
+            return 1
+        fi
+    fi
+
     if ! MountPrivilege test -e "$MountPoint/etc/timezone" && ! MountPrivilege test -L "$MountPoint/etc/timezone"; then
         if ! MountProgramCopy "$MountRoot/Configs/timezone" "/etc" "$MountPoint" 0644; then
             printf 'Timezone configuration copy rejected or failed\n' >&2

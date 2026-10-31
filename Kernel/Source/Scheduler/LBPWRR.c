@@ -116,6 +116,7 @@ VOID LBPWRRStart(VOID)
     if (Task == NULL)
     {
         SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+
         return;
     }
 
@@ -162,7 +163,7 @@ VOID LBPWRRJoin(VOID)
 
 VOID LBPWRRYield(VOID)
 {
-    ASM("int $0x43" ::: "memory");
+    ASM("int $0x43" :: : "memory");
 }
 
 UINT64 LBPWRRTick(INTERRUPT_FRAME *Frame)

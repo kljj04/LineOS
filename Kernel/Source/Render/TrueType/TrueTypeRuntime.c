@@ -55,6 +55,7 @@ FLOAT64 KSqrt(FLOAT64 Value)
     }
 
     Result = Value >= 1.0 ? Value : 1.0;
+
     for (UINTN Index = 0; Index < 16; Index++)
     {
         Result = 0.5 * (Result + Value / Result);
@@ -73,6 +74,7 @@ FLOAT64 KFMod(FLOAT64 Value, FLOAT64 Divisor)
     }
 
     Quotient = (INT64) (Value / Divisor);
+
     return Value - ((FLOAT64) Quotient * Divisor);
 }
 
@@ -86,6 +88,7 @@ STATIC FLOAT64 KCbrt(FLOAT64 Value)
     }
 
     Result = Value > 1.0 ? Value : 1.0;
+
     for (UINTN Index = 0; Index < 24; Index++)
     {
         Result = ((2.0 * Result) + (Value / (Result * Result))) / 3.0;

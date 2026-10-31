@@ -40,6 +40,7 @@ BOOLEAN CreateBootInfo(VOID)
 VOID JumpKernel(VOID)
 {
     typedef VOID(MS_ABI * KERNEL_ENTRY)(LINEOS_BOOT_INFO *);
+
     KERNEL_ENTRY KernelEntry;
 
     KernelEntry = (KERNEL_ENTRY) Kernel.Entry;

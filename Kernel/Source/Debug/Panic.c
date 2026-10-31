@@ -190,6 +190,7 @@ STATIC UINT64 ReadCR2(VOID)
     UINT64 Value;
 
     ASM("mov %%cr2, %0" : "=r"(Value));
+
     return Value;
 }
 
@@ -474,6 +475,7 @@ STATIC VOID DrawStackIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
     for (UINT32 Index = 0; Index < 3; Index++)
     {
         UINT32 Y = CenterY - Scale(10, UIScale) + (Index * Scale(10, UIScale));
+
         DrawThickLine((INT32) (CenterX - Scale(13, UIScale)), (INT32) Y, (INT32) (CenterX + Scale(13, UIScale)), (INT32) Y, Scale(4, UIScale), Index == 1 ? PANIC_TEXT : PANIC_MUTED);
     }
 }
@@ -654,6 +656,7 @@ STATIC VOID DrawExceptionSummary(UINT32 X, UINT32 Y, UINT32 Width, UINT32 UIScal
     {
         DrawDefaultExceptionIcon(X + Scale(44, UIScale), Y + Scale(106, UIScale), UIScale);
         KPrint(L"(null interrupt frame)", X + Scale(82, UIScale), Y + Scale(112, UIScale), PANIC_TEXT, Scale(22, UIScale), PRETENDARD);
+
         return;
     }
 
@@ -665,6 +668,7 @@ STATIC VOID DrawExceptionSummary(UINT32 X, UINT32 Y, UINT32 Width, UINT32 UIScal
     {
         KPrint(L"vector=%X", X + Scale(82, UIScale), Y + Scale(96, UIScale), PANIC_TEXT, Scale(24, UIScale), JETBRAINS_MONO, Frame->Vector);
         KPrint(L"unknown exception", X + Scale(82, UIScale), Y + Scale(138, UIScale), PANIC_MUTED, Scale(15, UIScale), PRETENDARD);
+
         return;
     }
 
@@ -780,6 +784,7 @@ STATIC VOID DrawSelectorErrorDetails(UINT32 X, UINT32 Y, UINT32 Width, UINT32 UI
     if (ErrorCode == 0)
     {
         KPrint(L"No selector information", X + Scale(24, UIScale), Y + Scale(124, UIScale), PANIC_MUTED, Scale(15, UIScale), PRETENDARD);
+
         return;
     }
 
@@ -795,6 +800,7 @@ STATIC VOID DrawGenericExceptionDetails(UINT32 X, UINT32 Y, UINT32 Width, UINT32
     if (Frame == NULL)
     {
         KPrint(L"no interrupt frame", X + Scale(24, UIScale), Y + Scale(88, UIScale), PANIC_TEXT, Scale(16, UIScale), PRETENDARD);
+
         return;
     }
 
@@ -844,6 +850,7 @@ STATIC VOID DrawExceptionStatePanel(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Hei
     if (Frame == NULL)
     {
         KPrint(L"frame pointer is null", X + Scale(24, UIScale), Y + Scale(84, UIScale), PANIC_TEXT, Scale(15, UIScale), PRETENDARD);
+
         return;
     }
 
@@ -909,8 +916,10 @@ STATIC VOID DrawInterruptFrame(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, 
     if (Frame == NULL)
     {
         KPrint(L"(null frame)", X + Scale(24, UIScale), Y + Scale(76, UIScale), PANIC_TEXT, Scale(18, UIScale), PRETENDARD);
+
         return;
     }
+
     DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(64, UIScale), UIScale, L"RAX", Frame->RAX, L"RBX", Frame->RBX);
     DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(84, UIScale), UIScale, L"RCX", Frame->RCX, L"RDX", Frame->RDX);
     DrawRegisterPair(X + Scale(24, UIScale), Y + Scale(104, UIScale), UIScale, L"RSI", Frame->RSI, L"RDI", Frame->RDI);
@@ -948,6 +957,7 @@ STATIC UINT32 PanicGetAPICID(VOID)
     UINT32 EDX;
 
     CPUID(1, 0, &EAX, &EBX, &ECX, &EDX);
+
     return EBX >> 24;
 }
 
@@ -1045,6 +1055,7 @@ STATIC BOOLEAN PreparePanicStop(VOID)
         if (Complete)
         {
             DebugWriteLine("PANIC: NMI peer stop complete");
+
             return PanicLocksAvailable();
         }
 
@@ -1064,7 +1075,7 @@ STATIC BOOLEAN PreparePanicStop(VOID)
                     break;
                 }
 
-                ASM("pause" ::: "memory");
+                ASM("pause" :: : "memory");
             }
         }
     }

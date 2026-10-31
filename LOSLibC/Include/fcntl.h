@@ -15,5 +15,5 @@
 
 int open(const char *Path, int Flags, ...);
 
-#define AT_FDCWD (-100)
+#define AT_FDCWD            (-100)
 #define AT_SYMLINK_NOFOLLOW 0x100

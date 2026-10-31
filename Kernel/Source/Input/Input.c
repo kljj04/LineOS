@@ -141,6 +141,7 @@ VOID ShowMouseCursor(VOID)
     if (!InitHardwareCursor())
     {
         SpinLockReleaseIRQRestore(&CursorLock, Flags);
+
         return;
     }
 
@@ -169,12 +170,14 @@ VOID UpdateMouseCursor(VOID)
     if (!InitHardwareCursor())
     {
         SpinLockReleaseIRQRestore(&CursorLock, Flags);
+
         return;
     }
 
     if (!CursorVisible)
     {
         SpinLockReleaseIRQRestore(&CursorLock, Flags);
+
         return;
     }
 
@@ -233,6 +236,7 @@ VOID InputMouseHandler(VOID)
 
             UpdateMouseCursor();
         }
+
         InputWaitMouseEvents();
     }
 }
@@ -294,6 +298,7 @@ VOID InputKeyboardHandler(VOID)
 
             SpinLockReleaseIRQRestore(&KeyboardStatusLock, Flags);
         }
+
         InputWaitKeyboardEvent();
     }
 }
@@ -312,11 +317,13 @@ BOOLEAN InputGetKeyboardEvent(KEYBOARD_STATUS *Event)
     if (KeyboardReadIndex == KeyboardWriteIndex)
     {
         SpinLockReleaseIRQRestore(&KeyboardStatusLock, Flags);
+
         return FALSE;
     }
 
     *Event = KeyboardEvents[KeyboardReadIndex];
     KeyboardReadIndex = (KeyboardReadIndex + 1) % 256;
     SpinLockReleaseIRQRestore(&KeyboardStatusLock, Flags);
+
     return TRUE;
 }

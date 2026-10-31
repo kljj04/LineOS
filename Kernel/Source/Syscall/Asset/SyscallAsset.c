@@ -82,14 +82,17 @@ INT64 SyscallAssetPublish(UINT64 Name, UINT64 Data, UINT64 Size)
     {
         return -ESRCH;
     }
+
     if (!Task->AssetPublisher)
     {
         return -EPERM;
     }
+
     if (Size == 0 || Size > LOS_ASSET_MAX_SIZE)
     {
         return -EINVAL;
     }
+
     if (Data == 0 || Data >= (1ULL << 47) || Size > (1ULL << 47) - Data || !AssetReadName(Task, Name, Buffer))
     {
         return -EFAULT;
@@ -103,6 +106,7 @@ INT64 SyscallAssetPublish(UINT64 Name, UINT64 Data, UINT64 Size)
         if (AssetEntries[Index].Pages != NULL && AssetNameEqual(AssetEntries[Index].Name, Buffer))
         {
             Result = -EEXIST;
+
             goto Cleanup;
         }
 
@@ -115,6 +119,7 @@ INT64 SyscallAssetPublish(UINT64 Name, UINT64 Data, UINT64 Size)
     if (Entry == NULL || Count > ASSET_PAGE_LIMIT - AssetPages)
     {
         Result = -ENOSPC;
+
         goto Cleanup;
     }
 
@@ -141,6 +146,7 @@ INT64 SyscallAssetPublish(UINT64 Name, UINT64 Data, UINT64 Size)
         if (!VMMCopyFromUser(Task->AddressSpace, Page, Data + Offset, Length))
         {
             Result = -EFAULT;
+
             goto Failed;
         }
     }
@@ -150,6 +156,7 @@ INT64 SyscallAssetPublish(UINT64 Name, UINT64 Data, UINT64 Size)
     Entry->PageCount = Count;
     AssetPages += Count;
     Result = 0;
+
     goto Cleanup;
 Failed:
     while (Pages != 0)
@@ -161,6 +168,7 @@ Failed:
     KMemSet(Entry, 0, sizeof(*Entry));
 Cleanup:
     SpinLockReleaseIRQRestore(&AssetLock, Flags);
+
     return Result;
 }
 
@@ -214,11 +222,14 @@ INT64 SyscallAssetAcquire(UINT64 Name, UINT64 UserAsset)
     }
 
     Result = -ENOSPC;
+
     if (Mapping == NULL || Mapping->References == UINT32_MAX)
     {
         goto Cleanup;
     }
+
     Result = -EFAULT;
+
     if (!VMMCopyToUser(Task->AddressSpace, UserAsset, &Asset, sizeof(Asset)))
     {
         goto Cleanup;
@@ -230,6 +241,7 @@ INT64 SyscallAssetAcquire(UINT64 Name, UINT64 UserAsset)
     if (Mapping->Handle == 0)
     {
         Result = -ENOMEM;
+
         if (AssetHandle == UINT64_MAX || !VMMMapSharedPages(Task->AddressSpace, (UINT64) Asset.Data, Entry->Pages, Entry->PageCount))
         {
             goto Cleanup;
@@ -242,6 +254,7 @@ INT64 SyscallAssetAcquire(UINT64 Name, UINT64 UserAsset)
     Asset.Handle = Mapping->Handle;
 
     Result = -EFAULT;
+
     if (!VMMCopyToUser(Task->AddressSpace, UserAsset, &Asset, sizeof(Asset)))
     {
         if (Mapping->References == 0 && VMMUnmapSharedPages(Task->AddressSpace, (UINT64) Asset.Data, Entry->Pages, Entry->PageCount))
@@ -256,6 +269,7 @@ INT64 SyscallAssetAcquire(UINT64 Name, UINT64 UserAsset)
     Result = 0;
 Cleanup:
     SpinLockReleaseIRQRestore(&AssetLock, Flags);
+
     return Result;
 }
 
@@ -296,5 +310,6 @@ INT64 SyscallAssetRelease(UINT64 Handle)
     }
 
     SpinLockReleaseIRQRestore(&AssetLock, Flags);
+
     return Result;
 }

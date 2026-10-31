@@ -131,7 +131,7 @@ STATIC BOOLEAN LAPICWaitForIPI(VOID)
             return TRUE;
         }
 
-        ASM("pause" ::: "memory");
+        ASM("pause" :: : "memory");
     }
 
     return FALSE;
@@ -197,7 +197,7 @@ BOOLEAN LAPICSendIPI(UINT32 APICID, UINT8 Vector)
 
     if ((Flags & (1ULL << 9)) != 0)
     {
-        ASM("sti" ::: "memory");
+        ASM("sti" :: : "memory");
     }
 
     return Result;
@@ -212,5 +212,6 @@ BOOLEAN LAPICSendNMI(UINT32 APICID)
 
     LAPICWrite(LAPIC_REG_ICR_HIGH, APICID << 24);
     LAPICWrite(LAPIC_REG_ICR_LOW, 4U << 8);
+
     return LAPICWaitForIPI();
 }

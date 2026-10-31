@@ -42,7 +42,7 @@ VOID UsageInit(UINT32 CPUCount)
 
     for (Index = 0; Index < SMP_MAX_CPUS; Index++)
     {
-        CPUUsages[Index] = (CPU_USAGE){0};
+        CPUUsages[Index] = (CPU_USAGE) {0};
     }
 
     LastTaskSampleTSC = RDTSC();
@@ -76,6 +76,7 @@ UINT64 UsageAccount(UINT32 CPUID, BOOLEAN Idle)
     if (Usage->LastTSC == 0)
     {
         Usage->LastTSC = Now;
+
         return 0;
     }
 
@@ -192,6 +193,7 @@ VOID UsageGetCounters(UINT32 CPUID, UINT64 *Busy, UINT64 *Idle)
 {
     *Busy = 0;
     *Idle = 0;
+
     if (CPUID < ActiveCPUCount)
     {
         *Busy = ATOMIC_LOAD(&CPUUsages[CPUID].BusyTSC, ATOMIC_ACQUIRE);

@@ -62,6 +62,7 @@ BOOLEAN EXT2LoadSuperblock(EXT2_VOLUME *Volume)
 
     Volume->DescriptorStart = Volume->FirstDataBlock + 1;
     Volume->DescriptorBlocks = (UINT32) (((UINT64) Volume->GroupCount * 32 + Volume->BlockSize - 1) / Volume->BlockSize);
+
     return TRUE;
 }
 

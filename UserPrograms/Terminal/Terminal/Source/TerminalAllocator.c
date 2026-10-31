@@ -6,7 +6,7 @@
 #include <stddef.h>
 
 STATIC UINT8 AllocatorBuffer[TERMINAL_ALLOCATOR_CAPACITY];
-UINTN AllocatorUsed;
+UINTN        AllocatorUsed;
 
 VOID *TerminalAllocate(UINTN Size, VOID *Context)
 {
@@ -38,4 +38,3 @@ VOID TerminalFree(VOID *Pointer, VOID *Context)
     (VOID) Pointer;
     (VOID) Context;
 }
-

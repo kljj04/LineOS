@@ -101,6 +101,7 @@ INT64 SyscallDisplayPresent(UINT64 UserBuffer, UINT64 BufferSize)
     if (Offset != 0)
     {
         VirtIOGPUMarkDirty(0, 0, GPU->FrameBufferWidth, GPU->FrameBufferHeight);
+
         if (!VirtIOGPUPresent() && Success)
         {
             return -EIO;
@@ -180,5 +181,6 @@ INT64 SyscallDisplayPresentRect(UINT64 UserRect)
     }
 
     VirtIOGPUMarkDirty(Rect.X, Rect.Y, Rect.Width, Rect.Height);
+
     return VirtIOGPUPresent() ? 0 : -EIO;
 }

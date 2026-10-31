@@ -7,6 +7,7 @@
 #include <LOSLibC/TypeInfo.h>
 #include <TrueType/TrueTypeEngine.h>
 #include <Syscall/Device/Input.h>
+#include <Window.h>
 
 #define TEST_GUI_ALLOCATOR_SIZE (8U * 1024U * 1024U)
 
@@ -20,20 +21,23 @@ typedef struct
 
 typedef struct
 {
-    UINT32 *Pixels;
-    UINT32 Width;
-    UINT32 Height;
-    UINT8 *Work;
-    UINTN Used;
+    UINT32        *Pixels;
+    UINT32         Width;
+    UINT32         Height;
+    UINT8         *Work;
+    UINTN          Used;
     TRUE_TYPE_FONT Font;
-    TEST_GUI_RECT Window;
-    TEST_GUI_RECT Close;
-    TEST_GUI_RECT Button;
-    UINT32 Clicks;
-    BOOLEAN Hover;
+    TEST_GUI_RECT  Window;
+    TEST_GUI_RECT  Close;
+    TEST_GUI_RECT  Button;
+    UINT32         Clicks;
+    BOOLEAN        Hover;
+    LOS_WINDOW     Client;
 } TEST_GUI;
 
-VOID *TestGUIAllocate(UINTN Size, VOID *Context);
-VOID TestGUIFree(VOID *Pointer, VOID *Context);
+VOID   *TestGUIAllocate(UINTN Size, VOID *Context);
+VOID    TestGUIFree(VOID *Pointer, VOID *Context);
 BOOLEAN TestGUIContains(CONST TEST_GUI_RECT *Rect, CONST POINTER_INFO *Pointer);
-VOID TestGUIDraw(TEST_GUI *GUI);
+VOID    TestGUIDraw(TEST_GUI *GUI);
+
+INT32 TestGUIWindowed(VOID);

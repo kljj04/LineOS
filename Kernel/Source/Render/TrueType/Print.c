@@ -120,6 +120,7 @@ STATIC UINT32 KPrintSigned(INT64 Value, UINT32 Width, CHAR16 Padding, BOOLEAN Le
 VOID KPrint(CONST CHAR16 *Msg, UINT32 X, UINT32 Baseline, UINT32 Color, UINT32 PixelHeight, TRUE_TYPE_FONT Font, ...)
 {
     va_list Args;
+
     UINT32  OriginX = X;
 
     if (Msg == NULL)

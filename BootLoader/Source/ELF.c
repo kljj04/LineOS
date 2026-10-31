@@ -43,6 +43,7 @@ STATIC BOOLEAN ReserveELFImage(UINT64 ImageBase, UINT64 ImageEnd)
     Pages = (UINTN) ((ImageEnd - ImageBase) / ELF_PAGE_SIZE);
 
     Status = UEFIBootServices->AllocatePages(AllocateAddress, EfiLoaderData, Pages, &Address);
+
     return !EFI_ERROR(Status) && Address == (EFI_PHYSICAL_ADDRESS) ImageBase;
 }
 

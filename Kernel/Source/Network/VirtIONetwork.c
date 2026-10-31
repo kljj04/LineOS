@@ -49,7 +49,7 @@ STATIC BOOLEAN ReadMAC(VIRTIO_NETWORK_DEVICE *Device)
         UINT8 Generation = Device->Device.CommonConfig->ConfigGeneration;
         UINT8 Combined = 0;
 
-        ASM("" ::: "memory");
+        ASM("" :: : "memory");
 
         for (UINT32 Index = 0; Index < 6; Index++)
         {
@@ -57,7 +57,7 @@ STATIC BOOLEAN ReadMAC(VIRTIO_NETWORK_DEVICE *Device)
             Combined |= Device->MAC[Index];
         }
 
-        ASM("" ::: "memory");
+        ASM("" :: : "memory");
 
         if (Generation == Device->Device.CommonConfig->ConfigGeneration)
         {
@@ -78,6 +78,7 @@ STATIC VOID DrainQueues(VIRTIO_NETWORK_DEVICE *Device)
         if (Device->TXQueue.DescInUse[Head] == 0)
         {
             FailDevice(L"network TX completion invalid");
+
             return;
         }
 
@@ -93,6 +94,7 @@ STATIC VOID DrainQueues(VIRTIO_NETWORK_DEVICE *Device)
         if (Device->RXQueue.DescInUse[Head] == 0)
         {
             FailDevice(L"network RX completion invalid");
+
             return;
         }
 
@@ -114,6 +116,7 @@ STATIC VOID DrainQueues(VIRTIO_NETWORK_DEVICE *Device)
         if (!VirtQueueSubmit(&Device->Device, &Device->RXQueue, Head))
         {
             FailDevice(VirtQueueGetLastError());
+
             return;
         }
     }
@@ -191,10 +194,11 @@ BOOLEAN VirtIONetworkInit(VOID)
     }
 
     Device->Initialized = TRUE;
-    ASM("" ::: "memory");
+    ASM("" :: : "memory");
     VirtIOPCIReadyDevice(&Device->Device);
     VirtIOPCINotifyQueue(&Device->Device, 0);
     LastError = L"ok";
+
     return TRUE;
 }
 
@@ -207,6 +211,7 @@ BOOLEAN VirtIONetworkSend(VIRTIO_NETWORK_DEVICE *Device, CONST VOID *Frame, UINT
     if (Device == NULL || !Device->Initialized || Frame == NULL || Length < 14 || Length > VIRTIO_NETWORK_MAX_FRAME_SIZE)
     {
         LastError = L"network send args invalid";
+
         return FALSE;
     }
 
@@ -221,6 +226,7 @@ BOOLEAN VirtIONetworkSend(VIRTIO_NETWORK_DEVICE *Device, CONST VOID *Frame, UINT
         }
 
         SpinLockReleaseIRQRestore(&Device->QueueLock, Flags);
+
         return FALSE;
     }
 
@@ -235,11 +241,13 @@ BOOLEAN VirtIONetworkSend(VIRTIO_NETWORK_DEVICE *Device, CONST VOID *Frame, UINT
         LastError = VirtQueueGetLastError();
         VirtQueueFreeDesc(&Device->TXQueue, Head);
         SpinLockReleaseIRQRestore(&Device->QueueLock, Flags);
+
         return FALSE;
     }
 
     LastError = L"ok";
     SpinLockReleaseIRQRestore(&Device->QueueLock, Flags);
+
     return TRUE;
 }
 
@@ -256,6 +264,7 @@ BOOLEAN VirtIONetworkReceive(VIRTIO_NETWORK_DEVICE *Device, VOID *Frame, UINT32 
     if (Device == NULL || !Device->Initialized || Frame == NULL || Length == NULL)
     {
         LastError = L"network receive args invalid";
+
         return FALSE;
     }
 
@@ -285,6 +294,7 @@ BOOLEAN VirtIONetworkReceive(VIRTIO_NETWORK_DEVICE *Device, VOID *Frame, UINT32 
     }
 
     SpinLockReleaseIRQRestore(&Device->QueueLock, Flags);
+
     return Result;
 }
 

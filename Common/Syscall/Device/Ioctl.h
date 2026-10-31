@@ -97,9 +97,9 @@ typedef struct
 
 #include <Syscall/Device/Input.h>
 
-#define LOS_TIO_GET_POINTER _IOR('L', 5, POINTER_INFO)
+#define LOS_TIO_GET_POINTER    _IOR('L', 5, POINTER_INFO)
 #define LOS_TIO_GRAPHICS_BEGIN _IO('L', 6)
-#define LOS_TIO_GRAPHICS_END _IO('L', 7)
+#define LOS_TIO_GRAPHICS_END   _IO('L', 7)
 
 #define FIONREAD 0x541BU
 
@@ -113,3 +113,8 @@ struct winsize
     unsigned short ws_xpixel;
     unsigned short ws_ypixel;
 };
+
+#define LOS_TIO_SET_COMPOSITOR _IOW('L', 8, unsigned long long)
+#define LOS_TIO_GET_COMPOSITOR _IOR('L', 9, unsigned long long)
+
+#define LOS_TIO_INJECT_CLI _IOW('L', 10, unsigned char)

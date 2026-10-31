@@ -2,80 +2,22 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <Terminal.h>
-#include <string.h>
+#include <TerminalScreen.h>
 
 TERMINAL_GLYPH Glyphs[128];
-TERMINAL_CELL LineCells[TERMINAL_MAX_WIDTH];
-UINT32 CellAscent = TERMINAL_FONT_HEIGHT;
+TERMINAL_CELL  LineCells[TERMINAL_MAX_WIDTH];
+UINT32         CellAscent = TERMINAL_FONT_HEIGHT;
 
 VOID TerminalNewLine(DISPLAY_INFO *Info, UINT32 *X, UINT32 *Baseline, UINT32 Background)
 {
+    (VOID) Info;
     *X = TERMINAL_MARGIN;
     *Baseline += TERMINAL_LINE_HEIGHT;
 
-    if (*Baseline + TERMINAL_LINE_HEIGHT > Info->Height)
+    if (*Baseline > TERMINAL_MARGIN + TERMINAL_FONT_HEIGHT + (TerminalScreenRows() - 1) * TERMINAL_LINE_HEIGHT)
     {
-        UINTN Rows = Info->Height - TERMINAL_LINE_HEIGHT;
-
-        memmove(FrameBuffer, FrameBuffer + TERMINAL_LINE_HEIGHT * Info->Width, Rows * Info->Width * sizeof(UINT32));
-
-        for (UINTN Index = Rows * Info->Width; Index < (UINTN) Info->Height * Info->Width; Index++)
-        {
-            FrameBuffer[Index] = Background;
-        }
-
+        TerminalScreenNewLine(Background);
         *Baseline -= TERMINAL_LINE_HEIGHT;
-    }
-}
-
-VOID TerminalErase(DISPLAY_INFO *Info, TERMINAL_GLYPH *Glyph, UINT32 X, UINT32 Baseline, UINT32 Background)
-{
-    INT64 Left = (INT64) X + Glyph->Left;
-    INT64 Right = (INT64) X + Glyph->Right;
-    INT64 Top = (INT64) Baseline + Glyph->Top;
-    INT64 Bottom = (INT64) Baseline + Glyph->Bottom;
-
-    if (Left < 0)
-    {
-        Left = 0;
-    }
-    if (Top < 0)
-    {
-        Top = 0;
-    }
-    if (Right > Info->Width)
-    {
-        Right = Info->Width;
-    }
-    if (Bottom > Info->Height)
-    {
-        Bottom = Info->Height;
-    }
-    INT64 CellTop = (INT64) Baseline - CellAscent;
-    INT64 CellBottom = CellTop + TERMINAL_LINE_HEIGHT;
-    if (Top < CellTop)
-    {
-        Top = CellTop;
-    }
-    if (Bottom > CellBottom)
-    {
-        Bottom = CellBottom;
-    }
-    if (Top < 0)
-    {
-        Top = 0;
-    }
-    if (Bottom > Info->Height)
-    {
-        Bottom = Info->Height;
-    }
-    for (INT64 Row = Top; Row < Bottom; Row++)
-    {
-        for (INT64 Column = Left; Column < Right; Column++)
-        {
-            FrameBuffer[(UINTN) Row * Info->Width + Column] = Background;
-        }
     }
 }
 
@@ -84,16 +26,45 @@ TRUE_TYPE_FONT *TerminalMeasure(TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fallback, 
     if (Codepoint < 128)
     {
         *Glyph = Glyphs[Codepoint];
+
         return Font;
     }
+
+    typedef struct
+    {
+        UINT32          Codepoint;
+        TRUE_TYPE_FONT *Primary;
+        TRUE_TYPE_FONT *Fallback;
+        TRUE_TYPE_FONT *Selected;
+        TERMINAL_GLYPH  Glyph;
+    } TERMINAL_METRIC_CACHE;
+
+    STATIC TERMINAL_METRIC_CACHE Cache[512];
+    TERMINAL_METRIC_CACHE       *Entry = &Cache[(Codepoint * 2654435761U) % 512U];
+
+    if (Entry->Codepoint == Codepoint && Entry->Primary == Font && Entry->Fallback == Fallback)
+    {
+        *Glyph = Entry->Glyph;
+
+        return Entry->Selected;
+    }
+
     TRUE_TYPE_FONT *Selected = FindGlyphIndex(&Font->Info, (INT32) Codepoint) != 0 ? Font : Fallback;
     FLOAT32         Scale = ScaleForPixelHeight(&Selected->Info, TERMINAL_FONT_HEIGHT);
     INT32           Advance;
     INT32           Bearing;
+
     GetCodepointHMetrics(&Selected->Info, (INT32) Codepoint, &Advance, &Bearing);
+
     INT32 Width = TTFFloor((Advance * Scale) + 0.5f);
+
     Glyph->Advance = Width > 0 ? (UINT32) Width : 1U;
     GetCodepointBitmapBox(&Selected->Info, (INT32) Codepoint, Scale, Scale, &Glyph->Left, &Glyph->Top, &Glyph->Right, &Glyph->Bottom);
+    Entry->Codepoint = Codepoint;
+    Entry->Primary = Font;
+    Entry->Fallback = Fallback;
+    Entry->Selected = Selected;
+    Entry->Glyph = *Glyph;
+
     return Selected;
 }
-

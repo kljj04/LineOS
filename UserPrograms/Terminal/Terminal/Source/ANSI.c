@@ -9,16 +9,21 @@ STATIC CONST UINT32 ANSIPalette[16] = {0x000000, 0x800000, 0x008000, 0x808000, 0
 STATIC UINT32 ANSIIndexedColor(UINT32 Index)
 {
     STATIC CONST UINT32 Levels[6] = {0, 95, 135, 175, 215, 255};
+
     if (Index < 16)
     {
         return ANSIPalette[Index];
     }
+
     if (Index < 232)
     {
         Index -= 16;
+
         return (Levels[Index / 36] << 16) | (Levels[(Index / 6) % 6] << 8) | Levels[Index % 6];
     }
+
     UINT32 Level = 8 + (Index - 232) * 10;
+
     return Level * 0x010101;
 }
 
@@ -33,7 +38,7 @@ STATIC VOID ANSIReset(TERMINAL_ANSI *ANSI)
 
 VOID TerminalANSIInit(TERMINAL_ANSI *ANSI, UINT32 Foreground, UINT32 Background)
 {
-    *ANSI = (TERMINAL_ANSI){0};
+    *ANSI = (TERMINAL_ANSI) {0};
     ANSI->DefaultForeground = Foreground;
     ANSI->DefaultBackground = Background;
     ANSIReset(ANSI);
@@ -44,6 +49,7 @@ STATIC VOID ANSIApply(TERMINAL_ANSI *ANSI)
     for (UINT32 Index = 0; Index < ANSI->Count; Index++)
     {
         UINT32 Parameter = ANSI->Parameters[Index];
+
         if (Parameter == 0)
         {
             ANSIReset(ANSI);
@@ -80,19 +86,24 @@ STATIC VOID ANSIApply(TERMINAL_ANSI *ANSI)
             {
                 break;
             }
+
             UINT32 Mode = ANSI->Parameters[++Index];
             UINT32 Color;
+
             if (Mode == 5)
             {
                 if (Index + 1 >= ANSI->Count)
                 {
                     break;
                 }
+
                 UINT32 PaletteIndex = ANSI->Parameters[++Index];
+
                 if (PaletteIndex > 255)
                 {
                     continue;
                 }
+
                 Color = ANSIIndexedColor(PaletteIndex);
             }
             else if (Mode == 2)
@@ -101,19 +112,23 @@ STATIC VOID ANSIApply(TERMINAL_ANSI *ANSI)
                 {
                     break;
                 }
+
                 UINT32 Red = ANSI->Parameters[++Index];
                 UINT32 Green = ANSI->Parameters[++Index];
                 UINT32 Blue = ANSI->Parameters[++Index];
+
                 if (Red > 255 || Green > 255 || Blue > 255)
                 {
                     continue;
                 }
+
                 Color = (Red << 16) | (Green << 8) | Blue;
             }
             else
             {
                 break;
             }
+
             if (Parameter == 38)
             {
                 ANSI->Foreground = Color;
@@ -130,6 +145,7 @@ STATIC VOID ANSIApply(TERMINAL_ANSI *ANSI)
 UINT32 TerminalANSIForeground(CONST TERMINAL_ANSI *ANSI)
 {
     UINT32 Foreground = ANSI->ForegroundIndex < 8 && ANSI->Bold ? ANSIPalette[ANSI->ForegroundIndex + 8] : ANSI->Foreground;
+
     return ANSI->Inverse ? ANSI->Background : Foreground;
 }
 
@@ -139,6 +155,7 @@ UINT32 TerminalANSIBackground(CONST TERMINAL_ANSI *ANSI)
     {
         return ANSI->ForegroundIndex < 8 && ANSI->Bold ? ANSIPalette[ANSI->ForegroundIndex + 8] : ANSI->Foreground;
     }
+
     return ANSI->Background;
 }
 
@@ -154,22 +171,29 @@ BOOLEAN TerminalANSIConsume(TERMINAL_ANSI *ANSI, UINT8 Byte)
         {
             ANSI->State = Byte == 27 ? TERMINAL_ANSI_OSC_ESCAPE : TERMINAL_ANSI_OSC;
         }
+
         return TRUE;
     }
+
     if (Byte == 27)
     {
         ANSI->State = TERMINAL_ANSI_ESCAPE;
+
         return TRUE;
     }
+
     if (ANSI->State == TERMINAL_ANSI_TEXT)
     {
         return FALSE;
     }
+
     if (Byte == 24 || Byte == 26)
     {
         ANSI->State = TERMINAL_ANSI_TEXT;
+
         return TRUE;
     }
+
     if (ANSI->State == TERMINAL_ANSI_ESCAPE)
     {
         ANSI->State = Byte == '[' ? TERMINAL_ANSI_CSI : Byte == ']' ? TERMINAL_ANSI_OSC : TERMINAL_ANSI_TEXT;
@@ -177,17 +201,22 @@ BOOLEAN TerminalANSIConsume(TERMINAL_ANSI *ANSI, UINT8 Byte)
         ANSI->Parameters[0] = 0;
         ANSI->Invalid = FALSE;
         ANSI->Private = FALSE;
+
         return TRUE;
     }
+
     if (Byte < 32)
     {
         return FALSE;
     }
+
     if (Byte == '?' && ANSI->Count == 1 && ANSI->Parameters[0] == 0 && !ANSI->Private)
     {
         ANSI->Private = TRUE;
+
         return TRUE;
     }
+
     if (Byte >= 0x40 && Byte <= 0x7E)
     {
         if (ANSI->Private)
@@ -204,6 +233,12 @@ BOOLEAN TerminalANSIConsume(TERMINAL_ANSI *ANSI, UINT8 Byte)
             {
                 ANSI->Synchronized = Byte == 'h';
             }
+        }
+        else if ((Byte == 'A' || Byte == 'B') && !ANSI->Invalid && ANSI->Count == 1)
+        {
+            INT32 Amount = ANSI->Parameters[0] == 0 ? 1 : (INT32) ANSI->Parameters[0];
+
+            ANSI->CursorDelta = Byte == 'A' ? -Amount : Amount;
         }
         else if (Byte == 'G' && !ANSI->Invalid && ANSI->Count == 1)
         {
@@ -227,6 +262,7 @@ BOOLEAN TerminalANSIConsume(TERMINAL_ANSI *ANSI, UINT8 Byte)
             ANSI->CursorColumn = ANSI->Count < 2 || ANSI->Parameters[1] == 0 ? 1 : ANSI->Parameters[1];
             ANSI->CursorPosition = TRUE;
         }
+
         ANSI->State = TERMINAL_ANSI_TEXT;
     }
     else if (!ANSI->Invalid)
@@ -234,6 +270,7 @@ BOOLEAN TerminalANSIConsume(TERMINAL_ANSI *ANSI, UINT8 Byte)
         if (Byte >= '0' && Byte <= '9')
         {
             UINT32 *Value = &ANSI->Parameters[ANSI->Count - 1];
+
             if (*Value > (65535U - (Byte - '0')) / 10)
             {
                 ANSI->Invalid = TRUE;
@@ -252,5 +289,6 @@ BOOLEAN TerminalANSIConsume(TERMINAL_ANSI *ANSI, UINT8 Byte)
             ANSI->Invalid = TRUE;
         }
     }
+
     return TRUE;
 }

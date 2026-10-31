@@ -58,6 +58,7 @@ BOOLEAN HPETInit(LINEOS_BOOT_INFO *BootInfo)
     if (Period == 0)
     {
         HPETBase = NULL;
+
         return FALSE;
     }
 

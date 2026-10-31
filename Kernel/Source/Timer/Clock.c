@@ -137,6 +137,7 @@ STATIC BOOLEAN ClockReadTimeLocked(CLOCK_TIME *Time, UINT64 *Counter)
     }
 
     UINT64 Nanoseconds = (UINT64) ((UINT128) (Now - ClockBaseTSC) * CLOCK_NS_PER_SECOND / ClockFrequency) + ClockBaseNanoseconds;
+
     Time->Seconds = ClockBaseUnix + (UINT64) (Nanoseconds / CLOCK_NS_PER_SECOND);
     Time->Nanoseconds = (UINT32) (Nanoseconds % CLOCK_NS_PER_SECOND);
 
@@ -157,7 +158,9 @@ BOOLEAN ClockGetTime(CLOCK_TIME *Time)
 
     UINT64  Flags = SpinLockAcquireIRQSave(&ClockLock);
     BOOLEAN Result = ClockReadTimeLocked(Time, NULL);
+
     SpinLockReleaseIRQRestore(&ClockLock, Flags);
+
     return Result;
 }
 
@@ -181,6 +184,7 @@ VOID ClockGetNTPStatus(CLOCK_NTP_STATUS *Status)
     }
 
     UINT64 Flags = SpinLockAcquireIRQSave(&ClockLock);
+
     *Status = ClockNTPStatus;
     SpinLockReleaseIRQRestore(&ClockLock, Flags);
 }
@@ -293,6 +297,7 @@ STATIC VOID ClockNTPWrite64(UINT8 *Data, UINT64 Value)
 STATIC UINT32 ClockNTPRemaining(UINT64 Start, UINT32 TimeoutMls)
 {
     UINT64 Elapsed = ClockGetUptimeMls() - Start;
+
     return Elapsed >= TimeoutMls ? 0 : TimeoutMls - (UINT32) Elapsed;
 }
 
@@ -321,6 +326,7 @@ STATIC BOOLEAN ClockNTPDecode(UINT64 Timestamp, UINT64 Hint, INT128 *Nanoseconds
     }
 
     *Nanoseconds = (INT128) (Seconds - CLOCK_NTP_EPOCH) * CLOCK_NS_PER_SECOND + ((UINT128) (UINT32) Timestamp * CLOCK_NS_PER_SECOND >> 32);
+
     return TRUE;
 }
 
@@ -354,6 +360,7 @@ STATIC BOOLEAN ClockNTPApply(CONST UINT8 *Packet, CONST CLOCK_TIME *Sent, CONST 
     if (!ClockReady || ClockFrequency == 0 || Now < ReceivedCounter)
     {
         SpinLockReleaseIRQRestore(&ClockLock, Flags);
+
         return FALSE;
     }
 
@@ -366,6 +373,7 @@ STATIC BOOLEAN ClockNTPApply(CONST UINT8 *Packet, CONST CLOCK_TIME *Sent, CONST 
     ClockNTPStatus.OffsetNanoseconds = (INT64) Offset;
     ClockNTPStatus.RoundTripMls = RoundTrip < 0 ? 0 : (UINT32) ((UINT64) RoundTrip / 1000000);
     SpinLockReleaseIRQRestore(&ClockLock, Flags);
+
     return TRUE;
 }
 
@@ -392,14 +400,18 @@ STATIC BOOLEAN ClockNTPExchange(CONST CHAR8 *Server, UINT32 TimeoutMls, UINT64 *
     Request[0] = 0x23;
     Request[2] = 10;
     Request[3] = (UINT8) -20;
+
     if (!ClockGetTime(&Sent))
     {
         NetworkUDPClose(Socket);
+
         return FALSE;
     }
 
     UINT64 Timestamp = ((Sent.Seconds + CLOCK_NTP_EPOCH) << 32) | (UINT32) (((UINT128) Sent.Nanoseconds << 32) / CLOCK_NS_PER_SECOND);
+
     ClockNTPWrite64(Request + 40, Timestamp);
+
     UINT32 Remaining = ClockNTPRemaining(Start, TimeoutMls);
 
     if (Remaining != 0 && NetworkUDPSendTo(Socket, Address, CLOCK_NTP_PORT, Request, sizeof(Request), Remaining))
@@ -413,6 +425,7 @@ STATIC BOOLEAN ClockNTPExchange(CONST CHAR8 *Server, UINT32 TimeoutMls, UINT64 *
 
             UINT64  Flags = SpinLockAcquireIRQSave(&ClockLock);
             BOOLEAN Read = ClockReadTimeLocked(&Received, &ReceivedCounter);
+
             SpinLockReleaseIRQRestore(&ClockLock, Flags);
 
             if (!Read || Source != Address || Port != CLOCK_NTP_PORT || Length != 48 || (Reply[0] & 7) != 4 || ((Reply[0] >> 3) & 7) < 3 || ((Reply[0] >> 3) & 7) > 4 || ClockNTPRead64(Reply + 24) != Timestamp)
@@ -424,6 +437,7 @@ STATIC BOOLEAN ClockNTPExchange(CONST CHAR8 *Server, UINT32 TimeoutMls, UINT64 *
             {
                 INT8   Poll = (INT8) Reply[2];
                 UINT64 Delay = Poll >= 4 && Poll <= 17 ? (1ULL << Poll) * 1000 : CLOCK_NTP_INTERVAL_MLS;
+
                 *RetryDelay = Delay > CLOCK_NTP_INTERVAL_MLS ? Delay : CLOCK_NTP_INTERVAL_MLS;
 
                 if ((Reply[12] == 'D' && Reply[13] == 'E' && Reply[14] == 'N' && Reply[15] == 'Y') || (Reply[12] == 'R' && Reply[13] == 'S' && Reply[14] == 'T' && Reply[15] == 'R'))
@@ -451,6 +465,7 @@ STATIC BOOLEAN ClockNTPExchange(CONST CHAR8 *Server, UINT32 TimeoutMls, UINT64 *
     }
 
     NetworkUDPClose(Socket);
+
     return Result;
 }
 
@@ -469,13 +484,16 @@ BOOLEAN ClockSyncNTP(CONST CHAR8 *Server, UINT32 TimeoutMls)
     {
         SpinLockReleaseIRQRestore(&ClockLock, Flags);
         ATOMIC_STORE(&ClockNTPBusy, 0, ATOMIC_RELEASE);
+
         return FALSE;
     }
 
     ClockNTPStatus.Busy = TRUE;
     SpinLockReleaseIRQRestore(&ClockLock, Flags);
+
     UINT64  RetryDelay = 0;
     BOOLEAN Result = ClockNTPExchange(Server, TimeoutMls, &RetryDelay);
+
     Flags = SpinLockAcquireIRQSave(&ClockLock);
     ClockNTPStatus.Busy = FALSE;
 
@@ -487,7 +505,9 @@ BOOLEAN ClockSyncNTP(CONST CHAR8 *Server, UINT32 TimeoutMls)
     else
     {
         ClockNTPStatus.Failures = ClockNTPStatus.Failures < 16 ? ClockNTPStatus.Failures + 1 : 16;
+
         UINT64 Backoff = 64000ULL << (ClockNTPStatus.Failures < 5 ? ClockNTPStatus.Failures - 1 : 4);
+
         Backoff = Backoff > CLOCK_NTP_INTERVAL_MLS ? CLOCK_NTP_INTERVAL_MLS : Backoff;
         RetryDelay = RetryDelay > Backoff ? RetryDelay : Backoff;
     }
@@ -495,6 +515,7 @@ BOOLEAN ClockSyncNTP(CONST CHAR8 *Server, UINT32 TimeoutMls)
     ClockNTPStatus.NextSyncUptimeMls = ClockGetUptimeMls() + RetryDelay;
     SpinLockReleaseIRQRestore(&ClockLock, Flags);
     ATOMIC_STORE(&ClockNTPBusy, 0, ATOMIC_RELEASE);
+
     return Result;
 }
 
@@ -504,11 +525,13 @@ VOID ClockNTPTask(VOID)
     {
         NETWORK_CONFIG   Config;
         CLOCK_NTP_STATUS Status;
+
         ClockGetNTPStatus(&Status);
 
         if (NetworkGetConfig(&Config) && ClockGetUptimeMls() >= Status.NextSyncUptimeMls)
         {
             BOOLEAN Result = ClockSyncNTP((CONST CHAR8 *) CLOCK_NTP_SERVER, 5000);
+
             DebugWriteLine(Result ? "[CLOCK] NTP synchronized; next update in 600 seconds" : "[CLOCK] NTP unavailable; retaining current clock");
         }
 
@@ -522,13 +545,18 @@ BOOLEAN ClockGetMonotonicTime(CLOCK_TIME *Time)
     {
         return FALSE;
     }
+
     UINT64 Now = HPETReadCounter();
+
     if (Now < ClockBootCounter)
     {
         return FALSE;
     }
+
     UINT128 Nanoseconds = (UINT128) (Now - ClockBootCounter) * CLOCK_NS_PER_SECOND / ClockBootFrequency;
+
     Time->Seconds = (UINT64) (Nanoseconds / CLOCK_NS_PER_SECOND);
     Time->Nanoseconds = (UINT32) (Nanoseconds % CLOCK_NS_PER_SECOND);
+
     return TRUE;
 }

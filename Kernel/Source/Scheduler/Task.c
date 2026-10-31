@@ -3,6 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <Scheduler/Task.h>
+#include <Syscall/IPC/SyscallIPC.h>
 #include <Syscall/File/SyscallFile.h>
 #include <Syscall/Memory/SyscallMemory.h>
 #include <Scheduler/WaitQueue.h>
@@ -42,7 +43,7 @@ STATIC NORETURN VOID TaskIdle(VOID)
 {
     while (TRUE)
     {
-        ASM("sti; hlt" ::: "memory");
+        ASM("sti; hlt" :: : "memory");
     }
 }
 
@@ -74,6 +75,7 @@ STATIC BOOLEAN TaskGetIndex(TASK *Task, UINTN *TaskIndex)
         if (&TaskPool[Index] == Task)
         {
             *TaskIndex = Index;
+
             return TRUE;
         }
     }
@@ -238,6 +240,7 @@ TASK *TaskCreate(VOID (*Entry)(VOID))
     if (!TaskAllocatePID(&Task->PID))
     {
         TaskFreeSlot(Task);
+
         return NULL;
     }
 
@@ -245,9 +248,11 @@ TASK *TaskCreate(VOID (*Entry)(VOID))
     Task->Weight = PToW(Task->Priority);
 
     Task->StackBase = (UINT64) KAllocPagesBelow(TASK_STACK_PAGES, TASK_STACK_ADDRESS_LIMIT);
+
     if (Task->StackBase == 0)
     {
         TaskFreeSlot(Task);
+
         return NULL;
     }
 
@@ -297,6 +302,7 @@ BOOLEAN TaskSetPriority(TASK *Task, UINT8 Priority)
         Task->Priority = Priority;
         Task->Weight = PToW(Priority);
         Task->Modified = TRUE;
+
         return TRUE;
     }
 
@@ -324,6 +330,7 @@ BOOLEAN TaskSetPriority(TASK *Task, UINT8 Priority)
     if (!LBPWRRModifyChunk(RunQueue, Task, Weight))
     {
         SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+
         return FALSE;
     }
 
@@ -331,6 +338,7 @@ BOOLEAN TaskSetPriority(TASK *Task, UINT8 Priority)
     Task->Weight = PToW(Priority);
     Task->Modified = FALSE;
     SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+
     return TRUE;
 }
 
@@ -345,12 +353,14 @@ VOID TaskSleepMls(UINT64 Milliseconds)
     if (Task == NULL)
     {
         SleepMls(Milliseconds);
+
         return;
     }
 
     if (Milliseconds == 0)
     {
         LBPWRRYield();
+
         return;
     }
 
@@ -382,12 +392,14 @@ VOID TaskSleepMis(UINT64 Microseconds)
     if (Task == NULL)
     {
         SleepMis(Microseconds);
+
         return;
     }
 
     if (Microseconds == 0)
     {
         LBPWRRYield();
+
         return;
     }
 
@@ -419,12 +431,14 @@ VOID TaskSleepNs(UINT64 Nanoseconds)
     if (Task == NULL)
     {
         SleepNs(Nanoseconds);
+
         return;
     }
 
     if (Nanoseconds == 0)
     {
         LBPWRRYield();
+
         return;
     }
 
@@ -480,7 +494,9 @@ BOOLEAN TaskDestroy(TASK *Task)
     }
 
     SyscallMemoryRelease(Task);
+    SyscallIPCRelease(Task);
     SyscallFilesRelease(Task);
+
     if (Task->FileContext != NULL)
     {
         KFree(Task->FileContext);
@@ -576,12 +592,14 @@ VOID TaskSampleCPUUsage(UINT64 IntervalTSC)
         {
             Percent = 100;
         }
+
         ATOMIC_STORE(&Task->CPUUsage, (UINT32) Percent, ATOMIC_RELEASE);
     }
 }
 UINT32 TaskGetSnapshot(SYSTEM_TASK_INFO *Entries, UINT32 Capacity)
 {
     UINT32 Count = 0;
+
     for (UINT32 Pass = 0; Pass < 2; Pass++)
     {
         for (UINTN Index = 0; Index < LBPWRR_MAX_TASKS && Count < Capacity; Index++)
@@ -590,34 +608,55 @@ UINT32 TaskGetSnapshot(SYSTEM_TASK_INFO *Entries, UINT32 Capacity)
             {
                 continue;
             }
+
             TASK *Task = &TaskPool[Index];
+            TASK_STATE State = ATOMIC_LOAD(&Task->State, ATOMIC_ACQUIRE);
+
+            if (State == TASK_TERMINATED || State == TASK_KILLED)
+            {
+                continue;
+            }
+
             if ((Task->Idle ? 1U : 0U) != Pass)
             {
                 continue;
             }
-            UINT16 PID = Task->PID;
+
+            UINT16           PID = Task->PID;
             SYSTEM_TASK_INFO Entry = {0};
+
             Entry.PID = PID;
             Entry.UID = Task->RealUID;
             Entry.CPU = Task->CPUID;
             Entry.Usage = ATOMIC_LOAD(&Task->CPUUsage, ATOMIC_ACQUIRE);
-            Entry.State = Task->State;
+            Entry.State = State;
             Entry.Kernel = Task->AddressSpace == NULL;
             Entry.Idle = Task->Idle;
             KMemCpy(Entry.Name, Task->Name, sizeof(Entry.Name) - 1);
+
             if (!ATOMIC_LOAD(&TaskUsed[Index], ATOMIC_ACQUIRE) || Task->PID != PID)
             {
                 continue;
             }
+
+            State = ATOMIC_LOAD(&Task->State, ATOMIC_ACQUIRE);
+
+            if (State == TASK_TERMINATED || State == TASK_KILLED)
+            {
+                continue;
+            }
+
             Entries[Count++] = Entry;
         }
     }
+
     return Count;
 }
 
 UINT32 TaskGetIdleCount(VOID)
 {
     UINT32 Count = 0;
+
     for (UINTN Index = 0; Index < LBPWRR_MAX_TASKS; Index++)
     {
         if (ATOMIC_LOAD(&TaskUsed[Index], ATOMIC_ACQUIRE) && TaskPool[Index].Idle)
@@ -625,5 +664,28 @@ UINT32 TaskGetIdleCount(VOID)
             Count++;
         }
     }
+
+    return Count;
+}
+
+UINT32 TaskGetLiveCount(VOID)
+{
+    UINT32 Count = 0;
+
+    for (UINTN Index = 0; Index < LBPWRR_MAX_TASKS; Index++)
+    {
+        if (!ATOMIC_LOAD(&TaskUsed[Index], ATOMIC_ACQUIRE))
+        {
+            continue;
+        }
+
+        TASK_STATE State = ATOMIC_LOAD(&TaskPool[Index].State, ATOMIC_ACQUIRE);
+
+        if (State != TASK_TERMINATED && State != TASK_KILLED)
+        {
+            Count++;
+        }
+    }
+
     return Count;
 }

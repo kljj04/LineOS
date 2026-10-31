@@ -24,12 +24,14 @@ STATIC INT64 DeviceOpen(TASK *Task, UINT64 Flags, VOID **State)
     (VOID) Task;
     (VOID) Flags;
     *State = NULL;
+
     return 0;
 }
 
 STATIC INT64 DeviceClose(VOID *State)
 {
     (VOID) State;
+
     return 0;
 }
 
@@ -40,6 +42,7 @@ STATIC INT64 DeviceNoIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Argum
     (VOID) Request;
     (VOID) Argument;
     (VOID) Access;
+
     return -ENOTTY;
 }
 
@@ -50,6 +53,7 @@ STATIC INT64 DeviceNullRead(TASK *Task, VOID *State, UINT64 *Offset, UINT64 Buff
     (VOID) Offset;
     (VOID) Buffer;
     (VOID) Count;
+
     return 0;
 }
 
@@ -59,6 +63,7 @@ STATIC INT64 DeviceDiscard(TASK *Task, VOID *State, UINT64 *Offset, UINT64 Buffe
     (VOID) State;
     (VOID) Offset;
     (VOID) Buffer;
+
     return Count;
 }
 
@@ -66,17 +71,22 @@ STATIC INT64 DeviceZeroRead(TASK *Task, VOID *State, UINT64 *Offset, UINT64 Buff
 {
     UINT8  Bytes[256] = {0};
     UINT64 Total = 0;
+
     (VOID) State;
     (VOID) Offset;
+
     while (Total < Count)
     {
         UINT64 Length = Count - Total > sizeof(Bytes) ? sizeof(Bytes) : Count - Total;
+
         if (!VMMCopyToUser(Task->AddressSpace, Buffer + Total, Bytes, Length))
         {
             return Total != 0 ? (INT64) Total : -EFAULT;
         }
+
         Total += Length;
     }
+
     return (INT64) Total;
 }
 
@@ -86,6 +96,7 @@ STATIC INT64 DeviceFullWrite(TASK *Task, VOID *State, UINT64 *Offset, UINT64 Buf
     (VOID) State;
     (VOID) Offset;
     (VOID) Buffer;
+
     return Count == 0 ? 0 : -ENOSPC;
 }
 
@@ -93,10 +104,12 @@ STATIC INT64 DeviceMasterOpen(TASK *Task, UINT64 Flags, VOID **State)
 {
     (VOID) Flags;
     *State = NULL;
+
     if (!Task->AssetPublisher)
     {
         return -EACCES;
     }
+
     return TerminalAttach() ? 0 : -EBUSY;
 }
 
@@ -104,6 +117,7 @@ STATIC INT64 DeviceMasterClose(VOID *State)
 {
     (VOID) State;
     TerminalDetach();
+
     return 0;
 }
 
@@ -111,6 +125,7 @@ STATIC INT64 DeviceTerminalRead(TASK *Task, VOID *State, UINT64 *Offset, UINT64 
 {
     (VOID) State;
     (VOID) Offset;
+
     return TerminalRead(Task, FALSE, Buffer, Count);
 }
 
@@ -118,6 +133,7 @@ STATIC INT64 DeviceTerminalWrite(TASK *Task, VOID *State, UINT64 *Offset, UINT64
 {
     (VOID) State;
     (VOID) Offset;
+
     return TerminalWrite(Task, FALSE, Buffer, Count);
 }
 
@@ -125,6 +141,7 @@ STATIC INT64 DeviceMasterRead(TASK *Task, VOID *State, UINT64 *Offset, UINT64 Bu
 {
     (VOID) State;
     (VOID) Offset;
+
     return TerminalRead(Task, TRUE, Buffer, Count);
 }
 
@@ -132,16 +149,19 @@ STATIC INT64 DeviceMasterWrite(TASK *Task, VOID *State, UINT64 *Offset, UINT64 B
 {
     (VOID) State;
     (VOID) Offset;
+
     return TerminalWrite(Task, TRUE, Buffer, Count);
 }
 
 STATIC INT64 FramebufferOpen(TASK *Task, UINT64 Flags, VOID **State)
 {
     VIRTIO_GPU_INFO *GPU = VirtIOGPUGetInfo();
+
     if (GPU == NULL || GPU->FrameBuffer == NULL)
     {
         return -ENODEV;
     }
+
     return DeviceOpen(Task, Flags, State);
 }
 
@@ -149,21 +169,28 @@ STATIC INT64 FramebufferMap(TASK *Task, VOID *State, UINT64 Length, UINT64 Prote
 {
     (VOID) Task;
     (VOID) State;
+
     if ((Flags & 3) != MAP_SHARED || (Protection & PROT_EXEC) != 0)
     {
         return -EOPNOTSUPP;
     }
+
     VIRTIO_GPU_INFO *GPU = VirtIOGPUGetInfo();
+
     if (GPU == NULL || GPU->FrameBuffer == NULL)
     {
         return -ENODEV;
     }
+
     UINT64 Size = ((UINT64) GPU->FrameBufferWidth * GPU->FrameBufferHeight * 4 + 4095) & ~4095ULL;
+
     if (((UINT64) GPU->FrameBuffer & 4095) != 0 || Length == 0 || Length > UINT64_MAX - 4095 || (Offset & 4095) != 0 || Offset >= Size || ((Length + 4095) & ~4095ULL) > Size - Offset)
     {
         return -EINVAL;
     }
+
     *Physical = (UINT64) GPU->FrameBuffer + Offset;
+
     return 0;
 }
 
@@ -172,66 +199,84 @@ STATIC INT64 FramebufferData(TASK *Task, UINT64 *Offset, UINT64 Buffer, UINT64 C
     VIRTIO_GPU_INFO *GPU = VirtIOGPUGetInfo();
     UINT64           Total = 0;
     UINT64           Size;
+
     if (GPU == NULL || GPU->FrameBuffer == NULL)
     {
         return -ENODEV;
     }
+
     Size = (UINT64) GPU->FrameBufferWidth * GPU->FrameBufferHeight * sizeof(UINT32);
+
     if (*Offset >= Size)
     {
         return Write && Count != 0 ? -ENOSPC : 0;
     }
+
     if (Count > Size - *Offset)
     {
         Count = Size - *Offset;
     }
+
     while (Total < Count)
     {
         UINT64  Length = Count - Total > 4096 ? 4096 : Count - Total;
         UINT64  Flags = VirtIOGPUAcquireRenderLock();
         BOOLEAN Copied = Write ? VMMCopyFromUser(Task->AddressSpace, (UINT8 *) GPU->FrameBuffer + *Offset + Total, Buffer + Total, Length) : VMMCopyToUser(Task->AddressSpace, Buffer + Total, (UINT8 *) GPU->FrameBuffer + *Offset + Total, Length);
+
         VirtIOGPUReleaseRenderLock(Flags);
+
         if (!Copied)
         {
             break;
         }
+
         Total += Length;
     }
+
     *Offset += Total;
+
     if (Write && Total != 0)
     {
         VirtIOGPUMarkDirty(0, 0, GPU->FrameBufferWidth, GPU->FrameBufferHeight);
+
         if (!VirtIOGPUPresent())
         {
             return -EIO;
         }
     }
+
     return Total != 0 || Count == 0 ? (INT64) Total : -EFAULT;
 }
 
 STATIC INT64 FramebufferRead(TASK *Task, VOID *State, UINT64 *Offset, UINT64 Buffer, UINT64 Count)
 {
     (VOID) State;
+
     return FramebufferData(Task, Offset, Buffer, Count, FALSE);
 }
 
 STATIC INT64 FramebufferWrite(TASK *Task, VOID *State, UINT64 *Offset, UINT64 Buffer, UINT64 Count)
 {
     (VOID) State;
+
     return FramebufferData(Task, Offset, Buffer, Count, TRUE);
 }
 
 STATIC INT64 FramebufferIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Argument, UINT32 Access)
 {
     VIRTIO_GPU_INFO *GPU = VirtIOGPUGetInfo();
+
     (VOID) State;
+
     if (GPU == NULL || GPU->FrameBuffer == NULL)
     {
         return -ENODEV;
     }
+
     if (Request == FBIOGET_VSCREENINFO)
     {
         FB_VAR_SCREENINFO Info = {0};
+
         Info.XRes = Info.XResVirtual = GPU->FrameBufferWidth;
         Info.YRes = Info.YResVirtual = GPU->FrameBufferHeight;
         Info.BitsPerPixel = 32;
@@ -241,39 +286,51 @@ STATIC INT64 FramebufferIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
         Info.Transp.Offset = 24;
         Info.Red.Length = Info.Green.Length = Info.Blue.Length = Info.Transp.Length = 8;
         Info.Height = Info.Width = UINT32_MAX;
+
         return VMMCopyToUser(Task->AddressSpace, Argument, &Info, sizeof(Info)) ? 0 : -EFAULT;
     }
+
     if (Request == FBIOGET_FSCREENINFO)
     {
         FB_FIX_SCREENINFO Info = {0};
+
         KMemCpy(Info.ID, "LineOS VirtIO", 13);
         Info.SmemLen = GPU->FrameBufferWidth * GPU->FrameBufferHeight * sizeof(UINT32);
         Info.LineLength = GPU->FrameBufferWidth * sizeof(UINT32);
         Info.Visual = 2;
+
         return VMMCopyToUser(Task->AddressSpace, Argument, &Info, sizeof(Info)) ? 0 : -EFAULT;
     }
+
     if (Request != LOS_FBIO_PRESENT && Request != LOS_FBIO_PRESENT_RECT && Request != LOS_FBIO_FLUSH)
     {
         return -ENOTTY;
     }
+
     if ((Access & 2U) == 0)
     {
         return -EACCES;
     }
+
     if (Request == LOS_FBIO_PRESENT)
     {
         LOS_FB_PRESENT Present;
+
         if (!VMMCopyFromUser(Task->AddressSpace, &Present, Argument, sizeof(Present)))
         {
             return -EFAULT;
         }
+
         return SyscallDisplayPresent(Present.Buffer, Present.Size);
     }
+
     if (Request == LOS_FBIO_PRESENT_RECT)
     {
         return SyscallDisplayPresentRect(Argument);
     }
+
     VirtIOGPUMarkDirty(0, 0, GPU->FrameBufferWidth, GPU->FrameBufferHeight);
+
     return VirtIOGPUPresent() ? 0 : -EIO;
 }
 
@@ -285,22 +342,31 @@ STATIC INT64 DeviceMasterIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 A
     (VOID) State;
     (VOID) Access;
 
+    if (Request == LOS_TIO_GET_COMPOSITOR)
+    {
+        return TerminalCompositor(Task, Argument, FALSE);
+    }
+
     if (Request == TIOCGWINSZ || Request == TIOCSWINSZ)
     {
         return TerminalWindowSize(Task, Argument, Request == TIOCSWINSZ);
     }
+
     if (Request == FIONREAD)
     {
         return TerminalPending(Task, TRUE, Argument);
     }
+
     if (Request == LOS_TIO_GET_POINTER)
     {
         return DevicePointerIoctl(Task, State, Request, Argument, Access);
     }
+
     if (Request != LOS_TIO_WAIT_READ)
     {
         return -ENOTTY;
     }
+
     if (Argument > 1000)
     {
         return -EINVAL;
@@ -313,65 +379,89 @@ STATIC INT64 DeviceTerminalOpen(TASK *Task, UINT64 Flags, VOID **State)
 {
     (VOID) Flags;
     *State = Task;
+
     return 0;
 }
 
 STATIC INT64 DeviceTerminalClose(VOID *State)
 {
     TerminalGraphicsRelease(State);
+
     return 0;
 }
 
 STATIC INT64 DevicePointerIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Argument, UINT32 Access)
 {
     (VOID) State;
+
     if (Request != LOS_TIO_GET_POINTER)
     {
         return -ENOTTY;
     }
+
     if ((Access & 1U) == 0)
     {
         return -EACCES;
     }
+
     MOUSE_STATUS Status = GetMouseStatus();
     POINTER_INFO Info = {Status.X, Status.Y, 0, Status.Wheel};
+
     if (Status.LeftButton)
     {
         Info.Buttons |= 1;
     }
+
     if (Status.RightButton)
     {
         Info.Buttons |= 2;
     }
+
     if (Status.MiddleButton)
     {
         Info.Buttons |= 4;
     }
+
     return VMMCopyToUser(Task->AddressSpace, Argument, &Info, sizeof(Info)) ? 0 : -EFAULT;
 }
 
 STATIC INT64 DeviceTerminalIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Argument, UINT32 Access)
 {
+    if (Request == LOS_TIO_INJECT_CLI)
+    {
+        return TerminalInjectCLI(Task, Argument);
+    }
+
+    if (Request == LOS_TIO_SET_COMPOSITOR)
+    {
+        return TerminalCompositor(Task, Argument, TRUE);
+    }
+
     if (Request == TIOCGWINSZ)
     {
         return TerminalWindowSize(Task, Argument, FALSE);
     }
+
     if (Request == FIONREAD)
     {
         if ((Access & 1U) == 0)
         {
             return -EACCES;
         }
+
         return TerminalPending(Task, FALSE, Argument);
     }
+
     if (Request == LOS_TIO_GRAPHICS_BEGIN || Request == LOS_TIO_GRAPHICS_END)
     {
         if (State != Task || (Access & 2U) == 0)
         {
             return -EACCES;
         }
+
         return TerminalGraphics(Task, Request == LOS_TIO_GRAPHICS_BEGIN);
     }
+
     return DevicePointerIoctl(Task, State, Request, Argument, Access);
 }
 
@@ -403,6 +493,7 @@ STATIC VFS_ERROR DeviceFSRoot(VOID *Backend, CONST VFS_CREDENTIALS *Credentials,
     (VOID) Backend;
     (VOID) Credentials;
     DeviceFSNode(1, Node);
+
     return VFS_OK;
 }
 
@@ -413,6 +504,7 @@ STATIC BOOLEAN DeviceNameEqual(CONST CHAR8 *A, CONST CHAR8 *B)
         A++;
         B++;
     }
+
     return *A == *B;
 }
 
@@ -420,23 +512,29 @@ STATIC VFS_ERROR DeviceFSChild(VOID *Backend, CONST VFS_CREDENTIALS *Credentials
 {
     (VOID) Backend;
     (VOID) Credentials;
+
     if (Parent != 1)
     {
         return VFS_NOT_DIRECTORY;
     }
+
     if (DeviceNameEqual(Name, (CONST CHAR8 *) ".") || DeviceNameEqual(Name, (CONST CHAR8 *) ".."))
     {
         DeviceFSNode(1, Node);
+
         return VFS_OK;
     }
+
     for (UINT32 Index = 0; Index < sizeof(DeviceNodes) / sizeof(DeviceNodes[0]); Index++)
     {
         if (DeviceNameEqual(Name, DeviceNodes[Index].Name))
         {
             DeviceFSNode(Index + 2, Node);
+
             return VFS_OK;
         }
     }
+
     return VFS_NOT_FOUND;
 }
 
@@ -447,6 +545,7 @@ STATIC VFS_ERROR DeviceFSReadLink(VOID *Backend, CONST VFS_CREDENTIALS *Credenti
     (VOID) Number;
     (VOID) Target;
     (VOID) Length;
+
     return VFS_INVALID;
 }
 
@@ -455,24 +554,31 @@ STATIC VFS_ERROR DeviceFSReadDirectory(VOID *Backend, CONST VFS_CREDENTIALS *Cre
     (VOID) Backend;
     (VOID) Credentials;
     KMemSet(Entry, 0, sizeof(*Entry));
+
     if (Number != 1)
     {
         return VFS_NOT_DIRECTORY;
     }
+
     if (*Cursor >= sizeof(DeviceNodes) / sizeof(DeviceNodes[0]) + 2)
     {
         Entry->End = TRUE;
+
         return VFS_OK;
     }
+
     CONST CHAR8 *Name = *Cursor == 0 ? (CONST CHAR8 *) "." : *Cursor == 1 ? (CONST CHAR8 *) ".." : DeviceNodes[*Cursor - 2].Name;
     UINT32       Length = 0;
+
     while (Name[Length] != 0)
     {
         Length++;
     }
+
     KMemCpy(Entry->Name, Name, Length + 1);
     DeviceFSNode(*Cursor < 2 ? 1 : (UINT32) *Cursor, &Entry->Node);
     (*Cursor)++;
+
     return VFS_OK;
 }
 
@@ -481,6 +587,7 @@ STATIC VFS_ERROR DeviceFSMutate(VOID *Backend, CONST VFS_CREDENTIALS *Credential
     (VOID) Backend;
     (VOID) Credentials;
     (VOID) Mutation;
+
     return VFS_READ_ONLY;
 }
 
@@ -490,10 +597,12 @@ VFS_ERROR DeviceFSMount(VFS_REGISTRY *Registry)
 {
     UINT32    Partition;
     VFS_ERROR Error = VFSRegisterPartition(Registry, (CONST CHAR8 *) "dev", 0, (VOID *) DeviceNodes, &DeviceFSOperations, &Partition);
+
     if (Error == VFS_OK)
     {
         DeviceMountTime = (UINT32) ClockGetUnixTime();
         Registry->DevicePartition = Partition;
     }
+
     return Error;
 }

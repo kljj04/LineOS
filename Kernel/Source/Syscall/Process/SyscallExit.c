@@ -7,6 +7,7 @@
 #include <Syscall/Process/SyscallProcess.h>
 #include <Scheduler/LBPWRR.h>
 #include <Scheduler/Task.h>
+#include <Syscall/IPC/SyscallIPC.h>
 #include <Debug/Debug.h>
 #include <Syscall/Errno.h>
 
@@ -26,6 +27,7 @@ INT64 SyscallExit(UINT64 ExitCode)
         return -ESRCH;
     }
 
+    SyscallIPCRelease(CurrentTask);
     SyscallFilesRelease(CurrentTask);
     SyscallProcessExit(CurrentTask, ExitCode);
     TaskTerminate(CurrentTask);

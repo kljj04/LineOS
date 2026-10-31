@@ -181,9 +181,11 @@ STATIC BOOLEAN SMPStartAP(CPU_INFO *CPU)
     for (UINT32 Elapsed = 0; Elapsed < SMP_AP_START_TIMEOUT_MS; Elapsed++)
     {
         CompilerBarrier();
+
         if (ATOMIC_LOAD(&CPU->Online, ATOMIC_ACQUIRE))
         {
             CompilerBarrier();
+
             return TRUE;
         }
 
@@ -274,6 +276,7 @@ BOOLEAN SMPInit(LINEOS_BOOT_INFO *BootInfo)
     if (!HasAP)
     {
         ATOMIC_STORE(&SMPReady, TRUE, ATOMIC_RELEASE);
+
         return TRUE;
     }
 
@@ -298,6 +301,7 @@ BOOLEAN SMPInit(LINEOS_BOOT_INFO *BootInfo)
     }
 
     ATOMIC_STORE(&SMPReady, TRUE, ATOMIC_RELEASE);
+
     return TRUE;
 }
 

@@ -11,5 +11,5 @@ typedef struct
     UINT32 X;
     UINT32 Y;
     UINT32 Buttons;
-    INT32 Wheel;
+    INT32  Wheel;
 } POINTER_INFO;

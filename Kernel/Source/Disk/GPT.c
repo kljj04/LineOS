@@ -153,5 +153,6 @@ BOOLEAN GPTReadPartition(VIRTIO_BLOCK_DEVICE *Device, UINT32 Index, GPT_PARTITIO
     Result = TRUE;
 Done:
     KMemFreePages(Buffer, 1);
+
     return Result;
 }

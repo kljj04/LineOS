@@ -109,10 +109,7 @@ STATIC VOID TSCSleepTicks(UINT128 Ticks)
 
     ASM("pushfq\n"
         "popq %0\n"
-        "cli"
-        : "=r"(Flags)
-        :
-        : "memory");
+        "cli" : "=r"(Flags) : : "memory");
 
     while (Ticks != 0)
     {

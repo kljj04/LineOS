@@ -2,6 +2,10 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
+#include <libintl.h>
+
+#include <locale.h>
+
 #include <LOSLibC/TypeInfo.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -35,6 +39,7 @@ STATIC BOOLEAN UserRescueReadLine(char *Line, UINTN Capacity)
         {
             Line[Length] = 0;
             write(1, "\n", 1);
+
             return TRUE;
         }
 
@@ -61,26 +66,31 @@ STATIC BOOLEAN UserRescueReadLine(char *Line, UINTN Capacity)
 
 STATIC VOID UserRescueHelp(VOID)
 {
-    puts("Available commands:");
-    puts("  help              Show available commands");
-    puts("  status            Show recovery status");
-    puts("  adduser USERNAME  Create user account");
-    puts("  deluser USERNAME  Delete user account");
-    puts("  exit              Return to Login");
+    puts(gettext("Available commands:"));
+    puts(gettext("  help              Show available commands"));
+    puts(gettext("  status            Show recovery status"));
+    puts(gettext("  adduser USERNAME  Create user account"));
+    puts(gettext("  deluser USERNAME  Delete user account"));
+    puts(gettext("  exit              Return to Login"));
 }
 
 STATIC VOID UserRescueStatus(VOID)
 {
-    puts("UserRescue: recovery environment active");
-    puts("UserRescue: use adduser root to initialize a missing account database");
+    puts(gettext("UserRescue: recovery environment active"));
+    puts(gettext("UserRescue: use adduser root to initialize a missing account database"));
 }
 
 INT32 main(VOID)
 {
+    if (setlocale(LC_ALL, "") == NULL)
+    {
+        setlocale(LC_ALL, "C");
+    }
+
     char Line[USER_RESCUE_LINE_SIZE];
 
-    puts("LineOS User Rescue");
-    puts("Type 'help' for available commands.");
+    puts(gettext("LineOS User Rescue"));
+    puts(gettext("Type 'help' for available commands."));
 
     for (;;)
     {
@@ -110,7 +120,7 @@ INT32 main(VOID)
 
             if (*Username == 0)
             {
-                puts("Usage: adduser USERNAME");
+                puts(gettext("Usage: adduser USERNAME"));
             }
             else
             {
@@ -123,7 +133,7 @@ INT32 main(VOID)
 
             if (*Username == 0)
             {
-                puts("Usage: deluser USERNAME");
+                puts(gettext("Usage: deluser USERNAME"));
             }
             else
             {
@@ -132,19 +142,24 @@ INT32 main(VOID)
         }
         else if (strcmp(Line, "exit") == 0)
         {
-            puts("UserRescue: returning to Login");
+            puts(gettext("UserRescue: returning to Login"));
+
             pid_t Child = fork();
+
             if (Child == 0)
             {
                 char *Arguments[] = {"/sbin/Login.lix", NULL};
                 char *Environment[] = {NULL};
+
                 execve(Arguments[0], Arguments, Environment);
-                puts("UserRescue: Login execve failed");
+                puts(gettext("UserRescue: Login execve failed"));
+
                 return 127;
             }
+
             if (Child < 0)
             {
-                puts("UserRescue: Login fork failed");
+                puts(gettext("UserRescue: Login fork failed"));
             }
             else
             {
@@ -153,7 +168,7 @@ INT32 main(VOID)
         }
         else
         {
-            puts("UserRescue: unknown command");
+            puts(gettext("UserRescue: unknown command"));
         }
     }
 }

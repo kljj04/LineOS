@@ -67,5 +67,6 @@ EFI_STATUS EFIAPI EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
     JumpKernel();
 
     LineOSHaltWithMessage(L"kernel returned", EFI_ABORTED);
+
     return EFI_ABORTED;
 }

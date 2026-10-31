@@ -22,3 +22,5 @@ int puts(const char *String);
 int putchar(int Character);
 int rename(const char *OldPath, const char *NewPath);
 int remove(const char *Path);
+
+void perror(const char *Prefix);

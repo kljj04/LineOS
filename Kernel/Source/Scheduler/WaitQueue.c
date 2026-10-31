@@ -78,6 +78,7 @@ BOOLEAN WaitQueueSleep(WAIT_QUEUE *Queue, SPIN_LOCK *ConditionLock)
     {
         SpinLockRelease(&RunQueue->Lock);
         SpinLockRelease(&WaitLock);
+
         return FALSE;
     }
 
@@ -100,6 +101,7 @@ BOOLEAN WaitQueueSleep(WAIT_QUEUE *Queue, SPIN_LOCK *ConditionLock)
     SpinLockRelease(ConditionLock);
     LBPWRRYield();
     SpinLockAcquire(ConditionLock);
+
     return TRUE;
 }
 

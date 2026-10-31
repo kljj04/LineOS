@@ -8,7 +8,7 @@
 #include <FS/DeviceFS/DeviceFS.h>
 #include <Scheduler/WaitQueue.h>
 
-#define FILE_READ 1U
+#define FILE_READ  1U
 #define FILE_WRITE 2U
 
 struct OPEN_FILE
@@ -31,6 +31,5 @@ struct OPEN_FILE
     VOID              *DeviceState;
 };
 
-
 INT64 FileBegin(OPEN_FILE *File);
-VOID FileEnd(OPEN_FILE *File);
+VOID  FileEnd(OPEN_FILE *File);

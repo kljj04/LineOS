@@ -13,6 +13,7 @@ EFI_STATUS         LineOSLastWatchdogStatus = EFI_SUCCESS;
 STATIC CHAR16 HexDigit(UINTN Value)
 {
     Value &= 0xF;
+
     return (CHAR16) (Value < 10 ? L'0' + Value : L'A' + (Value - 10));
 }
 
@@ -24,6 +25,7 @@ STATIC VOID UInt64ToHex(UINT64 Value, CHAR16 *Buffer)
     for (UINTN Index = 0; Index < 16; Index++)
     {
         UINTN Shift = (15 - Index) * 4;
+
         Buffer[2 + Index] = HexDigit((UINTN) (Value >> Shift));
     }
 
@@ -41,6 +43,7 @@ BOOLEAN LineOSDisableWatchdog(VOID)
 
     Status = UEFIBootServices->SetWatchdogTimer(0, 0, 0, NULL);
     LineOSLastWatchdogStatus = Status;
+
     return !EFI_ERROR(Status) || Status == EFI_UNSUPPORTED;
 }
 

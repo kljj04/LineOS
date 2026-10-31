@@ -11,31 +11,44 @@ STATIC VFS_ERROR VFSEXT2Error(EXT2_ERROR Error)
     {
         case EXT2_ERROR_NONE:
             return VFS_OK;
+
         case EXT2_ERROR_NOT_FOUND:
             return VFS_NOT_FOUND;
+
         case EXT2_ERROR_PERMISSION:
             return VFS_PERMISSION;
+
         case EXT2_ERROR_ARGUMENT:
             return VFS_INVALID;
+
         case EXT2_ERROR_UNSUPPORTED:
             return VFS_UNSUPPORTED;
+
         case EXT2_ERROR_READ_ONLY:
             return VFS_READ_ONLY;
+
         case EXT2_ERROR_EXISTS:
             return VFS_EXISTS;
+
         case EXT2_ERROR_NO_SPACE:
             return VFS_NO_SPACE;
+
         case EXT2_ERROR_MEMORY:
         case EXT2_ERROR_LIMIT:
             return VFS_LIMIT;
+
         case EXT2_ERROR_BUSY:
             return VFS_BUSY;
+
         case EXT2_ERROR_LOOP:
             return VFS_LOOP;
+
         case EXT2_ERROR_NOT_EMPTY:
             return VFS_NOT_EMPTY;
+
         case EXT2_ERROR_CLOCK:
             return VFS_CLOCK_ERROR;
+
         default:
             return VFS_IO;
     }
@@ -58,6 +71,7 @@ STATIC BOOLEAN VFSEXT2Begin(EXT2_VOLUME *Volume, CONST VFS_CREDENTIALS *Credenti
 {
     *UID = Volume->UID;
     *GID = Volume->GID;
+
     return EXT2SetCredentials(Volume, Credentials->UID, Credentials->GID);
 }
 
@@ -134,6 +148,7 @@ STATIC VFS_ERROR VFSEXT2ReadLink(VOID *Backend, CONST VFS_CREDENTIALS *Credentia
     }
 
     Result = EXT2ReadLink(Volume, Number, Target, VFS_MAX_PATH, Length);
+
     return VFSEXT2End(Volume, UID, GID, Result);
 }
 
@@ -174,6 +189,7 @@ STATIC VFS_ERROR VFSEXT2Read(VOID *Backend, CONST VFS_CREDENTIALS *Credentials, 
     }
 
     Result = EXT2ReadFile(Volume, Number, Offset, Buffer, Length, ReadLength);
+
     return VFSEXT2End(Volume, UID, GID, Result);
 }
 
@@ -191,6 +207,7 @@ STATIC VFS_ERROR VFSEXT2Write(VOID *Backend, CONST VFS_CREDENTIALS *Credentials,
     }
 
     Result = EXT2GetCurrentTime(Volume, &Time) && EXT2WriteFile(Volume, Number, Offset, Buffer, Length, Time);
+
     return VFSEXT2End(Volume, UID, GID, Result);
 }
 
@@ -215,41 +232,53 @@ STATIC VFS_ERROR VFSEXT2Mutate(VOID *Backend, CONST VFS_CREDENTIALS *Credentials
             case VFS_MUTATE_CREATE:
                 Result = EXT2Create(Volume, Mutation->Parent, Mutation->Name, Mutation->Directory, Mutation->Mode, Time, &Number);
                 break;
+
             case VFS_MUTATE_REMOVE:
                 Result = EXT2Remove(Volume, Mutation->Parent, Mutation->Name, Time);
                 break;
+
             case VFS_MUTATE_RENAME:
                 Result = EXT2Rename(Volume, Mutation->Parent, Mutation->Name, Mutation->OtherParent, Mutation->OtherName, Time);
                 break;
+
             case VFS_MUTATE_TRUNCATE:
                 Result = EXT2Truncate(Volume, Mutation->Number, Mutation->Size, Time);
                 break;
+
             case VFS_MUTATE_LINK:
                 Result = EXT2Link(Volume, Mutation->Parent, Mutation->Name, Mutation->Number, Time);
                 break;
+
             case VFS_MUTATE_SYMLINK:
                 Result = EXT2Symlink(Volume, Mutation->Parent, Mutation->Name, Mutation->Target, Time, &Number);
                 break;
+
             case VFS_MUTATE_MODE:
                 Result = EXT2SetMode(Volume, Mutation->Number, Mutation->Mode, Time);
                 break;
+
             case VFS_MUTATE_TIMES:
             {
                 TIME_SPEC Times[2];
+
                 for (UINTN Index = 0; Index < 2; Index++)
                 {
                     Times[Index].Seconds = Mutation->TimeSeconds[Index];
                     Times[Index].Nanoseconds = Mutation->TimeNanoseconds[Index];
                 }
+
                 Result = EXT2SetTimes(Volume, Mutation->Number, Times, Time);
                 break;
             }
+
             case VFS_MUTATE_TOUCH:
                 Result = EXT2Touch(Volume, Mutation->Number, Time);
                 break;
+
             case VFS_MUTATE_OWNER:
                 Result = EXT2SetOwner(Volume, Mutation->Number, Mutation->UID, Mutation->GID, Time);
                 break;
+
             default:
                 Volume->Error = EXT2_ERROR_ARGUMENT;
                 break;

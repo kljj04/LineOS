@@ -74,6 +74,7 @@ STATIC BOOLEAN VMMGetPhysicalAddressMask(UINT64 *PhysMask)
     }
 
     *PhysMask = ((1ULL << PhysBits) - 1) & VMM_PAGE_MASK;
+
     return TRUE;
 }
 
@@ -95,7 +96,7 @@ STATIC BOOLEAN VMMLock(UINT64 *IRQFlags)
 
     if ((*IRQFlags & (1ULL << 9)) != 0)
     {
-        ASM("sti" ::: "memory");
+        ASM("sti" :: : "memory");
     }
 
     return FALSE;
@@ -108,7 +109,7 @@ STATIC BOOLEAN VMMWaitLock(UINT64 *IRQFlags)
     while (ATOMIC_EXCHANGE(&VMMMapLock.Locked, 1, ATOMIC_ACQUIRE) != 0)
     {
         VMMHandleShootdown();
-        ASM("pause" ::: "memory");
+        ASM("pause" :: : "memory");
     }
 
     return TRUE;
@@ -165,6 +166,7 @@ STATIC BOOLEAN VMMShootdown(UINT64 VirtAddr)
     if (CurrentCPUID >= CPUCount || CPUCount > SMP_MAX_CPUS || Timeout == 0 || VMMGeneration == 0)
     {
         VMMFailed = TRUE;
+
         return FALSE;
     }
 
@@ -199,14 +201,16 @@ STATIC BOOLEAN VMMShootdown(UINT64 VirtAddr)
             if (RDTSC() - Start >= Timeout)
             {
                 VMMFailed = TRUE;
+
                 return FALSE;
             }
 
-            ASM("pause" ::: "memory");
+            ASM("pause" :: : "memory");
         }
     }
 
     VMMFailed = !Result;
+
     return Result;
 }
 
@@ -215,6 +219,7 @@ UINT64 VMMGetCurrentCR3(VOID)
     UINT64 CR3;
 
     ASM("mov %%cr3, %0" : "=r"(CR3));
+
     return CR3;
 }
 
@@ -250,6 +255,7 @@ STATIC BOOLEAN VMMTranslateRoot(UINT64 *Root, UINT64 VirtAddr, UINT64 *PhysAddr)
     if ((Entry & VMM_PAGE_LARGE) != 0)
     {
         *PhysAddr = (Entry & VMM_LARGE_1G_MASK) | (VirtAddr & 0x3FFFFFFFULL);
+
         return TRUE;
     }
 
@@ -264,6 +270,7 @@ STATIC BOOLEAN VMMTranslateRoot(UINT64 *Root, UINT64 VirtAddr, UINT64 *PhysAddr)
     if ((Entry & VMM_PAGE_LARGE) != 0)
     {
         *PhysAddr = (Entry & VMM_LARGE_2M_MASK) | (VirtAddr & 0x1FFFFFULL);
+
         return TRUE;
     }
 
@@ -276,6 +283,7 @@ STATIC BOOLEAN VMMTranslateRoot(UINT64 *Root, UINT64 VirtAddr, UINT64 *PhysAddr)
     }
 
     *PhysAddr = (Entry & VMM_PAGE_MASK) | (VirtAddr & (VMM_PAGE_SIZE - 1));
+
     return TRUE;
 }
 
@@ -305,6 +313,7 @@ BOOLEAN VMMTranslate(UINT64 VirtAddr, UINT64 *PhysAddr)
 
     Result = VMMTranslateUnlocked(VirtAddr, PhysAddr);
     SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+
     return Result;
 }
 
@@ -400,6 +409,7 @@ STATIC UINT64 *VMMCloneTable(UINT64 Address, UINT32 Level, UINT64 PhysMask)
             if (Child == NULL)
             {
                 VMMFreeClone(Table, Level);
+
                 return NULL;
             }
 
@@ -446,6 +456,7 @@ BOOLEAN VMMInit(VOID)
 
 Cleanup:
     SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+
     return Result;
 }
 
@@ -603,6 +614,7 @@ Cleanup:
     }
 
     SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+
     return Result;
 }
 
@@ -661,6 +673,7 @@ BOOLEAN VMMUnmapPage(UINT64 VirtAddr, UINT64 *PhysAddr)
 
 Cleanup:
     SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+
     return Result;
 }
 
@@ -700,6 +713,7 @@ STATIC BOOLEAN VMMAddressSpaceIdentityWritable(VMM_ADDRESS_SPACE *AddressSpace, 
         {
             Mask = Level == 1 ? VMM_LARGE_1G_MASK : Level == 2 ? VMM_LARGE_2M_MASK : VMM_PAGE_MASK;
             Offset = Address & ((1ULL << (39 - Level * 9)) - 1);
+
             return (Entry & VMM_PAGE_USER) == 0 && ((Entry & Mask) | Offset) == Address;
         }
 
@@ -749,16 +763,21 @@ STATIC BOOLEAN VMMCanModifyFromManagedRoot(VOID)
     {
         return FALSE;
     }
+
     if (VMMGetCurrentCR3() == SMPGetBootCR3())
     {
         return TRUE;
     }
+
     CPUID = SMPGetCurrentCPUID();
+
     if (CPUID >= SMP_MAX_CPUS)
     {
         return FALSE;
     }
+
     Current = VMMActiveAddressSpaces[CPUID];
+
     return Current != NULL && VMMAddressSpaceValid(Current) && (VMMGetCurrentCR3() & VMM_PAGE_MASK) == (UINT64) Current->Root;
 }
 STATIC UINT64 *VMMAllocateAddressSpacePage(UINT64 PhysMask)
@@ -768,6 +787,7 @@ STATIC UINT64 *VMMAllocateAddressSpacePage(UINT64 PhysMask)
     if (Page != NULL && (((UINT64) Page & ~PhysMask) != 0 || !VMMTableWritable((UINT64) Page)))
     {
         KMemFreePages(Page, 1);
+
         return NULL;
     }
 
@@ -778,6 +798,7 @@ STATIC UINT64 *VMMAllocateAddressSpacePage(UINT64 PhysMask)
             if (!VMMAddressSpaceIdentityWritable(Space, (UINT64) Page))
             {
                 KMemFreePages(Page, 1);
+
                 return NULL;
             }
         }
@@ -838,6 +859,7 @@ BOOLEAN VMMCreateAddressSpace(VMM_ADDRESS_SPACE **AddressSpace)
     if (Space->Root == NULL)
     {
         KMemFreePages(Space, 1);
+
         goto Cleanup;
     }
 
@@ -859,6 +881,7 @@ BOOLEAN VMMCreateAddressSpace(VMM_ADDRESS_SPACE **AddressSpace)
 
 Cleanup:
     SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+
     return Result;
 }
 
@@ -902,6 +925,7 @@ BOOLEAN VMMDestroyAddressSpace(VMM_ADDRESS_SPACE *AddressSpace)
 
 Cleanup:
     SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+
     return Result;
 }
 
@@ -976,6 +1000,7 @@ BOOLEAN VMMTranslateAddressSpace(VMM_ADDRESS_SPACE *AddressSpace, UINT64 VirtAdd
             Mask = Level == 1 ? VMM_LARGE_1G_MASK : Level == 2 ? VMM_LARGE_2M_MASK : VMM_PAGE_MASK;
             *PhysAddr = (Entry & Mask) | (VirtAddr & ((1ULL << (39 - Level * 9)) - 1));
             Result = TRUE;
+
             goto Cleanup;
         }
 
@@ -989,6 +1014,7 @@ BOOLEAN VMMTranslateAddressSpace(VMM_ADDRESS_SPACE *AddressSpace, UINT64 VirtAdd
 
 Cleanup:
     SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+
     return Result;
 }
 
@@ -1266,6 +1292,7 @@ Cleanup:
     }
 
     SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+
     return Result;
 }
 
@@ -1297,6 +1324,7 @@ BOOLEAN VMMUnmapAddressSpacePage(VMM_ADDRESS_SPACE *AddressSpace, UINT64 VirtAdd
 
 Cleanup:
     SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+
     return Result;
 }
 
@@ -1413,6 +1441,7 @@ Cleanup:
     }
 
     SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+
     return Result;
 }
 
@@ -1453,6 +1482,7 @@ BOOLEAN VMMUnmapSharedPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, CON
     Result = TRUE;
 Cleanup:
     SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+
     return Result;
 }
 
@@ -1470,7 +1500,7 @@ BOOLEAN VMMSwitchAddressSpace(VMM_ADDRESS_SPACE *AddressSpace)
     while (ATOMIC_EXCHANGE(&VMMMapLock.Locked, 1, ATOMIC_ACQUIRE) != 0)
     {
         VMMHandleShootdown();
-        ASM("pause" ::: "memory");
+        ASM("pause" :: : "memory");
     }
 
     ASM("mov %%cr4, %0" : "=r"(CR4));
@@ -1506,6 +1536,7 @@ BOOLEAN VMMSwitchAddressSpace(VMM_ADDRESS_SPACE *AddressSpace)
 
 Cleanup:
     SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+
     return Result;
 }
 
@@ -1548,6 +1579,7 @@ STATIC BOOLEAN VMMUserPagePhysical(VMM_ADDRESS_SPACE *AddressSpace, UINT64 *Kern
             Offset = VirtAddr & ((1ULL << (39 - Level * 9)) - 1);
 
             *PhysAddr = (Entry & Mask) | Offset;
+
             return TRUE;
         }
 
@@ -1589,7 +1621,7 @@ STATIC BOOLEAN VMMCopyUser(VMM_ADDRESS_SPACE *AddressSpace, UINT64 UserAddress, 
     while (ATOMIC_EXCHANGE(&VMMMapLock.Locked, 1, ATOMIC_ACQUIRE) != 0)
     {
         VMMHandleShootdown();
-        ASM("pause" ::: "memory");
+        ASM("pause" :: : "memory");
     }
 
     if (!VMMCanModify() || !VMMAddressSpaceValid(AddressSpace))
@@ -1661,6 +1693,7 @@ STATIC BOOLEAN VMMCopyUser(VMM_ADDRESS_SPACE *AddressSpace, UINT64 UserAddress, 
 
 Cleanup:
     SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+
     return Result;
 }
 
@@ -1680,7 +1713,9 @@ STATIC BOOLEAN VMMUserMutable(VMM_ADDRESS_SPACE *AddressSpace)
     {
         return FALSE;
     }
+
     UINT32 CPU = SMPGetCurrentCPUID();
+
     for (UINT32 Index = 0; Index < SMP_MAX_CPUS; Index++)
     {
         if (VMMActiveAddressSpaces[Index] == AddressSpace && Index != CPU)
@@ -1688,6 +1723,7 @@ STATIC BOOLEAN VMMUserMutable(VMM_ADDRESS_SPACE *AddressSpace)
             return FALSE;
         }
     }
+
     return VMMAddressSpaceInactive(AddressSpace) || (CPU < SMP_MAX_CPUS && VMMActiveAddressSpaces[CPU] == AddressSpace);
 }
 
@@ -1704,93 +1740,120 @@ BOOLEAN VMMMapUserPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, CONST U
     UINT64 IRQFlags;
     UINT64 PhysMask;
     UINT32 Mapped = 0;
+
     if (Pages == NULL || Count == 0 || Address < 4096 || (Address & 4095) != 0 || Address >= (1ULL << 47) || Count > ((1ULL << 47) - Address) / 4096 || (Flags & ~(VMM_FLAG_WRITABLE | VMM_FLAG_NO_EXECUTE)) != 0 || !VMMGetPhysicalAddressMask(&PhysMask) || !VMMWaitLock(&IRQFlags))
     {
         return FALSE;
     }
+
     if (!VMMUserMutable(AddressSpace))
     {
         goto Cleanup;
     }
+
     for (; Mapped < Count; Mapped++)
     {
         UINT64  Current = Address + (UINT64) Mapped * 4096;
         UINT32  RootIndex = (Current >> 39) & 511;
         UINT64 *Table = AddressSpace->Root;
+
         if (Pages[Mapped] == 0 || (Pages[Mapped] & ~PhysMask) != 0 || (AddressSpace->Shared[RootIndex / 64] & (1ULL << (RootIndex % 64))) != 0)
         {
             break;
         }
+
         for (UINT32 Level = 0; Level < 3; Level++)
         {
             UINT32 Index = (Current >> (39 - Level * 9)) & 511;
             UINT64 Entry = Table[Index];
+
             if ((Entry & VMM_PAGE_PRESENT) == 0)
             {
                 UINT64 *Child = VMMAllocateAddressSpacePage(PhysMask);
+
                 if (Child == NULL)
                 {
                     goto Rollback;
                 }
+
                 Entry = (UINT64) Child | VMM_PAGE_PRESENT | VMM_PAGE_USER | VMM_PAGE_WRITABLE;
                 Table[Index] = Entry;
             }
+
             if ((Entry & (VMM_PAGE_USER | VMM_PAGE_LARGE)) != VMM_PAGE_USER)
             {
                 goto Rollback;
             }
+
             Table = (UINT64 *) (Entry & VMM_PAGE_MASK);
         }
+
         UINT32 Index = (Current >> 12) & 511;
+
         if ((Table[Index] & VMM_PAGE_PRESENT) != 0)
         {
             break;
         }
+
         Table[Index] = Pages[Mapped] | VMM_PAGE_PRESENT | VMM_PAGE_USER | Flags;
     }
+
     if (Mapped == Count)
     {
         VMMUserReload(AddressSpace);
         SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+
         return TRUE;
     }
+
 Rollback:
     for (UINT32 Index = 0; Index < Mapped; Index++)
     {
         UINT64 *Entry = VMMAddressSpaceLeaf(AddressSpace, Address + (UINT64) Index * 4096);
+
         *Entry = 0;
     }
+
     VMMUserReload(AddressSpace);
 Cleanup:
     SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+
     return FALSE;
 }
 
 BOOLEAN VMMUnmapUserPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, CONST UINT64 *Pages, UINT32 Count)
 {
     UINT64 IRQFlags;
+
     if (Pages == NULL || Count == 0 || Address < VMM_MMAP_START || Address >= VMM_MMAP_END || (Address & 4095) != 0 || Count > (VMM_MMAP_END - Address) / 4096 || !VMMWaitLock(&IRQFlags))
     {
         return FALSE;
     }
+
     if (!VMMUserMutable(AddressSpace))
     {
         SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+
         return FALSE;
     }
+
     for (UINT32 Index = 0; Index < Count; Index++)
     {
         if (Pages[Index] == 0)
         {
             continue;
         }
+
         UINT64 *Entry = VMMAddressSpaceLeaf(AddressSpace, Address + (UINT64) Index * 4096);
+
         if (Entry == NULL || (*Entry & VMM_PAGE_MASK) != Pages[Index] || (*Entry & (VMM_PAGE_PRESENT | VMM_PAGE_USER)) != (VMM_PAGE_PRESENT | VMM_PAGE_USER))
         {
             SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+
             return FALSE;
         }
     }
+
     for (UINT32 Index = 0; Index < Count; Index++)
     {
         if (Pages[Index] != 0)
@@ -1798,8 +1861,10 @@ BOOLEAN VMMUnmapUserPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, CONST
             *VMMAddressSpaceLeaf(AddressSpace, Address + (UINT64) Index * 4096) = 0;
         }
     }
+
     VMMUserReload(AddressSpace);
     SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+
     return TRUE;
 }
 
@@ -1808,11 +1873,14 @@ STATIC BOOLEAN VMMListUserTable(UINT64 *Table, UINT32 Level, UINT64 Base, VMM_US
     for (UINT32 Index = 0; Index < (Level == 0 ? 256U : 512U); Index++)
     {
         UINT64 Entry = Table[Index];
+
         if ((Entry & (VMM_PAGE_PRESENT | VMM_PAGE_USER)) != (VMM_PAGE_PRESENT | VMM_PAGE_USER))
         {
             continue;
         }
+
         UINT64 Address = Base | ((UINT64) Index << (39 - Level * 9));
+
         if (Level == 3)
         {
             if (Pages != NULL)
@@ -1821,8 +1889,10 @@ STATIC BOOLEAN VMMListUserTable(UINT64 *Table, UINT32 Level, UINT64 Base, VMM_US
                 {
                     return FALSE;
                 }
-                Pages[*Count] = (VMM_USER_PAGE){Address, Entry & VMM_PAGE_MASK, Entry & (VMM_FLAG_WRITABLE | VMM_FLAG_NO_EXECUTE)};
+
+                Pages[*Count] = (VMM_USER_PAGE) {Address, Entry & VMM_PAGE_MASK, Entry & (VMM_FLAG_WRITABLE | VMM_FLAG_NO_EXECUTE)};
             }
+
             (*Count)++;
         }
         else if ((Entry & VMM_PAGE_LARGE) != 0 || !VMMListUserTable((UINT64 *) (Entry & VMM_PAGE_MASK), Level + 1, Address, Pages, Capacity, Count))
@@ -1830,18 +1900,24 @@ STATIC BOOLEAN VMMListUserTable(UINT64 *Table, UINT32 Level, UINT64 Base, VMM_US
             return FALSE;
         }
     }
+
     return TRUE;
 }
 
 BOOLEAN VMMListUserPages(VMM_ADDRESS_SPACE *AddressSpace, VMM_USER_PAGE *Pages, UINT64 Capacity, UINT64 *Count)
 {
     UINT64 IRQFlags;
+
     if (Count == NULL || !VMMWaitLock(&IRQFlags))
     {
         return FALSE;
     }
+
     *Count = 0;
+
     BOOLEAN Result = VMMUserMutable(AddressSpace) && VMMListUserTable(AddressSpace->Root, 0, 0, Pages, Capacity, Count);
+
     SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+
     return Result;
 }

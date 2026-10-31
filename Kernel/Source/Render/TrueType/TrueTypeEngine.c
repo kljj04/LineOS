@@ -75,9 +75,11 @@ STATIC VOID BlendPixel(VIRTIO_GPU_INFO *GPU, INT32 X, INT32 Y, UINT32 Color, UIN
     }
 
     Pixel = &GPU->FrameBuffer[((UINT32) Y * GPU->FrameBufferWidth) + (UINT32) X];
+
     if (Alpha == 255 && GetColorAlpha(Color) == 255)
     {
         *Pixel = GetColorRGB(Color) | 0xFF000000;
+
         return;
     }
 
@@ -91,6 +93,7 @@ STATIC UINT32 CodepointAdvance(FONT_INFO *Font, UINT32 Codepoint, FLOAT32 Scale)
     INT32 LeftSideBearing = 0;
 
     GetCodepointHMetrics(Font, (INT32) Codepoint, &AdvanceWidth, &LeftSideBearing);
+
     return (UINT32) KFloor((AdvanceWidth * Scale) + 0.5f);
 }
 
@@ -101,9 +104,11 @@ STATIC UINT32 DecodeSurrogate(CONST CHAR16 *Text, UINT32 *Index)
     if (High >= 0xD800 && High <= 0xDBFF)
     {
         UINT32 Low = Text[*Index + 1];
+
         if (Low >= 0xDC00 && Low <= 0xDFFF)
         {
             *Index += 1;
+
             return 0x10000 + ((High - 0xD800) << 10) + (Low - 0xDC00);
         }
     }
@@ -167,6 +172,7 @@ UINT32 DrawTrueTypeCodepoint(TRUE_TYPE_FONT Font, UINT32 Codepoint, UINT32 X, UI
     XOff = 0;
     YOff = 0;
     Bitmap = GetCodepointBitmap(DrawFont, Scale, Scale, (INT32) Codepoint, &Width, &Height, &XOff, &YOff);
+
     if (Bitmap == NULL)
     {
         if (Width == 0 && Height == 0)
@@ -178,14 +184,17 @@ UINT32 DrawTrueTypeCodepoint(TRUE_TYPE_FONT Font, UINT32 Codepoint, UINT32 X, UI
     }
 
     Flags = VirtIOGPUAcquireRenderLock();
+
     for (INT32 Row = 0; Row < Height; Row++)
     {
         for (INT32 Column = 0; Column < Width; Column++)
         {
             UINT8 Alpha = Bitmap[(Row * Width) + Column];
+
             BlendPixel(GPU, (INT32) X + XOff + Column, (INT32) Baseline + YOff + Row, Color, Alpha);
         }
     }
+
     VirtIOGPUReleaseRenderLock(Flags);
 
     if ((INT32) X + XOff >= 0 && (INT32) Baseline + YOff >= 0)
@@ -194,6 +203,7 @@ UINT32 DrawTrueTypeCodepoint(TRUE_TYPE_FONT Font, UINT32 Codepoint, UINT32 X, UI
     }
 
     FreeBitmap(Bitmap, DrawFont->UserData);
+
     return X + CodepointAdvance(DrawFont, Codepoint, Scale);
 }
 
@@ -226,6 +236,7 @@ UINT32 DrawTrueTypeText(TRUE_TYPE_FONT Font, CONST CHAR16 *Text, UINT32 X, UINT3
         if (Codepoint == '\t')
         {
             UINT32 SpaceAdvance = DrawTrueTypeCodepoint(Font, ' ', X, Baseline, Color, PixelHeight);
+
             X += (SpaceAdvance - X) * TRUE_TYPE_TAB_WIDTH;
             continue;
         }

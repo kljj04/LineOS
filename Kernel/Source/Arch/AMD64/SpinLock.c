@@ -27,14 +27,14 @@ VOID SpinLockAcquire(SPIN_LOCK *Lock)
 
         while (Lock->Locked != 0)
         {
-            ASM("pause" ::: "memory");
+            ASM("pause" :: : "memory");
         }
     }
 }
 
 VOID SpinLockRelease(SPIN_LOCK *Lock)
 {
-    ASM("" ::: "memory");
+    ASM("" :: : "memory");
     Lock->Locked = 0;
 }
 
@@ -44,10 +44,7 @@ UINT64 SpinLockAcquireIRQSave(SPIN_LOCK *Lock)
 
     ASM("pushfq\n"
         "popq %0\n"
-        "cli"
-        : "=r"(Flags)
-        :
-        : "memory");
+        "cli" : "=r"(Flags) : : "memory");
 
     SpinLockAcquire(Lock);
 
@@ -60,6 +57,6 @@ VOID SpinLockReleaseIRQRestore(SPIN_LOCK *Lock, UINT64 Flags)
 
     if ((Flags & (1ULL << 9)) != 0)
     {
-        ASM("sti" ::: "memory");
+        ASM("sti" :: : "memory");
     }
 }

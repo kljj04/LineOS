@@ -2,6 +2,10 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
+#include <libintl.h>
+
+#include <locale.h>
+
 #include <LOSLibC/TypeInfo.h>
 #include <stdio.h>
 #include <string.h>
@@ -25,28 +29,30 @@ STATIC VOID UptimeClock(CONST struct tm *Date)
 STATIC VOID UptimeDuration(UINT64 Seconds)
 {
     CONST UINT64 Units[] = {86400, 3600, 60, 1};
-    CONST char *Names[] = {"day", "hour", "minute", "second"};
-    BOOLEAN Printed = FALSE;
+    CONST char  *Names[] = {"day", "hour", "minute", "second"};
+    BOOLEAN      Printed = FALSE;
 
-    printf("up ");
+    printf("%s", gettext("up "));
 
     for (UINTN Index = 0; Index < 4; Index++)
     {
         UINT64 Value = Seconds / Units[Index];
+
         Seconds %= Units[Index];
 
         if (Value == 0)
         {
             continue;
         }
+
         if (Printed)
         {
             printf(", ");
         }
 
-        printf("%llu %s", Value, Names[Index]);
+        printf("%llu %s", Value, gettext(Names[Index]));
 
-        if (Value != 1)
+        if (Value != 1 && strcmp(setlocale(LC_MESSAGES, NULL), "ko_KR.UTF-8") != 0)
         {
             putchar('s');
         }
@@ -56,12 +62,17 @@ STATIC VOID UptimeDuration(UINT64 Seconds)
 
     if (!Printed)
     {
-        printf("0 seconds");
+        printf("%s", gettext("0 seconds"));
     }
 }
 
 INT32 main(INT32 Argc, char **Argv)
 {
+    if (setlocale(LC_ALL, "") == NULL)
+    {
+        setlocale(LC_ALL, "C");
+    }
+
     BOOLEAN Pretty = FALSE;
     BOOLEAN Since = FALSE;
 
@@ -77,21 +88,24 @@ INT32 main(INT32 Argc, char **Argv)
         }
         else if (strcmp(Argv[Index], "-h") == 0 || strcmp(Argv[Index], "--help") == 0)
         {
-            puts("Usage: uptime [-p|--pretty] [-s|--since]");
-            puts("  -p  Show elapsed time only");
-            puts("  -s  Show boot time in the configured timezone");
+            puts(gettext("Usage: uptime [-p|--pretty] [-s|--since]"));
+            puts(gettext("  -p  Show elapsed time only"));
+            puts(gettext("  -s  Show boot time in the configured timezone"));
+
             return 0;
         }
         else
         {
-            printf("uptime: unknown argument: %s\n", Argv[Index]);
+            printf(gettext("uptime: unknown argument: %s\n"), Argv[Index]);
+
             return 1;
         }
     }
 
     if (Pretty && Since)
     {
-        puts("uptime: --pretty and --since cannot be combined");
+        puts(gettext("uptime: --pretty and --since cannot be combined"));
+
         return 1;
     }
 
@@ -99,7 +113,8 @@ INT32 main(INT32 Argc, char **Argv)
 
     if (sysinfo(&Info) != 0 || Info.Uptime < 0)
     {
-        puts("uptime: cannot read system information");
+        puts(gettext("uptime: cannot read system information"));
+
         return 1;
     }
 
@@ -107,16 +122,18 @@ INT32 main(INT32 Argc, char **Argv)
     {
         UptimeDuration((UINT64) Info.Uptime);
         putchar('\n');
+
         return 0;
     }
 
     struct timespec Real;
     struct timespec Monotonic;
-    struct tm Date;
+    struct tm       Date;
 
     if (clock_gettime(CLOCK_REALTIME, &Real) != 0)
     {
-        puts("uptime: cannot read current time");
+        puts(gettext("uptime: cannot read current time"));
+
         return 1;
     }
 
@@ -126,10 +143,13 @@ INT32 main(INT32 Argc, char **Argv)
     {
         if (clock_gettime(CLOCK_MONOTONIC, &Monotonic) != 0)
         {
-            puts("uptime: cannot read monotonic time");
+            puts(gettext("uptime: cannot read monotonic time"));
+
             return 1;
         }
+
         Display -= Monotonic.tv_sec;
+
         if (Real.tv_nsec < Monotonic.tv_nsec)
         {
             Display--;
@@ -138,7 +158,8 @@ INT32 main(INT32 Argc, char **Argv)
 
     if (localtime_r(&Display, &Date) == NULL)
     {
-        puts("uptime: cannot convert time");
+        puts(gettext("uptime: cannot convert time"));
+
         return 1;
     }
 
@@ -151,6 +172,7 @@ INT32 main(INT32 Argc, char **Argv)
         putchar(' ');
         UptimeClock(&Date);
         printf(" %s\n", Date.tm_zone);
+
         return 0;
     }
 
@@ -158,5 +180,6 @@ INT32 main(INT32 Argc, char **Argv)
     printf(" %s  ", Date.tm_zone);
     UptimeDuration((UINT64) Info.Uptime);
     putchar('\n');
+
     return 0;
 }

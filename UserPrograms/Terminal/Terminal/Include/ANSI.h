@@ -34,6 +34,7 @@ typedef struct
     UINT32              CursorColumn;
     UINT32              CursorRow;
     BOOLEAN             CursorPosition;
+    INT32               CursorDelta;
     BOOLEAN             Synchronized;
     BOOLEAN             CursorHidden;
     BOOLEAN             Invalid;

@@ -2,54 +2,52 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
+#include <libintl.h>
+
 #include <LOSLibC/TypeInfo.h>
 #include <stdio.h>
 #include <time.h>
-
-STATIC VOID DatePair(INT32 Value)
-{
-    putchar('0' + Value / 10);
-    putchar('0' + Value % 10);
-}
+#include <locale.h>
+#include <string.h>
+#include <errno.h>
 
 INT32 main(INT32 Argc, char **Argv)
 {
-    STATIC CONST char *Weekdays[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+    if (setlocale(LC_ALL, "") == NULL)
+    {
+        setlocale(LC_ALL, "C");
+    }
+
     struct timespec Now;
-    struct tm Date;
+    struct tm       Date;
+    char            Buffer[128];
 
     (VOID) Argv;
 
     if (Argc != 1)
     {
-        puts("Usage: date");
+        puts(gettext("Usage: date"));
+
         return 1;
     }
 
-    if (clock_gettime(CLOCK_REALTIME, &Now) != 0)
+    if (clock_gettime(CLOCK_REALTIME, &Now) != 0 || localtime_r(&Now.tv_sec, &Date) == NULL)
     {
-        puts("date: cannot read current time");
+        int Error = errno;
+
+        printf("date: %s\n", strerror(Error));
+
         return 1;
     }
 
-    if (localtime_r(&Now.tv_sec, &Date) == NULL)
+    if (strftime(Buffer, sizeof(Buffer), "%c %Z", &Date) == 0)
     {
-        puts("date: cannot convert date");
+        puts(gettext("date: cannot format current time"));
+
         return 1;
     }
 
-    printf("%d. ", Date.tm_year + 1900);
-    DatePair(Date.tm_mon + 1);
-    printf(". ");
-    DatePair(Date.tm_mday);
-    printf(". (%s) ", Weekdays[Date.tm_wday]);
-
-    DatePair(Date.tm_hour);
-    putchar(':');
-    DatePair(Date.tm_min);
-    putchar(':');
-    DatePair(Date.tm_sec);
-    printf(" %s\n", Date.tm_zone);
+    puts(Buffer);
 
     return 0;
 }

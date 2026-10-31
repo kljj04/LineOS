@@ -161,6 +161,7 @@ STATIC BOOLEAN BuddyRemove(UINTN Order, UINT64 Address)
 
             FreePages -= 1ULL << Order;
             Block->Next = NULL;
+
             return TRUE;
         }
 
@@ -269,6 +270,7 @@ STATIC VOID BuddyAddUsableRangeExcept(UINT64 Address, UINT64 PageCount, UINT64 R
     if (ReservedEnd <= ReservedStart || End <= ReservedStart || Start >= ReservedEnd)
     {
         BuddyAddUsableRange(Start, (End - Start) / PAGE_SIZE);
+
         return;
     }
 
@@ -448,6 +450,7 @@ BOOLEAN KMemoryInit(LINEOS_BOOT_INFO *BootInfo)
     }
 
     ManagedPages = FreePages;
+
     return TRUE;
 }
 
@@ -490,6 +493,7 @@ VOID *KMemCpy(VOID *Destination, CONST VOID *Source, UINTN Size)
     CONST VOID *Input = Source;
 
     ASM("cld; rep movsb" : "+D"(Target), "+S"(Input), "+c"(Size) : : "memory");
+
     return Destination;
 }
 
@@ -741,6 +745,7 @@ STATIC HEAP_BLOCK *HeapExpand(UINTN MinimumSize)
     {
         HeapHead = Block;
         HeapTail = Block;
+
         return Block;
     }
 
@@ -800,6 +805,7 @@ VOID *KAlloc(UINTN Size)
         if (Block == NULL)
         {
             SpinLockReleaseIRQRestore(&HeapLock, Flags);
+
             return NULL;
         }
     }
@@ -846,6 +852,7 @@ BOOLEAN KMemoryPanicLocksAvailable(VOID)
 VOID KGetManagedMemory(UINT64 *Managed, UINT64 *Free)
 {
     UINT64 Flags = SpinLockAcquireIRQSave(&BuddyLock);
+
     *Managed = ManagedPages * PAGE_SIZE;
     *Free = FreePages * PAGE_SIZE;
     SpinLockReleaseIRQRestore(&BuddyLock, Flags);

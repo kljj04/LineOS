@@ -28,7 +28,7 @@ STATIC VOID *AllocQueueMemory(UINTN Bytes)
 
 STATIC VOID MemoryBarrier(VOID)
 {
-    ASM("" ::: "memory");
+    ASM("" :: : "memory");
 }
 
 STATIC BOOLEAN DescIndexValid(VIRTQUEUE *Queue, UINT16 DescIndex)
@@ -51,6 +51,7 @@ STATIC BOOLEAN ConsumeCompleted(VIRTQUEUE *Queue, UINT16 Head, UINT32 *Length)
     Queue->Completed[Head] = 0;
     Queue->CompletedLength[Head] = 0;
     LastError = L"ok";
+
     return TRUE;
 }
 
@@ -68,6 +69,7 @@ BOOLEAN VirtQueueInit(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, UINT16 QueueI
     if (Device == NULL || Device->CommonConfig == NULL || Queue == NULL)
     {
         LastError = L"virtqueue args invalid";
+
         return FALSE;
     }
 
@@ -78,6 +80,7 @@ BOOLEAN VirtQueueInit(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, UINT16 QueueI
     if (QueueSize == 0)
     {
         LastError = L"virtqueue missing";
+
         return FALSE;
     }
 
@@ -110,6 +113,7 @@ BOOLEAN VirtQueueInit(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, UINT16 QueueI
     if (Queue->Desc == NULL || Queue->Avail == NULL || Queue->Used == NULL || Queue->DescInUse == NULL || Queue->Completed == NULL || Queue->CompletedLength == NULL)
     {
         LastError = L"virtqueue alloc failed";
+
         return FALSE;
     }
 
@@ -124,6 +128,7 @@ BOOLEAN VirtQueueInit(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, UINT16 QueueI
     {
         Queue->Desc[Index].Next = Index + 1;
     }
+
     Queue->Desc[QueueSize - 1].Next = 0xFFFF;
 
     CommonConfig->QueueSize = QueueSize;
@@ -133,6 +138,7 @@ BOOLEAN VirtQueueInit(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, UINT16 QueueI
     CommonConfig->QueueEnable = 1;
 
     LastError = L"ok";
+
     return TRUE;
 }
 
@@ -143,21 +149,26 @@ BOOLEAN VirtQueueAllocDesc(VIRTQUEUE *Queue, UINT16 *DescIndex)
     if (Queue == NULL || DescIndex == NULL)
     {
         LastError = L"virtqueue alloc args invalid";
+
         return FALSE;
     }
 
     if (Queue->FreeCount == 0 || Queue->FreeHead == 0xFFFF)
     {
         LastError = L"virtqueue descriptors exhausted";
+
         return FALSE;
     }
 
     Index = Queue->FreeHead;
+
     if (Queue->Desc == NULL || Queue->DescInUse == NULL || Queue->Completed == NULL || Queue->CompletedLength == NULL || Queue->FreeCount > Queue->Size || Index >= Queue->Size || Queue->DescInUse[Index] != 0)
     {
         LastError = L"virtqueue free list invalid";
+
         return FALSE;
     }
+
     Queue->FreeHead = Queue->Desc[Index].Next;
     Queue->FreeCount--;
     Queue->DescInUse[Index] = 1;
@@ -167,6 +178,7 @@ BOOLEAN VirtQueueAllocDesc(VIRTQUEUE *Queue, UINT16 *DescIndex)
 
     *DescIndex = Index;
     LastError = L"ok";
+
     return TRUE;
 }
 
@@ -175,6 +187,7 @@ VOID VirtQueueFreeDesc(VIRTQUEUE *Queue, UINT16 DescIndex)
     if (!DescIndexValid(Queue, DescIndex) || Queue->DescInUse[DescIndex] == 0)
     {
         LastError = L"virtqueue free args invalid";
+
         return;
     }
 
@@ -195,10 +208,12 @@ VOID VirtQueueFreeChain(VIRTQUEUE *Queue, UINT16 Head)
     if (!DescIndexValid(Queue, Head))
     {
         LastError = L"virtqueue chain free args invalid";
+
         return;
     }
 
     Index = Head;
+
     while (DescIndexValid(Queue, Index) && Queue->DescInUse[Index] != 0)
     {
         UINT16 Flags = Queue->Desc[Index].Flags;
@@ -225,6 +240,7 @@ BOOLEAN VirtQueueBuildChain(VIRTQUEUE *Queue, VIRTQUEUE_BUFFER *Buffers, UINT16 
     if (Queue == NULL || Buffers == NULL || BufferCount == 0 || Head == NULL)
     {
         LastError = L"virtqueue chain args invalid";
+
         return FALSE;
     }
 
@@ -240,6 +256,7 @@ BOOLEAN VirtQueueBuildChain(VIRTQUEUE *Queue, VIRTQUEUE_BUFFER *Buffers, UINT16 
             }
 
             LastError = L"virtqueue buffer invalid";
+
             return FALSE;
         }
 
@@ -273,6 +290,7 @@ BOOLEAN VirtQueueBuildChain(VIRTQUEUE *Queue, VIRTQUEUE_BUFFER *Buffers, UINT16 
 
     *Head = First;
     LastError = L"ok";
+
     return TRUE;
 }
 
@@ -281,6 +299,7 @@ BOOLEAN VirtQueueSubmit(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, UINT16 Head
     if (Device == NULL || Queue == NULL || Head >= Queue->Size || Queue->DescInUse[Head] == 0)
     {
         LastError = L"virtqueue submit args invalid";
+
         return FALSE;
     }
 
@@ -294,6 +313,7 @@ BOOLEAN VirtQueueSubmit(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, UINT16 Head
     VirtIOPCINotifyQueue(Device, Queue->Index);
 
     LastError = L"ok";
+
     return TRUE;
 }
 
@@ -314,6 +334,7 @@ BOOLEAN VirtQueuePostBuffer(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, VOID *B
     if (!VirtQueueSubmit(Device, Queue, DescHead))
     {
         VirtQueueFreeChain(Queue, DescHead);
+
         return FALSE;
     }
 
@@ -323,6 +344,7 @@ BOOLEAN VirtQueuePostBuffer(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, VOID *B
     }
 
     LastError = L"ok";
+
     return TRUE;
 }
 
@@ -333,12 +355,14 @@ BOOLEAN VirtQueuePopUsed(VIRTQUEUE *Queue, UINT16 *Head, UINT32 *Length)
     if (Queue == NULL || Head == NULL)
     {
         LastError = L"virtqueue pop args invalid";
+
         return FALSE;
     }
 
     if (Queue->Used->Index == Queue->UsedIndex)
     {
         LastError = L"virtqueue used empty";
+
         return FALSE;
     }
 
@@ -349,16 +373,19 @@ BOOLEAN VirtQueuePopUsed(VIRTQUEUE *Queue, UINT16 *Head, UINT32 *Length)
     if (UsedElement.ID >= Queue->Size)
     {
         LastError = L"virtqueue used id invalid";
+
         return FALSE;
     }
 
     *Head = (UINT16) UsedElement.ID;
+
     if (Length != NULL)
     {
         *Length = UsedElement.Length;
     }
 
     LastError = L"ok";
+
     return TRUE;
 }
 
@@ -367,6 +394,7 @@ BOOLEAN VirtQueueWaitUsed(VIRTQUEUE *Queue, UINT16 Head, UINT32 *Length, UINT32 
     if (!DescIndexValid(Queue, Head))
     {
         LastError = L"virtqueue wait args invalid";
+
         return FALSE;
     }
 
@@ -393,6 +421,7 @@ BOOLEAN VirtQueueWaitUsed(VIRTQUEUE *Queue, UINT16 Head, UINT32 *Length, UINT32 
             }
 
             LastError = L"ok";
+
             return TRUE;
         }
 
@@ -401,6 +430,7 @@ BOOLEAN VirtQueueWaitUsed(VIRTQUEUE *Queue, UINT16 Head, UINT32 *Length, UINT32 
     }
 
     LastError = L"virtqueue timeout";
+
     return FALSE;
 }
 

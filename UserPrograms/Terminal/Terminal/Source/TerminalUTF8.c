@@ -7,6 +7,7 @@
 BOOLEAN TerminalDecode(TERMINAL_UTF8 *Decoder, UINT8 Byte, UINT32 *Codepoint, BOOLEAN *Retry)
 {
     *Retry = FALSE;
+
     if (Decoder->Remaining != 0)
     {
         if ((Byte & 0xC0) != 0x80)
@@ -14,25 +15,34 @@ BOOLEAN TerminalDecode(TERMINAL_UTF8 *Decoder, UINT8 Byte, UINT32 *Codepoint, BO
             Decoder->Remaining = 0;
             *Retry = TRUE;
             *Codepoint = 0xFFFD;
+
             return TRUE;
         }
+
         Decoder->Value = (Decoder->Value << 6) | (Byte & 63);
+
         if (--Decoder->Remaining != 0)
         {
             return FALSE;
         }
+
         *Codepoint = Decoder->Value;
+
         if (*Codepoint < Decoder->Minimum || *Codepoint > 0x10FFFF || (*Codepoint >= 0xD800 && *Codepoint <= 0xDFFF))
         {
             *Codepoint = 0xFFFD;
         }
+
         return TRUE;
     }
+
     if (Byte < 0x80)
     {
         *Codepoint = Byte;
+
         return TRUE;
     }
+
     if (Byte >= 0xC2 && Byte <= 0xDF)
     {
         Decoder->Value = Byte & 31;
@@ -54,8 +64,9 @@ BOOLEAN TerminalDecode(TERMINAL_UTF8 *Decoder, UINT8 Byte, UINT32 *Codepoint, BO
     else
     {
         *Codepoint = 0xFFFD;
+
         return TRUE;
     }
+
     return FALSE;
 }
-

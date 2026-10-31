@@ -88,6 +88,7 @@ VOID DebugWriteDec(UINT64 Value)
     if (Value == 0)
     {
         DebugWriteChar('0');
+
         return;
     }
 

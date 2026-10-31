@@ -53,6 +53,7 @@ BOOLEAN EXT2ReadBlockGroup(EXT2_VOLUME *Volume, UINT32 Group, EXT2_BLOCK_GROUP *
     Descriptor->FreeBlocks = EXT2Load16(Data + 12);
     Descriptor->FreeInodes = EXT2Load16(Data + 14);
     Descriptor->UsedDirectories = EXT2Load16(Data + 16);
+
     return TRUE;
 }
 
@@ -76,6 +77,7 @@ BOOLEAN EXT2UpdateBlockGroup(EXT2_VOLUME *Volume, UINT32 Group, CONST EXT2_BLOCK
     EXT2Store16(Data + 12, Descriptor->FreeBlocks);
     EXT2Store16(Data + 14, Descriptor->FreeInodes);
     EXT2Store16(Data + 16, Descriptor->UsedDirectories);
+
     return TRUE;
 }
 

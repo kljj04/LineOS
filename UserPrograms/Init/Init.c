@@ -2,6 +2,10 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
+#include <libintl.h>
+
+#include <locale.h>
+
 #include <LOSLibC/TypeInfo.h>
 #include <Asset.h>
 #include <fcntl.h>
@@ -31,7 +35,8 @@ STATIC BOOLEAN InitReadFont(CONST char *Path, UINT8 *Buffer, UINTN Capacity, UIN
 
     if (FD < 0)
     {
-        printf("Init: cannot open font: %s\n", Path);
+        printf(gettext("Init: cannot open font: %s\n"), Path);
+
         return FALSE;
     }
 
@@ -53,7 +58,8 @@ STATIC BOOLEAN InitReadFont(CONST char *Path, UINT8 *Buffer, UINTN Capacity, UIN
 
         if (ReadSize < 0)
         {
-            printf("Init: font read failed: %s\n", Path);
+            printf(gettext("Init: font read failed: %s\n"), Path);
+
             goto Cleanup;
         }
 
@@ -76,14 +82,16 @@ STATIC BOOLEAN InitReadFont(CONST char *Path, UINT8 *Buffer, UINTN Capacity, UIN
 
         if (ReadSize != 0)
         {
-            printf("Init: font exceeds buffer capacity: %s\n", Path);
+            printf(gettext("Init: font exceeds buffer capacity: %s\n"), Path);
+
             goto Cleanup;
         }
     }
 
     if (Total == 0)
     {
-        printf("Init: empty font file: %s\n", Path);
+        printf(gettext("Init: empty font file: %s\n"), Path);
+
         goto Cleanup;
     }
 
@@ -105,7 +113,8 @@ STATIC BOOLEAN InitPublishFont(CONST char *Path, CONST char *Name)
 
     if (!InitReadFont(Path, FontData, sizeof(FontData), &Size) || LOSAssetPublish(Name, FontData, Size) != 0)
     {
-        printf("Init: asset publication failed: %s\n", Name);
+        printf(gettext("Init: asset publication failed: %s\n"), Name);
+
         return FALSE;
     }
 
@@ -114,6 +123,11 @@ STATIC BOOLEAN InitPublishFont(CONST char *Path, CONST char *Name)
 
 INT32 main(VOID)
 {
+    if (setlocale(LC_ALL, "") == NULL)
+    {
+        setlocale(LC_ALL, "C");
+    }
+
     if (open("/dev/lsh1", O_RDONLY) != 0 || open("/dev/lsh1", O_WRONLY) != 1 || open("/dev/lsh1", O_WRONLY) != 2)
     {
         return 1;
@@ -128,37 +142,50 @@ INT32 main(VOID)
 
     if (Master != 3)
     {
-        puts("Init: terminal master open failed");
+        puts(gettext("Init: terminal master open failed"));
+
         return 1;
     }
+
     pid_t Terminal = fork();
+
     if (Terminal == 0)
     {
         char *Arguments[] = {"/sbin/Terminal.lix", NULL};
         char *Environment[] = {NULL};
+
         execve(Arguments[0], Arguments, Environment);
-        puts("Init: Terminal execve failed");
+        puts(gettext("Init: Terminal execve failed"));
+
         return 127;
     }
+
     if (Terminal < 0)
     {
-        puts("Init: Terminal fork failed");
+        puts(gettext("Init: Terminal fork failed"));
+
         return 1;
     }
+
     close(Master);
 
     pid_t Login = fork();
+
     if (Login == 0)
     {
         char *Arguments[] = {"/sbin/Login.lix", NULL};
         char *Environment[] = {NULL};
+
         execve(Arguments[0], Arguments, Environment);
-        puts("Init: Login execve failed");
+        puts(gettext("Init: Login execve failed"));
+
         return 127;
     }
+
     if (Login < 0)
     {
-        puts("Init: Login fork failed");
+        puts(gettext("Init: Login fork failed"));
+
         return 1;
     }
 

@@ -57,7 +57,7 @@
 #define ATOMIC_ACQ_REL                                                                    __ATOMIC_ACQ_REL
 #define ATOMIC_SEQ_CST                                                                    __ATOMIC_SEQ_CST
 #define STATIC_ASSERT(Condition, Message)                                                 _Static_assert(Condition, Message)
-#define OFFSET_OF(A, B)                                                                  __builtin_offsetof(A, B)
+#define OFFSET_OF(A, B)                                                                   __builtin_offsetof(A, B)
 
 #ifdef LINEOS_KERNEL_BUILD
 typedef unsigned char      UINT8;

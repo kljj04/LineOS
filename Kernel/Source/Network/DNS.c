@@ -161,9 +161,11 @@ BOOLEAN NetworkDNSResolveInternal(CONST CHAR8 *Name, UINT32 *Address, UINT32 Tim
             }
 
             *Address = Literal;
+
             return TRUE;
         }
     }
+
     NetworkWrite16(Query, ID);
     NetworkWrite16(Query + 2, 0x0100);
     NetworkWrite16(Query + 4, 1);
@@ -255,6 +257,7 @@ BOOLEAN NetworkDNSResolveInternal(CONST CHAR8 *Name, UINT32 *Address, UINT32 Tim
     for (UINT32 Depth = 0; Depth < 8; Depth++)
     {
         BOOLEAN Alias = FALSE;
+
         Offset = AnswersOffset;
 
         for (UINT32 Index = 0; Index < Answers; Index++)
@@ -295,6 +298,7 @@ BOOLEAN NetworkDNSResolveInternal(CONST CHAR8 *Name, UINT32 *Address, UINT32 Tim
 
                     *Address = Result;
                     NetworkError(L"ok");
+
                     return TRUE;
                 }
 
@@ -333,5 +337,6 @@ BOOLEAN NetworkDNSResolve(CONST CHAR8 *Name, UINT32 *Address, UINT32 TimeoutMls)
 
     Result = NetworkDNSResolveInternal(Name, Address, TimeoutMls);
     NetworkEnd();
+
     return Result;
 }

@@ -117,6 +117,7 @@ BOOLEAN LBPWRRAddTask(TASK *Task)
     if (Task->Scheduled || RunQueue->RunnableCount >= LBPWRR_MAX_TASKS)
     {
         SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+
         return FALSE;
     }
 
@@ -125,6 +126,7 @@ BOOLEAN LBPWRRAddTask(TASK *Task)
         if (RunQueue->Runnable[Index] == Task)
         {
             SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+
             return FALSE;
         }
     }
@@ -132,6 +134,7 @@ BOOLEAN LBPWRRAddTask(TASK *Task)
     if (!LBPWRRModifyChunk(RunQueue, Task, Task->Weight))
     {
         SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+
         return FALSE;
     }
 
@@ -144,6 +147,7 @@ BOOLEAN LBPWRRAddTask(TASK *Task)
     Task->Scheduled = TRUE;
 
     SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+
     return TRUE;
 }
 
@@ -172,6 +176,7 @@ BOOLEAN LBPWRRRemoveTask(TASK *Task)
     if (!Task->Scheduled || Task->CPUID != CPUID || CurrentTasks[CPUID] == Task || Task->OnCPU || (Task->State != TASK_TERMINATED && Task->State != TASK_KILLED))
     {
         SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+
         return FALSE;
     }
 
@@ -186,12 +191,14 @@ BOOLEAN LBPWRRRemoveTask(TASK *Task)
     if (Index == RunQueue->RunnableCount)
     {
         SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+
         return FALSE;
     }
 
     if (!LBPWRRModifyChunk(RunQueue, Task, 0))
     {
         SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+
         return FALSE;
     }
 
@@ -203,6 +210,7 @@ BOOLEAN LBPWRRRemoveTask(TASK *Task)
     Task->Modified = FALSE;
 
     SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+
     return TRUE;
 }
 
@@ -252,6 +260,7 @@ BOOLEAN LBPWRRMoveTask(TASK *Task, UINT32 TargetCPUID)
     {
         SpinLockRelease(&RunQueues[OtherCPUID].Lock);
         SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, Flags);
+
         return FALSE;
     }
 
@@ -270,6 +279,7 @@ BOOLEAN LBPWRRMoveTask(TASK *Task, UINT32 TargetCPUID)
     {
         SpinLockRelease(&RunQueues[OtherCPUID].Lock);
         SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, Flags);
+
         return FALSE;
     }
 
@@ -279,6 +289,7 @@ BOOLEAN LBPWRRMoveTask(TASK *Task, UINT32 TargetCPUID)
         {
             SpinLockRelease(&RunQueues[OtherCPUID].Lock);
             SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, Flags);
+
             return FALSE;
         }
     }
@@ -287,6 +298,7 @@ BOOLEAN LBPWRRMoveTask(TASK *Task, UINT32 TargetCPUID)
     {
         SpinLockRelease(&RunQueues[OtherCPUID].Lock);
         SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, Flags);
+
         return FALSE;
     }
 
@@ -296,6 +308,7 @@ BOOLEAN LBPWRRMoveTask(TASK *Task, UINT32 TargetCPUID)
 
         SpinLockRelease(&RunQueues[OtherCPUID].Lock);
         SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, Flags);
+
         return FALSE;
     }
 
@@ -311,6 +324,7 @@ BOOLEAN LBPWRRMoveTask(TASK *Task, UINT32 TargetCPUID)
 
     SpinLockRelease(&RunQueues[OtherCPUID].Lock);
     SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, Flags);
+
     return TRUE;
 }
 
@@ -342,6 +356,7 @@ BOOLEAN LBPWRRNotifyTaskChanged(TASK *Task)
     if (!Task->Scheduled || Task->CPUID != CPUID)
     {
         SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+
         return FALSE;
     }
 
@@ -359,6 +374,7 @@ BOOLEAN LBPWRRNotifyTaskChanged(TASK *Task)
     if (!Exists)
     {
         SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+
         return FALSE;
     }
 
@@ -381,6 +397,7 @@ BOOLEAN LBPWRRNotifyTaskChanged(TASK *Task)
     }
 
     SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+
     return Result;
 }
 
@@ -412,6 +429,7 @@ TASK *LBPWRRGetTaskFromCPU(UINT32 CPUID)
     }
 
     SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
+
     return Task;
 }
 

@@ -62,6 +62,7 @@ BOOLEAN EXT2WriteInode(EXT2_VOLUME *Volume, UINT32 Number, CONST EXT2_INODE *Ino
     }
 
     KMemCpy(Data, Inode->Raw, 128);
+
     return TRUE;
 }
 
@@ -92,6 +93,7 @@ STATIC BOOLEAN EXT2NewInodeBlock(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT32 
     }
 
     EXT2Store32(Inode->Raw + 28, Sectors + Volume->BlockSize / 512);
+
     return TRUE;
 }
 
@@ -159,6 +161,7 @@ BOOLEAN EXT2MapBlock(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT64 Logical, BOO
         if (Block == 0)
         {
             *Physical = 0;
+
             return TRUE;
         }
 
@@ -207,6 +210,7 @@ BOOLEAN EXT2MapBlock(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT64 Logical, BOO
     }
 
     *Physical = Block;
+
     return TRUE;
 }
 
@@ -297,6 +301,7 @@ STATIC BOOLEAN EXT2PruneTree(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT32 *Blo
 
     EXT2Store32(Inode->Raw + 28, Sectors - Volume->BlockSize / 512);
     *Block = 0;
+
     return TRUE;
 }
 
@@ -322,6 +327,7 @@ BOOLEAN EXT2ResizeInode(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT64 Size)
 
         KMemSet(Inode->Raw + 40, 0, 60);
         EXT2Store32(Inode->Raw + 4, 0);
+
         return TRUE;
     }
 
@@ -450,6 +456,7 @@ STATIC BOOLEAN EXT2AuditTree(EXT2_VOLUME *Volume, UINT32 Block, UINT32 Level, UI
     if (!EXT2ReadBlock(Volume, Block, Buffer))
     {
         KFree(Buffer);
+
         return FALSE;
     }
 
@@ -458,11 +465,13 @@ STATIC BOOLEAN EXT2AuditTree(EXT2_VOLUME *Volume, UINT32 Block, UINT32 Level, UI
         if (!EXT2AuditTree(Volume, EXT2Load32(Buffer + Index * 4), Level - 1, Seen, Count, Metadata))
         {
             KFree(Buffer);
+
             return FALSE;
         }
     }
 
     KFree(Buffer);
+
     return TRUE;
 }
 
@@ -519,12 +528,14 @@ BOOLEAN EXT2ValidateOwnership(EXT2_VOLUME *Volume)
                 if ((UINT64) Count * (Volume->BlockSize / 512) != EXT2Load32(Inode.Raw + 28))
                 {
                     EXT2Fail(Volume, EXT2_ERROR_CORRUPT);
+
                     goto Done;
                 }
             }
             else if (EXT2Load32(Inode.Raw + 28) != 0 || EXT2Load32(Inode.Raw + 104) != 0)
             {
                 EXT2Fail(Volume, EXT2_ERROR_UNSUPPORTED);
+
                 goto Done;
             }
         }
@@ -561,6 +572,7 @@ BOOLEAN EXT2ValidateOwnership(EXT2_VOLUME *Volume)
             if (EXT2Load32(Inode.Raw + 104) != 0 || EXT2Load32(Inode.Raw + 112) != 0 || Inode.Raw[116] != 0 || Inode.Raw[117] != 0 || (EXT2Load32(Inode.Raw + 32) & ~0x30FFU) != 0)
             {
                 EXT2Fail(Volume, EXT2_ERROR_UNSUPPORTED);
+
                 goto Done;
             }
 
@@ -569,6 +581,7 @@ BOOLEAN EXT2ValidateOwnership(EXT2_VOLUME *Volume)
                 if (EXT2Load32(Inode.Raw + 28) != 0)
                 {
                     EXT2Fail(Volume, EXT2_ERROR_UNSUPPORTED);
+
                     goto Done;
                 }
 
@@ -580,6 +593,7 @@ BOOLEAN EXT2ValidateOwnership(EXT2_VOLUME *Volume)
                 if (EXT2InodeSize(&Inode) > 60)
                 {
                     EXT2Fail(Volume, EXT2_ERROR_CORRUPT);
+
                     goto Done;
                 }
 
@@ -597,6 +611,7 @@ BOOLEAN EXT2ValidateOwnership(EXT2_VOLUME *Volume)
             if ((UINT64) Count * (Volume->BlockSize / 512) != EXT2Load32(Inode.Raw + 28))
             {
                 EXT2Fail(Volume, EXT2_ERROR_CORRUPT);
+
                 goto Done;
             }
         }
@@ -605,6 +620,7 @@ BOOLEAN EXT2ValidateOwnership(EXT2_VOLUME *Volume)
     Result = TRUE;
 Done:
     KFree(Seen);
+
     return Result;
 }
 

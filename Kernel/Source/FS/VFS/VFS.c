@@ -38,29 +38,37 @@ STATIC BOOLEAN VFSLock(VFS_REGISTRY *Registry)
 {
     UINT64 Flags;
     UINT32 Expected = 0;
+
     if (Registry == NULL)
     {
         return FALSE;
     }
+
     ASM("pushfq; popq %0; cli" : "=r"(Flags) : : "memory");
+
     while (!ATOMIC_COMPARE_EXCHANGE(&Registry->Busy, &Expected, 1, FALSE, ATOMIC_ACQUIRE, ATOMIC_RELAXED))
     {
         Expected = 0;
         VMMHandleShootdown();
-        ASM("pause" ::: "memory");
+        ASM("pause" :: : "memory");
     }
+
     Registry->IRQFlags = Flags;
+
     return TRUE;
 }
 
 STATIC VFS_ERROR VFSUnlock(VFS_REGISTRY *Registry, VFS_ERROR Error)
 {
     UINT64 Flags = Registry->IRQFlags;
+
     ATOMIC_STORE(&Registry->Busy, 0, ATOMIC_RELEASE);
+
     if ((Flags & (1ULL << 9)) != 0)
     {
-        ASM("sti" ::: "memory");
+        ASM("sti" :: : "memory");
     }
+
     return Error;
 }
 
@@ -146,6 +154,7 @@ VFS_ERROR VFSRegisterPartition(VFS_REGISTRY *Registry, CONST CHAR8 *Name, UINT32
             Entry->Operations = Operations;
             Entry->Registered = TRUE;
             *Partition = Index;
+
             return VFSUnlock(Registry, VFS_OK);
         }
     }
@@ -184,6 +193,7 @@ VFS_ERROR VFSContextInit(VFS_CONTEXT *Context, VFS_REGISTRY *Registry, UINT32 Pa
     Context->Credentials = Credentials;
     Context->Partition = Partition;
     Context->Cwd[0] = '/';
+
     return VFSUnlock(Registry, VFS_OK);
 }
 
@@ -233,6 +243,7 @@ VFS_ERROR VFSEndCommand(VFS_COMMAND *Command, BOOLEAN KeepLocation)
     Command->Context.Registry = NULL;
     Command->Session = NULL;
     Command->Active = FALSE;
+
     return Error;
 }
 
@@ -260,6 +271,7 @@ VFS_ERROR VFSGetCwd(CONST VFS_CONTEXT *Context, CHAR8 *Buffer, UINT32 Capacity)
 STATIC VFS_ERROR VFSRoot(VFS_CONTEXT *Context, VFS_RESOLVED *Resolved)
 {
     Resolved->Partition = Context->Registry->RootPartition;
+
     VFS_PARTITION *Partition = VFSPartition(Context, Resolved->Partition);
 
     if (Partition == NULL)
@@ -274,6 +286,7 @@ STATIC VFS_ERROR VFSRoot(VFS_CONTEXT *Context, VFS_RESOLVED *Resolved)
 
     Resolved->Path[0] = '/';
     Resolved->Path[1] = 0;
+
     return Partition->Operations->Root(Partition->Backend, &Context->Credentials, &Resolved->Node);
 }
 
@@ -309,6 +322,7 @@ STATIC VFS_ERROR VFSResolve(VFS_CONTEXT *Context, CONST CHAR8 *Path, BOOLEAN Fol
         if (Prefix >= VFS_MAX_PATH || Prefix + Length + 1 >= VFS_MAX_PATH)
         {
             Error = VFS_LIMIT;
+
             goto Done;
         }
 
@@ -341,6 +355,7 @@ STATIC VFS_ERROR VFSResolve(VFS_CONTEXT *Context, CONST CHAR8 *Path, BOOLEAN Fol
             if ((Resolved->Node.Mode & VFS_MODE_TYPE) != VFS_MODE_DIRECTORY)
             {
                 Error = VFS_NOT_DIRECTORY;
+
                 goto Done;
             }
 
@@ -357,6 +372,7 @@ STATIC VFS_ERROR VFSResolve(VFS_CONTEXT *Context, CONST CHAR8 *Path, BOOLEAN Fol
             if (NameLength == 255)
             {
                 Error = VFS_NAME_TOO_LONG;
+
                 goto Done;
             }
 
@@ -372,20 +388,25 @@ STATIC VFS_ERROR VFSResolve(VFS_CONTEXT *Context, CONST CHAR8 *Path, BOOLEAN Fol
                 Resolved->Partition = Context->Registry->DevicePartition;
                 Partition = VFSPartition(Context, Resolved->Partition);
                 Error = Partition->Operations->Root(Partition->Backend, &Context->Credentials, &Resolved->Node);
+
                 if (Error != VFS_OK)
                 {
                     goto Done;
                 }
+
                 KMemCpy(Resolved->Path, "/dev", 5);
                 continue;
             }
+
             if (Resolved->Partition == Context->Registry->DevicePartition && VFSEqual(Resolved->Path, (CONST CHAR8 *) "/dev") && VFSEqual(Name, (CONST CHAR8 *) ".."))
             {
                 Error = VFSRoot(Context, Resolved);
+
                 if (Error != VFS_OK)
                 {
                     goto Done;
                 }
+
                 continue;
             }
         }
@@ -406,6 +427,7 @@ STATIC VFS_ERROR VFSResolve(VFS_CONTEXT *Context, CONST CHAR8 *Path, BOOLEAN Fol
             if (++Links > 40)
             {
                 Error = VFS_LOOP;
+
                 goto Done;
             }
 
@@ -419,6 +441,7 @@ STATIC VFS_ERROR VFSResolve(VFS_CONTEXT *Context, CONST CHAR8 *Path, BOOLEAN Fol
             if (TargetLength == 0 || TargetLength + TailLength >= VFS_MAX_PATH)
             {
                 Error = VFS_LIMIT;
+
                 goto Done;
             }
 
@@ -459,6 +482,7 @@ STATIC VFS_ERROR VFSResolve(VFS_CONTEXT *Context, CONST CHAR8 *Path, BOOLEAN Fol
             if (End + Separator + NameLength >= VFS_MAX_PATH)
             {
                 Error = VFS_LIMIT;
+
                 goto Done;
             }
 
@@ -475,6 +499,7 @@ STATIC VFS_ERROR VFSResolve(VFS_CONTEXT *Context, CONST CHAR8 *Path, BOOLEAN Fol
 
 Done:
     KFree(Pending);
+
     return Error;
 }
 
@@ -499,6 +524,7 @@ VFS_ERROR VFSChangeDirectory(VFS_CONTEXT *Context, CONST CHAR8 *Path)
     {
         VFS_PARTITION *Partition = VFSPartition(Context, Resolved.Partition);
         VFS_NODE       Dot;
+
         Error = Partition->Operations->Child(Partition->Backend, &Context->Credentials, Resolved.Node.Number, (CONST CHAR8 *) ".", &Dot);
     }
 
@@ -568,14 +594,18 @@ VFS_ERROR VFSReadDirectory(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 *Curs
     Error = VFSResolve(Context, Path, TRUE, &Resolved);
 
     BOOLEAN Root = Error == VFS_OK && Resolved.Partition == Context->Registry->RootPartition && VFSEqual(Resolved.Path, (CONST CHAR8 *) "/") && Context->Registry->DevicePartition != VFS_INVALID_PARTITION;
+
     if (Root && (*Cursor & (1ULL << 63)) != 0)
     {
         Entry->End = TRUE;
+
         return VFSUnlock(Context->Registry, VFS_OK);
     }
+
     if (Error == VFS_OK)
     {
         VFS_PARTITION *Partition = VFSPartition(Context, Resolved.Partition);
+
         if (Partition->Operations->ReadDirectory == NULL)
         {
             Error = VFS_UNSUPPORTED;
@@ -586,6 +616,7 @@ VFS_ERROR VFSReadDirectory(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 *Curs
             {
                 Error = Partition->Operations->ReadDirectory(Partition->Backend, &Context->Credentials, Resolved.Node.Number, Cursor, Entry);
             } while (Root && Error == VFS_OK && !Entry->End && VFSEqual(Entry->Name, (CONST CHAR8 *) "dev"));
+
             if (Root && Error == VFS_OK && Entry->End)
             {
                 Partition = VFSPartition(Context, Context->Registry->DevicePartition);
@@ -603,6 +634,7 @@ VFS_ERROR VFSReadDirectory(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 *Curs
         Entry->Node.NamespaceGeneration = Context->Registry->NamespaceGeneration;
         Entry->Node.Partition = Root && VFSEqual(Entry->Name, (CONST CHAR8 *) "dev") ? Context->Registry->DevicePartition : Resolved.Partition;
     }
+
     return VFSUnlock(Context->Registry, Error);
 }
 
@@ -642,6 +674,7 @@ STATIC VFS_ERROR VFSData(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 Offset,
             {
                 Offset = Resolved.Node.Size;
             }
+
             if (Offset > UINT64_MAX - Length)
             {
                 Error = VFS_LIMIT;
@@ -650,6 +683,7 @@ STATIC VFS_ERROR VFSData(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 Offset,
             {
                 Error = Partition->Operations->Write == NULL ? VFS_UNSUPPORTED : Partition->Operations->Write(Partition->Backend, &Context->Credentials, Resolved.Node.Number, Offset, Buffer, Length);
             }
+
             if (Error == VFS_OK && EndOffset != NULL)
             {
                 *EndOffset = Offset + Length;
@@ -772,6 +806,7 @@ STATIC VFS_ERROR VFSMutate(VFS_CONTEXT *Context, VFS_MUTATION *Mutation, CONST C
     {
         Error = Mutation->Type == VFS_MUTATE_CREATE || Mutation->Type == VFS_MUTATE_SYMLINK ? VFS_EXISTS : VFS_BUSY;
     }
+
     if (Error == VFS_OK)
     {
         Mutation->Parent = First.Node.Number;
@@ -791,6 +826,7 @@ STATIC VFS_ERROR VFSMutate(VFS_CONTEXT *Context, VFS_MUTATION *Mutation, CONST C
             {
                 Error = VFS_BUSY;
             }
+
             Mutation->OtherParent = Second.Node.Number;
             Mutation->OtherName = OtherName;
 
@@ -805,7 +841,9 @@ STATIC VFS_ERROR VFSMutate(VFS_CONTEXT *Context, VFS_MUTATION *Mutation, CONST C
     if (Error == VFS_OK)
     {
         VFS_PARTITION *Partition = VFSPartition(Context, First.Partition);
+
         Error = Partition->Operations->Mutate == NULL ? VFS_UNSUPPORTED : Partition->Operations->Mutate(Partition->Backend, &Context->Credentials, Mutation);
+
         if (Error == VFS_OK && (Mutation->Type == VFS_MUTATE_REMOVE || Mutation->Type == VFS_MUTATE_RENAME))
         {
             Context->Registry->NamespaceGeneration++;
@@ -818,44 +856,55 @@ STATIC VFS_ERROR VFSMutate(VFS_CONTEXT *Context, VFS_MUTATION *Mutation, CONST C
 VFS_ERROR VFSCreate(VFS_CONTEXT *Context, CONST CHAR8 *Path, BOOLEAN Directory, UINT16 Mode)
 {
     VFS_MUTATION Mutation = {0};
+
     Mutation.Type = VFS_MUTATE_CREATE;
     Mutation.Directory = Directory;
     Mutation.Mode = Mode;
+
     return VFSMutate(Context, &Mutation, Path, NULL);
 }
 
 VFS_ERROR VFSRemove(VFS_CONTEXT *Context, CONST CHAR8 *Path)
 {
     VFS_MUTATION Mutation = {0};
+
     Mutation.Type = VFS_MUTATE_REMOVE;
+
     return VFSMutate(Context, &Mutation, Path, NULL);
 }
 
 VFS_ERROR VFSRename(VFS_CONTEXT *Context, CONST CHAR8 *OldPath, CONST CHAR8 *NewPath)
 {
     VFS_MUTATION Mutation = {0};
+
     Mutation.Type = VFS_MUTATE_RENAME;
+
     return VFSMutate(Context, &Mutation, OldPath, NewPath);
 }
 
 VFS_ERROR VFSTruncate(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 Size)
 {
     VFS_MUTATION Mutation = {0};
+
     Mutation.Type = VFS_MUTATE_TRUNCATE;
     Mutation.Size = Size;
+
     return VFSMutate(Context, &Mutation, Path, NULL);
 }
 
 VFS_ERROR VFSLink(VFS_CONTEXT *Context, CONST CHAR8 *Source, CONST CHAR8 *Destination)
 {
     VFS_MUTATION Mutation = {0};
+
     Mutation.Type = VFS_MUTATE_LINK;
+
     return VFSMutate(Context, &Mutation, Source, Destination);
 }
 
 VFS_ERROR VFSSymlink(VFS_CONTEXT *Context, CONST CHAR8 *Target, CONST CHAR8 *Path)
 {
     VFS_MUTATION Mutation = {0};
+
     Mutation.Type = VFS_MUTATE_SYMLINK;
     Mutation.Target = Target;
 
@@ -870,24 +919,30 @@ VFS_ERROR VFSSymlink(VFS_CONTEXT *Context, CONST CHAR8 *Target, CONST CHAR8 *Pat
 VFS_ERROR VFSSetMode(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT16 Mode)
 {
     VFS_MUTATION Mutation = {0};
+
     Mutation.Type = VFS_MUTATE_MODE;
     Mutation.Mode = Mode;
+
     return VFSMutate(Context, &Mutation, Path, NULL);
 }
 
 VFS_ERROR VFSSetOwner(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT32 UID, UINT32 GID)
 {
     VFS_MUTATION Mutation = {0};
+
     Mutation.Type = VFS_MUTATE_OWNER;
     Mutation.UID = UID;
     Mutation.GID = GID;
+
     return VFSMutate(Context, &Mutation, Path, NULL);
 }
 
 VFS_ERROR VFSTouch(VFS_CONTEXT *Context, CONST CHAR8 *Path)
 {
     VFS_MUTATION Mutation = {0};
+
     Mutation.Type = VFS_MUTATE_TOUCH;
+
     return VFSMutate(Context, &Mutation, Path, NULL);
 }
 
@@ -897,6 +952,7 @@ VFS_ERROR VFSWriteChecked(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST VFS_NOD
     {
         return VFS_INVALID;
     }
+
     return VFSData(Context, Path, Offset, (VOID *) Buffer, Length, NULL, TRUE, Expected, FALSE, NULL);
 }
 
@@ -914,18 +970,23 @@ VFS_ERROR VFSOpen(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT32 Flags, UINT16 
     {
         return VFS_INVALID;
     }
+
     if (!VFSLock(Context->Registry))
     {
         return VFS_BUSY;
     }
+
     Error = VFSResolve(Context, Path, FALSE, &Resolved);
+
     if (Error == VFS_OK && (Flags & (VFS_OPEN_CREATE | VFS_OPEN_EXCLUSIVE)) == (VFS_OPEN_CREATE | VFS_OPEN_EXCLUSIVE))
     {
         return VFSUnlock(Context->Registry, VFS_EXISTS);
     }
+
     if (Error == VFS_NOT_FOUND && (Flags & VFS_OPEN_CREATE) != 0)
     {
         Error = VFSParent(Context, Path, &Resolved, Name);
+
         if (Error == VFS_OK)
         {
             Partition = VFSPartition(Context, Resolved.Partition);
@@ -934,6 +995,7 @@ VFS_ERROR VFSOpen(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT32 Flags, UINT16 
             Mutation.Name = Name;
             Mutation.Mode = Mode;
             Error = Partition->Operations->Mutate == NULL ? VFS_UNSUPPORTED : Partition->Operations->Mutate(Partition->Backend, &Context->Credentials, &Mutation);
+
             if (Error == VFS_OK)
             {
                 Error = VFSResolve(Context, Path, FALSE, &Resolved);
@@ -944,39 +1006,49 @@ VFS_ERROR VFSOpen(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT32 Flags, UINT16 
     {
         Error = VFSResolve(Context, Path, TRUE, &Resolved);
     }
+
     if (Error == VFS_OK && (Resolved.Node.Mode & VFS_MODE_TYPE) == VFS_MODE_DIRECTORY)
     {
         if (Access != 0 || (Flags & (VFS_OPEN_CREATE | VFS_OPEN_TRUNCATE)) != 0)
         {
             return VFSUnlock(Context->Registry, VFS_IS_DIRECTORY);
         }
+
         *Node = Resolved.Node;
         Node->NamespaceGeneration = Context->Registry->NamespaceGeneration;
         Node->Partition = Resolved.Partition;
+
         return VFSUnlock(Context->Registry, VFS_OK);
     }
+
     if (Error == VFS_OK && (Resolved.Node.Mode & VFS_MODE_TYPE) == 0x2000U)
     {
         *Node = Resolved.Node;
         Node->NamespaceGeneration = Context->Registry->NamespaceGeneration;
         Node->Partition = Resolved.Partition;
+
         return VFSUnlock(Context->Registry, VFS_OK);
     }
+
     if (Error == VFS_OK && (Resolved.Node.Mode & VFS_MODE_TYPE) != 0x8000U)
     {
         Error = (Resolved.Node.Mode & VFS_MODE_TYPE) == VFS_MODE_DIRECTORY ? VFS_IS_DIRECTORY : VFS_INVALID;
     }
+
     if (Error == VFS_OK)
     {
         Partition = VFSPartition(Context, Resolved.Partition);
+
         if (Access != 1)
         {
             Error = Partition->Operations->Read == NULL ? VFS_UNSUPPORTED : Partition->Operations->Read(Partition->Backend, &Context->Credentials, Resolved.Node.Number, 0, NULL, 0, &ReadLength);
         }
+
         if (Error == VFS_OK && Access != 0)
         {
             Error = Partition->Operations->Write == NULL ? VFS_UNSUPPORTED : Partition->Operations->Write(Partition->Backend, &Context->Credentials, Resolved.Node.Number, 0, NULL, 0);
         }
+
         if (Error == VFS_OK && (Flags & VFS_OPEN_TRUNCATE) != 0)
         {
             Mutation.Type = VFS_MUTATE_TRUNCATE;
@@ -985,6 +1057,7 @@ VFS_ERROR VFSOpen(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT32 Flags, UINT16 
             Error = Partition->Operations->Mutate == NULL ? VFS_UNSUPPORTED : Partition->Operations->Mutate(Partition->Backend, &Context->Credentials, &Mutation);
             Resolved.Node.Size = 0;
         }
+
         if (Error == VFS_OK)
         {
             *Node = Resolved.Node;
@@ -992,6 +1065,7 @@ VFS_ERROR VFSOpen(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT32 Flags, UINT16 
             Node->Partition = Resolved.Partition;
         }
     }
+
     return VFSUnlock(Context->Registry, Error);
 }
 
@@ -999,31 +1073,40 @@ VFS_ERROR VFSSetTimes(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST VFS_NODE *E
 {
     VFS_RESOLVED Resolved;
     VFS_MUTATION Mutation = {0};
+
     if (Context == NULL || Context->Registry == NULL)
     {
         return VFS_INVALID;
     }
+
     if (!VFSLock(Context->Registry))
     {
         return VFS_BUSY;
     }
+
     VFS_ERROR Error = VFSResolve(Context, Path, Follow, &Resolved);
+
     if (Error == VFS_OK && Expected != NULL && (Resolved.Partition != Expected->Partition || Resolved.Node.Number != Expected->Number || Context->Registry->NamespaceGeneration != Expected->NamespaceGeneration))
     {
         Error = VFS_NOT_FOUND;
     }
+
     if (Error == VFS_OK && !(Times[0].Nanoseconds == LOS_UTIME_OMIT && Times[1].Nanoseconds == LOS_UTIME_OMIT))
     {
         Mutation.Type = VFS_MUTATE_TIMES;
         Mutation.Number = Resolved.Node.Number;
+
         for (UINTN Index = 0; Index < 2; Index++)
         {
             Mutation.TimeSeconds[Index] = Times[Index].Seconds;
             Mutation.TimeNanoseconds[Index] = Times[Index].Nanoseconds;
         }
+
         VFS_PARTITION *Partition = VFSPartition(Context, Resolved.Partition);
+
         Error = Partition->Operations->Mutate == NULL ? VFS_UNSUPPORTED : Partition->Operations->Mutate(Partition->Backend, &Context->Credentials, &Mutation);
     }
+
     return VFSUnlock(Context->Registry, Error);
 }
 
@@ -1033,5 +1116,6 @@ VFS_ERROR VFSAppendChecked(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST VFS_NO
     {
         return VFS_INVALID;
     }
+
     return VFSData(Context, Path, 0, (VOID *) Buffer, Length, NULL, TRUE, Expected, TRUE, EndOffset);
 }

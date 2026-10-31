@@ -31,4 +31,4 @@ BOOLEAN KHeapInit(VOID);
 BOOLEAN KMemoryPanicLocksAvailable(VOID);
 VOID   *KAlloc(UINTN Size);
 VOID    KFree(VOID *Address);
-VOID KGetManagedMemory(UINT64 *Managed, UINT64 *Free);
+VOID    KGetManagedMemory(UINT64 *Managed, UINT64 *Free);

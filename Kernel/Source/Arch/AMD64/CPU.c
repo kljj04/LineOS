@@ -33,17 +33,17 @@ VOID HLTONCE()
 
 VOID STIHLT()
 {
-    ASM("sti; hlt" ::: "memory");
+    ASM("sti; hlt" :: : "memory");
 }
 
 VOID CLI()
 {
-    ASM("cli" ::: "memory");
+    ASM("cli" :: : "memory");
 }
 
 VOID STI()
 {
-    ASM("sti" ::: "memory");
+    ASM("sti" :: : "memory");
 }
 
 VOID PAUSE()
@@ -53,7 +53,7 @@ VOID PAUSE()
 
 VOID CompilerBarrier()
 {
-    ASM("" ::: "memory");
+    ASM("" :: : "memory");
 }
 
 VOID CPUEnableSSE(VOID)
@@ -72,7 +72,7 @@ VOID CPUEnableSSE(VOID)
     CR4 |= (1ULL << 10);
     ASM("mov %0, %%cr4" : : "r"(CR4) : "memory");
 
-    ASM("fninit" ::: "memory");
+    ASM("fninit" :: : "memory");
 }
 
 STATIC BOOLEAN GDTGetCurrentCPUIndex(UINT32 *CPUIndex)
@@ -85,6 +85,7 @@ STATIC BOOLEAN GDTGetCurrentCPUIndex(UINT32 *CPUIndex)
     if (!SMPIsReady())
     {
         *CPUIndex = 0;
+
         return TRUE;
     }
 
@@ -142,10 +143,8 @@ VOID GDTInitCurrentCPU(UINT32 CPUID)
         "lretq\n"
         "1:\n"
         "movw $0x30, %%ax\n"
-        "ltr %%ax\n"
-        :
-        : "m"(GDTR[CPUIndex]), "i"(GDT_KERNEL_DATA_SELECTOR), "i"(GDT_KERNEL_CODE_SELECTOR)
-        : "rax", "memory");
+        "ltr %%ax\n" : : "m"(GDTR[CPUIndex]),
+        "i"(GDT_KERNEL_DATA_SELECTOR), "i"(GDT_KERNEL_CODE_SELECTOR) : "rax", "memory");
 
     SyscallInitCurrentCPU(CPUIndex);
 }
@@ -192,6 +191,7 @@ UINT8 INB(UINT16 Port)
     UINT8 Value;
 
     ASM("inb %w1, %b0" : "=a"(Value) : "Nd"(Port));
+
     return Value;
 }
 
@@ -200,6 +200,7 @@ UINT16 INW(UINT16 Port)
     UINT16 Value;
 
     ASM("inw %w1, %w0" : "=a"(Value) : "Nd"(Port));
+
     return Value;
 }
 
@@ -208,6 +209,7 @@ UINT32 INL(UINT16 Port)
     UINT32 Value;
 
     ASM("inl %w1, %0" : "=a"(Value) : "Nd"(Port));
+
     return Value;
 }
 

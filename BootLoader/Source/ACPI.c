@@ -32,6 +32,7 @@ BOOLEAN ACPIInit(VOID)
         if (IsGuidEqual(GUID, &gEfiAcpi20TableGuid))
         {
             RSDP = (ACPI_RSDP *) Table[I].VendorTable;
+
             return TRUE;
         }
     }

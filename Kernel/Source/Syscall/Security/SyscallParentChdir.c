@@ -11,21 +11,27 @@
 INT64 SyscallParentChdir(UINT64 Path)
 {
     TASK *Task = LBPWRRGetCurrentTask();
+
     if (Task == NULL || Task->FileContext == NULL)
     {
         return -ESRCH;
     }
+
     if (Task->FileContext->Credentials.UID != 0)
     {
         return -EPERM;
     }
+
     CHAR8 *Name;
-    INT64 Result = SyscallCopyPath(Task, Path, &Name);
+    INT64  Result = SyscallCopyPath(Task, Path, &Name);
+
     if (Result < 0)
     {
         return Result;
     }
+
     Result = ProcessChangeParentDirectory(Task, Name);
     KFree(Name);
+
     return Result;
 }

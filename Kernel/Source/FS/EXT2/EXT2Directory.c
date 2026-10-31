@@ -219,6 +219,7 @@ BOOLEAN EXT2AddEntry(EXT2_VOLUME *Volume, EXT2_INODE *Directory, CONST CHAR8 *Na
 
         EXT2SetEntry(Volume, Data, Number, (UINT16) Volume->BlockSize, Name, Type);
         EXT2Store32(Directory->Raw + 4, (UINT32) Size + Volume->BlockSize);
+
         return TRUE;
     }
 
@@ -242,6 +243,7 @@ BOOLEAN EXT2AddEntry(EXT2_VOLUME *Volume, EXT2_INODE *Directory, CONST CHAR8 *Na
     }
 
     EXT2SetEntry(Volume, Data, Number, (UINT16) Record, Name, Type);
+
     return TRUE;
 }
 
@@ -269,6 +271,7 @@ BOOLEAN EXT2Resolve(EXT2_VOLUME *Volume, CONST CHAR8 *Path, UINT32 *Number, EXT2
     if (Length == 4096 || Path[0] != '/')
     {
         EXT2Fail(Volume, EXT2_ERROR_ARGUMENT);
+
         goto Done;
     }
 
@@ -318,6 +321,7 @@ BOOLEAN EXT2Resolve(EXT2_VOLUME *Volume, CONST CHAR8 *Path, UINT32 *Number, EXT2
             if (NameLength == 255)
             {
                 EXT2Fail(Volume, EXT2_ERROR_ARGUMENT);
+
                 goto Done;
             }
 
@@ -339,6 +343,7 @@ BOOLEAN EXT2Resolve(EXT2_VOLUME *Volume, CONST CHAR8 *Path, UINT32 *Number, EXT2
             if (++Links > 40)
             {
                 EXT2Fail(Volume, EXT2_ERROR_LOOP);
+
                 goto Done;
             }
 
@@ -355,6 +360,7 @@ BOOLEAN EXT2Resolve(EXT2_VOLUME *Volume, CONST CHAR8 *Path, UINT32 *Number, EXT2
             if (TargetLength + TailLength >= 4096)
             {
                 EXT2Fail(Volume, EXT2_ERROR_LIMIT);
+
                 goto Done;
             }
 
@@ -382,6 +388,7 @@ BOOLEAN EXT2Resolve(EXT2_VOLUME *Volume, CONST CHAR8 *Path, UINT32 *Number, EXT2
 
 Done:
     KFree(Pending);
+
     return Result;
 }
 
@@ -476,6 +483,7 @@ BOOLEAN EXT2CreateEntry(EXT2_VOLUME *Volume, UINT32 Parent, CONST CHAR8 *Name, B
 
     EXT2Store32(ParentInode.Raw + 12, Time);
     EXT2Store32(ParentInode.Raw + 16, Time);
+
     return EXT2WriteInode(Volume, *Number, &Inode, TRUE) && EXT2AddEntry(Volume, &ParentInode, Name, *Number, Directory ? 2 : 1) && EXT2WriteInode(Volume, Parent, &ParentInode, FALSE);
 }
 
@@ -682,6 +690,7 @@ BOOLEAN EXT2RemoveEntry(EXT2_VOLUME *Volume, UINT32 Parent, CONST CHAR8 *Name, U
 
     EXT2Store32(ParentInode.Raw + 12, Time);
     EXT2Store32(ParentInode.Raw + 16, Time);
+
     return EXT2WriteInode(Volume, Parent, &ParentInode, FALSE);
 }
 
@@ -822,6 +831,7 @@ BOOLEAN EXT2RenameEntry(EXT2_VOLUME *Volume, UINT32 OldParent, CONST CHAR8 *OldN
     EXT2Store32(Inode.Raw + 12, Time);
     EXT2Store32(NewDirectory.Raw + 12, Time);
     EXT2Store32(NewDirectory.Raw + 16, Time);
+
     return EXT2WriteInode(Volume, Number, &Inode, FALSE) && EXT2WriteInode(Volume, NewParent, &NewDirectory, FALSE);
 }
 
@@ -859,6 +869,7 @@ BOOLEAN EXT2LinkEntry(EXT2_VOLUME *Volume, UINT32 Parent, CONST CHAR8 *Name, UIN
     EXT2Store32(Inode.Raw + 12, Time);
     EXT2Store32(Directory.Raw + 12, Time);
     EXT2Store32(Directory.Raw + 16, Time);
+
     return EXT2WriteInode(Volume, Number, &Inode, FALSE) && EXT2WriteInode(Volume, Parent, &Directory, FALSE);
 }
 
@@ -895,6 +906,7 @@ BOOLEAN EXT2ReadLinkData(EXT2_VOLUME *Volume, EXT2_INODE *Inode, CHAR8 *Buffer, 
     }
 
     Buffer[*Length] = 0;
+
     return TRUE;
 }
 
@@ -957,6 +969,7 @@ BOOLEAN EXT2ValidateDirectories(EXT2_VOLUME *Volume)
     if (References == NULL || Parents == NULL || DotParents == NULL || Modes == NULL || Links == NULL)
     {
         EXT2Fail(Volume, EXT2_ERROR_MEMORY);
+
         goto Done;
     }
 
@@ -998,6 +1011,7 @@ BOOLEAN EXT2ValidateDirectories(EXT2_VOLUME *Volume)
             if (Type != 0x1000 && Type != 0x2000 && Type != 0x4000 && Type != 0x6000 && Type != 0x8000 && Type != 0xA000 && Type != 0xC000)
             {
                 EXT2Fail(Volume, EXT2_ERROR_CORRUPT);
+
                 goto Done;
             }
 
@@ -1009,6 +1023,7 @@ BOOLEAN EXT2ValidateDirectories(EXT2_VOLUME *Volume)
         if (Directories != Descriptor.UsedDirectories)
         {
             EXT2Fail(Volume, EXT2_ERROR_CORRUPT);
+
             goto Done;
         }
     }
@@ -1027,6 +1042,7 @@ BOOLEAN EXT2ValidateDirectories(EXT2_VOLUME *Volume)
         if (!EXT2ReadInode(Volume, Number, &Inode) || !EXT2FindEntry(Volume, &Inode, (CONST CHAR8 *) ".", &Dot) || !EXT2FindEntry(Volume, &Inode, (CONST CHAR8 *) "..", &DotDot) || Dot != Number || Modes[DotDot] != EXT2_MODE_DIRECTORY)
         {
             EXT2Fail(Volume, EXT2_ERROR_CORRUPT);
+
             goto Done;
         }
 
@@ -1061,6 +1077,7 @@ BOOLEAN EXT2ValidateDirectories(EXT2_VOLUME *Volume)
                 if (Type == 0 || References[Child] == UINT32_MAX || (Volume->FileType && Buffer[Offset + 7] != 0 && Buffer[Offset + 7] != FileType))
                 {
                     EXT2Fail(Volume, EXT2_ERROR_CORRUPT);
+
                     goto Done;
                 }
 
@@ -1071,6 +1088,7 @@ BOOLEAN EXT2ValidateDirectories(EXT2_VOLUME *Volume)
                     if (Parents[Child] != 0)
                     {
                         EXT2Fail(Volume, EXT2_ERROR_CORRUPT);
+
                         goto Done;
                     }
 
@@ -1090,6 +1108,7 @@ BOOLEAN EXT2ValidateDirectories(EXT2_VOLUME *Volume)
         if (References[Number] != Links[Number] || (Modes[Number] == EXT2_MODE_DIRECTORY && (Parents[Number] == 0 || DotParents[Number] != Parents[Number])))
         {
             EXT2Fail(Volume, EXT2_ERROR_CORRUPT);
+
             goto Done;
         }
 
@@ -1106,6 +1125,7 @@ BOOLEAN EXT2ValidateDirectories(EXT2_VOLUME *Volume)
             if (Current != 2)
             {
                 EXT2Fail(Volume, EXT2_ERROR_CORRUPT);
+
                 goto Done;
             }
         }

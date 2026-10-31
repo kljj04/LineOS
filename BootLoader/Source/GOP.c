@@ -29,6 +29,7 @@ STATIC BOOLEAN GOPSelectMode(EFI_GRAPHICS_OUTPUT_PROTOCOL *GraphicsOutput, UINT3
         {
             Status = GraphicsOutput->SetMode(GraphicsOutput, ModeNumber);
             UEFIBootServices->FreePool(Info);
+
             return !EFI_ERROR(Status);
         }
 
@@ -58,5 +59,6 @@ BOOLEAN GOPInit(VOID)
     GOP.ScreenHeight = GraphicsOutput->Mode->Info->VerticalResolution;
     GOP.PixelsPerScanLine = GraphicsOutput->Mode->Info->PixelsPerScanLine;
     GOP.PixelFormat = GraphicsOutput->Mode->Info->PixelFormat;
+
     return TRUE;
 }

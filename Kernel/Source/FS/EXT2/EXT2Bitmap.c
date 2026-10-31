@@ -155,6 +155,7 @@ STATIC BOOLEAN EXT2Allocate(EXT2_VOLUME *Volume, BOOLEAN Inode, BOOLEAN Director
             }
 
             *Number = Start + Bit;
+
             return TRUE;
         }
 

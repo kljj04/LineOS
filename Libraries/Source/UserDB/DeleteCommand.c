@@ -8,6 +8,8 @@
 INT32 UserDBDeleteCommand(CONST char *Username)
 {
     USER_DB_RESULT Status = UserDBDelete(Username);
+
     printf("DelUser: %s\n", UserDBResultText(Status));
+
     return Status == USER_DB_OK ? 0 : (Status == USER_DB_COMMITTED_CLEANUP ? 2 : 1);
 }

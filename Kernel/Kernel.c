@@ -93,14 +93,17 @@ VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
     BlockDevice = VirtIOBlockGetDevice();
 
     VFSInit(&RootRegistry);
+
     if (VFSMountEXT2(&RootRegistry, (CONST CHAR8 *) "root", &RootVolume, BlockDevice, 2, TRUE, &RootPartition) != VFS_OK)
     {
         Panic(L"Root Filesystem Mount Failed");
     }
+
     if (DeviceFSMount(&RootRegistry) != VFS_OK)
     {
         Panic(L"DeviceFS Mount Failed");
     }
+
     VFSContextInit(&RootContext, &RootRegistry, RootPartition, Credentials);
     VFSLookup(&RootContext, (CONST CHAR8 *) "/", &RootNode);
 
@@ -138,7 +141,9 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
     {
         Panic(L"NTP Task Failed");
     }
+
     KMemCpy(NTPTask->Name, "ntpk", sizeof("ntpk"));
+
     if (!LBPWRRAddTask(NTPTask))
     {
         Panic(L"NTP Task Failed");

@@ -8,4 +8,5 @@
 
 BOOLEAN SudoAllowed(CONST char *Username);
 BOOLEAN SudoAuthenticate(CONST char *Username, USER_DB_ACCOUNT *Account);
-INT32 SudoExecute(INT32 Argc, char **Argv, CONST char *Username);
+INT32   SudoExecute(INT32 Argc, char **Argv, CONST char *Username);
+INT32   SudoExecute(INT32 Argc, char **Argv, CONST char *Username);
