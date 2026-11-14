@@ -4,6 +4,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <Scheduler/Usage.h>
+#include <Scheduler/LoadBalancer.h>
 #include <Multicore/SMP.h>
 #include <Scheduler/LBPWRRTypes.h>
 #include <Arch/AMD64/CPU.h>
@@ -154,6 +155,7 @@ VOID UsageSampleTasks(VOID)
     {
         LastTaskSampleTSC = Now;
         TaskSampleCPUUsage(Interval);
+        LoadBalancerBalance();
     }
 
     ATOMIC_STORE(&TaskSampleLock, 0, ATOMIC_RELEASE);

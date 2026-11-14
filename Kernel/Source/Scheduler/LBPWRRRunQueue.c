@@ -214,25 +214,15 @@ BOOLEAN LBPWRRRemoveTask(TASK *Task)
     return TRUE;
 }
 
-BOOLEAN LBPWRRMoveTask(TASK *Task, UINT32 TargetCPUID)
+BOOLEAN LBPWRRMoveTask(UINT32 SourceCPUID, UINT32 TargetCPUID, UINTN UsageGap)
 {
-    UINT32           SourceCPUID;
-    UINT32           CPUCount;
-    UINT32           Index;
+    UINT32           CPUCount = LBPWRRGetActiveCPUCount();
     UINT32           SourceIndex;
     UINT32           LockCPUID;
     UINT32           OtherCPUID;
     UINT64           Flags;
     LBPWRR_RUNQUEUE *SourceRunQueue;
     LBPWRR_RUNQUEUE *TargetRunQueue;
-
-    if (Task == NULL || !Task->Scheduled)
-    {
-        return FALSE;
-    }
-
-    CPUCount = LBPWRRGetActiveCPUCount();
-    SourceCPUID = Task->CPUID;
 
     if (SourceCPUID >= CPUCount || TargetCPUID >= CPUCount || SourceCPUID == TargetCPUID)
     {
@@ -256,22 +246,27 @@ BOOLEAN LBPWRRMoveTask(TASK *Task, UINT32 TargetCPUID)
     Flags = SpinLockAcquireIRQSave(&RunQueues[LockCPUID].Lock);
     SpinLockAcquire(&RunQueues[OtherCPUID].Lock);
 
-    if (!Task->Scheduled || Task->CPUID != SourceCPUID || Task->State != TASK_READY || Task->Idle || Task->OnCPU || CurrentTasks[SourceCPUID] == Task || TargetRunQueue->RunnableCount >= LBPWRR_MAX_TASKS || Task->Weight == 0 || Task->Weight > 6)
-    {
-        SpinLockRelease(&RunQueues[OtherCPUID].Lock);
-        SpinLockReleaseIRQRestore(&RunQueues[LockCPUID].Lock, Flags);
-
-        return FALSE;
-    }
-
+    TASK *Task = NULL;
+    UINTN BestGap = UsageGap;
     SourceIndex = SourceRunQueue->RunnableCount;
 
-    for (Index = 0; Index < SourceRunQueue->RunnableCount; Index++)
+    for (UINT32 Index = 0; Index < SourceRunQueue->RunnableCount && TargetRunQueue->RunnableCount < LBPWRR_MAX_TASKS; Index++)
     {
-        if (SourceRunQueue->Runnable[Index] == Task)
+        TASK *Candidate = SourceRunQueue->Runnable[Index];
+
+        if (Candidate == NULL || !Candidate->Scheduled || Candidate->CPUID != SourceCPUID || Candidate->State != TASK_READY || Candidate->Idle || Candidate->OnCPU || CurrentTasks[SourceCPUID] == Candidate || Candidate->Weight == 0 || Candidate->Weight > 6)
         {
+            continue;
+        }
+
+        UINTN Shift = 2 * ATOMIC_LOAD(&Candidate->CPUUsage, ATOMIC_ACQUIRE);
+        UINTN Gap = Shift > UsageGap ? Shift - UsageGap : UsageGap - Shift;
+
+        if (Gap + 5 <= BestGap)
+        {
+            BestGap = Gap;
             SourceIndex = Index;
-            break;
+            Task = Candidate;
         }
     }
 
@@ -283,7 +278,7 @@ BOOLEAN LBPWRRMoveTask(TASK *Task, UINT32 TargetCPUID)
         return FALSE;
     }
 
-    for (Index = 0; Index < TargetRunQueue->RunnableCount; Index++)
+    for (UINT32 Index = 0; Index < TargetRunQueue->RunnableCount; Index++)
     {
         if (TargetRunQueue->Runnable[Index] == Task)
         {

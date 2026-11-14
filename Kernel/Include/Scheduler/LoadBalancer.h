@@ -6,6 +6,4 @@
 
 #include <LineOS/TypeInfo.h>
 
-VOID LoadBalancerInit(VOID);
-VOID LoadBalancerTick(VOID);
 VOID LoadBalancerBalance(VOID);

@@ -10,9 +10,9 @@
 #include <errno.h>
 #include <string.h>
 
-STATIC char   Output[32768];
-STATIC char   Previous[32768];
-STATIC char   Changes[65536];
+STATIC char   Output[131072];
+STATIC char   Previous[131072];
+STATIC char   Changes[262144];
 STATIC UINTN  PreviousLength;
 STATIC char  *Target = Output;
 STATIC UINTN  Capacity = sizeof(Output);
@@ -76,16 +76,32 @@ STATIC VOID BtopBar(UINT64 Percent, UINT32 Width)
         Percent = 100;
     }
 
-    UINT32 Filled = Percent * Width / 100;
+    STATIC CONST char *CONST Blocks[] = {"░", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"};
+    UINT32 Units = Percent * Width * 8 / 100;
+    UINT32 Filled = Units / 8;
+    UINT32 Fraction = Units % 8;
 
-    BtopText("\033[38;2;104;203;97m[");
+    BtopText(" \033[38;2;79;208;176m");
 
-    for (UINT32 Index = 0; Index < Width; Index++)
+    for (UINT32 Index = 0; Index < Filled; Index++)
     {
-        BtopCharacter(Index < Filled ? '#' : '-');
+        BtopText(Blocks[8]);
     }
 
-    BtopText("]\033[0m ");
+    if (Fraction != 0)
+    {
+        BtopText(Blocks[Fraction]);
+        Filled++;
+    }
+
+    BtopText("\033[38;2;77;89;107m");
+
+    for (UINT32 Index = Filled; Index < Width; Index++)
+    {
+        BtopText(Blocks[0]);
+    }
+
+    BtopText("\033[0m  ");
     BtopNumber(Percent, 3);
     BtopCharacter('%');
 }
@@ -279,7 +295,8 @@ INT32 BtopRender(CONST BTOP *Monitor)
     BtopNumber(Monitor->Info.CPUCount, 0);
     BtopText(gettext(" cores\n     "));
 
-    CONST char *Levels = " .:-=+*#%@";
+    STATIC CONST char *CONST Levels[] = {" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"};
+    BtopText("\033[38;2;79;208;176m");
     UINT32      HistoryWidth = Monitor->Columns - 6;
 
     for (UINTN Index = 0; Index < HistoryWidth; Index++)
@@ -292,7 +309,7 @@ INT32 BtopRender(CONST BTOP *Monitor)
             Value = 100;
         }
 
-        BtopCharacter(Levels[Value * 9 / 100]);
+        BtopText(Levels[(Value * 8 + 99) / 100]);
     }
 
     BtopCharacter('\n');
