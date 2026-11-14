@@ -216,10 +216,10 @@ VOID LwmText(LWM *Manager, CONST char *Text, UINT32 X, UINT32 Baseline, UINT32 S
 
 VOID LwmDesktop(LWM *Manager)
 {
-    Manager->Surface = (TRUE_TYPE_SURFACE){Manager->Desktop, Manager->Width, Manager->Height};
+    Manager->Surface = (TRUE_TYPE_SURFACE) {Manager->Desktop, Manager->Width, Manager->Height};
 
-    LwmFill(Manager, (LWM_RECT){0, 0, Manager->Width, Manager->Height}, 0x00151922U);
-    Manager->Surface = (TRUE_TYPE_SURFACE){Manager->Frame, Manager->Width, Manager->Height};
+    LwmFill(Manager, (LWM_RECT) {0, 0, Manager->Width, Manager->Height}, 0x00151922U);
+    Manager->Surface = (TRUE_TYPE_SURFACE) {Manager->Frame, Manager->Width, Manager->Height};
 }
 
 VOID LwmDamage(LWM *Manager, LWM_RECT Rect)
@@ -389,7 +389,7 @@ STATIC VOID LwmShadow(LWM *Manager, CONST LWM_WINDOW *Window)
 
 STATIC LWM_RECT LwmShadowRect(LWM_RECT Rect)
 {
-    return (LWM_RECT){Rect.X - 12, Rect.Y - 12, Rect.Width + 24, Rect.Height + 28};
+    return (LWM_RECT) {Rect.X - 12, Rect.Y - 12, Rect.Width + 24, Rect.Height + 28};
 }
 
 INT32 LwmCompose(LWM *Manager)
@@ -401,7 +401,7 @@ INT32 LwmCompose(LWM *Manager)
 
     if (!Manager->FrameReady)
     {
-        LwmDamage(Manager, (LWM_RECT){0, 0, Manager->Width, Manager->Height});
+        LwmDamage(Manager, (LWM_RECT) {0, 0, Manager->Width, Manager->Height});
     }
 
     INT32  Focused = -1;
@@ -421,7 +421,7 @@ INT32 LwmCompose(LWM *Manager)
 
     if (!Manager->FrameReady || DockState != Manager->DockState)
     {
-        LwmDamage(Manager, (LWM_RECT){0, (INT32) Manager->Height - LWM_DOCK_HEIGHT, Manager->Width, LWM_DOCK_HEIGHT});
+        LwmDamage(Manager, (LWM_RECT) {0, (INT32) Manager->Height - LWM_DOCK_HEIGHT, Manager->Width, LWM_DOCK_HEIGHT});
     }
 
     for (UINT32 Index = 0; Index < Manager->WindowCount; Index++)

@@ -609,7 +609,7 @@ UINT32 TaskGetSnapshot(SYSTEM_TASK_INFO *Entries, UINT32 Capacity)
                 continue;
             }
 
-            TASK *Task = &TaskPool[Index];
+            TASK      *Task = &TaskPool[Index];
             TASK_STATE State = ATOMIC_LOAD(&Task->State, ATOMIC_ACQUIRE);
 
             if (State == TASK_TERMINATED || State == TASK_KILLED)

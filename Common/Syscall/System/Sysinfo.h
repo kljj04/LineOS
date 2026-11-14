@@ -26,4 +26,4 @@ typedef struct
     CHAR8  Reserved[0];
 } SYS_INFO;
 
-STATIC_ASSERT(sizeof(SYS_INFO) == 112, "Invalid SYS_INFO size");
+_Static_assert(sizeof(SYS_INFO) == 112, "Invalid SYS_INFO size");

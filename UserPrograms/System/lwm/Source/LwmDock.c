@@ -17,14 +17,14 @@ STATIC UINT32 LwmDockSlot(LWM *Manager)
 
 VOID LwmDock(LWM *Manager)
 {
-    Manager->Surface = (TRUE_TYPE_SURFACE){Manager->Frame, Manager->Width, Manager->Height};
+    Manager->Surface = (TRUE_TYPE_SURFACE) {Manager->Frame, Manager->Width, Manager->Height};
 
-    LwmFill(Manager, (LWM_RECT){0, (INT32) Manager->Height - LWM_DOCK_HEIGHT, Manager->Width, LWM_DOCK_HEIGHT}, 0x00232B38U);
-    LwmFill(Manager, (LWM_RECT){12, (INT32) Manager->Height - 54, 96, 44}, Manager->ShellFocused ? 0x003D5874U : 0x00303E50U);
+    LwmFill(Manager, (LWM_RECT) {0, (INT32) Manager->Height - LWM_DOCK_HEIGHT, Manager->Width, LWM_DOCK_HEIGHT}, 0x00232B38U);
+    LwmFill(Manager, (LWM_RECT) {12, (INT32) Manager->Height - 54, 96, 44}, Manager->ShellFocused ? 0x003D5874U : 0x00303E50U);
     LwmText(Manager, "Shell", 24, Manager->Height - 24, 21, 0x00FFFFFFU, 102);
-    LwmFill(Manager, (LWM_RECT){116, (INT32) Manager->Height - 54, 120, 44}, 0x00354860U);
+    LwmFill(Manager, (LWM_RECT) {116, (INT32) Manager->Height - 54, 120, 44}, 0x00354860U);
     LwmText(Manager, "TestGUI +", 126, Manager->Height - 24, 21, 0x00FFFFFFU, 232);
-    LwmFill(Manager, (LWM_RECT){(INT32) Manager->Width - 80, (INT32) Manager->Height - 54, 68, 44}, 0x00423038U);
+    LwmFill(Manager, (LWM_RECT) {(INT32) Manager->Width - 80, (INT32) Manager->Height - 54, 68, 44}, 0x00423038U);
     LwmText(Manager, gettext("Exit"), Manager->Width - 70, Manager->Height - 24, 21, 0x00FFB4B4U, Manager->Width - 16);
 
     UINT32 Slot = LwmDockSlot(Manager);
@@ -34,7 +34,7 @@ VOID LwmDock(LWM *Manager)
         LWM_WINDOW *Window = &Manager->Windows[Index];
         UINT32      X = 248 + Index * Slot;
 
-        LwmFill(Manager, (LWM_RECT){(INT32) X, (INT32) Manager->Height - 54, Slot - 8, 44}, Window->Minimized ? 0x002D3340U : !Manager->ShellFocused && Index + 1 == Manager->WindowCount ? 0x003D5874U : 0x00303E50U);
+        LwmFill(Manager, (LWM_RECT) {(INT32) X, (INT32) Manager->Height - 54, Slot - 8, 44}, Window->Minimized ? 0x002D3340U : !Manager->ShellFocused && Index + 1 == Manager->WindowCount ? 0x003D5874U : 0x00303E50U);
         LwmText(Manager, Window->Endpoint != 0 ? Window->Title : "Demo", X + 6, Manager->Height - 24, 21, 0x00E0E8F4U, X + Slot - 10);
     }
 }

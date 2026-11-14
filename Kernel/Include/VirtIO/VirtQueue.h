@@ -71,3 +71,5 @@ BOOLEAN       VirtQueuePostBuffer(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, V
 BOOLEAN       VirtQueuePopUsed(VIRTQUEUE *Queue, UINT16 *Head, UINT32 *Length);
 BOOLEAN       VirtQueueWaitUsed(VIRTQUEUE *Queue, UINT16 Head, UINT32 *Length, UINT32 Timeout);
 CONST CHAR16 *VirtQueueGetLastError(VOID);
+
+BOOLEAN VirtQueueTryWaitUsed(VIRTQUEUE *Queue, UINT16 Head, UINT32 *Length);

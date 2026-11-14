@@ -5,7 +5,7 @@
 #pragma once
 
 #include <LOSLibC/TypeInfo.h>
-#include <TrueType/TrueTypeEngine.h>
+#include <TrueTypeEngine.h>
 #include <Syscall/Device/Input.h>
 #include <Window.h>
 

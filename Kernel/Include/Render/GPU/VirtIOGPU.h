@@ -6,12 +6,14 @@
 
 #include <LineOS/TypeInfo.h>
 #include <PCI/PCI.h>
+#include <Render/Direct/Direct.h>
 #include <Render/GPU/VirtIOGPUProtocol.h>
 #include <VirtIO/VirtIOPCI.h>
 #include <VirtIO/VirtQueue.h>
 
 #define VIRTIO_GPU_VENDOR_ID       0x1AF4
 #define VIRTIO_GPU_DEVICE_ID       0x1050
+#define VIRTIO_GPU_IRQ_VECTOR      0x47
 #define VIRTIO_GPU_MAX_DIRTY_RECTS 128
 
 typedef struct
@@ -56,18 +58,12 @@ typedef struct
 } VIRTIO_GPU_INFO;
 
 BOOLEAN          VirtIOGPUInit(VOID);
+BOOLEAN          VirtIOGPUEnableInterrupt(VOID);
+VOID             VirtIOGPUHandleInterrupt(VOID);
+UINT64           VirtIOGPUGetInterruptCount(VOID);
 BOOLEAN          VirtIOGPUCreateFrameBuffer(UINT32 Width, UINT32 Height);
-VOID             FillScreen(UINT32 Color);
-VOID             DrawPixel(UINT32 X, UINT32 Y, UINT32 Color);
-VOID             FillRect(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 Color);
-VOID             DrawRect(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT32 Color);
-VOID             DrawLine(INT32 X1, INT32 Y1, INT32 X2, INT32 Y2, UINT32 Color);
-VOID             DrawCircle(INT32 CenterX, INT32 CenterY, UINT32 Radius, UINT32 Color);
-VOID             FillCircle(INT32 CenterX, INT32 CenterY, UINT32 Radius, UINT32 Color);
-VOID             VirtIOGPUBlendPixel(UINT32 X, UINT32 Y, UINT32 Color, UINT8 Alpha);
-VOID             CopyRect(UINT32 SourceX, UINT32 SourceY, UINT32 Width, UINT32 Height, UINT32 TargetX, UINT32 TargetY);
-UINT32           ReadPixel(UINT32 X, UINT32 Y);
 VOID             VirtIOGPUMarkDirty(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height);
+VOID             VirtIOGPUMarkDirtyLocked(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height);
 VOID             VirtIOGPUClearDirty(VOID);
 UINT64           VirtIOGPUAcquireRenderLock(VOID);
 VOID             VirtIOGPUReleaseRenderLock(UINT64 Flags);
@@ -86,3 +82,10 @@ VIRTIO_GPU_INFO *VirtIOGPUGetInfo(VOID);
 CONST CHAR16    *VirtIOGPUGetLastError(VOID);
 UINT32           VirtIOGPUGetFrameBufferWidth(VOID);
 UINT32           VirtIOGPUGetFrameBufferHeight(VOID);
+UINT32           VirtIOGPUGetCapsetCount(VOID);
+BOOLEAN          VirtIOGPUGetCapsetInfo(UINT32 Index, VIRTIO_GPU_GET_CAPSET_INFO_RESPONSE *Response);
+BOOLEAN          VirtIOGPUSendVirGLCommand(VOID *Request, UINT32 RequestLength, CONST CHAR16 *Stage);
+BOOLEAN          VirtIOGPUReadCapset(UINT32 Id, UINT32 Version, VOID *Data, UINT32 Size, UINT32 *BytesRead);
+
+VOID    VirtIOGPUCheckCompletion(BOOLEAN Interrupt);
+BOOLEAN VirtIOGPUSubmitVirGL(VOID *Request, UINT32 RequestLength);

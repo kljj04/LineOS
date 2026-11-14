@@ -6,16 +6,30 @@
 
 #include <LineOS/TypeInfo.h>
 
+#define VIRTIO_GPU_F_VIRGL 0
+
 #define VIRTIO_GPU_CMD_GET_DISPLAY_INFO        0x0100
 #define VIRTIO_GPU_CMD_RESOURCE_CREATE_2D      0x0101
 #define VIRTIO_GPU_CMD_RESOURCE_ATTACH_BACKING 0x0106
 #define VIRTIO_GPU_CMD_SET_SCANOUT             0x0103
 #define VIRTIO_GPU_CMD_TRANSFER_TO_HOST_2D     0x0105
 #define VIRTIO_GPU_CMD_RESOURCE_FLUSH          0x0104
+#define VIRTIO_GPU_CMD_GET_CAPSET_INFO         0x0108
+#define VIRTIO_GPU_CMD_GET_CAPSET              0x0109
+#define VIRTIO_GPU_CMD_CTX_CREATE              0x0200
+#define VIRTIO_GPU_CMD_CTX_DESTROY             0x0201
+#define VIRTIO_GPU_CMD_RESOURCE_UNREF          0x0102
+#define VIRTIO_GPU_CMD_CTX_ATTACH_RESOURCE     0x0202
+#define VIRTIO_GPU_CMD_CTX_DETACH_RESOURCE     0x0203
+#define VIRTIO_GPU_CMD_RESOURCE_CREATE_3D      0x0204
+#define VIRTIO_GPU_CMD_SUBMIT_3D               0x0207
+#define VIRTIO_GPU_FLAG_FENCE                  1
 #define VIRTIO_GPU_CMD_UPDATE_CURSOR           0x0300
 #define VIRTIO_GPU_CMD_MOVE_CURSOR             0x0301
 #define VIRTIO_GPU_RESP_OK_NODATA              0x1100
 #define VIRTIO_GPU_RESP_OK_DISPLAY_INFO        0x1101
+#define VIRTIO_GPU_RESP_OK_CAPSET_INFO         0x1102
+#define VIRTIO_GPU_RESP_OK_CAPSET              0x1103
 
 #define VIRTIO_GPU_MAX_SCANOUTS          16
 #define VIRTIO_GPU_FORMAT_B8G8R8A8_UNORM 1
@@ -122,3 +136,73 @@ typedef struct PACKED
     UINT32                     HotY;
     UINT32                     Padding;
 } VIRTIO_GPU_UPDATE_CURSOR_REQUEST;
+
+typedef struct PACKED
+{
+    UINT32 EventsRead;
+    UINT32 EventsClear;
+    UINT32 NumScanouts;
+    UINT32 NumCapsets;
+} VIRTIO_GPU_CONFIG;
+
+typedef struct PACKED
+{
+    VIRTIO_GPU_CTRL_HEADER Header;
+    UINT32                 CapsetIndex;
+    UINT32                 Padding;
+} VIRTIO_GPU_GET_CAPSET_INFO_REQUEST;
+
+typedef struct PACKED
+{
+    VIRTIO_GPU_CTRL_HEADER Header;
+    UINT32                 CapsetId;
+    UINT32                 CapsetMaxVersion;
+    UINT32                 CapsetMaxSize;
+    UINT32                 Padding;
+} VIRTIO_GPU_GET_CAPSET_INFO_RESPONSE;
+
+typedef struct PACKED
+{
+    VIRTIO_GPU_CTRL_HEADER Header;
+    UINT32                 NameLength;
+    UINT32                 ContextInit;
+    CHAR8                  Name[64];
+} VIRTIO_GPU_CTX_CREATE_REQUEST;
+
+typedef struct PACKED
+{
+    VIRTIO_GPU_CTRL_HEADER Header;
+    UINT32                 CapsetId;
+    UINT32                 Version;
+} VIRTIO_GPU_GET_CAPSET_REQUEST;
+
+typedef struct PACKED
+{
+    VIRTIO_GPU_CTRL_HEADER Header;
+    UINT32                 ResourceId;
+    UINT32                 Padding;
+} VIRTIO_GPU_RESOURCE_REQUEST;
+
+typedef struct PACKED
+{
+    VIRTIO_GPU_CTRL_HEADER Header;
+    UINT32                 ResourceId;
+    UINT32                 Target;
+    UINT32                 Format;
+    UINT32                 Bind;
+    UINT32                 Width;
+    UINT32                 Height;
+    UINT32                 Depth;
+    UINT32                 ArraySize;
+    UINT32                 LastLevel;
+    UINT32                 Samples;
+    UINT32                 Flags;
+    UINT32                 Padding;
+} VIRTIO_GPU_RESOURCE_CREATE_3D_REQUEST;
+
+typedef struct PACKED
+{
+    VIRTIO_GPU_CTRL_HEADER Header;
+    UINT32                 Size;
+    UINT32                 Padding;
+} VIRTIO_GPU_SUBMIT_3D_REQUEST;

@@ -74,13 +74,13 @@ USER_PROGRAM_CFLAGS = -target $(KERNEL_TYPE_TARGET) \
                       -fno-pie -fno-stack-protector -mcmodel=large \
                       -fno-asynchronous-unwind-tables \
                       -fno-unwind-tables \
-                      -ICommon -ILOSLibC/Include -ILibraries/Include
+                      -ICommon -ILOSLibC/Include
 
 KERN_FLOAT_CFLAGS = $(filter-out -mgeneral-regs-only,$(KERN_CFLAGS)) -msse2 -mfpmath=sse
 KERN_OBJ_CFLAGS = $(KERN_CFLAGS)
 LOSLIBC_CFLAGS = $(USER_PROGRAM_CFLAGS)
 
-FORMAT_EXCLUDE_SRCS := BootLoader/EDK2/%
+FORMAT_EXCLUDE_SRCS := BootLoader/EDK2/% Libraries/Mesa/% Libraries/LibM/%
 
 FORMAT_ALL_SRCS = $(call RWildcard,Libraries,*.c) $(call RWildcard,Libraries,*.h) \
                   $(call RWildcard,BootLoader,*.c) $(call RWildcard,BootLoader,*.h) \

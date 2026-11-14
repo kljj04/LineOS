@@ -121,6 +121,12 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
             return (UINT64) SyscallGetUID(Frame->RAX == SYSCALL_GETEUID);
         }
 
+        case SYSCALL_GETGID:
+        case SYSCALL_GETEGID:
+        {
+            return (UINT64) SyscallGetGID(Frame->RAX == SYSCALL_GETEGID);
+        }
+
         case SYSCALL_PARENT_CHDIR:
         {
             return (UINT64) SyscallParentChdir(Frame->RDI);
@@ -193,6 +199,11 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
         case SYSCALL_GETRANDOM:
         {
             return (UINT64) SyscallGetRandom(Frame->RDI, Frame->RSI, Frame->RDX);
+        }
+
+        case SYSCALL_LSEEK:
+        {
+            return (UINT64) SyscallSeek(Frame->RDI, (INT64) Frame->RSI, Frame->RDX);
         }
 
         case SYSCALL_READ:

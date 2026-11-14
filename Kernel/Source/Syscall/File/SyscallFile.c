@@ -453,3 +453,74 @@ INT64 SyscallClose(UINT64 FD)
 
     return FileRelease(File);
 }
+
+INT64 SyscallSeek(UINT64 FD, INT64 Offset, UINT64 Whence)
+{
+    TASK      *Task = LBPWRRGetCurrentTask();
+    OPEN_FILE *File;
+
+    if (Task == NULL || FD >= TASK_FILE_LIMIT || (File = Task->Files[FD]) == NULL)
+    {
+        return -EBADF;
+    }
+
+    if (File->Device != NULL || File->Directory)
+    {
+        return -ESPIPE;
+    }
+
+    if (Whence > 2)
+    {
+        return -EINVAL;
+    }
+
+    INT64 Result = FileBegin(File);
+
+    if (Result < 0)
+    {
+        return Result;
+    }
+
+    UINT64 Base = Whence == 1 ? File->Offset : 0;
+
+    if (Whence == 2)
+    {
+        VFS_NODE Node;
+        Result = SyscallVFSError(VFSLookup(Task->FileContext, File->Path, &Node));
+
+        if (Result == 0)
+        {
+            if (Node.Partition != File->Partition || Node.Number != File->Number || Node.NamespaceGeneration != File->NamespaceGeneration)
+            {
+                Result = -ESTALE;
+            }
+            else
+            {
+                Base = Node.Size;
+            }
+        }
+    }
+
+    if (Result == 0)
+    {
+        INT128 Position = (INT128) Base + Offset;
+
+        if (Position < 0)
+        {
+            Result = -EINVAL;
+        }
+        else if (Position > 0x7FFFFFFFFFFFFFFFLL)
+        {
+            Result = -EOVERFLOW;
+        }
+        else
+        {
+            File->Offset = (UINT64) Position;
+            Result = (INT64) Position;
+        }
+    }
+
+    FileEnd(File);
+
+    return Result;
+}

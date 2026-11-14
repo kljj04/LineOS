@@ -794,7 +794,7 @@ INT64 TerminalCompositor(TASK *Task, UINT64 UserEndpoint, BOOLEAN Set)
     }
 
     UINT64 Flags = SpinLockAcquireIRQSave(&TerminalControlLock);
-    INT64 Result = 0;
+    INT64  Result = 0;
 
     if (Set)
     {
@@ -832,7 +832,7 @@ INT64 TerminalInjectCLI(TASK *Task, UINT64 UserByte)
     }
 
     UINT64 Flags = SpinLockAcquireIRQSave(&TerminalControlLock);
-    INT64 Result = 0;
+    INT64  Result = 0;
 
     if (TerminalGraphicsOwner != Task)
     {

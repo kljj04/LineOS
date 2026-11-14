@@ -5,7 +5,7 @@
 #include <libintl.h>
 
 #include <Sudo.h>
-#include <UserDB/Argon2.h>
+#include <Argon2.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>

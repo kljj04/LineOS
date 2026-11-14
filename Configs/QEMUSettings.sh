@@ -19,9 +19,9 @@ CPUFlags=(
 
 MemorySize="4G"
 
-GraphicsDisplay="gtk"
+GraphicsDisplay="gtk,gl=on"
 GraphicsResolution="2560x1440"
-GraphicsDevice="virtio-gpu-pci"
+GraphicsDevice="virtio-gpu-gl-pci"
 GraphicsHostMemory="1G"
 
 NetworkBackend="user"

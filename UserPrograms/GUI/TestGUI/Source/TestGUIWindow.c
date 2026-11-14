@@ -37,8 +37,8 @@ INT32 TestGUIWindowed(VOID)
         goto Cleanup;
     }
 
-    GUI.Window = (TEST_GUI_RECT){0, 0, GUI.Width, GUI.Height};
-    GUI.Button = (TEST_GUI_RECT){32, 265, 176, 58};
+    GUI.Window = (TEST_GUI_RECT) {0, 0, GUI.Width, GUI.Height};
+    GUI.Button = (TEST_GUI_RECT) {32, 265, 176, 58};
 
     BOOLEAN Dirty = TRUE;
     UINT32  PreviousButtons = 0;

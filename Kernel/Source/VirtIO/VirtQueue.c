@@ -389,7 +389,7 @@ BOOLEAN VirtQueuePopUsed(VIRTQUEUE *Queue, UINT16 *Head, UINT32 *Length)
     return TRUE;
 }
 
-BOOLEAN VirtQueueWaitUsed(VIRTQUEUE *Queue, UINT16 Head, UINT32 *Length, UINT32 Timeout)
+BOOLEAN VirtQueueTryWaitUsed(VIRTQUEUE *Queue, UINT16 Head, UINT32 *Length)
 {
     if (!DescIndexValid(Queue, Head))
     {
@@ -403,14 +403,14 @@ BOOLEAN VirtQueueWaitUsed(VIRTQUEUE *Queue, UINT16 Head, UINT32 *Length, UINT32 
         return TRUE;
     }
 
-    for (UINT32 Index = 0; Index < Timeout; Index++)
+    for (UINT32 Index = 0; Index < Queue->Size; Index++)
     {
         UINT16 UsedHead;
         UINT32 UsedLength;
 
         if (!VirtQueuePopUsed(Queue, &UsedHead, &UsedLength))
         {
-            continue;
+            return FALSE;
         }
 
         if (UsedHead == Head)
@@ -427,6 +427,26 @@ BOOLEAN VirtQueueWaitUsed(VIRTQUEUE *Queue, UINT16 Head, UINT32 *Length, UINT32 
 
         Queue->Completed[UsedHead] = 1;
         Queue->CompletedLength[UsedHead] = UsedLength;
+    }
+
+    return FALSE;
+}
+
+BOOLEAN VirtQueueWaitUsed(VIRTQUEUE *Queue, UINT16 Head, UINT32 *Length, UINT32 Timeout)
+{
+    if (!DescIndexValid(Queue, Head))
+    {
+        LastError = L"virtqueue wait args invalid";
+
+        return FALSE;
+    }
+
+    for (UINT32 Index = 0; Index < Timeout; Index++)
+    {
+        if (VirtQueueTryWaitUsed(Queue, Head, Length))
+        {
+            return TRUE;
+        }
     }
 
     LastError = L"virtqueue timeout";

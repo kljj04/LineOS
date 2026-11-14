@@ -29,6 +29,11 @@ SECTIONS
     .data :
     {
         *(.data .data.* .ldata .ldata.*)
+        . = ALIGN(8);
+        __InitArrayStart = .;
+        KEEP(*(SORT_BY_INIT_PRIORITY(.init_array.*)))
+        KEEP(*(.init_array))
+        __InitArrayEnd = .;
     } :Data
 
     .bss :

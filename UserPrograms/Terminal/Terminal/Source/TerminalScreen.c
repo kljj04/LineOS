@@ -117,10 +117,10 @@ VOID TerminalScreenPut(UINT32 Baseline, UINT32 Cursor, UINT32 Codepoint, UINT32 
         UINT32 Index = Line->Length++;
         UINT32 Start = Index == 0 ? TERMINAL_MARGIN : Line->Cells[Index - 1].X + Line->Cells[Index - 1].Advance;
 
-        Line->Cells[Index] = (TERMINAL_TEXT_CELL){' ', Foreground, Line->Background, Start, Glyphs[' '].Advance};
+        Line->Cells[Index] = (TERMINAL_TEXT_CELL) {' ', Foreground, Line->Background, Start, Glyphs[' '].Advance};
     }
 
-    Line->Cells[Cursor] = (TERMINAL_TEXT_CELL){Codepoint, Foreground, Background, X, Advance};
+    Line->Cells[Cursor] = (TERMINAL_TEXT_CELL) {Codepoint, Foreground, Background, X, Advance};
 
     if (Line->Length <= Cursor)
     {

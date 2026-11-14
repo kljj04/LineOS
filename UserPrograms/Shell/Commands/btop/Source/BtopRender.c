@@ -77,9 +77,9 @@ STATIC VOID BtopBar(UINT64 Percent, UINT32 Width)
     }
 
     STATIC CONST char *CONST Blocks[] = {"░", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"};
-    UINT32 Units = Percent * Width * 8 / 100;
-    UINT32 Filled = Units / 8;
-    UINT32 Fraction = Units % 8;
+    UINT32                   Units = Percent * Width * 8 / 100;
+    UINT32                   Filled = Units / 8;
+    UINT32                   Fraction = Units % 8;
 
     BtopText(" \033[38;2;79;208;176m");
 
@@ -297,7 +297,7 @@ INT32 BtopRender(CONST BTOP *Monitor)
 
     STATIC CONST char *CONST Levels[] = {" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"};
     BtopText("\033[38;2;79;208;176m");
-    UINT32      HistoryWidth = Monitor->Columns - 6;
+    UINT32 HistoryWidth = Monitor->Columns - 6;
 
     for (UINTN Index = 0; Index < HistoryWidth; Index++)
     {

@@ -37,6 +37,7 @@ typedef int clockid_t;
 #define CLOCK_REALTIME  LOS_CLOCK_REALTIME
 #define CLOCK_MONOTONIC LOS_CLOCK_MONOTONIC
 
+time_t time(time_t *Result);
 int clock_gettime(clockid_t ClockID, struct timespec *Time);
 
 int nanosleep(const struct timespec *Duration, struct timespec *Remaining);

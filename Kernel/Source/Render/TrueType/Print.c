@@ -121,7 +121,7 @@ VOID KPrint(CONST CHAR16 *Msg, UINT32 X, UINT32 Baseline, UINT32 Color, UINT32 P
 {
     va_list Args;
 
-    UINT32  OriginX = X;
+    UINT32 OriginX = X;
 
     if (Msg == NULL)
     {

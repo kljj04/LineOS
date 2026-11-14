@@ -7,6 +7,8 @@
 #include <Syscall/Device/SyscallDisplay.h>
 #include <Syscall/Errno.h>
 #include <Syscall/Device/Ioctl.h>
+#include <Syscall/Device/VirGL.h>
+#include <Render/VirGL/VirGL.h>
 #include <Syscall/Memory/Memory.h>
 #include <Render/GPU/VirtIOGPU.h>
 #include <Memory/PMM.h>
@@ -465,13 +467,497 @@ STATIC INT64 DeviceTerminalIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64
     return DevicePointerIoctl(Task, State, Request, Argument, Access);
 }
 
+typedef struct
+{
+    UINT32 ResourceId;
+    UINT32 Size;
+    BOOLEAN ColorTarget;
+    UINT32 Width;
+    UINT32 Height;
+    VOID *Backing;
+} VIRGL_FILE_BUFFER;
+
+typedef struct
+{
+    UINT32            ContextId;
+    UINT32            BufferBusy;
+    VIRGL_FILE_BUFFER Buffers[LOS_VIRGL_BUFFER_LIMIT];
+} VIRGL_FILE_STATE;
+
+STATIC UINT64 NextVirGLResourceId = 0x80000000ULL;
+STATIC UINT64 NextVirGLContextId = 0x80000000ULL;
+
+STATIC INT64 VirGLDeviceOpen(TASK *Task, UINT64 Flags, VOID **State)
+{
+    if (VirtIOGPUGetCapsetCount() == 0)
+    {
+        return -ENODEV;
+    }
+
+    (VOID) Task;
+    (VOID) Flags;
+
+    VIRGL_FILE_STATE *File = KAlloc(sizeof(*File));
+
+    if (File == NULL)
+    {
+        return -ENOMEM;
+    }
+
+    KMemSet(File, 0, sizeof(*File));
+    *State = File;
+
+    return 0;
+}
+
+STATIC INT64 VirGLDeviceClose(VOID *State)
+{
+    VIRGL_FILE_STATE *File = State;
+    INT64             Result = 0;
+
+    if (File != NULL)
+    {
+        if (File->ContextId != 0 && !VirGLDestroyContext(File->ContextId))
+        {
+            Result = -EIO;
+        }
+
+        for (UINT32 Index = 0; Index < LOS_VIRGL_BUFFER_LIMIT; Index++)
+        {
+            VIRGL_FILE_BUFFER *Buffer = &File->Buffers[Index];
+
+            if (Buffer->ResourceId != 0)
+            {
+                if (!VirGLDestroyResource(Buffer->ResourceId))
+                {
+                    Result = -EIO;
+                }
+                else if (Buffer->Backing != NULL)
+                {
+                    KMemFreePages(Buffer->Backing, ((UINT64) Buffer->Width * Buffer->Height * 4 + 4095) / 4096);
+                }
+            }
+        }
+
+        KFree(File);
+    }
+
+    return Result;
+}
+
+STATIC INT64 VirGLDeviceCreateContext(VIRGL_FILE_STATE *File)
+{
+    UINT32 Expected = 0;
+
+    if (!ATOMIC_COMPARE_EXCHANGE(&File->ContextId, &Expected, 1, FALSE, ATOMIC_ACQ_REL, ATOMIC_ACQUIRE))
+    {
+        return -EBUSY;
+    }
+
+    UINT64 Id = ATOMIC_FETCH_ADD(&NextVirGLContextId, 1, ATOMIC_RELAXED);
+
+    if (Id > 0xFFFFFFFFULL || !VirGLCreateContext((UINT32) Id, NULL))
+    {
+        ATOMIC_STORE(&File->ContextId, 0, ATOMIC_RELEASE);
+
+        return -EIO;
+    }
+
+    ATOMIC_STORE(&File->ContextId, (UINT32) Id, ATOMIC_RELEASE);
+
+    return 0;
+}
+
+STATIC INT64 VirGLDeviceCreateBuffer(TASK *Task, VIRGL_FILE_STATE *File, UINT32 ContextId, UINT64 Argument, BOOLEAN ColorTarget)
+{
+    LOS_VIRGL_BUFFER_CREATE Query = {0};
+    LOS_VIRGL_TARGET_CREATE Target = {0};
+
+    if (!VMMCopyFromUser(Task->AddressSpace, ColorTarget ? (VOID *) &Target : (VOID *) &Query, Argument, ColorTarget ? sizeof(Target) : sizeof(Query)))
+    {
+        return -EFAULT;
+    }
+
+    if (ColorTarget ? (Target.Width == 0 || Target.Height == 0 || Target.Width > 4096 || Target.Height > 4096) :
+                      (Query.Size == 0 || Query.Size > LOS_VIRGL_MAX_BUFFER_BYTES))
+    {
+        return -EINVAL;
+    }
+
+    for (UINT32 Index = 0; Index < LOS_VIRGL_BUFFER_LIMIT; Index++)
+    {
+        VIRGL_FILE_BUFFER *Buffer = &File->Buffers[Index];
+
+        if (Buffer->ResourceId != 0)
+        {
+            continue;
+        }
+
+        UINT64 Id = ATOMIC_FETCH_ADD(&NextVirGLResourceId, 1, ATOMIC_RELAXED);
+
+        if (Id > 0xFFFFFFFFULL || !(ColorTarget ? VirGLCreateRenderTarget((UINT32) Id, Target.Width, Target.Height) : VirGLCreateVertexBuffer((UINT32) Id, Query.Size)))
+        {
+            return -EIO;
+        }
+
+        Buffer->ResourceId = (UINT32) Id;
+        Buffer->Size = Query.Size;
+        Buffer->ColorTarget = ColorTarget;
+        Buffer->Width = Target.Width;
+        Buffer->Height = Target.Height;
+        BOOLEAN Attached = VirGLAttachResource(ContextId, Buffer->ResourceId);
+        Query.Handle = Buffer->ResourceId;
+        Target.Handle = Buffer->ResourceId;
+
+        if (Attached && VMMCopyToUser(Task->AddressSpace, Argument, ColorTarget ? (VOID *) &Target : (VOID *) &Query, ColorTarget ? sizeof(Target) : sizeof(Query)))
+        {
+            return 0;
+        }
+
+        if (Attached)
+        {
+            VirGLDetachResource(ContextId, Buffer->ResourceId);
+        }
+
+        if (VirGLDestroyResource(Buffer->ResourceId))
+        {
+            Buffer->ResourceId = 0;
+        }
+
+        return Attached ? -EFAULT : -EIO;
+    }
+
+    return -ENOSPC;
+}
+
+STATIC INT64 VirGLDeviceBufferIoctl(TASK *Task, VIRGL_FILE_STATE *File, UINT64 Request, UINT64 Argument)
+{
+    UINT32                 ContextId = ATOMIC_LOAD(&File->ContextId, ATOMIC_ACQUIRE);
+    LOS_VIRGL_BUFFER_WRITE Query = {0};
+
+    if (ContextId < 0x80000000U)
+    {
+        return -EINVAL;
+    }
+
+    if (Request == LOS_VIRGL_CREATE_BUFFER || Request == LOS_VIRGL_CREATE_TARGET)
+    {
+        return VirGLDeviceCreateBuffer(Task, File, ContextId, Argument, Request == LOS_VIRGL_CREATE_TARGET);
+    }
+
+    UINTN Size = Request == LOS_VIRGL_DESTROY_BUFFER ? sizeof(Query.Handle) : sizeof(Query);
+
+    if (!VMMCopyFromUser(Task->AddressSpace, &Query, Argument, Size))
+    {
+        return -EFAULT;
+    }
+
+    for (UINT32 Index = 0; Index < LOS_VIRGL_BUFFER_LIMIT; Index++)
+    {
+        VIRGL_FILE_BUFFER *Buffer = &File->Buffers[Index];
+
+        if (Buffer->ResourceId == 0 || Buffer->ResourceId != Query.Handle)
+        {
+            continue;
+        }
+
+        if (Request == LOS_VIRGL_DESTROY_BUFFER)
+        {
+            VirGLDetachResource(ContextId, Buffer->ResourceId);
+
+            if (!VirGLDestroyResource(Buffer->ResourceId))
+            {
+                return -EIO;
+            }
+
+            if (Buffer->Backing != NULL)
+            {
+                KMemFreePages(Buffer->Backing, ((UINT64) Buffer->Width * Buffer->Height * 4 + 4095) / 4096);
+            }
+
+            KMemSet(Buffer, 0, sizeof(*Buffer));
+
+            return 0;
+        }
+
+        if (Buffer->ColorTarget || Query.Reserved != 0 || Query.Size == 0 || Query.Size > LOS_VIRGL_MAX_UPLOAD_BYTES || Query.Offset > Buffer->Size || Query.Size > Buffer->Size - Query.Offset)
+        {
+            return -EINVAL;
+        }
+
+        VOID *Data = KAlloc(Query.Size);
+
+        if (Data == NULL)
+        {
+            return -ENOMEM;
+        }
+
+        INT64 Result = -EFAULT;
+
+        if (VMMCopyFromUser(Task->AddressSpace, Data, Query.Address, Query.Size))
+        {
+            Result = VirGLWriteVertexBuffer(ContextId, Buffer->ResourceId, Query.Offset, Data, Query.Size) ? 0 : -EIO;
+        }
+
+        KFree(Data);
+
+        return Result;
+    }
+
+    return -ENOENT;
+}
+
+STATIC INT64 VirGLDeviceSubmit(TASK *Task, VIRGL_FILE_STATE *File, UINT64 Argument)
+{
+    LOS_VIRGL_SUBMIT Request;
+    UINT32 ContextId = ATOMIC_LOAD(&File->ContextId, ATOMIC_ACQUIRE);
+
+    if (ContextId < 0x80000000U)
+    {
+        return -EINVAL;
+    }
+
+    if (!VMMCopyFromUser(Task->AddressSpace, &Request, Argument, sizeof(Request)))
+    {
+        return -EFAULT;
+    }
+
+    if (Request.Reserved != 0 || Request.Words == 0 || Request.Words > LOS_VIRGL_MAX_COMMAND_WORDS)
+    {
+        return -EINVAL;
+    }
+
+    UINT32 Size = Request.Words * sizeof(UINT32);
+    UINT32 *Commands = KAlloc(Size);
+
+    if (Commands == NULL)
+    {
+        return -ENOMEM;
+    }
+
+    INT64 Result = -EFAULT;
+
+    if (VMMCopyFromUser(Task->AddressSpace, Commands, Request.Address, Size))
+    {
+        Result = -EOPNOTSUPP;
+
+        if (Request.Words == 19 && Commands[0] == 0x00050801U &&
+                 Commands[1] != 0 && Commands[3] == VIRTIO_GPU_FORMAT_B8G8R8X8_UNORM &&
+                 Commands[4] == 0 && Commands[5] == 0 && Commands[6] == 0x00030005U &&
+                 Commands[7] == 1 && Commands[8] == 0 && Commands[9] == Commands[1] &&
+                 Commands[10] == 0x00080007U && Commands[11] == 4 &&
+                 Commands[16] == 0 && Commands[17] == 0 && Commands[18] == 0)
+        {
+            Result = -ENOENT;
+
+            for (UINT32 Index = 0; Index < LOS_VIRGL_BUFFER_LIMIT; Index++)
+            {
+                VIRGL_FILE_BUFFER *Buffer = &File->Buffers[Index];
+
+                if (Buffer->ResourceId != 0 && Buffer->ColorTarget && Buffer->ResourceId == Commands[2])
+                {
+                    Result = VirGLClearRenderTarget(ContextId, Buffer->ResourceId, Commands[1], Commands + 12) ? 0 : -EIO;
+                    break;
+                }
+            }
+        }
+        else if (Request.Words == 15 && Commands[0] == 0x00020000U &&
+                 Commands[3] == 0x000C0008U && Commands[4] == 0 && Commands[5] == 3 &&
+                 Commands[6] == 4 && Commands[7] == 0 && Commands[8] == 1 &&
+                 Commands[9] == 0 && Commands[10] == 0 && Commands[11] == 0 &&
+                 Commands[12] == 0 && Commands[13] == 0 && Commands[14] == 2)
+        {
+            VIRGL_FILE_BUFFER *Target = NULL;
+            VIRGL_FILE_BUFFER *Vertices = NULL;
+
+            for (UINT32 Index = 0; Index < LOS_VIRGL_BUFFER_LIMIT; Index++)
+            {
+                VIRGL_FILE_BUFFER *Buffer = &File->Buffers[Index];
+
+                if (Buffer->ColorTarget && Buffer->ResourceId == Commands[1] && Buffer->ResourceId != 0)
+                {
+                    Target = Buffer;
+                }
+
+                if (!Buffer->ColorTarget && Buffer->ResourceId == Commands[2] && Buffer->ResourceId != 0 && Buffer->Size >= 48)
+                {
+                    Vertices = Buffer;
+                }
+            }
+
+            Result = -ENOENT;
+
+            if (Target != NULL && Vertices != NULL)
+            {
+                Result = VirGLDrawPositionTriangle(ContextId, Target->ResourceId, Vertices->ResourceId, Target->Width, Target->Height) ? 0 : -EIO;
+            }
+        }
+        else
+        {
+            Result = 0;
+
+            for (UINT32 Index = 0; Index < Request.Words; Index++)
+            {
+                if (Commands[Index] != 0)
+                {
+                    Result = -EOPNOTSUPP;
+                    break;
+                }
+            }
+
+            if (Result == 0 && !VirGLSubmit(ContextId, Commands, Size))
+            {
+                Result = -EIO;
+            }
+        }
+    }
+
+    KFree(Commands);
+
+    return Result;
+}
+
+STATIC INT64 VirGLDeviceReadTarget(TASK *Task, VIRGL_FILE_STATE *File, UINT64 Argument)
+{
+    LOS_VIRGL_TARGET_READ Request;
+
+    if (!VMMCopyFromUser(Task->AddressSpace, &Request, Argument, sizeof(Request)))
+    {
+        return -EFAULT;
+    }
+
+    for (UINT32 Index = 0; Index < LOS_VIRGL_BUFFER_LIMIT; Index++)
+    {
+        VIRGL_FILE_BUFFER *Buffer = &File->Buffers[Index];
+
+        if (!Buffer->ColorTarget || Buffer->ResourceId == 0 || Buffer->ResourceId != Request.Handle)
+        {
+            continue;
+        }
+
+        UINT32 Size = Buffer->Width * Buffer->Height * 4;
+        UINTN Pages = (Size + 4095) / 4096;
+
+        if (Request.Capacity < Size || Buffer->Backing != NULL)
+        {
+            return -EINVAL;
+        }
+
+        Buffer->Backing = KAllocPagesBelow(Pages, 0x100000000ULL);
+
+        if (Buffer->Backing == NULL)
+        {
+            return -ENOMEM;
+        }
+
+        BOOLEAN CanFree;
+        UINT32 ContextId = ATOMIC_LOAD(&File->ContextId, ATOMIC_ACQUIRE);
+        BOOLEAN Success = VirGLReadColorTarget(ContextId, Buffer->ResourceId, Buffer->Width, Buffer->Height, Buffer->Backing, &CanFree);
+        INT64 Result = Success ? (VMMCopyToUser(Task->AddressSpace, Request.Address, Buffer->Backing, Size) ? 0 : -EFAULT) : -EIO;
+
+        if (CanFree)
+        {
+            KMemFreePages(Buffer->Backing, Pages);
+            Buffer->Backing = NULL;
+        }
+
+        return Result;
+    }
+
+    return -ENOENT;
+}
+
+STATIC INT64 VirGLDeviceIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Argument, UINT32 Access)
+{
+    VIRGL_CAPSET_INFO Info;
+
+    (VOID) Access;
+
+    if (Request == LOS_VIRGL_CREATE_CONTEXT)
+    {
+        return VirGLDeviceCreateContext(State);
+    }
+
+    if (Request == LOS_VIRGL_CREATE_BUFFER || Request == LOS_VIRGL_WRITE_BUFFER || Request == LOS_VIRGL_DESTROY_BUFFER ||
+        Request == LOS_VIRGL_CREATE_TARGET || Request == LOS_VIRGL_SUBMIT_COMMANDS || Request == LOS_VIRGL_READ_TARGET)
+    {
+        VIRGL_FILE_STATE *File = State;
+
+        if (ATOMIC_EXCHANGE(&File->BufferBusy, 1, ATOMIC_ACQUIRE) != 0)
+        {
+            return -EBUSY;
+        }
+
+        INT64 Result = Request == LOS_VIRGL_SUBMIT_COMMANDS ? VirGLDeviceSubmit(Task, File, Argument) :
+                       Request == LOS_VIRGL_READ_TARGET ? VirGLDeviceReadTarget(Task, File, Argument) : VirGLDeviceBufferIoctl(Task, File, Request, Argument);
+        ATOMIC_STORE(&File->BufferBusy, 0, ATOMIC_RELEASE);
+
+        return Result;
+    }
+
+    if (Request == LOS_VIRGL_GET_CAPSET_INFO)
+    {
+        LOS_VIRGL_CAPSET_INFO Query;
+
+        if (!VMMCopyFromUser(Task->AddressSpace, &Query, Argument, sizeof(Query)))
+        {
+            return -EFAULT;
+        }
+
+        if (!VirGLGetCapsetInfo(Query.Id, &Info))
+        {
+            return -EINVAL;
+        }
+
+        Query.MaxVersion = Info.MaxVersion;
+        Query.MaxSize = Info.MaxSize;
+
+        return VMMCopyToUser(Task->AddressSpace, Argument, &Query, sizeof(Query)) ? 0 : -EFAULT;
+    }
+
+    if (Request == LOS_VIRGL_READ_CAPSET)
+    {
+        LOS_VIRGL_CAPSET_READ Query;
+        INT64                 Result = -EIO;
+
+        if (!VMMCopyFromUser(Task->AddressSpace, &Query, Argument, sizeof(Query)))
+        {
+            return -EFAULT;
+        }
+
+        if (!VirGLGetCapsetInfo(Query.Id, &Info) || Query.Version > Info.MaxVersion || Info.MaxSize > LOS_VIRGL_MAX_CAPSET_BYTES || Query.Capacity < Info.MaxSize)
+        {
+            return -EINVAL;
+        }
+
+        VOID *Data = KAlloc(Info.MaxSize);
+
+        if (Data == NULL)
+        {
+            return -ENOMEM;
+        }
+
+        if (VirGLReadCapset(Query.Id, Query.Version, Data, Info.MaxSize, &Query.BytesRead))
+        {
+            Result = VMMCopyToUser(Task->AddressSpace, Query.Address, Data, Query.BytesRead) && VMMCopyToUser(Task->AddressSpace, Argument, &Query, sizeof(Query)) ? 0 : -EFAULT;
+        }
+
+        KFree(Data);
+
+        return Result;
+    }
+
+    return -ENOTTY;
+}
+
+STATIC CONST DEVICE_OPERATIONS VirGLOperations = {VirGLDeviceOpen, NULL, NULL, VirGLDeviceClose, NULL, VirGLDeviceIoctl};
 STATIC CONST DEVICE_OPERATIONS NullOperations = {DeviceOpen, DeviceNullRead, DeviceDiscard, DeviceClose, NULL, DeviceNoIoctl};
 STATIC CONST DEVICE_OPERATIONS ZeroOperations = {DeviceOpen, DeviceZeroRead, DeviceDiscard, DeviceClose, NULL, DeviceNoIoctl};
 STATIC CONST DEVICE_OPERATIONS FullOperations = {DeviceOpen, DeviceZeroRead, DeviceFullWrite, DeviceClose, NULL, DeviceNoIoctl};
 STATIC CONST DEVICE_OPERATIONS TerminalOperations = {DeviceTerminalOpen, DeviceTerminalRead, DeviceTerminalWrite, DeviceTerminalClose, NULL, DeviceTerminalIoctl};
 STATIC CONST DEVICE_OPERATIONS MasterOperations = {DeviceMasterOpen, DeviceMasterRead, DeviceMasterWrite, DeviceMasterClose, NULL, DeviceMasterIoctl};
 STATIC CONST DEVICE_OPERATIONS FramebufferOperations = {FramebufferOpen, FramebufferRead, FramebufferWrite, DeviceClose, FramebufferMap, FramebufferIoctl};
-STATIC CONST DEVICE_NODE       DeviceNodes[] = {{(CONST CHAR8 *) "null", 0666, FALSE, &NullOperations}, {(CONST CHAR8 *) "zero", 0666, FALSE, &ZeroOperations}, {(CONST CHAR8 *) "full", 0666, FALSE, &FullOperations}, {(CONST CHAR8 *) "lsh1", 0666, FALSE, &TerminalOperations}, {(CONST CHAR8 *) "lsh1-master", 0600, FALSE, &MasterOperations}, {(CONST CHAR8 *) "fb0", 0666, TRUE, &FramebufferOperations}};
+STATIC CONST DEVICE_NODE       DeviceNodes[] = {{(CONST CHAR8 *) "null", 0666, FALSE, &NullOperations}, {(CONST CHAR8 *) "zero", 0666, FALSE, &ZeroOperations}, {(CONST CHAR8 *) "full", 0666, FALSE, &FullOperations}, {(CONST CHAR8 *) "lsh1", 0666, FALSE, &TerminalOperations}, {(CONST CHAR8 *) "lsh1-master", 0600, FALSE, &MasterOperations}, {(CONST CHAR8 *) "fb0", 0666, TRUE, &FramebufferOperations}, {(CONST CHAR8 *) "virgl0", 0444, FALSE, &VirGLOperations}};
 
 CONST DEVICE_NODE *DeviceFSGetNode(UINT32 Number)
 {

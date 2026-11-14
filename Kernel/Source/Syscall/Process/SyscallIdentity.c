@@ -70,3 +70,15 @@ INT64 SyscallGetUID(BOOLEAN Effective)
 
     return Effective ? Task->FileContext->Credentials.UID : Task->RealUID;
 }
+
+INT64 SyscallGetGID(BOOLEAN Effective)
+{
+    TASK *Task = LBPWRRGetCurrentTask();
+
+    if (Task == NULL || Task->FileContext == NULL)
+    {
+        return -ESRCH;
+    }
+
+    return Effective ? Task->FileContext->Credentials.GID : Task->RealGID;
+}

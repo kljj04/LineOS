@@ -11,7 +11,7 @@ VOID LoadBalancerBalance(VOID)
 {
     UINT32 CPUCount = LBPWRRGetActiveCPUCount();
     UINT32 TargetCPUID = 0;
-    UINTN TargetUsage = 100;
+    UINTN  TargetUsage = 100;
 
     for (UINT32 CPUID = 0; CPUID < CPUCount; CPUID++)
     {
@@ -25,7 +25,7 @@ VOID LoadBalancerBalance(VOID)
     }
 
     UINT32 SourceCPUID = CPUCount;
-    UINTN SourceUsage = TargetUsage;
+    UINTN  SourceUsage = TargetUsage;
 
     for (UINT32 CPUID = 0; CPUID < CPUCount; CPUID++)
     {

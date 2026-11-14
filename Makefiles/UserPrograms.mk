@@ -9,6 +9,7 @@ endif
 
 Comma := ,
 ProgramFields = $(subst |, ,$(1))
+ProgramLibraryIncludes = $(foreach Library,$(subst $(Comma), ,$(1)),$(USER_LIBRARY_INCLUDE_$(Library)))
 ProgramLibraries = $(foreach Library,$(subst $(Comma), ,$(1)),$(USER_LIBRARY_$(Library)))
 USER_LIBRARY_LOSLibC := $(LOSLIBC_TARGET)
 USER_PROGRAMS := $(foreach Row,$(USER_PROGRAM_MANIFEST),$(word 1,$(call ProgramFields,$(Row))))
@@ -39,9 +40,9 @@ define USER_PROGRAM_TEMPLATE
 USER_PROGRAM_SRCS_$(1) := $(filter-out -,$(subst $(Comma), ,$(4)))
 USER_PROGRAM_OBJS_$(1) := $$(addprefix Build/Objects/,$$(addsuffix .o,$$(basename $$(USER_PROGRAM_SRCS_$(1)))))
 USER_PROGRAM_OUTPUT_$(1) := $(USER_PROGRAM_OUTPUT_DIR)/$(1)/$(notdir $(1)).lix
-USER_PROGRAM_LIBS_$(1) := $(filter-out $(LOSLIBC_TARGET),$(call ProgramLibraries,$(3))) $(LOSLIBC_TARGET)
+USER_PROGRAM_LIBS_$(1) := $(filter-out $(LOSLIBC_TARGET),$(call ProgramLibraries,$(3))) $(if $(filter Shell/Commands/testopengl,$(1)),$(MESA_USER_LIBS)) $(LOSLIBC_TARGET)
 
-$$(USER_PROGRAM_OBJS_$(1)): private USER_PROGRAM_INCLUDE := -I$(USER_PROGRAM_ROOT)/$(1)/Include
+$$(USER_PROGRAM_OBJS_$(1)): private USER_PROGRAM_INCLUDE := -I$(USER_PROGRAM_ROOT)/$(1)/Include $(call ProgramLibraryIncludes,$(3))
 $$(USER_PROGRAM_OBJS_$(1)): $(USER_PROGRAM_ROOT)/$(1)/Program.cfg
 $$(USER_PROGRAM_OUTPUT_$(1)): PrepareUserPrograms $(USER_CRT0_TARGET) $$(USER_PROGRAM_OBJS_$(1)) $$(USER_PROGRAM_LIBS_$(1)) $(USER_PROGRAM_ROOT)/$(1)/Program.cfg $(shell find $(USER_PROGRAM_ROOT)/$(1) -type d) Link/UserProgram.ld Makefiles/UserPrograms.mk Scripts/Backend/Programs.sh
 	@$$(call MKDIR_P,$$(dir $$@))

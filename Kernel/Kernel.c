@@ -79,6 +79,7 @@ VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
     IDTLoad();
 
     LAPICInit();
+    VirtIOGPUEnableInterrupt();
     HPETInit(BootInfo);
     TSCCalibrate();
     TSCDeadlineInit(0x40);

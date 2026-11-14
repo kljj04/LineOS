@@ -56,17 +56,17 @@ VOID LwmPaintWindow(LWM *Manager, LWM_WINDOW *Window, BOOLEAN Focused)
     UINT32 Width = Window->Rect.Width;
     UINT32 Height = Window->Rect.Height;
 
-    Manager->Surface = (TRUE_TYPE_SURFACE){Window->Pixels, Window->Stride, Window->CapacityHeight};
+    Manager->Surface = (TRUE_TYPE_SURFACE) {Window->Pixels, Window->Stride, Window->CapacityHeight};
 
-    LwmFill(Manager, (LWM_RECT){0, 0, Width, Height}, 0x00414D61U);
-    LwmFill(Manager, (LWM_RECT){1, LWM_TITLE_HEIGHT, Width - 2, Height - LWM_TITLE_HEIGHT - 1}, 0x00252B38U);
-    LwmFill(Manager, (LWM_RECT){1, 1, Width - 2, LWM_TITLE_HEIGHT - 1}, Focused ? 0x00354860U : 0x002F3540U);
+    LwmFill(Manager, (LWM_RECT) {0, 0, Width, Height}, 0x00414D61U);
+    LwmFill(Manager, (LWM_RECT) {1, LWM_TITLE_HEIGHT, Width - 2, Height - LWM_TITLE_HEIGHT - 1}, 0x00252B38U);
+    LwmFill(Manager, (LWM_RECT) {1, 1, Width - 2, LWM_TITLE_HEIGHT - 1}, Focused ? 0x00354860U : 0x002F3540U);
     LwmText(Manager, Window->Endpoint != 0 ? Window->Title : gettext("lwm demo"), 16, 31, 25, 0x00FFFFFFU, Width - 120);
-    LwmFill(Manager, (LWM_RECT){(INT32) Width - 110, 8, 28, 28}, 0x00485B72U);
+    LwmFill(Manager, (LWM_RECT) {(INT32) Width - 110, 8, 28, 28}, 0x00485B72U);
     LwmText(Manager, "-", Width - 103, 29, 22, 0x00FFFFFFU, Width - 82);
-    LwmFill(Manager, (LWM_RECT){(INT32) Width - 74, 8, 28, 28}, 0x00485B72U);
+    LwmFill(Manager, (LWM_RECT) {(INT32) Width - 74, 8, 28, 28}, 0x00485B72U);
     LwmText(Manager, Window->Maximized ? "=" : "+", Width - 67, 29, 22, 0x00FFFFFFU, Width - 46);
-    LwmFill(Manager, (LWM_RECT){(INT32) Width - 38, 8, 28, 28}, 0x00C95F65U);
+    LwmFill(Manager, (LWM_RECT) {(INT32) Width - 38, 8, 28, 28}, 0x00C95F65U);
     LwmText(Manager, "X", Width - 31, 29, 22, 0x00FFFFFFU, Width - 10);
     if (Window->Endpoint != 0)
     {
@@ -91,7 +91,7 @@ VOID LwmPaintWindow(LWM *Manager, LWM_WINDOW *Window, BOOLEAN Focused)
         }
 
         Window->Dirty = FALSE;
-        Manager->Surface = (TRUE_TYPE_SURFACE){Manager->Frame, Manager->Width, Manager->Height};
+        Manager->Surface = (TRUE_TYPE_SURFACE) {Manager->Frame, Manager->Width, Manager->Height};
 
         return;
     }
@@ -124,10 +124,10 @@ VOID LwmPaintWindow(LWM *Manager, LWM_WINDOW *Window, BOOLEAN Focused)
     Digits[Count] = 0;
 
     LwmText(Manager, Digits, 196, Height - 42, 23, 0x0068CB61U, Width - 20);
-    LwmFill(Manager, (LWM_RECT){(INT32) Width - 14, (INT32) Height - 14, 12, 12}, 0x0050E3C2U);
+    LwmFill(Manager, (LWM_RECT) {(INT32) Width - 14, (INT32) Height - 14, 12, 12}, 0x0050E3C2U);
 
     Window->Dirty = FALSE;
-    Manager->Surface = (TRUE_TYPE_SURFACE){Manager->Frame, Manager->Width, Manager->Height};
+    Manager->Surface = (TRUE_TYPE_SURFACE) {Manager->Frame, Manager->Width, Manager->Height};
 }
 
 STATIC INT32 LwmClamp(INT32 Value, INT32 Minimum, INT32 Maximum)
@@ -187,7 +187,7 @@ VOID LwmPointer(LWM *Manager, CONST POINTER_INFO *Pointer)
                 Bottom = LwmClamp(Base.Y + (INT32) Base.Height + DY, Top + LWM_MIN_HEIGHT, Manager->Height - LWM_DOCK_HEIGHT);
             }
 
-            Window->Rect = (LWM_RECT){Left, Top, (UINT32) (Right - Left), (UINT32) (Bottom - Top)};
+            Window->Rect = (LWM_RECT) {Left, Top, (UINT32) (Right - Left), (UINT32) (Bottom - Top)};
             Window->Dirty = Window->Dirty || memcmp(&Window->Rect, &Previous, sizeof(Previous)) != 0;
         }
         else if (!Window->Maximized)
@@ -255,7 +255,7 @@ VOID LwmPointer(LWM *Manager, CONST POINTER_INFO *Pointer)
         INT32       X = (INT32) Pointer->X - Window->Rect.X;
         INT32       Y = (INT32) Pointer->Y - Window->Rect.Y;
 
-        if (LwmContains((LWM_RECT){Window->Rect.X + (INT32) Window->Rect.Width - 38, Window->Rect.Y + 8, 28, 28}, Pointer))
+        if (LwmContains((LWM_RECT) {Window->Rect.X + (INT32) Window->Rect.Width - 38, Window->Rect.Y + 8, 28, 28}, Pointer))
         {
             if (Window->Endpoint != 0 && (Window->ClientFlags & LOS_WINDOW_PERSISTENT) != 0)
             {
@@ -408,7 +408,7 @@ VOID LwmMaximize(LWM *Manager, LWM_WINDOW *Window)
     else
     {
         Window->Restore = Window->Rect;
-        Window->Rect = (LWM_RECT){0, 0, Manager->Width, Manager->Height - LWM_DOCK_HEIGHT};
+        Window->Rect = (LWM_RECT) {0, 0, Manager->Width, Manager->Height - LWM_DOCK_HEIGHT};
     }
 
     Window->Maximized = !Window->Maximized;

@@ -18,13 +18,13 @@ process concurrently edits image contents.
 
 ## Userspace TrueType
 
-`Libraries/Include/TrueType` and `Libraries/Source/TrueType` contain a user port of the kernel implementation. Make
+`Libraries/TrueType/Include` and `Libraries/TrueType/Source` contain a user port of the kernel implementation. Make
 builds `Build/Libraries/libtruetype.a` and links it for programs listing `TrueType` in `Program.cfg` under `Dependencies`. Archive members are included
 only when referenced. The user library has no PMM, VirtIO GPU, kernel lock or kernel font-symbol dependencies. Kernel
 TrueType and panic output remain intact. The kernel console has been removed. The Terminal user program renders bytes
 received through its terminal master descriptor; ordinary programs use `read` and `write`.
 
-Include `TrueType/TrueTypeEngine.h`. Supply a `TTF_ALLOCATOR` with aligned allocation/free callbacks and context, and a
+Include `TrueTypeEngine.h`. Supply a `TTF_ALLOCATOR` with aligned allocation/free callbacks and context, and a
 `TRUE_TYPE_SURFACE` with a tightly packed UINT32 BGRA8888 buffer of at least width * height * 4 bytes.
 `TrueTypeInit(&Allocator, &Surface)` configures the allocator and surface; it does not open files. Read each trusted TTF
 into memory, initialize a separate `TRUE_TYPE_FONT Font = {0}`, and call `TrueTypeRegisterFont(&Font, FontData)`. Pass

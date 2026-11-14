@@ -90,3 +90,18 @@ int memcmp(const void *Left, const void *Right, size_t Size)
 
     return 0;
 }
+
+void *memchr(const void *Buffer, int Character, size_t Size)
+{
+    const unsigned char *Bytes = Buffer;
+
+    for (size_t Index = 0; Index < Size; Index++)
+    {
+        if (Bytes[Index] == (unsigned char) Character)
+        {
+            return (void *) (Bytes + Index);
+        }
+    }
+
+    return NULL;
+}

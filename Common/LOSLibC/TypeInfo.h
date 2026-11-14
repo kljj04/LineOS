@@ -25,7 +25,11 @@
 #undef ATOMIC_COMPARE_EXCHANGE
 
 #define CONST                                                                             const
+#ifdef __cplusplus
+#define NULL nullptr
+#else
 #define NULL                                                                              ((VOID *) 0)
+#endif
 #define TRUE                                                                              ((BOOLEAN) 1)
 #define FALSE                                                                             ((BOOLEAN) 0)
 #define STATIC                                                                            static
@@ -49,7 +53,9 @@
 #define ATOMIC_RELEASE                                                                    __ATOMIC_RELEASE
 #define ATOMIC_ACQ_REL                                                                    __ATOMIC_ACQ_REL
 #define ATOMIC_SEQ_CST                                                                    __ATOMIC_SEQ_CST
+#ifndef STATIC_ASSERT
 #define STATIC_ASSERT(Condition, Message)                                                 _Static_assert(Condition, Message)
+#endif
 
 typedef unsigned char      UINT8;
 typedef unsigned short     UINT16;
