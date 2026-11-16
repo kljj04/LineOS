@@ -10,6 +10,7 @@
 
 BOOLEAN TaskInit(VOID);
 TASK   *TaskCreate(VOID (*Entry)(VOID));
+TASK   *TaskCreateThread(TASK *Member, VOID (*Entry)(VOID));
 TASK   *TaskCreateIdle(VOID);
 BOOLEAN TaskSetPriority(TASK *Task, UINT8 Priority);
 VOID    TaskSleepMls(UINT64 Milliseconds);

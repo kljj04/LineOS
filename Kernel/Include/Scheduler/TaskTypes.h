@@ -96,36 +96,14 @@ typedef struct TASK_CONTEXT
     UINT64 SS;
 } TASK_CONTEXT;
 
-typedef struct TASK
+struct TASK;
+
+typedef struct PROCESS
 {
-    UINT64                  RSP;
-    UINT64                  InitialRSP;
-    UINT64                  StackBase;
-    UINT64                  StackSize;
-    UINT64                  KernelStackBase;
-    UINT64                  KernelStackSize;
-    TASK_STATE              State;
-    TASK_CONTEXT            Context;
-    UINT32                  CPUID;
-    UINT8                   Priority;
-    UINT8                   Weight;
     UINT16                  PID;
-    UINT64                  WakeDeadlineTSC;
-    TASK_SIGNAL             Signal;
-    BOOLEAN                 Modified;
-    BOOLEAN                 Idle;
-    BOOLEAN                 Scheduled;
-    UINT64                  CPUTimeTSC;
-    UINT64                  LastCPUTimeTSC;
-    UINT32                  CPUUsage;
-    BOOLEAN                 OnCPU;
-    struct WAIT_QUEUE      *WaitQueue;
-    struct TASK            *WaitNext;
     VMM_ADDRESS_SPACE      *AddressSpace;
     struct MMAP_REGION     *Mappings;
     struct ELF64_EXECUTION *Execution;
-    UINT64                  UserStackBase;
-    UINT64                  UserStackSize;
     VFS_CONTEXT            *FileContext;
     BOOLEAN                 AssetPublisher;
     TASK_ASSET              Assets[LOS_ASSET_MAPPING_LIMIT];
@@ -134,4 +112,38 @@ typedef struct TASK
     UINT32                  RealUID;
     UINT32                  RealGID;
     UINT64                  AuthSession;
+    struct TASK            *ThreadHead;
+    UINT32                  ThreadCount;
+} PROCESS;
+
+typedef struct TASK
+{
+    UINT64             RSP;
+    UINT64             InitialRSP;
+    UINT64             StackBase;
+    UINT64             StackSize;
+    UINT64             KernelStackBase;
+    UINT64             KernelStackSize;
+    TASK_STATE         State;
+    TASK_CONTEXT       Context;
+    UINT32             CPUID;
+    UINT8              Priority;
+    UINT8              Weight;
+    UINT64             WakeDeadlineTSC;
+    TASK_SIGNAL        Signal;
+    BOOLEAN            Modified;
+    BOOLEAN            Idle;
+    BOOLEAN            Scheduled;
+    UINT64             CPUTimeTSC;
+    UINT64             LastCPUTimeTSC;
+    UINT32             CPUUsage;
+    BOOLEAN            OnCPU;
+    struct WAIT_QUEUE *WaitQueue;
+    struct TASK       *WaitNext;
+    UINT64             UserStackBase;
+    UINT64             UserStackSize;
+    PROCESS           *Process;
+    struct TASK       *ThreadNext;
+    struct TASK       *ThreadPrev;
+    UINT32             TID;
 } TASK;

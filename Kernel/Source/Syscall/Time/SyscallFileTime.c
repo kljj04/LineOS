@@ -18,7 +18,7 @@ INT64 SyscallUtimensat(INT64 DirFD, UINT64 Path, UINT64 TimesAddress, UINT64 Fla
     VFS_NODE  Expected = {0};
     VFS_NODE *ExpectedPointer = NULL;
 
-    if (Task == NULL || Task->FileContext == NULL || Task->AddressSpace == NULL)
+    if (Task == NULL || Task->Process->FileContext == NULL || Task->Process->AddressSpace == NULL)
     {
         return -ESRCH;
     }
@@ -28,7 +28,7 @@ INT64 SyscallUtimensat(INT64 DirFD, UINT64 Path, UINT64 TimesAddress, UINT64 Fla
         return -EINVAL;
     }
 
-    if (TimesAddress != 0 && !VMMCopyFromUser(Task->AddressSpace, Times, TimesAddress, sizeof(Times)))
+    if (TimesAddress != 0 && !VMMCopyFromUser(Task->Process->AddressSpace, Times, TimesAddress, sizeof(Times)))
     {
         return -EFAULT;
     }
@@ -51,7 +51,7 @@ INT64 SyscallUtimensat(INT64 DirFD, UINT64 Path, UINT64 TimesAddress, UINT64 Fla
         }
     }
 
-    VFS_CONTEXT Context = *Task->FileContext;
+    VFS_CONTEXT Context = *Task->Process->FileContext;
     INT64       Result = 0;
 
     if (Path != 0)
@@ -66,17 +66,17 @@ INT64 SyscallUtimensat(INT64 DirFD, UINT64 Path, UINT64 TimesAddress, UINT64 Fla
 
     if (Path == 0 || (Name[0] != '/' && DirFD != -100))
     {
-        if (DirFD < 0 || DirFD >= TASK_FILE_LIMIT || Task->Files[DirFD] == NULL)
+        if (DirFD < 0 || DirFD >= TASK_FILE_LIMIT || Task->Process->Files[DirFD] == NULL)
         {
             KFree(Name);
 
             return -EBADF;
         }
 
-        OPEN_FILE *File = Task->Files[DirFD];
+        OPEN_FILE *File = Task->Process->Files[DirFD];
 
         Context = File->OpenContext;
-        Context.Credentials = Task->FileContext->Credentials;
+        Context.Credentials = Task->Process->FileContext->Credentials;
         Expected.NamespaceGeneration = File->NamespaceGeneration;
         Expected.Partition = File->Partition;
         Expected.Number = File->Number;

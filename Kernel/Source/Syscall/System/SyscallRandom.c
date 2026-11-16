@@ -26,7 +26,7 @@ INT64 SyscallGetRandom(UINT64 Buffer, UINT64 Count, UINT64 Flags)
         return -EINVAL;
     }
 
-    if (Task == NULL || Task->AddressSpace == NULL)
+    if (Task == NULL || Task->Process->AddressSpace == NULL)
     {
         return -ESRCH;
     }
@@ -100,7 +100,7 @@ INT64 SyscallGetRandom(UINT64 Buffer, UINT64 Count, UINT64 Flags)
 
     Result = -EFAULT;
 
-    if (VMMCopyToUser(Task->AddressSpace, Buffer, Bytes, Count))
+    if (VMMCopyToUser(Task->Process->AddressSpace, Buffer, Bytes, Count))
     {
         Result = (INT64) Count;
     }

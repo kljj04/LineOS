@@ -79,7 +79,7 @@ STATIC INT64 DeviceZeroRead(TASK *Task, VOID *State, UINT64 *Offset, UINT64 Buff
     {
         UINT64 Length = Count - Total > sizeof(Bytes) ? sizeof(Bytes) : Count - Total;
 
-        if (!VMMCopyToUser(Task->AddressSpace, Buffer + Total, Bytes, Length))
+        if (!VMMCopyToUser(Task->Process->AddressSpace, Buffer + Total, Bytes, Length))
         {
             return Total != 0 ? (INT64) Total : -EFAULT;
         }
@@ -105,7 +105,7 @@ STATIC INT64 DeviceMasterOpen(TASK *Task, UINT64 Flags, VOID **State)
     (VOID) Flags;
     *State = NULL;
 
-    if (!Task->AssetPublisher)
+    if (!Task->Process->AssetPublisher)
     {
         return -EACCES;
     }
@@ -221,7 +221,7 @@ STATIC INT64 FramebufferData(TASK *Task, UINT64 *Offset, UINT64 Buffer, UINT64 C
     {
         UINT64  Length = Count - Total > 4096 ? 4096 : Count - Total;
         UINT64  Flags = VirtIOGPUAcquireRenderLock();
-        BOOLEAN Copied = Write ? VMMCopyFromUser(Task->AddressSpace, (UINT8 *) GPU->FrameBuffer + *Offset + Total, Buffer + Total, Length) : VMMCopyToUser(Task->AddressSpace, Buffer + Total, (UINT8 *) GPU->FrameBuffer + *Offset + Total, Length);
+        BOOLEAN Copied = Write ? VMMCopyFromUser(Task->Process->AddressSpace, (UINT8 *) GPU->FrameBuffer + *Offset + Total, Buffer + Total, Length) : VMMCopyToUser(Task->Process->AddressSpace, Buffer + Total, (UINT8 *) GPU->FrameBuffer + *Offset + Total, Length);
 
         VirtIOGPUReleaseRenderLock(Flags);
 
@@ -287,7 +287,7 @@ STATIC INT64 FramebufferIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
         Info.Red.Length = Info.Green.Length = Info.Blue.Length = Info.Transp.Length = 8;
         Info.Height = Info.Width = UINT32_MAX;
 
-        return VMMCopyToUser(Task->AddressSpace, Argument, &Info, sizeof(Info)) ? 0 : -EFAULT;
+        return VMMCopyToUser(Task->Process->AddressSpace, Argument, &Info, sizeof(Info)) ? 0 : -EFAULT;
     }
 
     if (Request == FBIOGET_FSCREENINFO)
@@ -299,7 +299,7 @@ STATIC INT64 FramebufferIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
         Info.LineLength = GPU->FrameBufferWidth * sizeof(UINT32);
         Info.Visual = 2;
 
-        return VMMCopyToUser(Task->AddressSpace, Argument, &Info, sizeof(Info)) ? 0 : -EFAULT;
+        return VMMCopyToUser(Task->Process->AddressSpace, Argument, &Info, sizeof(Info)) ? 0 : -EFAULT;
     }
 
     if (Request != LOS_FBIO_PRESENT && Request != LOS_FBIO_PRESENT_RECT && Request != LOS_FBIO_FLUSH)
@@ -316,7 +316,7 @@ STATIC INT64 FramebufferIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
     {
         LOS_FB_PRESENT Present;
 
-        if (!VMMCopyFromUser(Task->AddressSpace, &Present, Argument, sizeof(Present)))
+        if (!VMMCopyFromUser(Task->Process->AddressSpace, &Present, Argument, sizeof(Present)))
         {
             return -EFAULT;
         }
@@ -422,7 +422,7 @@ STATIC INT64 DevicePointerIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 
         Info.Buttons |= 4;
     }
 
-    return VMMCopyToUser(Task->AddressSpace, Argument, &Info, sizeof(Info)) ? 0 : -EFAULT;
+    return VMMCopyToUser(Task->Process->AddressSpace, Argument, &Info, sizeof(Info)) ? 0 : -EFAULT;
 }
 
 STATIC INT64 DeviceTerminalIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Argument, UINT32 Access)

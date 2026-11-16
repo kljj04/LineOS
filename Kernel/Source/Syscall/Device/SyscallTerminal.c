@@ -387,7 +387,7 @@ Retry:
         Bytes[Index] = Queue->Data[(Queue->Head + Index) % TERMINAL_CAPACITY];
     }
 
-    if (!VMMCopyToUser(Task->AddressSpace, Buffer, Bytes, Length))
+    if (!VMMCopyToUser(Task->Process->AddressSpace, Buffer, Bytes, Length))
     {
         SpinLockReleaseIRQRestore(&Queue->Lock, Flags);
 
@@ -413,7 +413,7 @@ INT64 TerminalWrite(TASK *Task, BOOLEAN Master, UINT64 Buffer, UINT64 Count)
         UINT32 Length = Count - Total > TERMINAL_CHUNK ? TERMINAL_CHUNK : (UINT32) (Count - Total);
         UINT32 Done = 0;
 
-        if (!VMMCopyFromUser(Task->AddressSpace, Bytes, Buffer + Total, Length))
+        if (!VMMCopyFromUser(Task->Process->AddressSpace, Bytes, Buffer + Total, Length))
         {
             return Total != 0 ? (INT64) Total : -EFAULT;
         }
@@ -742,7 +742,7 @@ INT64 TerminalPending(TASK *Task, BOOLEAN Master, UINT64 UserCount)
 
     SpinLockReleaseIRQRestore(&Queue->Lock, Flags);
 
-    return VMMCopyToUser(Task->AddressSpace, UserCount, &Count, sizeof(Count)) ? 0 : -EFAULT;
+    return VMMCopyToUser(Task->Process->AddressSpace, UserCount, &Count, sizeof(Count)) ? 0 : -EFAULT;
 }
 
 INT64 TerminalWindowSize(TASK *Task, UINT64 UserSize, BOOLEAN Set)
@@ -752,7 +752,7 @@ INT64 TerminalWindowSize(TASK *Task, UINT64 UserSize, BOOLEAN Set)
 
     if (Set)
     {
-        if (!VMMCopyFromUser(Task->AddressSpace, &Value, UserSize, sizeof(Value)))
+        if (!VMMCopyFromUser(Task->Process->AddressSpace, &Value, UserSize, sizeof(Value)))
         {
             return -EFAULT;
         }
@@ -776,7 +776,7 @@ INT64 TerminalWindowSize(TASK *Task, UINT64 UserSize, BOOLEAN Set)
 
     SpinLockReleaseIRQRestore(&TerminalControlLock, Flags);
 
-    if (!Set && !VMMCopyToUser(Task->AddressSpace, UserSize, &Value, sizeof(Value)))
+    if (!Set && !VMMCopyToUser(Task->Process->AddressSpace, UserSize, &Value, sizeof(Value)))
     {
         return -EFAULT;
     }
@@ -788,7 +788,7 @@ INT64 TerminalCompositor(TASK *Task, UINT64 UserEndpoint, BOOLEAN Set)
 {
     UINT64 Endpoint = 0;
 
-    if (Set && (!VMMCopyFromUser(Task->AddressSpace, &Endpoint, UserEndpoint, sizeof(Endpoint)) || !SyscallIPCOwns(Task, Endpoint)))
+    if (Set && (!VMMCopyFromUser(Task->Process->AddressSpace, &Endpoint, UserEndpoint, sizeof(Endpoint)) || !SyscallIPCOwns(Task, Endpoint)))
     {
         return -EINVAL;
     }
@@ -814,7 +814,7 @@ INT64 TerminalCompositor(TASK *Task, UINT64 UserEndpoint, BOOLEAN Set)
 
     SpinLockReleaseIRQRestore(&TerminalControlLock, Flags);
 
-    if (Result == 0 && !Set && !VMMCopyToUser(Task->AddressSpace, UserEndpoint, &Endpoint, sizeof(Endpoint)))
+    if (Result == 0 && !Set && !VMMCopyToUser(Task->Process->AddressSpace, UserEndpoint, &Endpoint, sizeof(Endpoint)))
     {
         return -EFAULT;
     }
@@ -826,7 +826,7 @@ INT64 TerminalInjectCLI(TASK *Task, UINT64 UserByte)
 {
     UINT8 Byte;
 
-    if (!VMMCopyFromUser(Task->AddressSpace, &Byte, UserByte, sizeof(Byte)))
+    if (!VMMCopyFromUser(Task->Process->AddressSpace, &Byte, UserByte, sizeof(Byte)))
     {
         return -EFAULT;
     }

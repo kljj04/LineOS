@@ -36,7 +36,7 @@ STATIC BOOLEAN AssetReadName(TASK *Task, UINT64 Name, CHAR8 *Buffer)
 
     for (UINT32 Index = 0; Index < LOS_ASSET_NAME_LIMIT; Index++)
     {
-        if (Name > UINT64_MAX - Index || !VMMCopyFromUser(Task->AddressSpace, Buffer + Index, Name + Index, 1))
+        if (Name > UINT64_MAX - Index || !VMMCopyFromUser(Task->Process->AddressSpace, Buffer + Index, Name + Index, 1))
         {
             return FALSE;
         }
@@ -78,12 +78,12 @@ INT64 SyscallAssetPublish(UINT64 Name, UINT64 Data, UINT64 Size)
     UINT32       Count;
     INT64        Result = -ENOMEM;
 
-    if (Task == NULL || Task->AddressSpace == NULL)
+    if (Task == NULL || Task->Process->AddressSpace == NULL)
     {
         return -ESRCH;
     }
 
-    if (!Task->AssetPublisher)
+    if (!Task->Process->AssetPublisher)
     {
         return -EPERM;
     }
@@ -143,7 +143,7 @@ INT64 SyscallAssetPublish(UINT64 Name, UINT64 Data, UINT64 Size)
 
         Entry->Pages[Pages++] = (UINT64) Page;
 
-        if (!VMMCopyFromUser(Task->AddressSpace, Page, Data + Offset, Length))
+        if (!VMMCopyFromUser(Task->Process->AddressSpace, Page, Data + Offset, Length))
         {
             Result = -EFAULT;
 
@@ -184,7 +184,7 @@ INT64 SyscallAssetAcquire(UINT64 Name, UINT64 UserAsset)
     LOS_ASSET    Asset = {0};
     INT64        Result = -ENOENT;
 
-    if (Task == NULL || Task->AddressSpace == NULL || UserAsset == 0 || !AssetReadName(Task, Name, Buffer))
+    if (Task == NULL || Task->Process->AddressSpace == NULL || UserAsset == 0 || !AssetReadName(Task, Name, Buffer))
     {
         return -EFAULT;
     }
@@ -207,16 +207,16 @@ INT64 SyscallAssetAcquire(UINT64 Name, UINT64 UserAsset)
 
     for (UINT32 Current = 0; Current < LOS_ASSET_MAPPING_LIMIT; Current++)
     {
-        if (Task->Assets[Current].Handle != 0 && Task->Assets[Current].Index == Index)
+        if (Task->Process->Assets[Current].Handle != 0 && Task->Process->Assets[Current].Index == Index)
         {
-            Mapping = &Task->Assets[Current];
+            Mapping = &Task->Process->Assets[Current];
             Slot = Current;
             break;
         }
 
-        if (Mapping == NULL && Task->Assets[Current].Handle == 0)
+        if (Mapping == NULL && Task->Process->Assets[Current].Handle == 0)
         {
-            Mapping = &Task->Assets[Current];
+            Mapping = &Task->Process->Assets[Current];
             Slot = Current;
         }
     }
@@ -230,7 +230,7 @@ INT64 SyscallAssetAcquire(UINT64 Name, UINT64 UserAsset)
 
     Result = -EFAULT;
 
-    if (!VMMCopyToUser(Task->AddressSpace, UserAsset, &Asset, sizeof(Asset)))
+    if (!VMMCopyToUser(Task->Process->AddressSpace, UserAsset, &Asset, sizeof(Asset)))
     {
         goto Cleanup;
     }
@@ -242,7 +242,7 @@ INT64 SyscallAssetAcquire(UINT64 Name, UINT64 UserAsset)
     {
         Result = -ENOMEM;
 
-        if (AssetHandle == UINT64_MAX || !VMMMapSharedPages(Task->AddressSpace, (UINT64) Asset.Data, Entry->Pages, Entry->PageCount))
+        if (AssetHandle == UINT64_MAX || !VMMMapSharedPages(Task->Process->AddressSpace, (UINT64) Asset.Data, Entry->Pages, Entry->PageCount))
         {
             goto Cleanup;
         }
@@ -255,9 +255,9 @@ INT64 SyscallAssetAcquire(UINT64 Name, UINT64 UserAsset)
 
     Result = -EFAULT;
 
-    if (!VMMCopyToUser(Task->AddressSpace, UserAsset, &Asset, sizeof(Asset)))
+    if (!VMMCopyToUser(Task->Process->AddressSpace, UserAsset, &Asset, sizeof(Asset)))
     {
-        if (Mapping->References == 0 && VMMUnmapSharedPages(Task->AddressSpace, (UINT64) Asset.Data, Entry->Pages, Entry->PageCount))
+        if (Mapping->References == 0 && VMMUnmapSharedPages(Task->Process->AddressSpace, (UINT64) Asset.Data, Entry->Pages, Entry->PageCount))
         {
             KMemSet(Mapping, 0, sizeof(*Mapping));
         }
@@ -279,7 +279,7 @@ INT64 SyscallAssetRelease(UINT64 Handle)
     UINT64 Flags;
     INT64  Result = -EINVAL;
 
-    if (Task == NULL || Task->AddressSpace == NULL || Handle == 0)
+    if (Task == NULL || Task->Process->AddressSpace == NULL || Handle == 0)
     {
         return -EINVAL;
     }
@@ -288,7 +288,7 @@ INT64 SyscallAssetRelease(UINT64 Handle)
 
     for (UINT32 Slot = 0; Slot < LOS_ASSET_MAPPING_LIMIT; Slot++)
     {
-        TASK_ASSET *Mapping = &Task->Assets[Slot];
+        TASK_ASSET *Mapping = &Task->Process->Assets[Slot];
 
         if (Mapping->Handle == Handle && Mapping->References != 0)
         {
@@ -299,7 +299,7 @@ INT64 SyscallAssetRelease(UINT64 Handle)
                 Mapping->References--;
                 Result = 0;
             }
-            else if (VMMUnmapSharedPages(Task->AddressSpace, VMM_SHARED_USER_START + Slot * ASSET_MAPPING_STRIDE, Entry->Pages, Entry->PageCount))
+            else if (VMMUnmapSharedPages(Task->Process->AddressSpace, VMM_SHARED_USER_START + Slot * ASSET_MAPPING_STRIDE, Entry->Pages, Entry->PageCount))
             {
                 KMemSet(Mapping, 0, sizeof(*Mapping));
                 Result = 0;

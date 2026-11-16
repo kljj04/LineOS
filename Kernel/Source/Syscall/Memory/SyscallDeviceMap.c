@@ -15,7 +15,7 @@ INT64 SyscallMapDevice(INT64 FD, UINT64 Length, UINT64 Protection, UINT64 Flags,
     TASK      *Task = LBPWRRGetCurrentTask();
     OPEN_FILE *File;
 
-    if (Task == NULL || FD < 0 || FD >= TASK_FILE_LIMIT || (File = Task->Files[FD]) == NULL)
+    if (Task == NULL || FD < 0 || FD >= TASK_FILE_LIMIT || (File = Task->Process->Files[FD]) == NULL)
     {
         return -EBADF;
     }

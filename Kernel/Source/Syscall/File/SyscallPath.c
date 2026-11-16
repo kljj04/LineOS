@@ -23,7 +23,7 @@ INT64 SyscallRename(UINT64 OldPath, UINT64 NewPath)
 
     if (Result == 0)
     {
-        Result = SyscallVFSError(VFSRename(Task->FileContext, OldName, NewName));
+        Result = SyscallVFSError(VFSRename(Task->Process->FileContext, OldName, NewName));
         KFree(NewName);
     }
 
@@ -40,7 +40,7 @@ INT64 SyscallRemove(UINT64 Path)
 
     if (Result == 0)
     {
-        Result = SyscallVFSError(VFSRemove(Task->FileContext, Name));
+        Result = SyscallVFSError(VFSRemove(Task->Process->FileContext, Name));
         KFree(Name);
     }
 

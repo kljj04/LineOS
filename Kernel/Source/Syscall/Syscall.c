@@ -266,7 +266,7 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
                 return (UINT64) -ESRCH;
             }
 
-            return Task->PID;
+            return Task->Process->PID;
         }
 
         case SYSCALL_DISPLAY_INFO:

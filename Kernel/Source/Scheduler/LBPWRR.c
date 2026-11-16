@@ -132,7 +132,7 @@ VOID LBPWRRStart(VOID)
 
     SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
 
-    if (Task->AddressSpace != NULL && !VMMSwitchAddressSpace(Task->AddressSpace))
+    if (Task->Process->AddressSpace != NULL && !VMMSwitchAddressSpace(Task->Process->AddressSpace))
     {
         Panic(L"LBPWRR: Initial CR3 switch failed");
     }
@@ -330,9 +330,9 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *Frame)
 
     UsageSampleTasks();
 
-    if (NextTask != NULL && (CurrentTask == NULL ? NextTask->AddressSpace != NULL : NextTask->AddressSpace != CurrentTask->AddressSpace))
+    if (NextTask != NULL && (CurrentTask == NULL ? NextTask->Process->AddressSpace != NULL : NextTask->Process->AddressSpace != CurrentTask->Process->AddressSpace))
     {
-        if (!VMMSwitchAddressSpace(NextTask->AddressSpace))
+        if (!VMMSwitchAddressSpace(NextTask->Process->AddressSpace))
         {
             Panic(L"LBPWRR: CR3 switch failed");
         }

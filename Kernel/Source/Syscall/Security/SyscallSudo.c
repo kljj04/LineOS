@@ -25,7 +25,7 @@ INT64 SyscallSudoCache(UINT64 Operation)
 {
     TASK *Task = LBPWRRGetCurrentTask();
 
-    if (Task == NULL || Task->FileContext == NULL)
+    if (Task == NULL || Task->Process->FileContext == NULL)
     {
         return -ESRCH;
     }
@@ -35,12 +35,12 @@ INT64 SyscallSudoCache(UINT64 Operation)
         return -EINVAL;
     }
 
-    if (Operation == SUDO_CACHE_RECORD && Task->FileContext->Credentials.UID != 0)
+    if (Operation == SUDO_CACHE_RECORD && Task->Process->FileContext->Credentials.UID != 0)
     {
         return -EPERM;
     }
 
-    if (Task->AuthSession == 0)
+    if (Task->Process->AuthSession == 0)
     {
         return 0;
     }
@@ -54,7 +54,7 @@ INT64 SyscallSudoCache(UINT64 Operation)
     {
         SUDO_CACHE_ENTRY *Entry = &SudoCache[Index];
 
-        if (Entry->Session == Task->AuthSession && Entry->UID == Task->RealUID)
+        if (Entry->Session == Task->Process->AuthSession && Entry->UID == Task->Process->RealUID)
         {
             Found = Entry;
             break;
@@ -87,8 +87,8 @@ INT64 SyscallSudoCache(UINT64 Operation)
                 Found = Oldest;
             }
 
-            Found->Session = Task->AuthSession;
-            Found->UID = Task->RealUID;
+            Found->Session = Task->Process->AuthSession;
+            Found->UID = Task->Process->RealUID;
             Found->Expires = Now + SUDO_CACHE_TIMEOUT_MLS;
             break;
         }

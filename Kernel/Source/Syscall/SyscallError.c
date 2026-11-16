@@ -69,7 +69,7 @@ INT64 SyscallCopyPath(TASK *Task, UINT64 Path, CHAR8 **Name)
 {
     *Name = NULL;
 
-    if (Task == NULL || Task->AddressSpace == NULL || Path == 0)
+    if (Task == NULL || Task->Process->AddressSpace == NULL || Path == 0)
     {
         return -EFAULT;
     }
@@ -83,7 +83,7 @@ INT64 SyscallCopyPath(TASK *Task, UINT64 Path, CHAR8 **Name)
 
     for (UINT32 Index = 0; Index < VFS_MAX_PATH; Index++)
     {
-        if (Path > UINT64_MAX - Index || !VMMCopyFromUser(Task->AddressSpace, &Copy[Index], Path + Index, 1))
+        if (Path > UINT64_MAX - Index || !VMMCopyFromUser(Task->Process->AddressSpace, &Copy[Index], Path + Index, 1))
         {
             KFree(Copy);
 

@@ -23,9 +23,9 @@ typedef struct MMAP_REGION
 
 STATIC VOID MemoryFreePage(TASK *Task, UINT64 Physical)
 {
-    if (Task->Execution != NULL)
+    if (Task->Process->Execution != NULL)
     {
-        ELF64_EXECUTION *Execution = Task->Execution;
+        ELF64_EXECUTION *Execution = Task->Process->Execution;
 
         for (UINT64 Index = 0; Index < Execution->PageCount; Index++)
         {
@@ -42,11 +42,11 @@ STATIC VOID MemoryFreePage(TASK *Task, UINT64 Physical)
 
 VOID SyscallMemoryRelease(TASK *Task)
 {
-    while (Task->Mappings != NULL)
+    while (Task->Process->Mappings != NULL)
     {
-        MMAP_REGION *Region = Task->Mappings;
+        MMAP_REGION *Region = Task->Process->Mappings;
 
-        Task->Mappings = Region->Next;
+        Task->Process->Mappings = Region->Next;
 
         for (UINT32 Index = 0; Region->Owned && Index < Region->Count; Index++)
         {
@@ -67,7 +67,7 @@ BOOLEAN SyscallMemoryShared(TASK *Task, UINT64 Address)
         return TRUE;
     }
 
-    for (MMAP_REGION *Region = Task->Mappings; Region != NULL; Region = Region->Next)
+    for (MMAP_REGION *Region = Task->Process->Mappings; Region != NULL; Region = Region->Next)
     {
         if (Address >= Region->Address && Address - Region->Address < (UINT64) Region->Count * 4096)
         {
@@ -80,7 +80,7 @@ BOOLEAN SyscallMemoryShared(TASK *Task, UINT64 Address)
 
 BOOLEAN SyscallMemoryClone(TASK *Child, TASK *Parent)
 {
-    for (MMAP_REGION *Region = Parent->Mappings; Region != NULL; Region = Region->Next)
+    for (MMAP_REGION *Region = Parent->Process->Mappings; Region != NULL; Region = Region->Next)
     {
         MMAP_REGION *Copy = KAlloc(sizeof(*Copy) + (UINT64) Region->Count * sizeof(UINT64));
 
@@ -93,14 +93,14 @@ BOOLEAN SyscallMemoryClone(TASK *Child, TASK *Parent)
         Copy->Address = Region->Address;
         Copy->Count = Region->Count;
         Copy->Owned = Region->Owned;
-        Copy->Next = Child->Mappings;
-        Child->Mappings = Copy;
+        Copy->Next = Child->Process->Mappings;
+        Child->Process->Mappings = Copy;
 
         for (UINT32 Index = 0; Index < Copy->Count; Index++)
         {
             if (Region->Pages[Index] != 0)
             {
-                if (!VMMTranslateAddressSpace(Child->AddressSpace, Copy->Address + (UINT64) Index * 4096, &Copy->Pages[Index]))
+                if (!VMMTranslateAddressSpace(Child->Process->AddressSpace, Copy->Address + (UINT64) Index * 4096, &Copy->Pages[Index]))
                 {
                     return FALSE;
                 }
@@ -116,7 +116,7 @@ INT64 SyscallMmap(UINT64 Address, UINT64 Length, UINT64 Protection, UINT64 Flags
     TASK  *Task = LBPWRRGetCurrentTask();
     UINT64 Physical = 0;
 
-    if (Task == NULL || Task->AddressSpace == NULL)
+    if (Task == NULL || Task->Process->AddressSpace == NULL)
     {
         return -ESRCH;
     }
@@ -156,7 +156,7 @@ INT64 SyscallMmap(UINT64 Address, UINT64 Length, UINT64 Protection, UINT64 Flags
     UINT32 Count = (UINT32) ((Length + 4095) / 4096);
     UINT64 Used = 0;
 
-    for (MMAP_REGION *Current = Task->Mappings; Current != NULL; Current = Current->Next)
+    for (MMAP_REGION *Current = Task->Process->Mappings; Current != NULL; Current = Current->Next)
     {
         Used += Current->Count;
     }
@@ -181,7 +181,7 @@ INT64 SyscallMmap(UINT64 Address, UINT64 Length, UINT64 Protection, UINT64 Flags
         {
             UINT64 Existing;
 
-            if (VMMTranslateAddressSpace(Task->AddressSpace, Address + (UINT64) Index * 4096, &Existing))
+            if (VMMTranslateAddressSpace(Task->Process->AddressSpace, Address + (UINT64) Index * 4096, &Existing))
             {
                 Address += ((UINT64) Index + 1) * 4096;
                 Found = FALSE;
@@ -222,13 +222,13 @@ INT64 SyscallMmap(UINT64 Address, UINT64 Length, UINT64 Protection, UINT64 Flags
         }
     }
 
-    if (!VMMMapUserPages(Task->AddressSpace, Address, Region->Pages, Count, ((Protection & PROT_WRITE) != 0 ? VMM_FLAG_WRITABLE : 0) | ((Protection & PROT_EXEC) == 0 ? VMM_FLAG_NO_EXECUTE : 0)))
+    if (!VMMMapUserPages(Task->Process->AddressSpace, Address, Region->Pages, Count, ((Protection & PROT_WRITE) != 0 ? VMM_FLAG_WRITABLE : 0) | ((Protection & PROT_EXEC) == 0 ? VMM_FLAG_NO_EXECUTE : 0)))
     {
         goto Failed;
     }
 
-    Region->Next = Task->Mappings;
-    Task->Mappings = Region;
+    Region->Next = Task->Process->Mappings;
+    Task->Process->Mappings = Region;
 
     return (INT64) Address;
 Failed:
@@ -249,7 +249,7 @@ INT64 SyscallMunmap(UINT64 Address, UINT64 Length)
 {
     TASK *Task = LBPWRRGetCurrentTask();
 
-    if (Task == NULL || Task->AddressSpace == NULL)
+    if (Task == NULL || Task->Process->AddressSpace == NULL)
     {
         return -ESRCH;
     }
@@ -261,7 +261,7 @@ INT64 SyscallMunmap(UINT64 Address, UINT64 Length)
 
     Length = (Length + 4095) & ~4095ULL;
 
-    MMAP_REGION **Link = &Task->Mappings;
+    MMAP_REGION **Link = &Task->Process->Mappings;
 
     while (*Link != NULL)
     {
@@ -274,7 +274,7 @@ INT64 SyscallMunmap(UINT64 Address, UINT64 Length)
             UINT32 First = (UINT32) ((Start - Region->Address) / 4096);
             UINT32 Count = (UINT32) ((End - Start) / 4096);
 
-            if (!VMMUnmapUserPages(Task->AddressSpace, Start, Region->Pages + First, Count))
+            if (!VMMUnmapUserPages(Task->Process->AddressSpace, Start, Region->Pages + First, Count))
             {
                 return -EBUSY;
             }

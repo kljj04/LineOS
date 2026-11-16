@@ -38,9 +38,9 @@ VOID SyscallFilesRelease(TASK *Task)
 {
     for (UINTN Index = 0; Index < TASK_FILE_LIMIT; Index++)
     {
-        OPEN_FILE *File = Task->Files[Index];
+        OPEN_FILE *File = Task->Process->Files[Index];
 
-        Task->Files[Index] = NULL;
+        Task->Process->Files[Index] = NULL;
 
         if (File != NULL)
         {
@@ -53,12 +53,12 @@ BOOLEAN SyscallFilesInherit(TASK *Child, TASK *Parent)
 {
     for (UINTN Index = 0; Index < TASK_FILE_LIMIT; Index++)
     {
-        if (Parent != NULL && Parent->Files[Index] != NULL)
+        if (Parent != NULL && Parent->Process->Files[Index] != NULL)
         {
-            OPEN_FILE *File = Parent->Files[Index];
+            OPEN_FILE *File = Parent->Process->Files[Index];
 
             ATOMIC_FETCH_ADD(&File->References, 1, ATOMIC_RELAXED);
-            Child->Files[Index] = File;
+            Child->Process->Files[Index] = File;
         }
     }
 
@@ -73,7 +73,7 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
     UINTN    Index;
     INT64    Result;
 
-    if (Task == NULL || Task->AddressSpace == NULL || Task->FileContext == NULL)
+    if (Task == NULL || Task->Process->AddressSpace == NULL || Task->Process->FileContext == NULL)
     {
         return -ESRCH;
     }
@@ -90,7 +90,7 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
         return Result;
     }
 
-    for (Index = 0; Index < TASK_FILE_LIMIT && Task->Files[Index] != NULL; Index++)
+    for (Index = 0; Index < TASK_FILE_LIMIT && Task->Process->Files[Index] != NULL; Index++)
     {
     }
 
@@ -111,7 +111,7 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
     }
 
     KMemSet(File, 0, sizeof(*File));
-    Result = SyscallVFSError(VFSOpen(Task->FileContext, Name, (UINT32) Flags, (UINT16) Mode, &Node));
+    Result = SyscallVFSError(VFSOpen(Task->Process->FileContext, Name, (UINT32) Flags, (UINT16) Mode, &Node));
 
     if (Result < 0)
     {
@@ -123,7 +123,7 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
 
     if ((Node.Mode & VFS_MODE_TYPE) == 0x2000U)
     {
-        File->Device = Node.Partition == Task->FileContext->Registry->DevicePartition ? DeviceFSGetNode(Node.Number) : NULL;
+        File->Device = Node.Partition == Task->Process->FileContext->Registry->DevicePartition ? DeviceFSGetNode(Node.Number) : NULL;
 
         if (File->Device == NULL)
         {
@@ -132,9 +132,9 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
             goto Failed;
         }
 
-        UINT32 Permission = Task->FileContext->Credentials.UID == Node.UID ? (Node.Mode >> 6) & 7 : Task->FileContext->Credentials.GID == Node.GID ? (Node.Mode >> 3) & 7 : Node.Mode & 7;
+        UINT32 Permission = Task->Process->FileContext->Credentials.UID == Node.UID ? (Node.Mode >> 6) & 7 : Task->Process->FileContext->Credentials.GID == Node.GID ? (Node.Mode >> 3) & 7 : Node.Mode & 7;
 
-        if (Task->FileContext->Credentials.UID != 0 && (((File->Access & FILE_READ) != 0 && (Permission & 4) == 0) || ((File->Access & FILE_WRITE) != 0 && (Permission & 2) == 0)))
+        if (Task->Process->FileContext->Credentials.UID != 0 && (((File->Access & FILE_READ) != 0 && (Permission & 4) == 0) || ((File->Access & FILE_WRITE) != 0 && (Permission & 2) == 0)))
         {
             Result = -EACCES;
 
@@ -156,7 +156,7 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
         UINT64              Cursor = 0;
         VFS_DIRECTORY_ENTRY Entry;
 
-        Result = SyscallVFSError(VFSReadDirectory(Task->FileContext, Name, &Cursor, &Entry));
+        Result = SyscallVFSError(VFSReadDirectory(Task->Process->FileContext, Name, &Cursor, &Entry));
 
         if (Result < 0)
         {
@@ -166,11 +166,11 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
 
     File->References = 1;
     File->Path = Name;
-    File->OpenContext = *Task->FileContext;
+    File->OpenContext = *Task->Process->FileContext;
     File->NamespaceGeneration = Node.NamespaceGeneration;
     File->Number = Node.Number;
     File->Partition = Node.Partition;
-    Task->Files[Index] = File;
+    Task->Process->Files[Index] = File;
 
     return (INT64) Index;
 Failed:
@@ -238,7 +238,7 @@ STATIC INT64 FileRead(TASK *Task, OPEN_FILE *File, UINT64 Buffer, UINT64 Count)
         UINT32 Length = Count - Total > BufferSize ? BufferSize : (UINT32) (Count - Total);
         UINT32 ReadLength = 0;
 
-        Error = SyscallVFSError(VFSReadChecked(Task->FileContext, File->Path, &Node, File->Offset, Bytes, Length, &ReadLength));
+        Error = SyscallVFSError(VFSReadChecked(Task->Process->FileContext, File->Path, &Node, File->Offset, Bytes, Length, &ReadLength));
 
         if (Error < 0 || ReadLength > Length)
         {
@@ -262,7 +262,7 @@ STATIC INT64 FileRead(TASK *Task, OPEN_FILE *File, UINT64 Buffer, UINT64 Count)
                 Chunk = ReadLength - Copied;
             }
 
-            if (!VMMCopyToUser(Task->AddressSpace, Buffer + Total, Bytes + Copied, Chunk))
+            if (!VMMCopyToUser(Task->Process->AddressSpace, Buffer + Total, Bytes + Copied, Chunk))
             {
                 Error = -EFAULT;
                 break;
@@ -328,7 +328,7 @@ STATIC INT64 FileWrite(TASK *Task, OPEN_FILE *File, UINT64 Buffer, UINT64 Count)
             Chunk = Length - Copied;
         }
 
-        if (!VMMCopyFromUser(Task->AddressSpace, Bytes + Copied, Buffer + Copied, Chunk))
+        if (!VMMCopyFromUser(Task->Process->AddressSpace, Bytes + Copied, Buffer + Copied, Chunk))
         {
             break;
         }
@@ -353,11 +353,11 @@ STATIC INT64 FileWrite(TASK *Task, OPEN_FILE *File, UINT64 Buffer, UINT64 Count)
 
     if (File->Append)
     {
-        Result = SyscallVFSError(VFSAppendChecked(Task->FileContext, File->Path, &Node, Bytes, Length, &EndOffset));
+        Result = SyscallVFSError(VFSAppendChecked(Task->Process->FileContext, File->Path, &Node, Bytes, Length, &EndOffset));
     }
     else
     {
-        Result = SyscallVFSError(VFSWriteChecked(Task->FileContext, File->Path, &Node, File->Offset, Bytes, Length));
+        Result = SyscallVFSError(VFSWriteChecked(Task->Process->FileContext, File->Path, &Node, File->Offset, Bytes, Length));
     }
 
     KFree(Bytes);
@@ -382,7 +382,7 @@ STATIC INT64 FileData(UINT64 FD, UINT64 Buffer, UINT64 Count, BOOLEAN Write)
     TASK      *Task = LBPWRRGetCurrentTask();
     OPEN_FILE *File;
 
-    if (Task == NULL || Task->AddressSpace == NULL || FD >= TASK_FILE_LIMIT || (File = Task->Files[FD]) == NULL || (File->Access & (Write ? FILE_WRITE : FILE_READ)) == 0)
+    if (Task == NULL || Task->Process->AddressSpace == NULL || FD >= TASK_FILE_LIMIT || (File = Task->Process->Files[FD]) == NULL || (File->Access & (Write ? FILE_WRITE : FILE_READ)) == 0)
     {
         return -EBADF;
     }
@@ -444,12 +444,12 @@ INT64 SyscallClose(UINT64 FD)
     TASK      *Task = LBPWRRGetCurrentTask();
     OPEN_FILE *File;
 
-    if (Task == NULL || FD >= TASK_FILE_LIMIT || (File = Task->Files[FD]) == NULL)
+    if (Task == NULL || FD >= TASK_FILE_LIMIT || (File = Task->Process->Files[FD]) == NULL)
     {
         return -EBADF;
     }
 
-    Task->Files[FD] = NULL;
+    Task->Process->Files[FD] = NULL;
 
     return FileRelease(File);
 }

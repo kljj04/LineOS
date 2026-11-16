@@ -17,7 +17,7 @@ INT64 SyscallExit(UINT64 ExitCode)
 
     CurrentTask = LBPWRRGetCurrentTask();
     DebugWrite("exit: pid=");
-    DebugWriteDec(CurrentTask == NULL ? 0 : CurrentTask->PID);
+    DebugWriteDec(CurrentTask == NULL ? 0 : CurrentTask->Process->PID);
     DebugWrite(" code=");
     DebugWriteDec(ExitCode);
     DebugWrite("\n");

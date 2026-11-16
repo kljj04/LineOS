@@ -77,7 +77,7 @@ STATIC PROCESS_SLOT *ProcessReserve(VOID)
         TASK            *Parent = Slot->ParentPID != 0 ? TaskGetByPID(Slot->ParentPID) : NULL;
         BOOLEAN          Retained = !Slot->Waited && Parent != NULL && Parent->State != TASK_TERMINATED && Parent->State != TASK_KILLED;
 
-        if (!Retained && Execution != NULL && Execution->Task != NULL && (!Execution->Task->Scheduled || LBPWRRRemoveTask(Execution->Task)) && ELF64Release(Execution))
+        if (!Retained && Execution != NULL && Execution->Task != NULL && ATOMIC_LOAD(&Execution->Task->Process->ThreadCount, ATOMIC_ACQUIRE) == 1 && (!Execution->Task->Scheduled || LBPWRRRemoveTask(Execution->Task)) && ELF64Release(Execution))
         {
             KMemFreePages(Execution, PROCESS_EXECUTION_PAGES);
             KMemSet(Slot, 0, sizeof(*Slot));
@@ -109,7 +109,7 @@ STATIC INT64 ProcessCopyArguments(TASK *Task, UINT64 Vector, ELF64_ARGUMENTS *Ar
         UINT64 Pointer;
         UINT64 Offset = (UINT64) Index * sizeof(Pointer);
 
-        if (Vector > UINT64_MAX - Offset || !VMMCopyFromUser(Task->AddressSpace, &Pointer, Vector + Offset, sizeof(Pointer)))
+        if (Vector > UINT64_MAX - Offset || !VMMCopyFromUser(Task->Process->AddressSpace, &Pointer, Vector + Offset, sizeof(Pointer)))
         {
             return -EFAULT;
         }
@@ -135,7 +135,7 @@ STATIC INT64 ProcessCopyArguments(TASK *Task, UINT64 Vector, ELF64_ARGUMENTS *Ar
                 return -E2BIG;
             }
 
-            if (Pointer > UINT64_MAX - Position || !VMMCopyFromUser(Task->AddressSpace, &Arguments->Data[Arguments->Bytes], Pointer + Position, 1))
+            if (Pointer > UINT64_MAX - Position || !VMMCopyFromUser(Task->Process->AddressSpace, &Arguments->Data[Arguments->Bytes], Pointer + Position, 1))
             {
                 return -EFAULT;
             }
@@ -171,7 +171,7 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
         return -EAGAIN;
     }
 
-    if (Parent == NULL || Parent->AddressSpace == NULL || Parent->FileContext == NULL || Parent->Execution == NULL)
+    if (Parent == NULL || Parent->Process->AddressSpace == NULL || Parent->Process->FileContext == NULL || Parent->Process->Execution == NULL)
     {
         return ProcessEnd(-ESRCH);
     }
@@ -183,7 +183,7 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
         return ProcessEnd(-EAGAIN);
     }
 
-    if (!VMMListUserPages(Parent->AddressSpace, NULL, 0, &Count) || Count > ELF64_EXEC_MAX_PAGES)
+    if (!VMMListUserPages(Parent->Process->AddressSpace, NULL, 0, &Count) || Count > ELF64_EXEC_MAX_PAGES)
     {
         return ProcessEnd(-EAGAIN);
     }
@@ -202,7 +202,7 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
         return ProcessEnd(-ENOMEM);
     }
 
-    if (!VMMListUserPages(Parent->AddressSpace, Pages, Count, &Count) || !VMMCreateAddressSpace(&Execution->AddressSpace))
+    if (!VMMListUserPages(Parent->Process->AddressSpace, Pages, Count, &Count) || !VMMCreateAddressSpace(&Execution->AddressSpace))
     {
         goto Failed;
     }
@@ -214,8 +214,8 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
         goto Failed;
     }
 
-    Child->AddressSpace = Execution->AddressSpace;
-    Child->Execution = Execution;
+    Child->Process->AddressSpace = Execution->AddressSpace;
+    Child->Process->Execution = Execution;
 
     for (UINT64 Index = 0; Index < Count; Index++)
     {
@@ -235,27 +235,27 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
             Execution->Pages[Execution->PageCount++] = Copy;
         }
 
-        if (!VMMMapUserPages(Child->AddressSpace, Pages[Index].Address, &Physical, 1, Pages[Index].Flags))
+        if (!VMMMapUserPages(Child->Process->AddressSpace, Pages[Index].Address, &Physical, 1, Pages[Index].Flags))
         {
             goto Failed;
         }
     }
 
-    Child->FileContext = KAlloc(sizeof(VFS_CONTEXT));
+    Child->Process->FileContext = KAlloc(sizeof(VFS_CONTEXT));
 
-    if (Child->FileContext == NULL)
+    if (Child->Process->FileContext == NULL)
     {
         goto Failed;
     }
 
-    *Child->FileContext = *Parent->FileContext;
-    Child->RealUID = Parent->RealUID;
-    Child->RealGID = Parent->RealGID;
-    Child->AuthSession = Parent->AuthSession;
-    KMemCpy(Child->Name, Parent->Name, sizeof(Child->Name));
+    *Child->Process->FileContext = *Parent->Process->FileContext;
+    Child->Process->RealUID = Parent->Process->RealUID;
+    Child->Process->RealGID = Parent->Process->RealGID;
+    Child->Process->AuthSession = Parent->Process->AuthSession;
+    KMemCpy(Child->Process->Name, Parent->Process->Name, sizeof(Child->Process->Name));
     Child->UserStackBase = Parent->UserStackBase;
     Child->UserStackSize = Parent->UserStackSize;
-    KMemCpy(Child->Assets, Parent->Assets, sizeof(Child->Assets));
+    KMemCpy(Child->Process->Assets, Parent->Process->Assets, sizeof(Child->Process->Assets));
     KMemCpy(&Child->Context, Frame, sizeof(Child->Context));
     Child->Context.RAX = 0;
     KMemCpy((VOID *) Child->RSP, &Child->Context, sizeof(Child->Context));
@@ -266,11 +266,11 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
     }
 
     Slot->Execution = Execution;
-    Slot->ParentPID = Parent->PID;
+    Slot->ParentPID = Parent->Process->PID;
     Slot->Exited = FALSE;
     Slot->Waited = FALSE;
     Slot->Status = 0;
-    Result = Child->PID;
+    Result = Child->Process->PID;
 
     if (!LBPWRRAddTask(Child))
     {
@@ -310,9 +310,14 @@ INT64 SyscallExecVE(INTERRUPT_FRAME *Frame)
         return -EAGAIN;
     }
 
-    if (Task == NULL || Task->Execution == NULL || Task->FileContext == NULL)
+    if (Task == NULL || Task->Process->Execution == NULL || Task->Process->FileContext == NULL)
     {
         return ProcessEnd(-ESRCH);
+    }
+
+    if (ATOMIC_LOAD(&Task->Process->ThreadCount, ATOMIC_ACQUIRE) != 1)
+    {
+        return ProcessEnd(-EBUSY);
     }
 
     INT64 Result = SyscallCopyPath(Task, Frame->RDI, &Name);
@@ -350,7 +355,7 @@ INT64 SyscallExecVE(INTERRUPT_FRAME *Frame)
         Result = -E2BIG;
     }
 
-    if (Result == 0 && !ELF64PrepareArguments(Task->FileContext, Name, Arguments, New))
+    if (Result == 0 && !ELF64PrepareArguments(Task->Process->FileContext, Name, Arguments, New))
     {
         Result = New->Error != 0 ? New->Error : -ENOEXEC;
     }
@@ -362,8 +367,8 @@ INT64 SyscallExecVE(INTERRUPT_FRAME *Frame)
 
     if (Result == 0)
     {
-        ELF64_EXECUTION   *Owner = Task->Execution;
-        VMM_ADDRESS_SPACE *OldSpace = Task->AddressSpace;
+        ELF64_EXECUTION   *Owner = Task->Process->Execution;
+        VMM_ADDRESS_SPACE *OldSpace = Task->Process->AddressSpace;
 
         if (!VMMSwitchAddressSpace(New->AddressSpace))
         {
@@ -388,17 +393,17 @@ INT64 SyscallExecVE(INTERRUPT_FRAME *Frame)
             Owner->AddressSpace = New->AddressSpace;
             Owner->PageCount = New->PageCount;
             KMemCpy(Owner->Pages, New->Pages, New->PageCount * sizeof(VOID *));
-            Task->FileContext->Credentials = New->Task->FileContext->Credentials;
-            Task->AddressSpace = New->AddressSpace;
+            Task->Process->FileContext->Credentials = New->Task->Process->FileContext->Credentials;
+            Task->Process->AddressSpace = New->AddressSpace;
             Task->UserStackBase = New->Task->UserStackBase;
             Task->UserStackSize = New->Task->UserStackSize;
-            KMemCpy(Task->Name, New->Task->Name, sizeof(Task->Name));
+            KMemCpy(Task->Process->Name, New->Task->Process->Name, sizeof(Task->Process->Name));
             Task->Context = New->Task->Context;
             KMemCpy(Frame, &Task->Context, sizeof(*Frame));
-            KMemSet(Task->Assets, 0, sizeof(Task->Assets));
+            KMemSet(Task->Process->Assets, 0, sizeof(Task->Process->Assets));
             New->AddressSpace = NULL;
             New->PageCount = 0;
-            New->Task->AddressSpace = NULL;
+            New->Task->Process->AddressSpace = NULL;
         }
     }
 
@@ -449,7 +454,7 @@ INT64 SyscallWait4(INT64 PID, UINT64 Status, UINT64 Options, UINT64 Usage)
 {
     TASK *Parent = LBPWRRGetCurrentTask();
 
-    if (Parent == NULL || Parent->AddressSpace == NULL)
+    if (Parent == NULL || Parent->Process->AddressSpace == NULL)
     {
         return -ESRCH;
     }
@@ -477,14 +482,14 @@ INT64 SyscallWait4(INT64 PID, UINT64 Status, UINT64 Options, UINT64 Usage)
         {
             PROCESS_SLOT *Slot = &ProcessSlots[Index];
 
-            if (Slot->Execution == NULL || Slot->Execution->Task == NULL || Slot->ParentPID != Parent->PID || Slot->Waited)
+            if (Slot->Execution == NULL || Slot->Execution->Task == NULL || Slot->ParentPID != Parent->Process->PID || Slot->Waited)
             {
                 continue;
             }
 
             TASK *Child = Slot->Execution->Task;
 
-            if (PID != -1 && PID != Child->PID)
+            if (PID != -1 && PID != Child->Process->PID)
             {
                 continue;
             }
@@ -495,14 +500,14 @@ INT64 SyscallWait4(INT64 PID, UINT64 Status, UINT64 Options, UINT64 Usage)
             {
                 INT32 Code = Slot->Exited ? Slot->Status : Child->State == TASK_KILLED ? 9 : 0;
 
-                if (Status != 0 && !VMMCopyToUser(Parent->AddressSpace, Status, &Code, sizeof(Code)))
+                if (Status != 0 && !VMMCopyToUser(Parent->Process->AddressSpace, Status, &Code, sizeof(Code)))
                 {
                     return ProcessEnd(-EFAULT);
                 }
 
                 Slot->Waited = TRUE;
 
-                return ProcessEnd(Child->PID);
+                return ProcessEnd(Child->Process->PID);
             }
         }
 
@@ -552,20 +557,20 @@ INT64 ProcessChangeParentDirectory(TASK *Task, CONST CHAR8 *Name)
 
         TASK *Parent = TaskGetByPID(Slot->ParentPID);
 
-        if (Parent == NULL || Parent->FileContext == NULL || Parent->RealUID != Task->RealUID)
+        if (Parent == NULL || Parent->Process->FileContext == NULL || Parent->Process->RealUID != Task->Process->RealUID)
         {
             break;
         }
 
-        VFS_CONTEXT Context = *Parent->FileContext;
+        VFS_CONTEXT Context = *Parent->Process->FileContext;
 
-        Context.Credentials = Task->FileContext->Credentials;
+        Context.Credentials = Task->Process->FileContext->Credentials;
         Result = SyscallVFSError(VFSChangeDirectory(&Context, Name));
 
         if (Result == 0)
         {
-            Parent->FileContext->Partition = Context.Partition;
-            KMemCpy(Parent->FileContext->Cwd, Context.Cwd, sizeof(Context.Cwd));
+            Parent->Process->FileContext->Partition = Context.Partition;
+            KMemCpy(Parent->Process->FileContext->Cwd, Context.Cwd, sizeof(Context.Cwd));
         }
 
         break;

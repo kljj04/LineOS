@@ -30,7 +30,7 @@ STATIC INT64 FileStat(TASK *Task, CONST VFS_NODE *Node, UINT64 Buffer)
     Info.ModifyTime = Node->ModifyTime;
     Info.ChangeTime = Node->ChangeTime;
 
-    return VMMCopyToUser(Task->AddressSpace, Buffer, &Info, sizeof(Info)) ? 0 : -EFAULT;
+    return VMMCopyToUser(Task->Process->AddressSpace, Buffer, &Info, sizeof(Info)) ? 0 : -EFAULT;
 }
 
 INT64 SyscallStat(UINT64 Path, UINT64 Buffer, BOOLEAN Follow)
@@ -39,7 +39,7 @@ INT64 SyscallStat(UINT64 Path, UINT64 Buffer, BOOLEAN Follow)
     CHAR8   *Name;
     VFS_NODE Node;
 
-    if (Task == NULL || Task->AddressSpace == NULL || Task->FileContext == NULL)
+    if (Task == NULL || Task->Process->AddressSpace == NULL || Task->Process->FileContext == NULL)
     {
         return -ESRCH;
     }
@@ -51,7 +51,7 @@ INT64 SyscallStat(UINT64 Path, UINT64 Buffer, BOOLEAN Follow)
         return Result;
     }
 
-    Result = SyscallVFSError(Follow ? VFSLookup(Task->FileContext, Name, &Node) : VFSLookupNoFollow(Task->FileContext, Name, &Node));
+    Result = SyscallVFSError(Follow ? VFSLookup(Task->Process->FileContext, Name, &Node) : VFSLookupNoFollow(Task->Process->FileContext, Name, &Node));
     KFree(Name);
 
     return Result < 0 ? Result : FileStat(Task, &Node, Buffer);
@@ -63,12 +63,12 @@ INT64 SyscallFstat(UINT64 FD, UINT64 Buffer)
     OPEN_FILE *File;
     VFS_NODE   Node;
 
-    if (Task == NULL || FD >= TASK_FILE_LIMIT || (File = Task->Files[FD]) == NULL)
+    if (Task == NULL || FD >= TASK_FILE_LIMIT || (File = Task->Process->Files[FD]) == NULL)
     {
         return -EBADF;
     }
 
-    INT64 Result = SyscallVFSError(VFSLookup(Task->FileContext, File->Path, &Node));
+    INT64 Result = SyscallVFSError(VFSLookup(Task->Process->FileContext, File->Path, &Node));
 
     if (Result < 0)
     {

@@ -17,7 +17,7 @@ INT64 SyscallDisplayInfo(UINT64 UserInfo)
 
     Task = LBPWRRGetCurrentTask();
 
-    if (Task == NULL || Task->AddressSpace == NULL)
+    if (Task == NULL || Task->Process->AddressSpace == NULL)
     {
         return -ESRCH;
     }
@@ -34,7 +34,7 @@ INT64 SyscallDisplayInfo(UINT64 UserInfo)
     Info.Pitch = Info.Width * sizeof(UINT32);
     Info.Format = DISPLAY_FORMAT_BGRA8888;
 
-    if (!VMMCopyToUser(Task->AddressSpace, UserInfo, &Info, sizeof(Info)))
+    if (!VMMCopyToUser(Task->Process->AddressSpace, UserInfo, &Info, sizeof(Info)))
     {
         return -EFAULT;
     }
@@ -54,7 +54,7 @@ INT64 SyscallDisplayPresent(UINT64 UserBuffer, UINT64 BufferSize)
 
     Task = LBPWRRGetCurrentTask();
 
-    if (Task == NULL || Task->AddressSpace == NULL)
+    if (Task == NULL || Task->Process->AddressSpace == NULL)
     {
         return -ESRCH;
     }
@@ -89,7 +89,7 @@ INT64 SyscallDisplayPresent(UINT64 UserBuffer, UINT64 BufferSize)
             Chunk = RequiredSize - Offset;
         }
 
-        if (!VMMCopyFromUser(Task->AddressSpace, (UINT8 *) GPU->FrameBuffer + Offset, UserBuffer + Offset, Chunk))
+        if (!VMMCopyFromUser(Task->Process->AddressSpace, (UINT8 *) GPU->FrameBuffer + Offset, UserBuffer + Offset, Chunk))
         {
             Success = FALSE;
             break;
@@ -125,7 +125,7 @@ INT64 SyscallDisplayPresentRect(UINT64 UserRect)
 
     Task = LBPWRRGetCurrentTask();
 
-    if (Task == NULL || Task->AddressSpace == NULL)
+    if (Task == NULL || Task->Process->AddressSpace == NULL)
     {
         return -ESRCH;
     }
@@ -137,7 +137,7 @@ INT64 SyscallDisplayPresentRect(UINT64 UserRect)
         return -ENODEV;
     }
 
-    if (!VMMCopyFromUser(Task->AddressSpace, &Rect, UserRect, sizeof(Rect)))
+    if (!VMMCopyFromUser(Task->Process->AddressSpace, &Rect, UserRect, sizeof(Rect)))
     {
         return -EFAULT;
     }
@@ -166,7 +166,7 @@ INT64 SyscallDisplayPresentRect(UINT64 UserRect)
         DestinationOffset = ((UINT64) (Rect.Y + Row) * GPU->FrameBufferWidth + Rect.X) * sizeof(UINT32);
         SourceOffset = Rect.Buffer + Row * RowSize;
 
-        if (!VMMCopyFromUser(Task->AddressSpace, (UINT8 *) GPU->FrameBuffer + DestinationOffset, SourceOffset, RowSize))
+        if (!VMMCopyFromUser(Task->Process->AddressSpace, (UINT8 *) GPU->FrameBuffer + DestinationOffset, SourceOffset, RowSize))
         {
             Success = FALSE;
             break;
