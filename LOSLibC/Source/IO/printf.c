@@ -186,7 +186,7 @@ static void OutputSigned(STDIO_OUTPUT *Output, int64_t Value, unsigned int Flags
 {
     uint64_t Magnitude;
 
-    char     Sign;
+    char Sign;
 
     if (Value < 0)
     {
@@ -229,7 +229,7 @@ int printf(const char *Format, ...)
 {
     STDIO_OUTPUT Output = {0};
 
-    va_list      Arguments;
+    va_list Arguments;
 
     unsigned int Flags;
     unsigned int Width;
@@ -413,7 +413,7 @@ int printf(const char *Format, ...)
             case 'x':
             case 'X':
             {
-                uint64_t     Value;
+                uint64_t Value;
 
                 unsigned int Base;
                 const char  *Prefix = NULL;

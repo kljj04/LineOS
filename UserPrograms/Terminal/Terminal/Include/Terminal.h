@@ -79,4 +79,4 @@ extern BOOLEAN TerminalWindowFailed;
 
 extern UINT32 TerminalDirtyFirst;
 extern UINT32 TerminalDirtyLast;
-VOID TerminalDamage(UINT32 First, UINT32 Last);
+VOID          TerminalDamage(UINT32 First, UINT32 Last);

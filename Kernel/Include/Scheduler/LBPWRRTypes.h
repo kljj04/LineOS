@@ -15,26 +15,26 @@
 
 typedef struct TASK_SLOT
 {
-    TASK* Task;
+    TASK   *Task;
     BOOLEAN Destroying;
 } TASK_SLOT;
 
 typedef struct CHUNK
 {
-    TASK** Tasks;
+    TASK **Tasks;
     UINT32 Count;
     UINT32 Capacity;
 } CHUNK;
 
 typedef struct LBPWRR_RUNQUEUE
 {
-    TASK** Runnable;
-    UINT32 RunnableCount;
-    UINT32 RunnableCapacity;
-    TASK** Unrunnable;
-    UINT32 UnrunnableCount;
-    CHUNK Chunk;
-    UINT32 CurrentIndex;
+    TASK    **Runnable;
+    UINT32    RunnableCount;
+    UINT32    RunnableCapacity;
+    TASK    **Unrunnable;
+    UINT32    UnrunnableCount;
+    CHUNK     Chunk;
+    UINT32    CurrentIndex;
     SPIN_LOCK Lock;
 } LBPWRR_RUNQUEUE;
 
@@ -45,5 +45,5 @@ typedef struct CPU_USAGE
     UINT64 LastSampleBusyTSC;
     UINT64 LastSampleIdleTSC;
     UINT64 LastTSC;
-    UINTN CPUUsage;
+    UINTN  CPUUsage;
 } CPU_USAGE;

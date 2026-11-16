@@ -12,7 +12,7 @@ VOID LwmRemoveWindow(LWM *Manager, UINT32 Index)
 {
     LWM_WINDOW *Window = &Manager->Windows[Index];
 
-    LwmDamage(Manager, (LWM_RECT){Window->Rect.X - 12, Window->Rect.Y - 12, Window->Rect.Width + 24, Window->Rect.Height + 28});
+    LwmDamage(Manager, (LWM_RECT) {Window->Rect.X - 12, Window->Rect.Y - 12, Window->Rect.Width + 24, Window->Rect.Height + 28});
 
     if (Manager->PointerCapture == Window->Endpoint)
     {
@@ -151,7 +151,7 @@ STATIC VOID LwmClientCreate(LWM *Manager, UINT64 Endpoint, UINT32 UID, CONST LOS
 
     if (Background)
     {
-        Window->Rect = (LWM_RECT){0, 0, Manager->Width, Manager->Height - LWM_DOCK_HEIGHT};
+        Window->Rect = (LWM_RECT) {0, 0, Manager->Width, Manager->Height - LWM_DOCK_HEIGHT};
         Manager->ShellFocused = TRUE;
     }
     else
@@ -305,7 +305,7 @@ INT32 LwmIPC(LWM *Manager)
 
                 if (Window == &Manager->Shell)
                 {
-                    LwmDamage(Manager, (LWM_RECT){0, (INT32) Window->PendingFirst, Manager->Width, Window->PendingLast - Window->PendingFirst});
+                    LwmDamage(Manager, (LWM_RECT) {0, (INT32) Window->PendingFirst, Manager->Width, Window->PendingLast - Window->PendingFirst});
                 }
             }
 

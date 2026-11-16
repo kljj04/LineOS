@@ -100,8 +100,8 @@ INT32 main(VOID)
     GUI.Window.Height = 400;
     GUI.Window.X = (GUI.Width - GUI.Window.Width) / 2;
     GUI.Window.Y = (GUI.Height - GUI.Window.Height) / 2;
-    GUI.Close = (TEST_GUI_RECT){GUI.Window.X + GUI.Window.Width - 56, GUI.Window.Y + 8, 44, 40};
-    GUI.Button = (TEST_GUI_RECT){GUI.Window.X + 32, GUI.Window.Y + 265, 176, 58};
+    GUI.Close = (TEST_GUI_RECT) {GUI.Window.X + GUI.Window.Width - 56, GUI.Window.Y + 8, 44, 40};
+    GUI.Button = (TEST_GUI_RECT) {GUI.Window.X + 32, GUI.Window.Y + 265, 176, 58};
 
     if (ioctl(TTY, LOS_TIO_GRAPHICS_BEGIN) < 0)
     {

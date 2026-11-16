@@ -73,9 +73,9 @@ BOOLEAN LwmOpen(LWM *Manager)
         return FALSE;
     }
 
-    Manager->Surface = (TRUE_TYPE_SURFACE){Manager->Frame, Manager->Width, Manager->Height};
+    Manager->Surface = (TRUE_TYPE_SURFACE) {Manager->Frame, Manager->Width, Manager->Height};
 
-    Manager->Allocator = (TTF_ALLOCATOR){LwmAllocate, LwmFree, Manager};
+    Manager->Allocator = (TTF_ALLOCATOR) {LwmAllocate, LwmFree, Manager};
 
     if (!TrueTypeInit(&Manager->Allocator, &Manager->Surface) || !TrueTypeRegisterFont(&Manager->Font, Manager->FontAsset.Data) || !TrueTypeRegisterFont(&Manager->Fallback, Manager->FallbackAsset.Data))
     {

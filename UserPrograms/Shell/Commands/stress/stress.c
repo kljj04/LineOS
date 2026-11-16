@@ -23,8 +23,8 @@ int main(void)
         setlocale(LC_ALL, "C");
     }
 
-    pid_t    Supervisor;
-    pid_t    Pids[STRESS_WORKERS];
+    pid_t Supervisor;
+    pid_t Pids[STRESS_WORKERS];
 
     uint32_t Created = 0;
     uint32_t Index;
@@ -57,8 +57,8 @@ int main(void)
 
         if (Pid == 0)
         {
-            struct timespec   StartTime;
-            struct timespec   CurrentTime;
+            struct timespec StartTime;
+            struct timespec CurrentTime;
 
             volatile uint64_t Value = 0x123456789ABCDEF0ULL;
             uint32_t          Iterations = 0;
