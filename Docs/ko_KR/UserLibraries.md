@@ -20,7 +20,7 @@ CopyPath=/usr/bin/
 
 ## 유저 TrueType
 
-`Libraries/Include/TrueType`과 `Libraries/Source/TrueType`은 커널 포트를 기반으로 한 유저 전용 TrueType 구현입니다.
+`Libraries/TrueType/Include`과 `Libraries/TrueType/Source`은 커널 포트를 기반으로 한 유저 전용 TrueType 구현입니다.
 `Build/Libraries/libtruetype.a`를 생성하며 `Program.cfg`의 `Dependencies`에 `TrueType`을 명시한 프로그램에 링크합니다. 실제 사용한 오브젝트만 ELF에 포함합니다. 커널의 PMM, VirtIO GPU, 잠금,
 폰트 심볼을 참조하지 않습니다. 커널 TrueType 및 패닉 출력은 유지합니다. 커널 콘솔은 제거했습니다. Terminal 유저 프로그램이 터미널 master 디스크립터에서 받은 바이트를 렌더링하며 일반 프로그램은
 `read`와 `write`를 사용합니다.

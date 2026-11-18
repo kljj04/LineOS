@@ -1,4 +1,4 @@
-// Libraries/Source/UserDB/Argon2.c
+// Libraries/UserDB/Source/Argon2.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 // BLAKE2b/Argon2 subset adapted from Monocypher 4.0.3.
@@ -54,7 +54,7 @@
 // with this software.  If not, see
 // <https://creativecommons.org/publicdomain/zero/1.0/>
 
-#include <UserDB/Argon2.h>
+#include <Argon2.h>
 
 #define FOR_T(Type, I, Start, End) for (Type I = (Start); I < (End); I++)
 #define FOR(I, Start, End)         FOR_T(UINTN, I, Start, End)

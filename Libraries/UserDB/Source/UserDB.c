@@ -1,10 +1,10 @@
-// Libraries/Source/UserDB/UserDB.c
+// Libraries/UserDB/Source/UserDB.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <libintl.h>
 
-#include <UserDB/UserDB.h>
+#include <UserDB.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>

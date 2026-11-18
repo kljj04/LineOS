@@ -1,11 +1,11 @@
-// Libraries/Source/UserDB/AddCommand.c
+// Libraries/UserDB/Source/AddCommand.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <libintl.h>
 
-#include <UserDB/UserDB.h>
-#include <UserDB/Argon2.h>
+#include <UserDB.h>
+#include <Argon2.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>

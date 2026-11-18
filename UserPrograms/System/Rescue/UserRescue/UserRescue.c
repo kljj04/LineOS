@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <UserDB/UserDB.h>
+#include <UserDB.h>
 
 #define USER_RESCUE_LINE_SIZE     256U
 #define USER_RESCUE_PASSWORD_SIZE 128U

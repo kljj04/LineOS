@@ -1,4 +1,4 @@
-// Libraries/Include/TrueType/TrueTypeRuntime.h
+// Libraries/TrueType/Include/TrueTypeRuntime.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 

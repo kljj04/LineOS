@@ -1,8 +1,8 @@
-// Libraries/Source/UserDB/Codec.c
+// Libraries/UserDB/Source/Codec.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <UserDB/UserDB.h>
+#include <UserDB.h>
 #include <string.h>
 
 STATIC BOOLEAN UserDBHex(CONST char *Text, UINTN Length)

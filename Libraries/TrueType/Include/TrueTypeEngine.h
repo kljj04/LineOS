@@ -1,12 +1,12 @@
-// Libraries/Include/TrueType/TrueTypeEngine.h
+// Libraries/TrueType/Include/TrueTypeEngine.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #pragma once
 
 #include <LOSLibC/TypeInfo.h>
-#include <TrueType/TrueTypeRuntime.h>
-#include <TrueType/TrueType.h>
+#include <TrueTypeRuntime.h>
+#include <TrueType.h>
 
 typedef struct
 {

@@ -6,7 +6,7 @@
 
 #include <locale.h>
 
-#include <UserDB/UserDB.h>
+#include <UserDB.h>
 #include <stdio.h>
 #include <stdlib.h>
 

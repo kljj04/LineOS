@@ -1,8 +1,8 @@
-// Libraries/Source/UserDB/DeleteCommand.c
+// Libraries/UserDB/Source/DeleteCommand.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <UserDB/UserDB.h>
+#include <UserDB.h>
 #include <stdio.h>
 
 INT32 UserDBDeleteCommand(CONST char *Username)

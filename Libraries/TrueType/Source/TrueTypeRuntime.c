@@ -1,8 +1,8 @@
-// Libraries/Source/TrueType/TrueTypeRuntime.c
+// Libraries/TrueType/Source/TrueTypeRuntime.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <TrueType/TrueTypeRuntime.h>
+#include <TrueTypeRuntime.h>
 #include <stdlib.h>
 
 #define PI      3.14159265358979323846

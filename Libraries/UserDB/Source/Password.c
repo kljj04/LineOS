@@ -1,9 +1,9 @@
-// Libraries/Source/UserDB/Password.c
+// Libraries/UserDB/Source/Password.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <UserDB/UserDB.h>
-#include <UserDB/Argon2.h>
+#include <UserDB.h>
+#include <Argon2.h>
 #include <sys/random.h>
 #include <string.h>
 #include <sys/mman.h>

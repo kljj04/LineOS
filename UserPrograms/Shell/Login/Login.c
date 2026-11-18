@@ -3,8 +3,8 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <LoginSession.h>
-#include <UserDB/UserDB.h>
-#include <UserDB/Argon2.h>
+#include <UserDB.h>
+#include <Argon2.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>

@@ -1,9 +1,9 @@
-// Libraries/Source/TrueType/TrueType.c
+// Libraries/TrueType/Source/TrueType.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <TrueType/TrueType.h>
-#include <TrueType/TrueTypeRuntime.h>
+#include <TrueType.h>
+#include <TrueTypeRuntime.h>
 #include <LOSLibC/TypeInfo.h>
 #include <string.h>
 

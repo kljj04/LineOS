@@ -1,10 +1,10 @@
-// Libraries/Source/TrueType/TrueTypeEngine.c
+// Libraries/TrueType/Source/TrueTypeEngine.c
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <TrueType/TrueType.h>
-#include <TrueType/TrueTypeEngine.h>
-#include <TrueType/TrueTypeRuntime.h>
+#include <TrueType.h>
+#include <TrueTypeEngine.h>
+#include <TrueTypeRuntime.h>
 
 #define TRUE_TYPE_TAB_WIDTH 4
 

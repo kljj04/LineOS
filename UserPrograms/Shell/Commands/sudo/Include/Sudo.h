@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <UserDB/UserDB.h>
+#include <UserDB.h>
 
 BOOLEAN SudoAllowed(CONST char *Username);
 BOOLEAN SudoAuthenticate(CONST char *Username, USER_DB_ACCOUNT *Account);

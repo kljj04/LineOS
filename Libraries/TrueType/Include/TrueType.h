@@ -1,4 +1,4 @@
-// Libraries/Include/TrueType/TrueType.h
+// Libraries/TrueType/Include/TrueType.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 // Original from stb_truetype.h
