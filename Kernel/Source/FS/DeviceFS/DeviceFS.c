@@ -469,12 +469,12 @@ STATIC INT64 DeviceTerminalIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64
 
 typedef struct
 {
-    UINT32 ResourceId;
-    UINT32 Size;
+    UINT32  ResourceId;
+    UINT32  Size;
     BOOLEAN ColorTarget;
-    UINT32 Width;
-    UINT32 Height;
-    VOID *Backing;
+    UINT32  Width;
+    UINT32  Height;
+    VOID   *Backing;
 } VIRGL_FILE_BUFFER;
 
 typedef struct
@@ -578,8 +578,7 @@ STATIC INT64 VirGLDeviceCreateBuffer(TASK *Task, VIRGL_FILE_STATE *File, UINT32 
         return -EFAULT;
     }
 
-    if (ColorTarget ? (Target.Width == 0 || Target.Height == 0 || Target.Width > 4096 || Target.Height > 4096) :
-                      (Query.Size == 0 || Query.Size > LOS_VIRGL_MAX_BUFFER_BYTES))
+    if (ColorTarget ? (Target.Width == 0 || Target.Height == 0 || Target.Width > 4096 || Target.Height > 4096) : (Query.Size == 0 || Query.Size > LOS_VIRGL_MAX_BUFFER_BYTES))
     {
         return -EINVAL;
     }
@@ -710,7 +709,7 @@ STATIC INT64 VirGLDeviceBufferIoctl(TASK *Task, VIRGL_FILE_STATE *File, UINT64 R
 STATIC INT64 VirGLDeviceSubmit(TASK *Task, VIRGL_FILE_STATE *File, UINT64 Argument)
 {
     LOS_VIRGL_SUBMIT Request;
-    UINT32 ContextId = ATOMIC_LOAD(&File->ContextId, ATOMIC_ACQUIRE);
+    UINT32           ContextId = ATOMIC_LOAD(&File->ContextId, ATOMIC_ACQUIRE);
 
     if (ContextId < 0x80000000U)
     {
@@ -727,7 +726,7 @@ STATIC INT64 VirGLDeviceSubmit(TASK *Task, VIRGL_FILE_STATE *File, UINT64 Argume
         return -EINVAL;
     }
 
-    UINT32 Size = Request.Words * sizeof(UINT32);
+    UINT32  Size = Request.Words * sizeof(UINT32);
     UINT32 *Commands = KAlloc(Size);
 
     if (Commands == NULL)
@@ -741,12 +740,7 @@ STATIC INT64 VirGLDeviceSubmit(TASK *Task, VIRGL_FILE_STATE *File, UINT64 Argume
     {
         Result = -EOPNOTSUPP;
 
-        if (Request.Words == 19 && Commands[0] == 0x00050801U &&
-                 Commands[1] != 0 && Commands[3] == VIRTIO_GPU_FORMAT_B8G8R8X8_UNORM &&
-                 Commands[4] == 0 && Commands[5] == 0 && Commands[6] == 0x00030005U &&
-                 Commands[7] == 1 && Commands[8] == 0 && Commands[9] == Commands[1] &&
-                 Commands[10] == 0x00080007U && Commands[11] == 4 &&
-                 Commands[16] == 0 && Commands[17] == 0 && Commands[18] == 0)
+        if (Request.Words == 19 && Commands[0] == 0x00050801U && Commands[1] != 0 && Commands[3] == VIRTIO_GPU_FORMAT_B8G8R8X8_UNORM && Commands[4] == 0 && Commands[5] == 0 && Commands[6] == 0x00030005U && Commands[7] == 1 && Commands[8] == 0 && Commands[9] == Commands[1] && Commands[10] == 0x00080007U && Commands[11] == 4 && Commands[16] == 0 && Commands[17] == 0 && Commands[18] == 0)
         {
             Result = -ENOENT;
 
@@ -761,11 +755,7 @@ STATIC INT64 VirGLDeviceSubmit(TASK *Task, VIRGL_FILE_STATE *File, UINT64 Argume
                 }
             }
         }
-        else if (Request.Words == 15 && Commands[0] == 0x00020000U &&
-                 Commands[3] == 0x000C0008U && Commands[4] == 0 && Commands[5] == 3 &&
-                 Commands[6] == 4 && Commands[7] == 0 && Commands[8] == 1 &&
-                 Commands[9] == 0 && Commands[10] == 0 && Commands[11] == 0 &&
-                 Commands[12] == 0 && Commands[13] == 0 && Commands[14] == 2)
+        else if (Request.Words == 15 && Commands[0] == 0x00020000U && Commands[3] == 0x000C0008U && Commands[4] == 0 && Commands[5] == 3 && Commands[6] == 4 && Commands[7] == 0 && Commands[8] == 1 && Commands[9] == 0 && Commands[10] == 0 && Commands[11] == 0 && Commands[12] == 0 && Commands[13] == 0 && Commands[14] == 2)
         {
             VIRGL_FILE_BUFFER *Target = NULL;
             VIRGL_FILE_BUFFER *Vertices = NULL;
@@ -836,7 +826,7 @@ STATIC INT64 VirGLDeviceReadTarget(TASK *Task, VIRGL_FILE_STATE *File, UINT64 Ar
         }
 
         UINT32 Size = Buffer->Width * Buffer->Height * 4;
-        UINTN Pages = (Size + 4095) / 4096;
+        UINTN  Pages = (Size + 4095) / 4096;
 
         if (Request.Capacity < Size || Buffer->Backing != NULL)
         {
@@ -851,9 +841,9 @@ STATIC INT64 VirGLDeviceReadTarget(TASK *Task, VIRGL_FILE_STATE *File, UINT64 Ar
         }
 
         BOOLEAN CanFree;
-        UINT32 ContextId = ATOMIC_LOAD(&File->ContextId, ATOMIC_ACQUIRE);
+        UINT32  ContextId = ATOMIC_LOAD(&File->ContextId, ATOMIC_ACQUIRE);
         BOOLEAN Success = VirGLReadColorTarget(ContextId, Buffer->ResourceId, Buffer->Width, Buffer->Height, Buffer->Backing, &CanFree);
-        INT64 Result = Success ? (VMMCopyToUser(Task->Process->AddressSpace, Request.Address, Buffer->Backing, Size) ? 0 : -EFAULT) : -EIO;
+        INT64   Result = Success ? (VMMCopyToUser(Task->Process->AddressSpace, Request.Address, Buffer->Backing, Size) ? 0 : -EFAULT) : -EIO;
 
         if (CanFree)
         {
@@ -878,8 +868,7 @@ STATIC INT64 VirGLDeviceIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
         return VirGLDeviceCreateContext(State);
     }
 
-    if (Request == LOS_VIRGL_CREATE_BUFFER || Request == LOS_VIRGL_WRITE_BUFFER || Request == LOS_VIRGL_DESTROY_BUFFER ||
-        Request == LOS_VIRGL_CREATE_TARGET || Request == LOS_VIRGL_SUBMIT_COMMANDS || Request == LOS_VIRGL_READ_TARGET)
+    if (Request == LOS_VIRGL_CREATE_BUFFER || Request == LOS_VIRGL_WRITE_BUFFER || Request == LOS_VIRGL_DESTROY_BUFFER || Request == LOS_VIRGL_CREATE_TARGET || Request == LOS_VIRGL_SUBMIT_COMMANDS || Request == LOS_VIRGL_READ_TARGET)
     {
         VIRGL_FILE_STATE *File = State;
 
@@ -888,8 +877,7 @@ STATIC INT64 VirGLDeviceIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
             return -EBUSY;
         }
 
-        INT64 Result = Request == LOS_VIRGL_SUBMIT_COMMANDS ? VirGLDeviceSubmit(Task, File, Argument) :
-                       Request == LOS_VIRGL_READ_TARGET ? VirGLDeviceReadTarget(Task, File, Argument) : VirGLDeviceBufferIoctl(Task, File, Request, Argument);
+        INT64 Result = Request == LOS_VIRGL_SUBMIT_COMMANDS ? VirGLDeviceSubmit(Task, File, Argument) : Request == LOS_VIRGL_READ_TARGET ? VirGLDeviceReadTarget(Task, File, Argument) : VirGLDeviceBufferIoctl(Task, File, Request, Argument);
         ATOMIC_STORE(&File->BufferBusy, 0, ATOMIC_RELEASE);
 
         return Result;

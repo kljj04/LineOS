@@ -57,8 +57,8 @@ typedef struct
 typedef struct
 {
     unsigned long Address;
-    unsigned int Words;
-    unsigned int Reserved;
+    unsigned int  Words;
+    unsigned int  Reserved;
 } LOS_VIRGL_SUBMIT;
 
 #define LOS_VIRGL_SUBMIT_COMMANDS _IOW('G', 6, LOS_VIRGL_SUBMIT)
@@ -74,8 +74,8 @@ typedef struct
 
 typedef struct
 {
-    unsigned int Handle;
-    unsigned int Capacity;
+    unsigned int  Handle;
+    unsigned int  Capacity;
     unsigned long Address;
 } LOS_VIRGL_TARGET_READ;
 
