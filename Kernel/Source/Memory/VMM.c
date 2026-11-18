@@ -1594,7 +1594,7 @@ STATIC BOOLEAN VMMUserPagePhysical(VMM_ADDRESS_SPACE *AddressSpace, UINT64 *Kern
     return FALSE;
 }
 
-STATIC BOOLEAN VMMCopyUser(VMM_ADDRESS_SPACE *AddressSpace, UINT64 UserAddress, VOID *KernelBuffer, UINT64 Size, BOOLEAN ToUser)
+STATIC BOOLEAN VMMCopyUser(VMM_ADDRESS_SPACE *AddressSpace, UINT64 UserAddress, VOID *KernelBuffer, UINT64 Size, BOOLEAN ToUser, UINT32 *Expected, BOOLEAN AtomicWord)
 {
     UINT64 *KernelRoot;
     UINT64  IRQFlags;
@@ -1660,6 +1660,27 @@ STATIC BOOLEAN VMMCopyUser(VMM_ADDRESS_SPACE *AddressSpace, UINT64 UserAddress, 
         Checked += Chunk;
     }
 
+    if (Expected != NULL)
+    {
+        Result = ATOMIC_COMPARE_EXCHANGE((UINT32 *) Physical, Expected, *(CONST UINT32 *) KernelBuffer, FALSE, ATOMIC_ACQ_REL, ATOMIC_ACQUIRE);
+        goto Cleanup;
+    }
+
+    if (AtomicWord)
+    {
+        if (ToUser)
+        {
+            ATOMIC_STORE((UINT32 *) Physical, *(CONST UINT32 *) KernelBuffer, ATOMIC_RELEASE);
+        }
+        else
+        {
+            *(UINT32 *) KernelBuffer = ATOMIC_LOAD((UINT32 *) Physical, ATOMIC_ACQUIRE);
+        }
+
+        Result = TRUE;
+        goto Cleanup;
+    }
+
     Offset = 0;
 
     while (Offset < Size)
@@ -1699,12 +1720,12 @@ Cleanup:
 
 BOOLEAN VMMCopyFromUser(VMM_ADDRESS_SPACE *AddressSpace, VOID *Destination, UINT64 Source, UINT64 Size)
 {
-    return VMMCopyUser(AddressSpace, Source, Destination, Size, FALSE);
+    return VMMCopyUser(AddressSpace, Source, Destination, Size, FALSE, NULL, FALSE);
 }
 
 BOOLEAN VMMCopyToUser(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Destination, CONST VOID *Source, UINT64 Size)
 {
-    return VMMCopyUser(AddressSpace, Destination, (VOID *) Source, Size, TRUE);
+    return VMMCopyUser(AddressSpace, Destination, (VOID *) Source, Size, TRUE, NULL, FALSE);
 }
 
 STATIC BOOLEAN VMMUserMutable(VMM_ADDRESS_SPACE *AddressSpace)
@@ -1920,4 +1941,24 @@ BOOLEAN VMMListUserPages(VMM_ADDRESS_SPACE *AddressSpace, VMM_USER_PAGE *Pages, 
     SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
 
     return Result;
+}
+
+BOOLEAN VMMCompareExchangeUser32(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, UINT32 *Expected, UINT32 Desired)
+{
+    if (Expected == NULL || (Address & (sizeof(UINT32) - 1)) != 0)
+    {
+        return FALSE;
+    }
+
+    return VMMCopyUser(AddressSpace, Address, &Desired, sizeof(Desired), TRUE, Expected, FALSE);
+}
+
+BOOLEAN VMMReadUserWord(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, UINT32 *Word)
+{
+    return (Address & 3U) == 0 && VMMCopyUser(AddressSpace, Address, Word, sizeof(*Word), FALSE, NULL, TRUE);
+}
+
+BOOLEAN VMMWriteUserWord(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, UINT32 Word)
+{
+    return (Address & 3U) == 0 && VMMCopyUser(AddressSpace, Address, &Word, sizeof(Word), TRUE, NULL, TRUE);
 }

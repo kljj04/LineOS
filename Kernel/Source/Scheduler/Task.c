@@ -251,6 +251,10 @@ STATIC TASK *TaskCreateInternal(TASK *Member, VOID (*Entry)(VOID))
     }
 
     KMemSet(Task, 0, sizeof(*Task));
+    Task->FPState[0] = 0x7F;
+    Task->FPState[1] = 0x03;
+    Task->FPState[24] = 0x80;
+    Task->FPState[25] = 0x1F;
 
     PROCESS *Process = NULL;
 
@@ -633,7 +637,7 @@ TASK *TaskGetByPID(UINT16 PID)
     {
         TASK *Task = TaskSlots[Index].Task;
 
-        if (Task != NULL && !TaskSlots[Index].Destroying && Task->Process->PID == PID)
+        if (Task != NULL && !TaskSlots[Index].Destroying && Task->TID == PID && Task->Process->PID == PID)
         {
             Result = Task;
             break;

@@ -62,7 +62,7 @@ VOID CPUEnableSSE(VOID)
     UINT64 CR4;
 
     ASM("mov %%cr0, %0" : "=r"(CR0));
-    CR0 &= ~(1ULL << 2);
+    CR0 &= ~((1ULL << 2) | (1ULL << 3));
     CR0 |= (1ULL << 1);
     CR0 |= (1ULL << 5);
     ASM("mov %0, %%cr0" : : "r"(CR0) : "memory");
@@ -70,6 +70,7 @@ VOID CPUEnableSSE(VOID)
     ASM("mov %%cr4, %0" : "=r"(CR4));
     CR4 |= (1ULL << 9);
     CR4 |= (1ULL << 10);
+    CR4 &= ~((1ULL << 16) | (1ULL << 18));
     ASM("mov %0, %%cr4" : : "r"(CR4) : "memory");
 
     ASM("fninit" :: : "memory");

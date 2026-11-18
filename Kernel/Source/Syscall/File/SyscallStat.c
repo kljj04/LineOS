@@ -60,10 +60,10 @@ INT64 SyscallStat(UINT64 Path, UINT64 Buffer, BOOLEAN Follow)
 INT64 SyscallFstat(UINT64 FD, UINT64 Buffer)
 {
     TASK      *Task = LBPWRRGetCurrentTask();
-    OPEN_FILE *File;
+    OPEN_FILE *File __attribute__((cleanup(FileDrop))) = FileAcquire(Task, (UINT64) FD);
     VFS_NODE   Node;
 
-    if (Task == NULL || FD >= TASK_FILE_LIMIT || (File = Task->Process->Files[FD]) == NULL)
+    if (Task == NULL || File == NULL)
     {
         return -EBADF;
     }

@@ -48,6 +48,7 @@ STATIC VOID WaitQueueDetach(TASK *Task)
         }
     }
 
+    Task->WaitDeadlineTSC = 0;
     Task->WaitQueue = NULL;
     Task->WaitNext = NULL;
 }
@@ -58,7 +59,7 @@ VOID WaitQueueInit(WAIT_QUEUE *Queue)
     Queue->Tail = NULL;
 }
 
-BOOLEAN WaitQueueSleep(WAIT_QUEUE *Queue, SPIN_LOCK *ConditionLock)
+STATIC BOOLEAN WaitQueueSleepInternal(WAIT_QUEUE *Queue, SPIN_LOCK *ConditionLock, BOOLEAN Interruptible, UINT64 Deadline, BOOLEAN *TimedOut)
 {
     TASK            *Task;
     LBPWRR_RUNQUEUE *RunQueue;
@@ -74,7 +75,7 @@ BOOLEAN WaitQueueSleep(WAIT_QUEUE *Queue, SPIN_LOCK *ConditionLock)
     SpinLockAcquire(&WaitLock);
     SpinLockAcquire(&RunQueue->Lock);
 
-    if (!Task->Scheduled || Task->State != TASK_RUNNING || Task->WaitQueue != NULL)
+    if (!Task->Scheduled || Task->State != TASK_RUNNING || Task->WaitQueue != NULL || (Interruptible && ATOMIC_LOAD(&Task->Process->GroupExiting, ATOMIC_ACQUIRE)))
     {
         SpinLockRelease(&RunQueue->Lock);
         SpinLockRelease(&WaitLock);
@@ -82,6 +83,8 @@ BOOLEAN WaitQueueSleep(WAIT_QUEUE *Queue, SPIN_LOCK *ConditionLock)
         return FALSE;
     }
 
+    Task->WaitDeadlineTSC = Deadline;
+    Task->WaitTimedOut = FALSE;
     Task->WaitQueue = Queue;
     Task->WaitNext = NULL;
 
@@ -102,80 +105,130 @@ BOOLEAN WaitQueueSleep(WAIT_QUEUE *Queue, SPIN_LOCK *ConditionLock)
     LBPWRRYield();
     SpinLockAcquire(ConditionLock);
 
+    if (TimedOut != NULL)
+    {
+        *TimedOut = Task->WaitTimedOut;
+    }
+
+    return !Interruptible || !ATOMIC_LOAD(&Task->Process->GroupExiting, ATOMIC_ACQUIRE);
+}
+
+BOOLEAN WaitQueueSleep(WAIT_QUEUE *Queue, SPIN_LOCK *ConditionLock)
+{
+    return WaitQueueSleepInternal(Queue, ConditionLock, TRUE, 0, NULL);
+}
+
+BOOLEAN WaitQueueSleepUninterruptible(WAIT_QUEUE *Queue, SPIN_LOCK *ConditionLock)
+{
+    return WaitQueueSleepInternal(Queue, ConditionLock, FALSE, 0, NULL);
+}
+
+STATIC BOOLEAN WaitQueueReady(TASK *Task)
+{
+    WaitQueueDetach(Task);
+
+    if (!Task->Scheduled || Task->State != TASK_BLOCKED)
+    {
+        return FALSE;
+    }
+
+    Task->State = LBPWRRGetCurrentTaskFromCPU(Task->CPUID) == Task ? TASK_RUNNING : TASK_READY;
+
     return TRUE;
 }
 
-STATIC VOID WaitQueueWake(WAIT_QUEUE *Queue, BOOLEAN All)
+STATIC LBPWRR_RUNQUEUE *WaitQueueLockTask(TASK *Task)
 {
-    TASK            *Task;
-    LBPWRR_RUNQUEUE *RunQueue;
-    UINT64           Flags;
-
-    Flags = SpinLockAcquireIRQSave(&WaitLock);
-
-    while (Queue->Head != NULL)
+    while (Task->Scheduled)
     {
-        Task = Queue->Head;
-        RunQueue = LBPWRRGetRunQueue(Task->CPUID);
-        SpinLockAcquire(&RunQueue->Lock);
-        WaitQueueDetach(Task);
+        UINT32           CPUID = Task->CPUID;
+        LBPWRR_RUNQUEUE *RunQueue = LBPWRRGetRunQueue(CPUID);
 
-        if (Task->Scheduled && Task->State == TASK_BLOCKED)
+        SpinLockAcquire(&RunQueue->Lock);
+
+        if (Task->CPUID == CPUID)
         {
-            if (LBPWRRGetCurrentTaskFromCPU(Task->CPUID) == Task)
-            {
-                Task->State = TASK_RUNNING;
-            }
-            else
-            {
-                Task->State = TASK_READY;
-            }
+            return RunQueue;
         }
 
         SpinLockRelease(&RunQueue->Lock);
+    }
 
-        if (!All)
+    return NULL;
+}
+
+VOID WaitQueueInterruptTask(TASK *Task)
+{
+    UINT64 Flags = SpinLockAcquireIRQSave(&WaitLock);
+
+    if (Task->WaitQueue != NULL)
+    {
+        LBPWRR_RUNQUEUE *RunQueue = WaitQueueLockTask(Task);
+
+        if (RunQueue != NULL)
         {
-            break;
+            WaitQueueReady(Task);
+            SpinLockRelease(&RunQueue->Lock);
         }
     }
 
     SpinLockReleaseIRQRestore(&WaitLock, Flags);
 }
 
+UINT32 WaitQueueWakeMatching(WAIT_QUEUE *Queue, UINT32 Count, BOOLEAN (*Match)(TASK *, CONST VOID *), CONST VOID *Context)
+{
+    TASK            *Task;
+    LBPWRR_RUNQUEUE *RunQueue;
+    UINT64           Flags;
+    UINT32           Woken = 0;
+
+    Flags = SpinLockAcquireIRQSave(&WaitLock);
+
+    for (TASK *Next = Queue->Head; Next != NULL && Woken < Count;)
+    {
+        Task = Next;
+        Next = Task->WaitNext;
+
+        if (Match != NULL && !Match(Task, Context))
+        {
+            continue;
+        }
+
+        RunQueue = WaitQueueLockTask(Task);
+
+        if (RunQueue != NULL)
+        {
+            Woken += WaitQueueReady(Task);
+            SpinLockRelease(&RunQueue->Lock);
+        }
+        else
+        {
+            WaitQueueDetach(Task);
+        }
+    }
+
+    SpinLockReleaseIRQRestore(&WaitLock, Flags);
+
+    return Woken;
+}
+
 VOID WaitQueueWakeOne(WAIT_QUEUE *Queue)
 {
-    WaitQueueWake(Queue, FALSE);
+    WaitQueueWakeMatching(Queue, 1, NULL, NULL);
 }
 
 VOID WaitQueueWakeAll(WAIT_QUEUE *Queue)
 {
-    WaitQueueWake(Queue, TRUE);
+    WaitQueueWakeMatching(Queue, (UINT32) -1, NULL, NULL);
 }
 
 VOID WaitQueueFinishTask(TASK *Task, TASK_STATE State)
 {
     LBPWRR_RUNQUEUE *RunQueue;
     UINT64           Flags;
-    UINT32           CPUID;
 
     Flags = SpinLockAcquireIRQSave(&WaitLock);
-    RunQueue = NULL;
-
-    while (Task->Scheduled)
-    {
-        CPUID = Task->CPUID;
-        RunQueue = LBPWRRGetRunQueue(CPUID);
-        SpinLockAcquire(&RunQueue->Lock);
-
-        if (Task->CPUID == CPUID)
-        {
-            break;
-        }
-
-        SpinLockRelease(&RunQueue->Lock);
-        RunQueue = NULL;
-    }
+    RunQueue = WaitQueueLockTask(Task);
 
     WaitQueueDetach(Task);
     Task->State = State;
@@ -188,4 +241,31 @@ VOID WaitQueueFinishTask(TASK *Task, TASK_STATE State)
     }
 
     SpinLockReleaseIRQRestore(&WaitLock, Flags);
+}
+
+BOOLEAN WaitQueueSleepTimed(WAIT_QUEUE *Queue, SPIN_LOCK *ConditionLock, UINT64 Deadline, BOOLEAN *TimedOut)
+{
+    return WaitQueueSleepInternal(Queue, ConditionLock, TRUE, Deadline, TimedOut);
+}
+
+VOID WaitQueueExpireCPU(UINT32 CPUID, UINT64 Now)
+{
+    LBPWRR_RUNQUEUE *RunQueue = LBPWRRGetRunQueue(CPUID);
+
+    SpinLockAcquire(&WaitLock);
+    SpinLockAcquire(&RunQueue->Lock);
+
+    for (UINT32 Index = 0; Index < RunQueue->RunnableCount; Index++)
+    {
+        TASK *Task = RunQueue->Runnable[Index];
+
+        if (Task->WaitDeadlineTSC != 0 && (INT64) (Now - Task->WaitDeadlineTSC) >= 0)
+        {
+            Task->WaitTimedOut = TRUE;
+            WaitQueueReady(Task);
+        }
+    }
+
+    SpinLockRelease(&RunQueue->Lock);
+    SpinLockRelease(&WaitLock);
 }

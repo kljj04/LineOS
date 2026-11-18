@@ -4,6 +4,7 @@
 
 #include <Syscall/Process/SyscallProcess.h>
 #include <Syscall/IPC/SyscallIPC.h>
+#include <Syscall/Process/SyscallThread.h>
 #include <Syscall/Process/ProcessInternal.h>
 #include <Syscall/SyscallError.h>
 #include <Syscall/Memory/SyscallMemory.h>
@@ -15,6 +16,9 @@
 #include <Memory/PMM.h>
 #include <Debug/Debug.h>
 #include <Debug/Panic.h>
+#include <Arch/AMD64/CPU.h>
+
+#define IA32_FS_BASE 0xC0000100U
 
 STATIC_ASSERT(sizeof(TASK_CONTEXT) == sizeof(INTERRUPT_FRAME), "fork context size");
 STATIC_ASSERT(__builtin_offsetof(TASK_CONTEXT, RIP) == __builtin_offsetof(INTERRUPT_FRAME, RIP) && __builtin_offsetof(TASK_CONTEXT, RAX) == __builtin_offsetof(INTERRUPT_FRAME, RAX) && __builtin_offsetof(TASK_CONTEXT, RSP) == __builtin_offsetof(INTERRUPT_FRAME, RSP), "fork context offsets");
@@ -37,13 +41,13 @@ STATIC SPIN_LOCK    ProcessLock;
 STATIC WAIT_QUEUE   ProcessWaiters;
 STATIC WAIT_QUEUE   ProcessChildWaiters;
 
-STATIC BOOLEAN ProcessBegin(VOID)
+BOOLEAN ProcessBegin(VOID)
 {
     UINT64 Flags = SpinLockAcquireIRQSave(&ProcessLock);
 
     while (ProcessBusy != 0)
     {
-        if (!WaitQueueSleep(&ProcessWaiters, &ProcessLock))
+        if (!WaitQueueSleepUninterruptible(&ProcessWaiters, &ProcessLock))
         {
             SpinLockReleaseIRQRestore(&ProcessLock, Flags);
 
@@ -57,7 +61,7 @@ STATIC BOOLEAN ProcessBegin(VOID)
     return TRUE;
 }
 
-STATIC INT64 ProcessEnd(INT64 Result)
+INT64 ProcessEnd(INT64 Result)
 {
     UINT64 Flags = SpinLockAcquireIRQSave(&ProcessLock);
 
@@ -68,6 +72,24 @@ STATIC INT64 ProcessEnd(INT64 Result)
     return Result;
 }
 
+VOID ProcessReapThreads(PROCESS *Process)
+{
+    TASK *Representative = Process->Execution->Task;
+    TASK *Task = Process->ThreadHead;
+
+    while (Task != NULL)
+    {
+        TASK *Next = Task->ThreadNext;
+
+        if (Task != Representative)
+        {
+            TaskDestroy(Task);
+        }
+
+        Task = Next;
+    }
+}
+
 STATIC PROCESS_SLOT *ProcessReserve(VOID)
 {
     for (UINT32 Index = 0; Index < PROCESS_LIMIT; Index++)
@@ -75,7 +97,12 @@ STATIC PROCESS_SLOT *ProcessReserve(VOID)
         PROCESS_SLOT    *Slot = &ProcessSlots[Index];
         ELF64_EXECUTION *Execution = Slot->Execution;
         TASK            *Parent = Slot->ParentPID != 0 ? TaskGetByPID(Slot->ParentPID) : NULL;
-        BOOLEAN          Retained = !Slot->Waited && Parent != NULL && Parent->State != TASK_TERMINATED && Parent->State != TASK_KILLED;
+        BOOLEAN          Retained = !Slot->Waited && Parent != NULL && !Parent->Process->Exited;
+
+        if (Execution != NULL && Execution->Task != NULL)
+        {
+            ProcessReapThreads(Execution->Task->Process);
+        }
 
         if (!Retained && Execution != NULL && Execution->Task != NULL && ATOMIC_LOAD(&Execution->Task->Process->ThreadCount, ATOMIC_ACQUIRE) == 1 && (!Execution->Task->Scheduled || LBPWRRRemoveTask(Execution->Task)) && ELF64Release(Execution))
         {
@@ -176,6 +203,11 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
         return ProcessEnd(-ESRCH);
     }
 
+    if (ATOMIC_LOAD(&Parent->Process->GroupExiting, ATOMIC_ACQUIRE))
+    {
+        return ProcessEnd(-EINTR);
+    }
+
     PROCESS_SLOT *Slot = ProcessReserve();
 
     if (Slot == NULL)
@@ -253,6 +285,8 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
     Child->Process->RealGID = Parent->Process->RealGID;
     Child->Process->AuthSession = Parent->Process->AuthSession;
     KMemCpy(Child->Process->Name, Parent->Process->Name, sizeof(Child->Process->Name));
+    ASM("fxsave64 %0" : "=m"(Child->FPState)::"memory");
+    Child->FSBase = ReadMSR(IA32_FS_BASE);
     Child->UserStackBase = Parent->UserStackBase;
     Child->UserStackSize = Parent->UserStackSize;
     KMemCpy(Child->Process->Assets, Parent->Process->Assets, sizeof(Child->Process->Assets));
@@ -315,7 +349,9 @@ INT64 SyscallExecVE(INTERRUPT_FRAME *Frame)
         return ProcessEnd(-ESRCH);
     }
 
-    if (ATOMIC_LOAD(&Task->Process->ThreadCount, ATOMIC_ACQUIRE) != 1)
+    ProcessReapThreads(Task->Process);
+
+    if (ATOMIC_LOAD(&Task->Process->ThreadCount, ATOMIC_ACQUIRE) != 1 || ATOMIC_LOAD(&Task->Process->GroupExiting, ATOMIC_ACQUIRE))
     {
         return ProcessEnd(-EBUSY);
     }
@@ -398,6 +434,10 @@ INT64 SyscallExecVE(INTERRUPT_FRAME *Frame)
             Task->UserStackBase = New->Task->UserStackBase;
             Task->UserStackSize = New->Task->UserStackSize;
             KMemCpy(Task->Process->Name, New->Task->Process->Name, sizeof(Task->Process->Name));
+            WriteMSR(IA32_FS_BASE, 0);
+            ASM("fxrstor64 %0" ::"m"(New->Task->FPState) : "memory");
+            Task->ClearTIDAddress = 0;
+            Task->RobustListHead = 0;
             Task->Context = New->Task->Context;
             KMemCpy(Frame, &Task->Context, sizeof(*Frame));
             KMemSet(Task->Process->Assets, 0, sizeof(Task->Process->Assets));
@@ -424,30 +464,76 @@ INT64 SyscallExecVE(INTERRUPT_FRAME *Frame)
     return ProcessEnd(Result);
 }
 
-VOID SyscallProcessExit(TASK *Task, UINT64 Code)
+INT64 SyscallProcessExit(TASK *Task, UINT64 Code, BOOLEAN Group)
 {
-    if (!ProcessBegin())
+    if (Task == NULL || Task->Idle || !ProcessBegin())
     {
-        return;
+        return -ESRCH;
     }
 
-    for (UINT32 Index = 0; Index < PROCESS_LIMIT; Index++)
-    {
-        PROCESS_SLOT *Slot = &ProcessSlots[Index];
+    PROCESS *Process = Task->Process;
+    BOOLEAN  OtherLive = FALSE;
 
-        if (Slot->Execution != NULL && Slot->Execution->Task == Task)
+    for (TASK *Thread = Process->ThreadHead; Thread != NULL; Thread = Thread->ThreadNext)
+    {
+        if (Thread != Task && Thread->State != TASK_TERMINATED && Thread->State != TASK_KILLED)
         {
-            Slot->Status = (INT32) ((Code & 255) << 8);
-            Slot->Exited = TRUE;
+            OtherLive = TRUE;
             break;
         }
     }
 
-    UINT64 Flags = SpinLockAcquireIRQSave(&ProcessLock);
+    if (Group && !ATOMIC_LOAD(&Process->GroupExiting, ATOMIC_ACQUIRE))
+    {
+        Process->GroupExitCode = Code;
+        ATOMIC_STORE(&Process->GroupExiting, TRUE, ATOMIC_RELEASE);
 
-    WaitQueueWakeAll(&ProcessChildWaiters);
-    SpinLockReleaseIRQRestore(&ProcessLock, Flags);
+        for (TASK *Thread = Process->ThreadHead; Thread != NULL; Thread = Thread->ThreadNext)
+        {
+            if (Thread != Task)
+            {
+                WaitQueueInterruptTask(Thread);
+            }
+        }
+    }
+
+    if (ATOMIC_LOAD(&Process->GroupExiting, ATOMIC_ACQUIRE))
+    {
+        Code = Process->GroupExitCode;
+    }
+
+    SyscallReleaseRobustList(Task);
+    SyscallClearTIDAddress(Task);
+    SyscallIPCRelease(Task);
+
+    if (!OtherLive)
+    {
+        SyscallFilesRelease(Task);
+        Process->Exited = TRUE;
+
+        for (UINT32 Index = 0; Index < PROCESS_LIMIT; Index++)
+        {
+            PROCESS_SLOT *Slot = &ProcessSlots[Index];
+
+            if (Slot->Execution != NULL && Slot->Execution == Process->Execution)
+            {
+                Slot->Status = (INT32) ((Code & 255) << 8);
+                Slot->Exited = TRUE;
+                break;
+            }
+        }
+
+        UINT64 Flags = SpinLockAcquireIRQSave(&ProcessLock);
+
+        WaitQueueWakeAll(&ProcessChildWaiters);
+        SpinLockReleaseIRQRestore(&ProcessLock, Flags);
+    }
+
+    TaskTerminate(Task);
     ProcessEnd(0);
+    LBPWRRYield();
+
+    return -EIO;
 }
 
 INT64 SyscallWait4(INT64 PID, UINT64 Status, UINT64 Options, UINT64 Usage)
@@ -496,7 +582,7 @@ INT64 SyscallWait4(INT64 PID, UINT64 Status, UINT64 Options, UINT64 Usage)
 
             Found = TRUE;
 
-            if (Slot->Exited || Child->State == TASK_TERMINATED || Child->State == TASK_KILLED)
+            if (Slot->Exited || (Child->State == TASK_KILLED && ATOMIC_LOAD(&Child->Process->ThreadCount, ATOMIC_ACQUIRE) == 1))
             {
                 INT32 Code = Slot->Exited ? Slot->Status : Child->State == TASK_KILLED ? 9 : 0;
 

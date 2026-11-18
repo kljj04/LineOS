@@ -33,3 +33,6 @@ struct OPEN_FILE
 
 INT64 FileBegin(OPEN_FILE *File);
 VOID  FileEnd(OPEN_FILE *File);
+
+OPEN_FILE *FileAcquire(TASK *Task, UINT64 FD);
+VOID       FileDrop(OPEN_FILE **File);

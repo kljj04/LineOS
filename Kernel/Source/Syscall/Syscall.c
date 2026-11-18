@@ -19,6 +19,7 @@
 #include <Syscall/Device/SyscallDisplay.h>
 #include <Syscall/File/SyscallFile.h>
 #include <Syscall/Process/SyscallProcess.h>
+#include <Syscall/Process/SyscallThread.h>
 #include <Syscall/Asset/SyscallAsset.h>
 #include <Syscall/Memory/SyscallMemory.h>
 #include <Syscall/System/SyscallSysinfo.h>
@@ -145,6 +146,51 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
         case SYSCALL_MUNMAP:
         {
             return (UINT64) SyscallMunmap(Frame->RDI, Frame->RSI);
+        }
+
+        case SYSCALL_CLONE:
+        {
+            return (UINT64) SyscallClone(Frame);
+        }
+
+        case SYSCALL_CLONE3:
+        {
+            return (UINT64) SyscallClone3(Frame);
+        }
+
+        case SYSCALL_GETTID:
+        {
+            return (UINT64) SyscallGetTID();
+        }
+
+        case SYSCALL_FUTEX:
+        {
+            return (UINT64) SyscallFutex(Frame->RDI, Frame->RSI, Frame->RDX, Frame->R10, Frame->R8, Frame->R9);
+        }
+
+        case SYSCALL_SET_TID_ADDRESS:
+        {
+            return (UINT64) SyscallSetTIDAddress(Frame->RDI);
+        }
+
+        case SYSCALL_ARCH_PRCTL:
+        {
+            return (UINT64) SyscallArchPrctl(Frame->RDI, Frame->RSI);
+        }
+
+        case SYSCALL_SET_ROBUST_LIST:
+        {
+            return (UINT64) SyscallSetRobustList(Frame->RDI, Frame->RSI);
+        }
+
+        case SYSCALL_GET_ROBUST_LIST:
+        {
+            return (UINT64) SyscallGetRobustList(Frame->RDI, Frame->RSI, Frame->RDX);
+        }
+
+        case SYSCALL_EXIT_GROUP:
+        {
+            return (UINT64) SyscallExitGroup(Frame->RDI);
         }
 
         case SYSCALL_FORK:

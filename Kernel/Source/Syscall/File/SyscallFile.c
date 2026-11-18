@@ -13,7 +13,7 @@
 
 STATIC INT64 FileRelease(OPEN_FILE *File)
 {
-    INT64 Result = File->Failed;
+    INT64 Result = ATOMIC_LOAD(&File->Failed, ATOMIC_RELAXED);
 
     if (ATOMIC_FETCH_SUB(&File->References, 1, ATOMIC_ACQ_REL) == 1)
     {
@@ -34,35 +34,89 @@ STATIC INT64 FileRelease(OPEN_FILE *File)
     return Result;
 }
 
+OPEN_FILE *FileAcquire(TASK *Task, UINT64 FD)
+{
+    if (Task == NULL || FD >= TASK_FILE_LIMIT)
+    {
+        return NULL;
+    }
+
+    PROCESS   *Process = Task->Process;
+    UINT64     Flags = SpinLockAcquireIRQSave(&Process->FileTableLock);
+    OPEN_FILE *File = Process->Files[FD];
+
+    if (File != NULL)
+    {
+        ATOMIC_FETCH_ADD(&File->References, 1, ATOMIC_RELAXED);
+    }
+
+    SpinLockReleaseIRQRestore(&Process->FileTableLock, Flags);
+
+    return File;
+}
+
+VOID FileDrop(OPEN_FILE **File)
+{
+    if (*File != NULL)
+    {
+        FileRelease(*File);
+    }
+}
+
+STATIC OPEN_FILE *FileDetach(PROCESS *Process, UINT64 FD)
+{
+    UINT64     Flags = SpinLockAcquireIRQSave(&Process->FileTableLock);
+    OPEN_FILE *File = Process->Files[FD];
+
+    Process->Files[FD] = NULL;
+    SpinLockReleaseIRQRestore(&Process->FileTableLock, Flags);
+
+    return File;
+}
+
 VOID SyscallFilesRelease(TASK *Task)
 {
     for (UINTN Index = 0; Index < TASK_FILE_LIMIT; Index++)
     {
-        OPEN_FILE *File = Task->Process->Files[Index];
+        OPEN_FILE *File = FileDetach(Task->Process, Index);
 
-        Task->Process->Files[Index] = NULL;
-
-        if (File != NULL)
-        {
-            FileRelease(File);
-        }
+        FileDrop(&File);
     }
 }
 
 BOOLEAN SyscallFilesInherit(TASK *Child, TASK *Parent)
 {
+    if (Parent == NULL)
+    {
+        return TRUE;
+    }
+
+    PROCESS *Process = Parent->Process;
+    UINT64   Flags = SpinLockAcquireIRQSave(&Process->FileTableLock);
+
     for (UINTN Index = 0; Index < TASK_FILE_LIMIT; Index++)
     {
-        if (Parent != NULL && Parent->Process->Files[Index] != NULL)
-        {
-            OPEN_FILE *File = Parent->Process->Files[Index];
+        OPEN_FILE *File = Process->Files[Index];
 
+        if (File != NULL)
+        {
             ATOMIC_FETCH_ADD(&File->References, 1, ATOMIC_RELAXED);
             Child->Process->Files[Index] = File;
         }
     }
 
+    SpinLockReleaseIRQRestore(&Process->FileTableLock, Flags);
+
     return TRUE;
+}
+
+STATIC VOID FilePublish(PROCESS *Process, UINTN Index, OPEN_FILE *File)
+{
+    UINT64 Flags = SpinLockAcquireIRQSave(&Process->FileTableLock);
+
+    Process->Files[Index] = File;
+    Process->ReservedFiles &= ~(1U << Index);
+    SpinLockReleaseIRQRestore(&Process->FileTableLock, Flags);
 }
 
 INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
@@ -90,17 +144,6 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
         return Result;
     }
 
-    for (Index = 0; Index < TASK_FILE_LIMIT && Task->Process->Files[Index] != NULL; Index++)
-    {
-    }
-
-    if (Index == TASK_FILE_LIMIT)
-    {
-        KFree(Name);
-
-        return -EMFILE;
-    }
-
     OPEN_FILE *File = KAlloc(sizeof(*File));
 
     if (File == NULL)
@@ -110,6 +153,24 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
         return -ENOMEM;
     }
 
+    PROCESS *Process = Task->Process;
+    UINT64   IRQFlags = SpinLockAcquireIRQSave(&Process->FileTableLock);
+
+    for (Index = 0; Index < TASK_FILE_LIMIT && (Process->Files[Index] != NULL || (Process->ReservedFiles & (1U << Index)) != 0); Index++)
+    {
+    }
+
+    if (Index == TASK_FILE_LIMIT)
+    {
+        SpinLockReleaseIRQRestore(&Process->FileTableLock, IRQFlags);
+        KFree(File);
+        KFree(Name);
+
+        return -EMFILE;
+    }
+
+    Process->ReservedFiles |= 1U << Index;
+    SpinLockReleaseIRQRestore(&Process->FileTableLock, IRQFlags);
     KMemSet(File, 0, sizeof(*File));
     Result = SyscallVFSError(VFSOpen(Task->Process->FileContext, Name, (UINT32) Flags, (UINT16) Mode, &Node));
 
@@ -170,10 +231,11 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
     File->NamespaceGeneration = Node.NamespaceGeneration;
     File->Number = Node.Number;
     File->Partition = Node.Partition;
-    Task->Process->Files[Index] = File;
+    FilePublish(Process, Index, File);
 
     return (INT64) Index;
 Failed:
+    FilePublish(Process, Index, NULL);
     KFree(File);
     KFree(Name);
 
@@ -293,9 +355,11 @@ STATIC INT64 FileWrite(TASK *Task, OPEN_FILE *File, UINT64 Buffer, UINT64 Count)
 {
     VFS_NODE Node = {0};
 
-    if (File->Failed != 0)
+    INT64 Failed = ATOMIC_LOAD(&File->Failed, ATOMIC_RELAXED);
+
+    if (Failed != 0)
     {
-        return File->Failed;
+        return Failed;
     }
 
     if (Count == 0)
@@ -371,7 +435,7 @@ STATIC INT64 FileWrite(TASK *Task, OPEN_FILE *File, UINT64 Buffer, UINT64 Count)
 
     if (Result == -EIO || Result == -EROFS)
     {
-        File->Failed = Result;
+        ATOMIC_STORE(&File->Failed, Result, ATOMIC_RELAXED);
     }
 
     return Result;
@@ -380,9 +444,9 @@ STATIC INT64 FileWrite(TASK *Task, OPEN_FILE *File, UINT64 Buffer, UINT64 Count)
 STATIC INT64 FileData(UINT64 FD, UINT64 Buffer, UINT64 Count, BOOLEAN Write)
 {
     TASK      *Task = LBPWRRGetCurrentTask();
-    OPEN_FILE *File;
+    OPEN_FILE *File __attribute__((cleanup(FileDrop))) = FileAcquire(Task, FD);
 
-    if (Task == NULL || Task->Process->AddressSpace == NULL || FD >= TASK_FILE_LIMIT || (File = Task->Process->Files[FD]) == NULL || (File->Access & (Write ? FILE_WRITE : FILE_READ)) == 0)
+    if (Task == NULL || Task->Process->AddressSpace == NULL || File == NULL || (File->Access & (Write ? FILE_WRITE : FILE_READ)) == 0)
     {
         return -EBADF;
     }
@@ -444,12 +508,10 @@ INT64 SyscallClose(UINT64 FD)
     TASK      *Task = LBPWRRGetCurrentTask();
     OPEN_FILE *File;
 
-    if (Task == NULL || FD >= TASK_FILE_LIMIT || (File = Task->Process->Files[FD]) == NULL)
+    if (Task == NULL || FD >= TASK_FILE_LIMIT || (File = FileDetach(Task->Process, FD)) == NULL)
     {
         return -EBADF;
     }
-
-    Task->Process->Files[FD] = NULL;
 
     return FileRelease(File);
 }

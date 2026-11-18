@@ -2,37 +2,21 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <Syscall/Syscall.h>
-#include <Syscall/File/SyscallFile.h>
+#include <Syscall/Process/SyscallExit.h>
 #include <Syscall/Process/SyscallProcess.h>
 #include <Scheduler/LBPWRR.h>
-#include <Scheduler/Task.h>
-#include <Syscall/IPC/SyscallIPC.h>
-#include <Debug/Debug.h>
-#include <Syscall/Errno.h>
 
 INT64 SyscallExit(UINT64 ExitCode)
 {
-    TASK *CurrentTask;
+    return SyscallProcessExit(LBPWRRGetCurrentTask(), ExitCode, FALSE);
+}
 
-    CurrentTask = LBPWRRGetCurrentTask();
-    DebugWrite("exit: pid=");
-    DebugWriteDec(CurrentTask == NULL ? 0 : CurrentTask->Process->PID);
-    DebugWrite(" code=");
-    DebugWriteDec(ExitCode);
-    DebugWrite("\n");
+VOID SyscallCheckGroupExit(VOID)
+{
+    TASK *Task = LBPWRRGetCurrentTask();
 
-    if (CurrentTask == NULL || CurrentTask->Idle)
+    if (Task != NULL && ATOMIC_LOAD(&Task->Process->GroupExiting, ATOMIC_ACQUIRE))
     {
-        return -ESRCH;
+        SyscallProcessExit(Task, 0, FALSE);
     }
-
-    SyscallIPCRelease(CurrentTask);
-    SyscallFilesRelease(CurrentTask);
-    SyscallProcessExit(CurrentTask, ExitCode);
-    TaskTerminate(CurrentTask);
-
-    LBPWRRYield();
-
-    return -EIO;
 }

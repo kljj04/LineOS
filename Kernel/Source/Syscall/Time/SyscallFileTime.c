@@ -66,14 +66,14 @@ INT64 SyscallUtimensat(INT64 DirFD, UINT64 Path, UINT64 TimesAddress, UINT64 Fla
 
     if (Path == 0 || (Name[0] != '/' && DirFD != -100))
     {
-        if (DirFD < 0 || DirFD >= TASK_FILE_LIMIT || Task->Process->Files[DirFD] == NULL)
+        OPEN_FILE *File __attribute__((cleanup(FileDrop))) = FileAcquire(Task, (UINT64) DirFD);
+
+        if (File == NULL)
         {
             KFree(Name);
 
             return -EBADF;
         }
-
-        OPEN_FILE *File = Task->Process->Files[DirFD];
 
         Context = File->OpenContext;
         Context.Credentials = Task->Process->FileContext->Credentials;

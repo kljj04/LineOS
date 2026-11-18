@@ -3,6 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <Syscall/Memory/SyscallMemory.h>
+#include <Syscall/Process/ProcessInternal.h>
 #include <Syscall/Memory/Memory.h>
 #include <Syscall/Errno.h>
 #include <Memory/PMM.h>
@@ -111,7 +112,7 @@ BOOLEAN SyscallMemoryClone(TASK *Child, TASK *Parent)
     return TRUE;
 }
 
-INT64 SyscallMmap(UINT64 Address, UINT64 Length, UINT64 Protection, UINT64 Flags, INT64 FD, UINT64 Offset)
+STATIC INT64 MemoryMap(UINT64 Address, UINT64 Length, UINT64 Protection, UINT64 Flags, INT64 FD, UINT64 Offset)
 {
     TASK  *Task = LBPWRRGetCurrentTask();
     UINT64 Physical = 0;
@@ -245,7 +246,7 @@ Failed:
     return -ENOMEM;
 }
 
-INT64 SyscallMunmap(UINT64 Address, UINT64 Length)
+STATIC INT64 MemoryUnmap(UINT64 Address, UINT64 Length)
 {
     TASK *Task = LBPWRRGetCurrentTask();
 
@@ -309,4 +310,24 @@ INT64 SyscallMunmap(UINT64 Address, UINT64 Length)
     }
 
     return 0;
+}
+
+INT64 SyscallMmap(UINT64 Address, UINT64 Length, UINT64 Protection, UINT64 Flags, INT64 FD, UINT64 Offset)
+{
+    if (!ProcessBegin())
+    {
+        return -EINTR;
+    }
+
+    return ProcessEnd(MemoryMap(Address, Length, Protection, Flags, FD, Offset));
+}
+
+INT64 SyscallMunmap(UINT64 Address, UINT64 Length)
+{
+    if (!ProcessBegin())
+    {
+        return -EINTR;
+    }
+
+    return ProcessEnd(MemoryUnmap(Address, Length));
 }

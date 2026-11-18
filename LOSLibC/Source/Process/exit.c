@@ -8,7 +8,7 @@
 
 VOID NORETURN exit(int ErrorCode)
 {
-    LineOSSyscall1(SYSCALL_EXIT, (UINT64) ErrorCode);
+    LineOSSyscall1(SYSCALL_EXIT_GROUP, (UINT64) ErrorCode);
 
     for (;;)
     {

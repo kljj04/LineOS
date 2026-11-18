@@ -32,9 +32,9 @@ INT64 SyscallMkdir(UINT64 Path, UINT64 Mode)
 INT64 SyscallGetDents64(UINT64 FD, UINT64 Buffer, UINT64 Count)
 {
     TASK      *Task = LBPWRRGetCurrentTask();
-    OPEN_FILE *File;
+    OPEN_FILE *File __attribute__((cleanup(FileDrop))) = FileAcquire(Task, (UINT64) FD);
 
-    if (Task == NULL || FD >= TASK_FILE_LIMIT || (File = Task->Process->Files[FD]) == NULL)
+    if (Task == NULL || File == NULL)
     {
         return -EBADF;
     }
