@@ -6,9 +6,11 @@
 
 #include <LineOS/TypeInfo.h>
 #include <Scheduler/TaskTypes.h>
+#include <Syscall/System/SystemMonitor.h>
 
 BOOLEAN TaskInit(VOID);
 TASK   *TaskCreate(VOID (*Entry)(VOID));
+TASK   *TaskCreateThread(TASK *Member, VOID (*Entry)(VOID));
 TASK   *TaskCreateIdle(VOID);
 BOOLEAN TaskSetPriority(TASK *Task, UINT8 Priority);
 VOID    TaskSleepMls(UINT64 Milliseconds);
@@ -20,9 +22,6 @@ BOOLEAN TaskDestroy(TASK *Task);
 TASK   *TaskGetByPID(UINT16 PID);
 UINTN   TaskGetCount(VOID);
 VOID    TaskSampleCPUUsage(UINT64 IntervalTSC);
-#include <Syscall/System/SystemMonitor.h>
-UINT32 TaskGetSnapshot(SYSTEM_TASK_INFO *Entries, UINT32 Capacity);
-
-UINT32 TaskGetIdleCount(VOID);
-
-UINT32 TaskGetLiveCount(VOID);
+UINT32  TaskGetSnapshot(SYSTEM_TASK_INFO *Entries, UINT32 Capacity);
+UINT32  TaskGetIdleCount(VOID);
+UINT32  TaskGetLiveCount(VOID);

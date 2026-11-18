@@ -18,7 +18,7 @@ STATIC BOOLEAN ChunkInsert(LBPWRR_RUNQUEUE *RunQueue, TASK *Task, UINT8 Weight)
     UINT32 NewCurrentIndex;
     UINT32 Index;
 
-    if (RunQueue == NULL || Task == NULL || Weight == 0 || Weight > 6)
+    if (RunQueue == NULL || Task == NULL || Weight == 0 || Weight > LBPWRR_MAX_WEIGHT)
     {
         return FALSE;
     }
@@ -26,7 +26,7 @@ STATIC BOOLEAN ChunkInsert(LBPWRR_RUNQUEUE *RunQueue, TASK *Task, UINT8 Weight)
     Chunk = &RunQueue->Chunk;
     OldCount = Chunk->Count;
 
-    if (OldCount > CHUNK_MAX_COUNT || Weight > CHUNK_MAX_COUNT - OldCount)
+    if (OldCount > Chunk->Capacity || Weight > Chunk->Capacity - OldCount)
     {
         return FALSE;
     }
@@ -88,7 +88,7 @@ STATIC BOOLEAN ChunkRemove(LBPWRR_RUNQUEUE *RunQueue, TASK *Task)
     Chunk = &RunQueue->Chunk;
     OldCount = Chunk->Count;
 
-    if (OldCount > CHUNK_MAX_COUNT)
+    if (OldCount > Chunk->Capacity)
     {
         return FALSE;
     }
@@ -156,7 +156,7 @@ STATIC BOOLEAN ChunkUpdate(LBPWRR_RUNQUEUE *RunQueue, TASK *Task, UINT8 Weight)
     UINT32  Previous;
     BOOLEAN FoundBefore;
 
-    if (RunQueue == NULL || Task == NULL || Weight == 0 || Weight > 6)
+    if (RunQueue == NULL || Task == NULL || Weight == 0 || Weight > LBPWRR_MAX_WEIGHT)
     {
         return FALSE;
     }
@@ -164,7 +164,7 @@ STATIC BOOLEAN ChunkUpdate(LBPWRR_RUNQUEUE *RunQueue, TASK *Task, UINT8 Weight)
     Chunk = &RunQueue->Chunk;
     OldCount = Chunk->Count;
 
-    if (OldCount > CHUNK_MAX_COUNT)
+    if (OldCount > Chunk->Capacity)
     {
         return FALSE;
     }
@@ -251,12 +251,12 @@ BOOLEAN LBPWRRModifyChunk(LBPWRR_RUNQUEUE *RunQueue, TASK *Task, UINT8 Priority)
     UINT32  Index;
     BOOLEAN Exists;
 
-    if (RunQueue == NULL || Task == NULL || Priority > 6)
+    if (RunQueue == NULL || Task == NULL || Priority > LBPWRR_MAX_WEIGHT)
     {
         return FALSE;
     }
 
-    if (RunQueue->Chunk.Count > CHUNK_MAX_COUNT)
+    if (RunQueue->Chunk.Count > RunQueue->Chunk.Capacity)
     {
         return FALSE;
     }

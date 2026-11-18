@@ -7,14 +7,14 @@ LibraryManifest()
 (
     set -o pipefail
     local Root="$1"
-    local List ListSources Config Library Name Line Key Value Enable CFlags Sources Source
+    local List Config Library Name Line Key Value Enable CFlags Sources Source Owner
     local -A Names=() Seen=()
-    List=$(find "$Root/Libraries" -mindepth 2 -maxdepth 2 -name Library.cfg -print | LC_ALL=C sort) || return 1
+    List=$(find "$Root/Libraries" -name Library.cfg -print | LC_ALL=C sort) || return 1
     while IFS= read -r Config; do
         [[ -z "$Config" ]] && continue
         Library=${Config#"$Root/Libraries/"}
         Library=${Library%/Library.cfg}
-        if [[ ! "$Library" =~ ^[A-Za-z0-9_-]+$ || -L "$Config" || ! -f "$Config" ]]; then
+        if [[ ! "$Library" =~ ^[A-Za-z0-9_-]+(/[A-Za-z0-9_-]+)*$ || -L "$Config" || ! -f "$Config" ]]; then
             printf 'Invalid library: %s\n' "$Config" >&2
             return 1
         fi
@@ -60,13 +60,16 @@ LibraryManifest()
         fi
         Names[${Name,,}]=1
         Sources=-
-        ListSources=$(find "$Root/Libraries/$Library/Source" -type f \( -name '*.c' -o -name '*.S' \) | LC_ALL=C sort) || return 1
         while IFS= read -r Source; do
-            [[ -z "$Source" ]] && continue
+            Owner=${Source%/*}
+            while [[ "$Owner" != "$Root/Libraries/$Library" && ! -f "$Owner/Library.cfg" ]]; do
+                Owner=${Owner%/*}
+            done
+            [[ "$Owner" != "$Root/Libraries/$Library" ]] && continue
             Source=${Source#"$Root/"}
             [[ "$Source" =~ ^[A-Za-z0-9_./-]+$ ]] || { printf 'Unsupported source path: %s\n' "$Source" >&2; return 1; }
             if [[ "$Sources" == - ]]; then Sources=$Source; else Sources+=",$Source"; fi
-        done <<< "$ListSources"
+        done < <(find "$Root/Libraries/$Library" -type f \( -name '*.c' -o -name '*.S' \) | LC_ALL=C sort)
         printf '%s|%s|%s|%s\n' "$Name" "$Library" "$CFlags" "$Sources"
     done <<< "$List"
 )

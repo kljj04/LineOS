@@ -25,13 +25,3 @@ uid_t geteuid(void)
 {
     return (uid_t) LineOSSyscallResult(LineOSSyscall0(SYSCALL_GETEUID));
 }
-
-gid_t getgid(VOID)
-{
-    return (gid_t) LineOSSyscallResult(LineOSSyscall0(SYSCALL_GETGID));
-}
-
-gid_t getegid(VOID)
-{
-    return (gid_t) LineOSSyscallResult(LineOSSyscall0(SYSCALL_GETEGID));
-}

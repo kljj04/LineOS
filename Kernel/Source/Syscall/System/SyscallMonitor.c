@@ -17,7 +17,7 @@ INT64 SyscallSystemMonitor(UINT64 UserInfo, UINT64 Size)
 {
     TASK *Task = LBPWRRGetCurrentTask();
 
-    if (Task == NULL || Task->AddressSpace == NULL)
+    if (Task == NULL || Task->Process->AddressSpace == NULL)
     {
         return -ESRCH;
     }
@@ -68,7 +68,7 @@ INT64 SyscallSystemMonitor(UINT64 UserInfo, UINT64 Size)
         Info->IdleTicks[Index] = Idle;
     }
 
-    BOOLEAN Copied = VMMCopyToUser(Task->AddressSpace, UserInfo, Info, sizeof(*Info));
+    BOOLEAN Copied = VMMCopyToUser(Task->Process->AddressSpace, UserInfo, Info, sizeof(*Info));
 
     KFree(Info);
 

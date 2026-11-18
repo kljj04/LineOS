@@ -12,12 +12,12 @@ INT64 SyscallParentChdir(UINT64 Path)
 {
     TASK *Task = LBPWRRGetCurrentTask();
 
-    if (Task == NULL || Task->FileContext == NULL)
+    if (Task == NULL || Task->Process->FileContext == NULL)
     {
         return -ESRCH;
     }
 
-    if (Task->FileContext->Credentials.UID != 0)
+    if (Task->Process->FileContext->Credentials.UID != 0)
     {
         return -EPERM;
     }

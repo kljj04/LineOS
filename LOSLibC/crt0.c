@@ -4,22 +4,24 @@
 
 #include <LOSLibC/TypeInfo.h>
 #include <stdlib.h>
+#include <syscall.h>
+
+#define ARCH_SET_FS 0x1002U
+
+STATIC int MainErrno;
 
 EXTERN INT32 main(INT32 Argc, char **Argv, char **Envp);
-
-EXTERN VOID (*__InitArrayStart[])(VOID);
-EXTERN VOID (*__InitArrayEnd[])(VOID);
 
 VOID NORETURN _Start(INT32 Argc, char **Argv, char **Envp)
 {
     INT32 Status;
 
-    environ = Envp;
-
-    for (VOID (**Constructor)(VOID) = __InitArrayStart; Constructor != __InitArrayEnd; Constructor++)
+    if (LineOSSyscall2(SYSCALL_ARCH_PRCTL, ARCH_SET_FS, (UINT64) &MainErrno) != 0)
     {
-        (*Constructor)();
+        exit(127);
     }
+
+    environ = Envp;
 
     Status = main(Argc, Argv, Envp);
 

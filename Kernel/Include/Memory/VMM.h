@@ -24,6 +24,9 @@ BOOLEAN VMMMapAddressSpacePage(VMM_ADDRESS_SPACE *AddressSpace, UINT64 VirtAddr,
 BOOLEAN VMMUnmapAddressSpacePage(VMM_ADDRESS_SPACE *AddressSpace, UINT64 VirtAddr, UINT64 *PhysAddr);
 BOOLEAN VMMSwitchAddressSpace(VMM_ADDRESS_SPACE *AddressSpace);
 BOOLEAN VMMCopyFromUser(VMM_ADDRESS_SPACE *AddressSpace, VOID *Destination, UINT64 Source, UINT64 Size);
+BOOLEAN VMMReadUserWord(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, UINT32 *Word);
+BOOLEAN VMMWriteUserWord(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, UINT32 Word);
+BOOLEAN VMMCompareExchangeUser32(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, UINT32 *Expected, UINT32 Desired);
 BOOLEAN VMMCopyToUser(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Destination, CONST VOID *Source, UINT64 Size);
 
 #define VMM_SHARED_USER_START 0x500000000000ULL

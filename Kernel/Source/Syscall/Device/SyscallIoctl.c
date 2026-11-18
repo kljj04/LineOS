@@ -11,9 +11,9 @@
 INT64 SyscallIoctl(UINT64 FD, UINT64 Request, UINT64 Argument)
 {
     TASK      *Task = LBPWRRGetCurrentTask();
-    OPEN_FILE *File;
+    OPEN_FILE *File __attribute__((cleanup(FileDrop))) = FileAcquire(Task, (UINT64) FD);
 
-    if (Task == NULL || FD >= TASK_FILE_LIMIT || (File = Task->Files[FD]) == NULL)
+    if (Task == NULL || File == NULL)
     {
         return -EBADF;
     }

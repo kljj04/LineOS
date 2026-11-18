@@ -4,10 +4,11 @@
 
 #pragma once
 
+#include <FS/VFS/VFSTypes.h>
+#include <Arch/AMD64/SpinLock.h>
 #include <LineOS/TypeInfo.h>
 #include <Memory/VMM.h>
 #include <Syscall/Asset/Asset.h>
-#include <FS/VFS/VFSTypes.h>
 
 #define TASK_FILE_LIMIT 16U
 
@@ -96,42 +97,69 @@ typedef struct TASK_CONTEXT
     UINT64 SS;
 } TASK_CONTEXT;
 
+typedef struct TASK            TASK;
+typedef struct WAIT_QUEUE      WAIT_QUEUE;
+typedef struct MMAP_REGION     MMAP_REGION;
+typedef struct ELF64_EXECUTION ELF64_EXECUTION;
+
+typedef struct PROCESS
+{
+    UINT16             PID;
+    VMM_ADDRESS_SPACE *AddressSpace;
+    MMAP_REGION       *Mappings;
+    ELF64_EXECUTION   *Execution;
+    VFS_CONTEXT       *FileContext;
+    BOOLEAN            AssetPublisher;
+    TASK_ASSET         Assets[LOS_ASSET_MAPPING_LIMIT];
+    SPIN_LOCK          FileTableLock;
+    UINT32             ReservedFiles;
+    OPEN_FILE         *Files[TASK_FILE_LIMIT];
+    CHAR8              Name[16];
+    UINT32             RealUID;
+    UINT32             RealGID;
+    UINT64             AuthSession;
+    TASK              *ThreadHead;
+    UINT32             ThreadCount;
+    BOOLEAN            Exited;
+    BOOLEAN            GroupExiting;
+    UINT64             GroupExitCode;
+} PROCESS;
+
 typedef struct TASK
 {
-    UINT64                  RSP;
-    UINT64                  InitialRSP;
-    UINT64                  StackBase;
-    UINT64                  StackSize;
-    UINT64                  KernelStackBase;
-    UINT64                  KernelStackSize;
-    TASK_STATE              State;
-    TASK_CONTEXT            Context;
-    UINT32                  CPUID;
-    UINT8                   Priority;
-    UINT8                   Weight;
-    UINT16                  PID;
-    UINT64                  WakeDeadlineTSC;
-    TASK_SIGNAL             Signal;
-    BOOLEAN                 Modified;
-    BOOLEAN                 Idle;
-    BOOLEAN                 Scheduled;
-    UINT64                  CPUTimeTSC;
-    UINT64                  LastCPUTimeTSC;
-    UINT32                  CPUUsage;
-    BOOLEAN                 OnCPU;
-    struct WAIT_QUEUE      *WaitQueue;
-    struct TASK            *WaitNext;
-    VMM_ADDRESS_SPACE      *AddressSpace;
-    struct MMAP_REGION     *Mappings;
-    struct ELF64_EXECUTION *Execution;
-    UINT64                  UserStackBase;
-    UINT64                  UserStackSize;
-    VFS_CONTEXT            *FileContext;
-    BOOLEAN                 AssetPublisher;
-    TASK_ASSET              Assets[LOS_ASSET_MAPPING_LIMIT];
-    OPEN_FILE              *Files[TASK_FILE_LIMIT];
-    CHAR8                   Name[16];
-    UINT32                  RealUID;
-    UINT32                  RealGID;
-    UINT64                  AuthSession;
+    UINT64       RSP;
+    UINT64       InitialRSP;
+    UINT64       StackBase;
+    UINT64       StackSize;
+    UINT64       FSBase;
+    UINT8        FPState[512] __attribute__((aligned(16)));
+    UINT64       ClearTIDAddress;
+    UINT64       RobustListHead;
+    UINT64       FutexAddress;
+    UINT64       KernelStackBase;
+    UINT64       KernelStackSize;
+    TASK_STATE   State;
+    TASK_CONTEXT Context;
+    UINT32       CPUID;
+    UINT8        Priority;
+    UINT8        Weight;
+    UINT64       WakeDeadlineTSC;
+    UINT64       WaitDeadlineTSC;
+    BOOLEAN      WaitTimedOut;
+    TASK_SIGNAL  Signal;
+    BOOLEAN      Modified;
+    BOOLEAN      Idle;
+    BOOLEAN      Scheduled;
+    UINT64       CPUTimeTSC;
+    UINT64       LastCPUTimeTSC;
+    UINT32       CPUUsage;
+    BOOLEAN      OnCPU;
+    WAIT_QUEUE  *WaitQueue;
+    TASK        *WaitNext;
+    UINT64       UserStackBase;
+    UINT64       UserStackSize;
+    PROCESS     *Process;
+    TASK        *ThreadNext;
+    TASK        *ThreadPrev;
+    UINT32       TID;
 } TASK;

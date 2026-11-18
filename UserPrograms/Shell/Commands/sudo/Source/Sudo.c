@@ -7,7 +7,7 @@
 #include <locale.h>
 
 #include <Sudo.h>
-#include <Argon2.h>
+#include <UserDB/Argon2.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>

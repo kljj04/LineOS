@@ -11,5 +11,5 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame);
 INT64 SyscallExecVE(INTERRUPT_FRAME *Frame);
 
 #include <Scheduler/TaskTypes.h>
-VOID  SyscallProcessExit(TASK *Task, UINT64 Code);
+INT64 SyscallProcessExit(TASK *Task, UINT64 Code, BOOLEAN Group);
 INT64 SyscallWait4(INT64 PID, UINT64 Status, UINT64 Options, UINT64 Usage);

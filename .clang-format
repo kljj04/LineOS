@@ -18,20 +18,21 @@ SpaceBeforeParens: ControlStatements
 SpaceAfterCStyleCast: true
 AlignConsecutiveAssignments: None
 AlignConsecutiveDeclarations:
-  Enabled: true
-  AcrossEmptyLines: false
-  AcrossComments: false
-  AlignCompound: false
-  AlignFunctionPointers: true
-  PadOperators: true
+    Enabled: true
+    AcrossEmptyLines: false
+    AcrossComments: false
+    AlignCompound: false
+    AlignFunctionPointers: true
+    PadOperators: true
 AlignConsecutiveMacros:
-  Enabled: true
-  AcrossEmptyLines: false
-  AcrossComments: false
-  AlignCompound: false
-  AlignFunctionPointers: false
-  PadOperators: false
+    Enabled: true
+    AcrossEmptyLines: false
+    AcrossComments: false
+    AlignCompound: false
+    AlignFunctionPointers: false
+    PadOperators: false
 SortIncludes: false
 AttributeMacros: [ '__attribute__' ]
 StatementMacros: [ 'CLI', 'HLT' ]
 IndentCaseLabels: true
+AlignEscapedNewlines: DontAlign

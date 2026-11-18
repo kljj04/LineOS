@@ -5,16 +5,20 @@
 #include <errno.h>
 #include <syscall.h>
 
-typedef struct
-{
-    int Errno;
-} LIBC_THREAD_STATE;
+#define ARCH_GET_FS 0x1003U
 
-STATIC LIBC_THREAD_STATE LibCThreadState;
+STATIC int FallbackErrno;
 
 int *__errno_location(void)
 {
-    return &LibCThreadState.Errno;
+    UINT64 Base = 0;
+
+    if (LineOSSyscall2(SYSCALL_ARCH_PRCTL, ARCH_GET_FS, (UINT64) &Base) != 0 || Base == 0)
+    {
+        return &FallbackErrno;
+    }
+
+    return (int *) Base;
 }
 
 INT64 LineOSSyscallResult(UINT64 Result)

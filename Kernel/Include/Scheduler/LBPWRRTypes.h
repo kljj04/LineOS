@@ -8,23 +8,30 @@
 #include <LineOS/TypeInfo.h>
 #include <Scheduler/TaskTypes.h>
 
-#define LBPWRR_MAX_TASKS         1024
-#define CHUNK_MAX_COUNT          1024
+#define LBPWRR_MAX_WEIGHT        6
 #define TASK_STACK_PAGES         16
 #define PAGE_SIZE                4096
 #define TASK_STACK_ADDRESS_LIMIT 0x100000000ULL
 
+typedef struct TASK_SLOT
+{
+    TASK   *Task;
+    BOOLEAN Destroying;
+} TASK_SLOT;
+
 typedef struct CHUNK
 {
-    TASK  *Tasks[CHUNK_MAX_COUNT];
+    TASK **Tasks;
     UINT32 Count;
+    UINT32 Capacity;
 } CHUNK;
 
 typedef struct LBPWRR_RUNQUEUE
 {
-    TASK     *Runnable[LBPWRR_MAX_TASKS];
+    TASK    **Runnable;
     UINT32    RunnableCount;
-    TASK     *Unrunnable[LBPWRR_MAX_TASKS];
+    UINT32    RunnableCapacity;
+    TASK    **Unrunnable;
     UINT32    UnrunnableCount;
     CHUNK     Chunk;
     UINT32    CurrentIndex;

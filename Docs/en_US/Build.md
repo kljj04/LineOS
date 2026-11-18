@@ -48,7 +48,8 @@ make -f Makefiles/Makefile -j1
 
 Outputs include `LineOS/EFI/BOOT/BOOTX64.EFI`, `LineOS/KERNEL/LINEOS_KERNEL.ELF` and
 `LineOS/Programs/<relative program path>/<directory name>.lix`. Objects and dependency files are under `Build/Objects/`.
-The build recursively discovers directories containing `UserPrograms/**/Program.cfg`. Each complete relative path identifies
+The build recursively discovers directories containing `UserPrograms/**/Program.cfg`. Each complete relative path
+identifies
 one program; sources belonging to nested program roots are excluded from their parent. Executables remain static ELF64.
 
 ```ini
@@ -67,11 +68,14 @@ build and deployment. Existing installed files are not removed automatically.
 make -f Makefiles/Makefile -j1 UserProgram Program=System/Shell
 ```
 
-These commands build only the selected enabled program and its libraries. Deployment uses `CopyPath/<directory name>.lix`;
+These commands build only the selected enabled program and its libraries. Deployment uses
+`CopyPath/<directory name>.lix`;
 all enabled destinations, including ancestor conflicts and font destinations, are checked before disk copies begin.
-Every full or selected build clears `LineOS/Programs/` before linking its target executables again. Objects and libraries
+Every full or selected build clears `LineOS/Programs/` before linking its target executables again. Objects and
+libraries
 remain incremental. A selected build leaves only the selected executable.
-Only outputs associated with current enabled configurations are copied. `-clean` also removes `LineOS/Programs/`, including
+Only outputs associated with current enabled configurations are copied. `-clean` also removes `LineOS/Programs/`,
+including
 stale outputs. Building alone neither updates the image nor starts QEMU.
 
 ## Configuration
@@ -132,7 +136,7 @@ variable template unchanged. The normal disk is writable; use a separate image w
 
 `Scripts/Run.sh` coordinates the stages. `Scripts/Backend/` contains configuration, build, image, mount and QEMU
 functions. `Scripts/Frontend/UI.js` renders the interface. Compiler/linker flags and targets are in `Makefiles/`;
-C/header formatting is configured by `.clang-format`.
+C/header formatting is configured by `../../.clang-format`.
 
 ## Manual mount
 

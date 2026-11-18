@@ -40,7 +40,7 @@ BOOLEAN LBPWRRWakeSleepingTasks(LBPWRR_RUNQUEUE *RunQueue)
             continue;
         }
 
-        if ((INT64) (Now - Task->WakeDeadlineTSC) < 0)
+        if ((INT64) (Now - Task->WakeDeadlineTSC) < 0 && !ATOMIC_LOAD(&Task->Process->GroupExiting, ATOMIC_ACQUIRE))
         {
             continue;
         }

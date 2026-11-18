@@ -19,7 +19,7 @@ INT64 SyscallSysInfo(UINT64 UserInfo)
 
     Task = LBPWRRGetCurrentTask();
 
-    if (Task == NULL || Task->AddressSpace == NULL)
+    if (Task == NULL || Task->Process->AddressSpace == NULL)
     {
         return -ESRCH;
     }
@@ -38,7 +38,7 @@ INT64 SyscallSysInfo(UINT64 UserInfo)
 
     Info.Processes = Count > 65535U ? 65535U : (UINT16) Count;
 
-    if (!VMMCopyToUser(Task->AddressSpace, UserInfo, &Info, sizeof(Info)))
+    if (!VMMCopyToUser(Task->Process->AddressSpace, UserInfo, &Info, sizeof(Info)))
     {
         return -EFAULT;
     }

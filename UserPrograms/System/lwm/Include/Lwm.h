@@ -6,7 +6,7 @@
 
 #include <LOSLibC/TypeInfo.h>
 #include <stddef.h>
-#include <TrueTypeEngine.h>
+#include <TrueType/TrueTypeEngine.h>
 #include <Syscall/Device/Input.h>
 #include <Asset.h>
 #include <Window.h>

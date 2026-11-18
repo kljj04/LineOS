@@ -3,6 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <Scheduler/Task.h>
+#include <Exec/ELF64.h>
 #include <Syscall/IPC/SyscallIPC.h>
 #include <Syscall/File/SyscallFile.h>
 #include <Syscall/Memory/SyscallMemory.h>
@@ -16,11 +17,12 @@
 #include <Memory/PMM.h>
 #include <Timer/TSC.h>
 
-STATIC TASK    TaskPool[LBPWRR_MAX_TASKS];
-STATIC BOOLEAN TaskUsed[LBPWRR_MAX_TASKS];
-
-STATIC UINTN  TaskCount;
-STATIC UINT16 NextPID;
+STATIC TASK_SLOT *TaskSlots;
+STATIC UINT32     TaskSlotCount;
+STATIC UINT32     TaskSlotCapacity;
+STATIC UINTN      TaskCount;
+STATIC UINT16     NextPID;
+STATIC SPIN_LOCK  TaskLock;
 
 STATIC NORETURN VOID TaskExit(VOID)
 {
@@ -61,31 +63,9 @@ TASK *TaskCreateIdle(VOID)
     return Task;
 }
 
-STATIC BOOLEAN TaskGetIndex(TASK *Task, UINTN *TaskIndex)
-{
-    UINTN Index;
-
-    if (Task == NULL || TaskIndex == NULL)
-    {
-        return FALSE;
-    }
-
-    for (Index = 0; Index < LBPWRR_MAX_TASKS; Index++)
-    {
-        if (&TaskPool[Index] == Task)
-        {
-            *TaskIndex = Index;
-
-            return TRUE;
-        }
-    }
-
-    return FALSE;
-}
-
 STATIC UINT8 PToW(UINT8 Priority)
 {
-    if (Priority < 1 || Priority > 6)
+    if (Priority < 1 || Priority > LBPWRR_MAX_WEIGHT)
     {
         return 0;
     }
@@ -93,41 +73,13 @@ STATIC UINT8 PToW(UINT8 Priority)
     return Priority;
 }
 
-STATIC TASK *TaskAllocate(VOID)
+STATIC BOOLEAN TaskIDUsed(UINT16 ID)
 {
-    UINTN Index;
-
-    for (Index = 0; Index < LBPWRR_MAX_TASKS; Index++)
+    for (UINT32 Index = 0; Index < TaskSlotCount; Index++)
     {
-        if (!TaskUsed[Index])
-        {
-            TaskUsed[Index] = TRUE;
-            KMemSet(&TaskPool[Index], 0, sizeof(TASK));
+        TASK *Task = TaskSlots[Index].Task;
 
-            return &TaskPool[Index];
-        }
-    }
-
-    return NULL;
-}
-
-STATIC BOOLEAN TaskPIDUsed(UINT16 PID)
-{
-    UINTN Index;
-
-    if (PID == 0)
-    {
-        return TRUE;
-    }
-
-    for (Index = 0; Index < LBPWRR_MAX_TASKS; Index++)
-    {
-        if (!TaskUsed[Index])
-        {
-            continue;
-        }
-
-        if (TaskPool[Index].PID == PID)
+        if (Task != NULL && (Task->Process->PID == ID || Task->TID == ID))
         {
             return TRUE;
         }
@@ -136,28 +88,28 @@ STATIC BOOLEAN TaskPIDUsed(UINT16 PID)
     return FALSE;
 }
 
-STATIC BOOLEAN TaskAllocatePID(UINT16 *PID)
+STATIC BOOLEAN TaskAllocateID(UINT16 *ID)
 {
     UINT32 Retry;
     UINT16 Candidate;
 
-    if (PID == NULL)
+    if (TaskCount == UINT16_MAX)
     {
         return FALSE;
     }
 
     Candidate = NextPID;
 
-    for (Retry = 0; Retry < 0xFFFF; Retry++)
+    for (Retry = 0; Retry < UINT16_MAX; Retry++)
     {
         if (Candidate == 0)
         {
             Candidate = 1;
         }
 
-        if (!TaskPIDUsed(Candidate))
+        if (!TaskIDUsed(Candidate))
         {
-            *PID = Candidate;
+            *ID = Candidate;
 
             Candidate++;
 
@@ -177,17 +129,81 @@ STATIC BOOLEAN TaskAllocatePID(UINT16 *PID)
     return FALSE;
 }
 
-STATIC VOID TaskFreeSlot(TASK *Task)
+STATIC BOOLEAN TaskRegister(TASK *Task, TASK *Member)
 {
-    UINTN Index;
+    UINT64 Flags = SpinLockAcquireIRQSave(&TaskLock);
+    UINT32 Index = 0;
 
-    if (!TaskGetIndex(Task, &Index))
+    while (Index < TaskSlotCount && TaskSlots[Index].Task != NULL)
     {
-        return;
+        Index++;
     }
 
-    KMemSet(Task, 0, sizeof(TASK));
-    TaskUsed[Index] = FALSE;
+    if (Member != NULL)
+    {
+        for (UINT32 SlotIndex = 0; SlotIndex < TaskSlotCount; SlotIndex++)
+        {
+            if (TaskSlots[SlotIndex].Task == Member && !TaskSlots[SlotIndex].Destroying && Member->State != TASK_TERMINATED && Member->State != TASK_KILLED)
+            {
+                Task->Process = Member->Process;
+                break;
+            }
+        }
+    }
+
+    UINT16 ID;
+
+    if (Task->Process == NULL || !TaskAllocateID(&ID))
+    {
+        SpinLockReleaseIRQRestore(&TaskLock, Flags);
+
+        return FALSE;
+    }
+
+    if (Index == TaskSlotCapacity)
+    {
+        TASK_SLOT *Slots = LBPWRRGrowArray(TaskSlots, &TaskSlotCapacity, Index + 1, sizeof(*Slots));
+
+        if (Slots == NULL)
+        {
+            SpinLockReleaseIRQRestore(&TaskLock, Flags);
+
+            return FALSE;
+        }
+
+        TaskSlots = Slots;
+    }
+
+    if (Index == TaskSlotCount)
+    {
+        TaskSlotCount++;
+    }
+
+    PROCESS *Process = Task->Process;
+
+    Task->TID = ID;
+
+    if (Member == NULL)
+    {
+        Process->PID = ID;
+    }
+
+    Task->ThreadNext = Process->ThreadHead;
+
+    if (Task->ThreadNext != NULL)
+    {
+        Task->ThreadNext->ThreadPrev = Task;
+    }
+
+    Process->ThreadHead = Task;
+    ATOMIC_FETCH_ADD(&Process->ThreadCount, 1, ATOMIC_RELEASE);
+
+    TaskSlots[Index].Task = Task;
+    TaskSlots[Index].Destroying = FALSE;
+    TaskCount++;
+    SpinLockReleaseIRQRestore(&TaskLock, Flags);
+
+    return TRUE;
 }
 
 STATIC VOID InitTaskContext(TASK *Task, VOID (*Entry)(VOID))
@@ -212,16 +228,13 @@ STATIC VOID InitTaskContext(TASK *Task, VOID (*Entry)(VOID))
 
 BOOLEAN TaskInit(VOID)
 {
-    KMemSet(TaskPool, 0, sizeof(TaskPool));
-    KMemSet(TaskUsed, 0, sizeof(TaskUsed));
-
-    TaskCount = 0;
+    SpinLockInit(&TaskLock);
     NextPID = 1;
 
     return TRUE;
 }
 
-TASK *TaskCreate(VOID (*Entry)(VOID))
+STATIC TASK *TaskCreateInternal(TASK *Member, VOID (*Entry)(VOID))
 {
     TASK *Task;
 
@@ -230,18 +243,34 @@ TASK *TaskCreate(VOID (*Entry)(VOID))
         return NULL;
     }
 
-    Task = TaskAllocate();
+    Task = KAlloc(sizeof(*Task));
 
     if (Task == NULL)
     {
         return NULL;
     }
 
-    if (!TaskAllocatePID(&Task->PID))
-    {
-        TaskFreeSlot(Task);
+    KMemSet(Task, 0, sizeof(*Task));
+    Task->FPState[0] = 0x7F;
+    Task->FPState[1] = 0x03;
+    Task->FPState[24] = 0x80;
+    Task->FPState[25] = 0x1F;
 
-        return NULL;
+    PROCESS *Process = NULL;
+
+    if (Member == NULL)
+    {
+        Process = KAlloc(sizeof(*Process));
+
+        if (Process == NULL)
+        {
+            KFree(Task);
+
+            return NULL;
+        }
+
+        KMemSet(Process, 0, sizeof(*Process));
+        Task->Process = Process;
     }
 
     Task->Priority = 3;
@@ -251,7 +280,8 @@ TASK *TaskCreate(VOID (*Entry)(VOID))
 
     if (Task->StackBase == 0)
     {
-        TaskFreeSlot(Task);
+        KFree(Process);
+        KFree(Task);
 
         return NULL;
     }
@@ -262,7 +292,8 @@ TASK *TaskCreate(VOID (*Entry)(VOID))
     {
         KMemFreePages((VOID *) Task->StackBase, TASK_STACK_PAGES);
 
-        TaskFreeSlot(Task);
+        KFree(Process);
+        KFree(Task);
 
         return NULL;
     }
@@ -280,9 +311,32 @@ TASK *TaskCreate(VOID (*Entry)(VOID))
     Task->Idle = FALSE;
     Task->Scheduled = FALSE;
 
-    TaskCount++;
+    if (!TaskRegister(Task, Member))
+    {
+        KMemFreePages((VOID *) Task->KernelStackBase, TASK_STACK_PAGES);
+        KMemFreePages((VOID *) Task->StackBase, TASK_STACK_PAGES);
+        KFree(Process);
+        KFree(Task);
+
+        return NULL;
+    }
 
     return Task;
+}
+
+TASK *TaskCreate(VOID (*Entry)(VOID))
+{
+    return TaskCreateInternal(NULL, Entry);
+}
+
+TASK *TaskCreateThread(TASK *Member, VOID (*Entry)(VOID))
+{
+    if (Member == NULL)
+    {
+        return NULL;
+    }
+
+    return TaskCreateInternal(Member, Entry);
 }
 
 BOOLEAN TaskSetPriority(TASK *Task, UINT8 Priority)
@@ -292,7 +346,7 @@ BOOLEAN TaskSetPriority(TASK *Task, UINT8 Priority)
     UINT64           Flags;
     UINT8            Weight;
 
-    if (Task == NULL || Priority < 1 || Priority > 6)
+    if (Task == NULL || Priority < 1 || Priority > LBPWRR_MAX_WEIGHT)
     {
         return FALSE;
     }
@@ -461,27 +515,66 @@ VOID TaskSleepNs(UINT64 Nanoseconds)
 
 BOOLEAN TaskDestroy(TASK *Task)
 {
-    UINTN Index;
-
     if (Task == NULL)
     {
         return FALSE;
     }
 
-    if (!TaskGetIndex(Task, &Index) || !TaskUsed[Index])
+    UINT64 Flags = SpinLockAcquireIRQSave(&TaskLock);
+    UINT32 Index = 0;
+
+    while (Index < TaskSlotCount && TaskSlots[Index].Task != Task)
     {
+        Index++;
+    }
+
+    if (Index == TaskSlotCount || TaskSlots[Index].Destroying || (Task->State != TASK_TERMINATED && Task->State != TASK_KILLED))
+    {
+        SpinLockReleaseIRQRestore(&TaskLock, Flags);
+
         return FALSE;
     }
 
-    if (Task->State != TASK_TERMINATED && Task->State != TASK_KILLED)
+    PROCESS         *Process = Task->Process;
+    ELF64_EXECUTION *Execution = Process->Execution;
+
+    if ((Execution != NULL && Execution->Task == Task && (Process->ThreadCount != 1 || Execution->AddressSpace != NULL)) || (Task->Scheduled && !LBPWRRRemoveTask(Task)))
     {
+        SpinLockReleaseIRQRestore(&TaskLock, Flags);
+
         return FALSE;
     }
 
-    if (Task->Scheduled && !LBPWRRRemoveTask(Task))
+    TaskSlots[Index].Destroying = TRUE;
+    SpinLockReleaseIRQRestore(&TaskLock, Flags);
+
+    SyscallIPCRelease(Task);
+
+    Flags = SpinLockAcquireIRQSave(&TaskLock);
+
+    if (Task->ThreadPrev != NULL)
     {
-        return FALSE;
+        Task->ThreadPrev->ThreadNext = Task->ThreadNext;
     }
+    else
+    {
+        Process->ThreadHead = Task->ThreadNext;
+    }
+
+    if (Task->ThreadNext != NULL)
+    {
+        Task->ThreadNext->ThreadPrev = Task->ThreadPrev;
+    }
+
+    BOOLEAN LastThread = ATOMIC_FETCH_SUB(&Process->ThreadCount, 1, ATOMIC_RELEASE) == 1;
+
+    if (!LastThread)
+    {
+        TaskSlots[Index].Task = NULL;
+        TaskCount--;
+    }
+
+    SpinLockReleaseIRQRestore(&TaskLock, Flags);
 
     if (Task->StackBase != 0)
     {
@@ -493,21 +586,24 @@ BOOLEAN TaskDestroy(TASK *Task)
         KMemFreePages((VOID *) Task->KernelStackBase, TASK_STACK_PAGES);
     }
 
-    SyscallMemoryRelease(Task);
-    SyscallIPCRelease(Task);
-    SyscallFilesRelease(Task);
-
-    if (Task->FileContext != NULL)
+    if (LastThread)
     {
-        KFree(Task->FileContext);
-    }
+        SyscallMemoryRelease(Task);
+        SyscallFilesRelease(Task);
 
-    TaskFreeSlot(Task);
+        if (Process->FileContext != NULL)
+        {
+            KFree(Process->FileContext);
+        }
 
-    if (TaskCount > 0)
-    {
+        Flags = SpinLockAcquireIRQSave(&TaskLock);
+        TaskSlots[Index].Task = NULL;
         TaskCount--;
+        SpinLockReleaseIRQRestore(&TaskLock, Flags);
+        KFree(Process);
     }
+
+    KFree(Task);
 
     return TRUE;
 }
@@ -534,33 +630,37 @@ VOID TaskTerminate(TASK *Task)
 
 TASK *TaskGetByPID(UINT16 PID)
 {
-    UINTN Index;
+    UINT64 Flags = SpinLockAcquireIRQSave(&TaskLock);
+    TASK  *Result = NULL;
 
-    for (Index = 0; Index < LBPWRR_MAX_TASKS; Index++)
+    for (UINT32 Index = 0; Index < TaskSlotCount; Index++)
     {
-        if (!TaskUsed[Index])
-        {
-            continue;
-        }
+        TASK *Task = TaskSlots[Index].Task;
 
-        if (TaskPool[Index].PID == PID)
+        if (Task != NULL && !TaskSlots[Index].Destroying && Task->TID == PID && Task->Process->PID == PID)
         {
-            return &TaskPool[Index];
+            Result = Task;
+            break;
         }
     }
 
-    return NULL;
+    SpinLockReleaseIRQRestore(&TaskLock, Flags);
+
+    return Result;
 }
 
 UINTN TaskGetCount(VOID)
 {
-    return TaskCount;
+    UINT64 Flags = SpinLockAcquireIRQSave(&TaskLock);
+    UINTN  Count = TaskCount;
+
+    SpinLockReleaseIRQRestore(&TaskLock, Flags);
+
+    return Count;
 }
 
 VOID TaskSampleCPUUsage(UINT64 IntervalTSC)
 {
-    UINTN  Index;
-    TASK  *Task;
     UINT64 Current;
     UINT64 Previous;
     UINT64 Delta;
@@ -571,14 +671,16 @@ VOID TaskSampleCPUUsage(UINT64 IntervalTSC)
         return;
     }
 
-    for (Index = 0; Index < LBPWRR_MAX_TASKS; Index++)
+    UINT64 Flags = SpinLockAcquireIRQSave(&TaskLock);
+
+    for (UINT32 Index = 0; Index < TaskSlotCount; Index++)
     {
-        if (!TaskUsed[Index])
+        TASK *Task = TaskSlots[Index].Task;
+
+        if (Task == NULL || TaskSlots[Index].Destroying)
         {
             continue;
         }
-
-        Task = &TaskPool[Index];
 
         Current = ATOMIC_LOAD(&Task->CPUTimeTSC, ATOMIC_RELAXED);
         Previous = Task->LastCPUTimeTSC;
@@ -595,21 +697,26 @@ VOID TaskSampleCPUUsage(UINT64 IntervalTSC)
 
         ATOMIC_STORE(&Task->CPUUsage, (UINT32) Percent, ATOMIC_RELEASE);
     }
+
+    SpinLockReleaseIRQRestore(&TaskLock, Flags);
 }
+
 UINT32 TaskGetSnapshot(SYSTEM_TASK_INFO *Entries, UINT32 Capacity)
 {
+    UINT64 Flags = SpinLockAcquireIRQSave(&TaskLock);
     UINT32 Count = 0;
 
     for (UINT32 Pass = 0; Pass < 2; Pass++)
     {
-        for (UINTN Index = 0; Index < LBPWRR_MAX_TASKS && Count < Capacity; Index++)
+        for (UINT32 Index = 0; Index < TaskSlotCount && Count < Capacity; Index++)
         {
-            if (!ATOMIC_LOAD(&TaskUsed[Index], ATOMIC_ACQUIRE))
+            TASK *Task = TaskSlots[Index].Task;
+
+            if (Task == NULL || TaskSlots[Index].Destroying)
             {
                 continue;
             }
 
-            TASK      *Task = &TaskPool[Index];
             TASK_STATE State = ATOMIC_LOAD(&Task->State, ATOMIC_ACQUIRE);
 
             if (State == TASK_TERMINATED || State == TASK_KILLED)
@@ -622,22 +729,17 @@ UINT32 TaskGetSnapshot(SYSTEM_TASK_INFO *Entries, UINT32 Capacity)
                 continue;
             }
 
-            UINT16           PID = Task->PID;
+            UINT16           PID = Task->Process->PID;
             SYSTEM_TASK_INFO Entry = {0};
 
             Entry.PID = PID;
-            Entry.UID = Task->RealUID;
+            Entry.UID = Task->Process->RealUID;
             Entry.CPU = Task->CPUID;
             Entry.Usage = ATOMIC_LOAD(&Task->CPUUsage, ATOMIC_ACQUIRE);
             Entry.State = State;
-            Entry.Kernel = Task->AddressSpace == NULL;
+            Entry.Kernel = Task->Process->AddressSpace == NULL;
             Entry.Idle = Task->Idle;
-            KMemCpy(Entry.Name, Task->Name, sizeof(Entry.Name) - 1);
-
-            if (!ATOMIC_LOAD(&TaskUsed[Index], ATOMIC_ACQUIRE) || Task->PID != PID)
-            {
-                continue;
-            }
+            KMemCpy(Entry.Name, Task->Process->Name, sizeof(Entry.Name) - 1);
 
             State = ATOMIC_LOAD(&Task->State, ATOMIC_ACQUIRE);
 
@@ -650,42 +752,54 @@ UINT32 TaskGetSnapshot(SYSTEM_TASK_INFO *Entries, UINT32 Capacity)
         }
     }
 
+    SpinLockReleaseIRQRestore(&TaskLock, Flags);
+
     return Count;
 }
 
 UINT32 TaskGetIdleCount(VOID)
 {
+    UINT64 Flags = SpinLockAcquireIRQSave(&TaskLock);
     UINT32 Count = 0;
 
-    for (UINTN Index = 0; Index < LBPWRR_MAX_TASKS; Index++)
+    for (UINT32 Index = 0; Index < TaskSlotCount; Index++)
     {
-        if (ATOMIC_LOAD(&TaskUsed[Index], ATOMIC_ACQUIRE) && TaskPool[Index].Idle)
+        TASK *Task = TaskSlots[Index].Task;
+
+        if (Task != NULL && !TaskSlots[Index].Destroying && Task->Idle)
         {
             Count++;
         }
     }
+
+    SpinLockReleaseIRQRestore(&TaskLock, Flags);
 
     return Count;
 }
 
 UINT32 TaskGetLiveCount(VOID)
 {
+    UINT64 Flags = SpinLockAcquireIRQSave(&TaskLock);
     UINT32 Count = 0;
 
-    for (UINTN Index = 0; Index < LBPWRR_MAX_TASKS; Index++)
+    for (UINT32 Index = 0; Index < TaskSlotCount; Index++)
     {
-        if (!ATOMIC_LOAD(&TaskUsed[Index], ATOMIC_ACQUIRE))
+        TASK *Task = TaskSlots[Index].Task;
+
+        if (Task == NULL || TaskSlots[Index].Destroying)
         {
             continue;
         }
 
-        TASK_STATE State = ATOMIC_LOAD(&TaskPool[Index].State, ATOMIC_ACQUIRE);
+        TASK_STATE State = ATOMIC_LOAD(&Task->State, ATOMIC_ACQUIRE);
 
         if (State != TASK_TERMINATED && State != TASK_KILLED)
         {
             Count++;
         }
     }
+
+    SpinLockReleaseIRQRestore(&TaskLock, Flags);
 
     return Count;
 }

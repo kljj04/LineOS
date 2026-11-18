@@ -5,8 +5,8 @@
 #include <Shell.h>
 #include <Terminal/Text.h>
 #include <Asset.h>
-#include <TrueType.h>
-#include <TrueTypeRuntime.h>
+#include <TrueType/TrueType.h>
+#include <TrueType/TrueTypeRuntime.h>
 
 #define SHELL_METRIC_CACHE_SIZE 512U
 

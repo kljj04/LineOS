@@ -11,3 +11,5 @@ UINT32           LBPWRRGetActiveCPUCount(VOID);
 LBPWRR_RUNQUEUE *LBPWRRGetRunQueue(UINT32 CPUID);
 TASK            *LBPWRRGetCurrentTaskFromCPU(UINT32 CPUID);
 VOID             LBPWRRSetCurrentTask(UINT32 CPUID, TASK *Task);
+
+VOID *LBPWRRGrowArray(VOID *Array, UINT32 *Capacity, UINT32 Required, UINTN ElementSize);

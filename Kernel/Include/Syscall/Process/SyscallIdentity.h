@@ -9,4 +9,3 @@
 INT64 SyscallSetUID(UINT64 UID);
 INT64 SyscallSetGID(UINT64 GID);
 INT64 SyscallGetUID(BOOLEAN Effective);
-INT64 SyscallGetGID(BOOLEAN Effective);

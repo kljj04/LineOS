@@ -17,6 +17,8 @@
 #include <Memory/VMM.h>
 #include <Arch/AMD64/CPU.h>
 
+STATIC_ASSERT(__builtin_offsetof(INTERRUPT_FRAME, CS) == 144, "ISR user return selector offset");
+
 EXTERN VOID ISR0(VOID);
 EXTERN VOID ISR1(VOID);
 EXTERN VOID ISR2(VOID);

@@ -81,7 +81,7 @@ STATIC INT64 DeviceZeroRead(TASK *Task, VOID *State, UINT64 *Offset, UINT64 Buff
     {
         UINT64 Length = Count - Total > sizeof(Bytes) ? sizeof(Bytes) : Count - Total;
 
-        if (!VMMCopyToUser(Task->AddressSpace, Buffer + Total, Bytes, Length))
+        if (!VMMCopyToUser(Task->Process->AddressSpace, Buffer + Total, Bytes, Length))
         {
             return Total != 0 ? (INT64) Total : -EFAULT;
         }
@@ -107,7 +107,7 @@ STATIC INT64 DeviceMasterOpen(TASK *Task, UINT64 Flags, VOID **State)
     (VOID) Flags;
     *State = NULL;
 
-    if (!Task->AssetPublisher)
+    if (!Task->Process->AssetPublisher)
     {
         return -EACCES;
     }
@@ -223,7 +223,7 @@ STATIC INT64 FramebufferData(TASK *Task, UINT64 *Offset, UINT64 Buffer, UINT64 C
     {
         UINT64  Length = Count - Total > 4096 ? 4096 : Count - Total;
         UINT64  Flags = VirtIOGPUAcquireRenderLock();
-        BOOLEAN Copied = Write ? VMMCopyFromUser(Task->AddressSpace, (UINT8 *) GPU->FrameBuffer + *Offset + Total, Buffer + Total, Length) : VMMCopyToUser(Task->AddressSpace, Buffer + Total, (UINT8 *) GPU->FrameBuffer + *Offset + Total, Length);
+        BOOLEAN Copied = Write ? VMMCopyFromUser(Task->Process->AddressSpace, (UINT8 *) GPU->FrameBuffer + *Offset + Total, Buffer + Total, Length) : VMMCopyToUser(Task->Process->AddressSpace, Buffer + Total, (UINT8 *) GPU->FrameBuffer + *Offset + Total, Length);
 
         VirtIOGPUReleaseRenderLock(Flags);
 
@@ -289,7 +289,7 @@ STATIC INT64 FramebufferIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
         Info.Red.Length = Info.Green.Length = Info.Blue.Length = Info.Transp.Length = 8;
         Info.Height = Info.Width = UINT32_MAX;
 
-        return VMMCopyToUser(Task->AddressSpace, Argument, &Info, sizeof(Info)) ? 0 : -EFAULT;
+        return VMMCopyToUser(Task->Process->AddressSpace, Argument, &Info, sizeof(Info)) ? 0 : -EFAULT;
     }
 
     if (Request == FBIOGET_FSCREENINFO)
@@ -301,7 +301,7 @@ STATIC INT64 FramebufferIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
         Info.LineLength = GPU->FrameBufferWidth * sizeof(UINT32);
         Info.Visual = 2;
 
-        return VMMCopyToUser(Task->AddressSpace, Argument, &Info, sizeof(Info)) ? 0 : -EFAULT;
+        return VMMCopyToUser(Task->Process->AddressSpace, Argument, &Info, sizeof(Info)) ? 0 : -EFAULT;
     }
 
     if (Request != LOS_FBIO_PRESENT && Request != LOS_FBIO_PRESENT_RECT && Request != LOS_FBIO_FLUSH)
@@ -318,7 +318,7 @@ STATIC INT64 FramebufferIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
     {
         LOS_FB_PRESENT Present;
 
-        if (!VMMCopyFromUser(Task->AddressSpace, &Present, Argument, sizeof(Present)))
+        if (!VMMCopyFromUser(Task->Process->AddressSpace, &Present, Argument, sizeof(Present)))
         {
             return -EFAULT;
         }
@@ -424,7 +424,7 @@ STATIC INT64 DevicePointerIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 
         Info.Buttons |= 4;
     }
 
-    return VMMCopyToUser(Task->AddressSpace, Argument, &Info, sizeof(Info)) ? 0 : -EFAULT;
+    return VMMCopyToUser(Task->Process->AddressSpace, Argument, &Info, sizeof(Info)) ? 0 : -EFAULT;
 }
 
 STATIC INT64 DeviceTerminalIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Argument, UINT32 Access)
@@ -573,7 +573,7 @@ STATIC INT64 VirGLDeviceCreateBuffer(TASK *Task, VIRGL_FILE_STATE *File, UINT32 
     LOS_VIRGL_BUFFER_CREATE Query = {0};
     LOS_VIRGL_TARGET_CREATE Target = {0};
 
-    if (!VMMCopyFromUser(Task->AddressSpace, ColorTarget ? (VOID *) &Target : (VOID *) &Query, Argument, ColorTarget ? sizeof(Target) : sizeof(Query)))
+    if (!VMMCopyFromUser(Task->Process->AddressSpace, ColorTarget ? (VOID *) &Target : (VOID *) &Query, Argument, ColorTarget ? sizeof(Target) : sizeof(Query)))
     {
         return -EFAULT;
     }
@@ -609,7 +609,7 @@ STATIC INT64 VirGLDeviceCreateBuffer(TASK *Task, VIRGL_FILE_STATE *File, UINT32 
         Query.Handle = Buffer->ResourceId;
         Target.Handle = Buffer->ResourceId;
 
-        if (Attached && VMMCopyToUser(Task->AddressSpace, Argument, ColorTarget ? (VOID *) &Target : (VOID *) &Query, ColorTarget ? sizeof(Target) : sizeof(Query)))
+        if (Attached && VMMCopyToUser(Task->Process->AddressSpace, Argument, ColorTarget ? (VOID *) &Target : (VOID *) &Query, ColorTarget ? sizeof(Target) : sizeof(Query)))
         {
             return 0;
         }
@@ -647,7 +647,7 @@ STATIC INT64 VirGLDeviceBufferIoctl(TASK *Task, VIRGL_FILE_STATE *File, UINT64 R
 
     UINTN Size = Request == LOS_VIRGL_DESTROY_BUFFER ? sizeof(Query.Handle) : sizeof(Query);
 
-    if (!VMMCopyFromUser(Task->AddressSpace, &Query, Argument, Size))
+    if (!VMMCopyFromUser(Task->Process->AddressSpace, &Query, Argument, Size))
     {
         return -EFAULT;
     }
@@ -694,7 +694,7 @@ STATIC INT64 VirGLDeviceBufferIoctl(TASK *Task, VIRGL_FILE_STATE *File, UINT64 R
 
         INT64 Result = -EFAULT;
 
-        if (VMMCopyFromUser(Task->AddressSpace, Data, Query.Address, Query.Size))
+        if (VMMCopyFromUser(Task->Process->AddressSpace, Data, Query.Address, Query.Size))
         {
             Result = VirGLWriteVertexBuffer(ContextId, Buffer->ResourceId, Query.Offset, Data, Query.Size) ? 0 : -EIO;
         }
@@ -717,7 +717,7 @@ STATIC INT64 VirGLDeviceSubmit(TASK *Task, VIRGL_FILE_STATE *File, UINT64 Argume
         return -EINVAL;
     }
 
-    if (!VMMCopyFromUser(Task->AddressSpace, &Request, Argument, sizeof(Request)))
+    if (!VMMCopyFromUser(Task->Process->AddressSpace, &Request, Argument, sizeof(Request)))
     {
         return -EFAULT;
     }
@@ -737,7 +737,7 @@ STATIC INT64 VirGLDeviceSubmit(TASK *Task, VIRGL_FILE_STATE *File, UINT64 Argume
 
     INT64 Result = -EFAULT;
 
-    if (VMMCopyFromUser(Task->AddressSpace, Commands, Request.Address, Size))
+    if (VMMCopyFromUser(Task->Process->AddressSpace, Commands, Request.Address, Size))
     {
         Result = -EOPNOTSUPP;
 
@@ -821,7 +821,7 @@ STATIC INT64 VirGLDeviceReadTarget(TASK *Task, VIRGL_FILE_STATE *File, UINT64 Ar
 {
     LOS_VIRGL_TARGET_READ Request;
 
-    if (!VMMCopyFromUser(Task->AddressSpace, &Request, Argument, sizeof(Request)))
+    if (!VMMCopyFromUser(Task->Process->AddressSpace, &Request, Argument, sizeof(Request)))
     {
         return -EFAULT;
     }
@@ -853,7 +853,7 @@ STATIC INT64 VirGLDeviceReadTarget(TASK *Task, VIRGL_FILE_STATE *File, UINT64 Ar
         BOOLEAN CanFree;
         UINT32 ContextId = ATOMIC_LOAD(&File->ContextId, ATOMIC_ACQUIRE);
         BOOLEAN Success = VirGLReadColorTarget(ContextId, Buffer->ResourceId, Buffer->Width, Buffer->Height, Buffer->Backing, &CanFree);
-        INT64 Result = Success ? (VMMCopyToUser(Task->AddressSpace, Request.Address, Buffer->Backing, Size) ? 0 : -EFAULT) : -EIO;
+        INT64 Result = Success ? (VMMCopyToUser(Task->Process->AddressSpace, Request.Address, Buffer->Backing, Size) ? 0 : -EFAULT) : -EIO;
 
         if (CanFree)
         {
@@ -899,7 +899,7 @@ STATIC INT64 VirGLDeviceIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
     {
         LOS_VIRGL_CAPSET_INFO Query;
 
-        if (!VMMCopyFromUser(Task->AddressSpace, &Query, Argument, sizeof(Query)))
+        if (!VMMCopyFromUser(Task->Process->AddressSpace, &Query, Argument, sizeof(Query)))
         {
             return -EFAULT;
         }
@@ -912,7 +912,7 @@ STATIC INT64 VirGLDeviceIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
         Query.MaxVersion = Info.MaxVersion;
         Query.MaxSize = Info.MaxSize;
 
-        return VMMCopyToUser(Task->AddressSpace, Argument, &Query, sizeof(Query)) ? 0 : -EFAULT;
+        return VMMCopyToUser(Task->Process->AddressSpace, Argument, &Query, sizeof(Query)) ? 0 : -EFAULT;
     }
 
     if (Request == LOS_VIRGL_READ_CAPSET)
@@ -920,7 +920,7 @@ STATIC INT64 VirGLDeviceIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
         LOS_VIRGL_CAPSET_READ Query;
         INT64                 Result = -EIO;
 
-        if (!VMMCopyFromUser(Task->AddressSpace, &Query, Argument, sizeof(Query)))
+        if (!VMMCopyFromUser(Task->Process->AddressSpace, &Query, Argument, sizeof(Query)))
         {
             return -EFAULT;
         }
@@ -939,7 +939,7 @@ STATIC INT64 VirGLDeviceIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
 
         if (VirGLReadCapset(Query.Id, Query.Version, Data, Info.MaxSize, &Query.BytesRead))
         {
-            Result = VMMCopyToUser(Task->AddressSpace, Query.Address, Data, Query.BytesRead) && VMMCopyToUser(Task->AddressSpace, Argument, &Query, sizeof(Query)) ? 0 : -EFAULT;
+            Result = VMMCopyToUser(Task->Process->AddressSpace, Query.Address, Data, Query.BytesRead) && VMMCopyToUser(Task->Process->AddressSpace, Argument, &Query, sizeof(Query)) ? 0 : -EFAULT;
         }
 
         KFree(Data);

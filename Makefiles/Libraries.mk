@@ -21,7 +21,7 @@ LIBRARY_OBJS_$(1) := $$(addprefix Build/Objects/,$$(addsuffix .o,$$(basename $$(
 $$(LIBRARY_OBJS_$(1)): private LIBRARY_INCLUDE := $$(USER_LIBRARY_INCLUDE_$(1))
 $$(LIBRARY_OBJS_$(1)): private LIBRARY_CFLAGS := $(subst $(Comma), ,$(filter-out -,$(3)))
 $$(LIBRARY_OBJS_$(1)): Libraries/$(2)/Library.cfg
-$$(USER_LIBRARY_$(1)): $$(LIBRARY_OBJS_$(1)) Libraries/$(2)/Library.cfg Makefiles/Libraries.mk Scripts/Backend/Libraries.sh $(shell find Libraries/$(2)/Source -type d)
+$$(USER_LIBRARY_$(1)): $$(LIBRARY_OBJS_$(1)) Libraries/$(2)/Library.cfg Makefiles/Libraries.mk Scripts/Backend/Libraries.sh $(shell find Libraries/$(2) -type d)
 	@$$(call MKDIR_P,$$(dir $$@))
 	@$$(call BUILD_PROGRESS,$$@)
 	@rm -f $$@

@@ -22,7 +22,7 @@ INT64 SyscallMkdir(UINT64 Path, UINT64 Mode)
 
     if (Result == 0)
     {
-        Result = SyscallVFSError(VFSCreate(Task->FileContext, Name, TRUE, (UINT16) (Mode & 0777)));
+        Result = SyscallVFSError(VFSCreate(Task->Process->FileContext, Name, TRUE, (UINT16) (Mode & 0777)));
         KFree(Name);
     }
 
@@ -32,9 +32,9 @@ INT64 SyscallMkdir(UINT64 Path, UINT64 Mode)
 INT64 SyscallGetDents64(UINT64 FD, UINT64 Buffer, UINT64 Count)
 {
     TASK      *Task = LBPWRRGetCurrentTask();
-    OPEN_FILE *File;
+    OPEN_FILE *File __attribute__((cleanup(FileDrop))) = FileAcquire(Task, (UINT64) FD);
 
-    if (Task == NULL || FD >= TASK_FILE_LIMIT || (File = Task->Files[FD]) == NULL)
+    if (Task == NULL || File == NULL)
     {
         return -EBADF;
     }
@@ -68,7 +68,7 @@ INT64 SyscallGetDents64(UINT64 FD, UINT64 Buffer, UINT64 Count)
         VFS_DIRECTORY_ENTRY Entry;
         UINT64              Cursor = File->Offset;
 
-        Error = SyscallVFSError(VFSReadDirectory(Task->FileContext, File->Path, &Cursor, &Entry));
+        Error = SyscallVFSError(VFSReadDirectory(Task->Process->FileContext, File->Path, &Cursor, &Entry));
 
         if (Error < 0 || Entry.End)
         {
@@ -99,7 +99,7 @@ INT64 SyscallGetDents64(UINT64 FD, UINT64 Buffer, UINT64 Count)
         Record[18] = (UINT8) ((Entry.Node.Mode & VFS_MODE_TYPE) >> 12);
         KMemCpy(Record + 19, Entry.Name, Length + 1);
 
-        if (!VMMCopyToUser(Task->AddressSpace, Buffer + Total, Record, RecordLength))
+        if (!VMMCopyToUser(Task->Process->AddressSpace, Buffer + Total, Record, RecordLength))
         {
             Error = -EFAULT;
             break;
@@ -119,7 +119,7 @@ INT64 SyscallChdir(UINT64 Path)
     TASK  *Task = LBPWRRGetCurrentTask();
     CHAR8 *Name;
 
-    if (Task == NULL || Task->AddressSpace == NULL || Task->FileContext == NULL)
+    if (Task == NULL || Task->Process->AddressSpace == NULL || Task->Process->FileContext == NULL)
     {
         return -ESRCH;
     }
@@ -131,7 +131,7 @@ INT64 SyscallChdir(UINT64 Path)
         return Result;
     }
 
-    Result = SyscallVFSError(VFSChangeDirectory(Task->FileContext, Name));
+    Result = SyscallVFSError(VFSChangeDirectory(Task->Process->FileContext, Name));
     KFree(Name);
 
     return Result;
@@ -142,7 +142,7 @@ INT64 SyscallGetCwd(UINT64 Buffer, UINT64 Size)
     TASK *Task = LBPWRRGetCurrentTask();
     CHAR8 Path[VFS_MAX_PATH];
 
-    if (Task == NULL || Task->AddressSpace == NULL || Task->FileContext == NULL)
+    if (Task == NULL || Task->Process->AddressSpace == NULL || Task->Process->FileContext == NULL)
     {
         return -ESRCH;
     }
@@ -152,7 +152,7 @@ INT64 SyscallGetCwd(UINT64 Buffer, UINT64 Size)
         return -EINVAL;
     }
 
-    INT64 Result = SyscallVFSError(VFSGetCwd(Task->FileContext, Path, sizeof(Path)));
+    INT64 Result = SyscallVFSError(VFSGetCwd(Task->Process->FileContext, Path, sizeof(Path)));
 
     if (Result < 0)
     {
@@ -173,5 +173,5 @@ INT64 SyscallGetCwd(UINT64 Buffer, UINT64 Size)
         return -ERANGE;
     }
 
-    return VMMCopyToUser(Task->AddressSpace, Buffer, Path, Length) ? (INT64) Length : -EFAULT;
+    return VMMCopyToUser(Task->Process->AddressSpace, Buffer, Path, Length) ? (INT64) Length : -EFAULT;
 }

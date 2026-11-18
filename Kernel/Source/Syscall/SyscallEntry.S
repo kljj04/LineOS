@@ -42,6 +42,9 @@ SyscallEntry:
     call SyscallDispatch
     movq %rbx, %rsp
     movq %rax, 112(%rsp)
+    andq $-16, %rsp
+    call SyscallCheckGroupExit
+    movq %rbx, %rsp
 
     movabsq $0x800000000000, %rdx
     cmpq %rdx, 136(%rsp)

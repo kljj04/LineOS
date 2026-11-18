@@ -186,7 +186,7 @@ BOOLEAN ELF64Release(ELF64_EXECUTION *Execution)
 
     if (Execution->Task != NULL)
     {
-        if (Execution->Task->OnCPU || Execution->Task->Scheduled || (Execution->Task->State != TASK_TERMINATED && Execution->Task->State != TASK_KILLED))
+        if (Execution->Task->OnCPU || Execution->Task->Scheduled || (Execution->Task->State != TASK_TERMINATED && Execution->Task->State != TASK_KILLED) || ATOMIC_LOAD(&Execution->Task->Process->ThreadCount, ATOMIC_ACQUIRE) != 1)
         {
             return FALSE;
         }
@@ -201,7 +201,7 @@ BOOLEAN ELF64Release(ELF64_EXECUTION *Execution)
 
     if (Execution->Task != NULL)
     {
-        Execution->Task->AddressSpace = NULL;
+        Execution->Task->Process->AddressSpace = NULL;
 
         if (!TaskDestroy(Execution->Task))
         {
@@ -378,8 +378,8 @@ BOOLEAN ELF64Load(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUTION *Execut
 
     TASK *Task = Execution->Task;
 
-    Task->AddressSpace = Execution->AddressSpace;
-    Task->Execution = Execution;
+    Task->Process->AddressSpace = Execution->AddressSpace;
+    Task->Process->Execution = Execution;
     Task->UserStackBase = ELF64_EXEC_STACK;
     Task->UserStackSize = ELF64_EXEC_STACK_PAGES * ELF64_EXEC_PAGE_SIZE;
     KMemSet(&Task->Context, 0, sizeof(Task->Context));
@@ -541,9 +541,9 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONS
         return FALSE;
     }
 
-    Execution->Task->FileContext = KAlloc(sizeof(VFS_CONTEXT));
+    Execution->Task->Process->FileContext = KAlloc(sizeof(VFS_CONTEXT));
 
-    if (Execution->Task->FileContext == NULL)
+    if (Execution->Task->Process->FileContext == NULL)
     {
         Execution->Error = -ENOMEM;
         DebugWriteLine("ELF64Execute: context allocation failed");
@@ -553,7 +553,7 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONS
         return FALSE;
     }
 
-    KMemCpy(Execution->Task->FileContext, Context, sizeof(VFS_CONTEXT));
+    KMemCpy(Execution->Task->Process->FileContext, Context, sizeof(VFS_CONTEXT));
 
     CONST CHAR8 *ProgramName = Path;
 
@@ -567,23 +567,23 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONS
 
     UINTN NameLength = 0;
 
-    while (ProgramName[NameLength] != 0 && NameLength + 1 < sizeof(Execution->Task->Name))
+    while (ProgramName[NameLength] != 0 && NameLength + 1 < sizeof(Execution->Task->Process->Name))
     {
-        Execution->Task->Name[NameLength] = ProgramName[NameLength];
+        Execution->Task->Process->Name[NameLength] = ProgramName[NameLength];
         NameLength++;
     }
 
-    Execution->Task->Name[NameLength] = 0;
-    Execution->Task->RealUID = Context->Credentials.UID;
-    Execution->Task->RealGID = Context->Credentials.GID;
+    Execution->Task->Process->Name[NameLength] = 0;
+    Execution->Task->Process->RealUID = Context->Credentials.UID;
+    Execution->Task->Process->RealGID = Context->Credentials.GID;
 
     if ((Node.Mode & 04000U) != 0)
     {
-        Execution->Task->FileContext->Credentials.UID = Node.UID;
-        Execution->Task->FileContext->Credentials.Administrator = Node.UID == 0;
+        Execution->Task->Process->FileContext->Credentials.UID = Node.UID;
+        Execution->Task->Process->FileContext->Credentials.Administrator = Node.UID == 0;
     }
 
-    Execution->Task->AssetPublisher = AssetPublisher;
+    Execution->Task->Process->AssetPublisher = AssetPublisher;
 
     if (!Schedule)
     {

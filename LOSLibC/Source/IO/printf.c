@@ -3,7 +3,6 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -17,44 +16,39 @@
 #define PRINTF_FLAG_ALTERNATE (1U << 3)
 #define PRINTF_FLAG_ZERO      (1U << 4)
 
-#define STDIO_BUFFER_SIZE 512
-
-typedef struct
-{
-    char   Buffer[STDIO_BUFFER_SIZE];
-    FILE  *Stream;
-    char  *Destination;
-    size_t Capacity;
-    size_t Length;
-    size_t Total;
-    int    Failed;
-} STDIO_OUTPUT;
-
 static void FlushOutput(STDIO_OUTPUT *Output)
 {
-    if (!Output->Failed && Output->Length != 0)
+    size_t  Offset;
+    ssize_t Written;
+
+    if (Output->Failed || Output->Length == 0)
     {
-        Output->Failed = fwrite(Output->Buffer, 1, Output->Length, Output->Stream) != Output->Length;
-        Output->Length = 0;
+        return;
     }
+
+    Offset = 0;
+
+    while (Offset < Output->Length)
+    {
+        Written = write(1, Output->Buffer + Offset, Output->Length - Offset);
+
+        if (Written <= 0 || (size_t) Written > Output->Length - Offset)
+        {
+            Output->Failed = 1;
+
+            return;
+        }
+
+        Offset += (size_t) Written;
+    }
+
+    Output->Length = 0;
 }
 
 static void OutputCharacter(STDIO_OUTPUT *Output, char Character)
 {
     if (Output->Failed)
     {
-        return;
-    }
-
-    if (Output->Stream == NULL)
-    {
-        if (Output->Capacity != 0 && Output->Total < Output->Capacity - 1)
-        {
-            Output->Destination[Output->Total] = Character;
-        }
-
-        Output->Total++;
-
         return;
     }
 
@@ -231,10 +225,11 @@ static unsigned int ParseNumber(const char **Format)
     return Value;
 }
 
-static int FormatOutput(STDIO_OUTPUT *Destination, const char *Format, va_list Source)
+int printf(const char *Format, ...)
 {
-    STDIO_OUTPUT Output = *Destination;
-    va_list      Arguments;
+    STDIO_OUTPUT Output = {0};
+
+    va_list Arguments;
 
     unsigned int Flags;
     unsigned int Width;
@@ -247,7 +242,7 @@ static int FormatOutput(STDIO_OUTPUT *Destination, const char *Format, va_list S
         return -1;
     }
 
-    va_copy(Arguments, Source);
+    va_start(Arguments, Format);
 
     while (*Format != '\0')
     {
@@ -470,14 +465,7 @@ static int FormatOutput(STDIO_OUTPUT *Destination, const char *Format, va_list S
 
     va_end(Arguments);
 
-    if (Output.Stream != NULL)
-    {
-        FlushOutput(&Output);
-    }
-    else if (Output.Capacity != 0)
-    {
-        Output.Destination[Output.Total < Output.Capacity ? Output.Total : Output.Capacity - 1] = 0;
-    }
+    FlushOutput(&Output);
 
     if (Output.Failed || Output.Total > 0x7FFFFFFF)
     {
@@ -485,103 +473,4 @@ static int FormatOutput(STDIO_OUTPUT *Destination, const char *Format, va_list S
     }
 
     return (int) Output.Total;
-}
-
-int vfprintf(FILE *Stream, const char *Format, va_list Arguments)
-{
-    STDIO_OUTPUT Output = {.Stream = Stream};
-
-    return FormatOutput(&Output, Format, Arguments);
-}
-
-int fprintf(FILE *Stream, const char *Format, ...)
-{
-    va_list Arguments;
-    va_start(Arguments, Format);
-    int Result = vfprintf(Stream, Format, Arguments);
-    va_end(Arguments);
-
-    return Result;
-}
-
-int printf(const char *Format, ...)
-{
-    va_list Arguments;
-    va_start(Arguments, Format);
-    int Result = vfprintf(stdout, Format, Arguments);
-    va_end(Arguments);
-
-    return Result;
-}
-
-int vsnprintf(char *Buffer, size_t Capacity, const char *Format, va_list Arguments)
-{
-    STDIO_OUTPUT Output = {.Destination = Buffer, .Capacity = Capacity};
-
-    return FormatOutput(&Output, Format, Arguments);
-}
-
-int snprintf(char *Buffer, size_t Capacity, const char *Format, ...)
-{
-    va_list Arguments;
-    va_start(Arguments, Format);
-    int Result = vsnprintf(Buffer, Capacity, Format, Arguments);
-    va_end(Arguments);
-
-    return Result;
-}
-
-int vprintf(const char *Format, va_list Arguments)
-{
-    return vfprintf(stdout, Format, Arguments);
-}
-
-int sprintf(char *Buffer, const char *Format, ...)
-{
-    va_list Arguments;
-    va_start(Arguments, Format);
-    int Result = vsnprintf(Buffer, (size_t) -1, Format, Arguments);
-    va_end(Arguments);
-
-    return Result;
-}
-
-int vasprintf(char **Buffer, const char *Format, va_list Arguments)
-{
-    *Buffer = NULL;
-    int Length = vsnprintf(NULL, 0, Format, Arguments);
-
-    if (Length < 0)
-    {
-        return -1;
-    }
-
-    size_t Capacity = (size_t) Length + 1;
-    char *Text = malloc(Capacity);
-
-    if (Text == NULL)
-    {
-        return -1;
-    }
-
-    if (vsnprintf(Text, Capacity, Format, Arguments) != Length)
-    {
-        free(Text);
-
-        return -1;
-    }
-
-    *Buffer = Text;
-
-    return Length;
-}
-
-int asprintf(char **Buffer, const char *Format, ...)
-{
-    va_list Arguments;
-    va_start(Arguments, Format);
-    int Result = vasprintf(Buffer, Format, Arguments);
-    va_end(Arguments);
-
-    return Result;
 }

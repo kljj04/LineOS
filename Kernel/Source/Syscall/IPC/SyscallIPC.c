@@ -81,7 +81,7 @@ STATIC VOID IPCCollect(VOID)
     {
         IPC_ENDPOINT *Endpoint = &Endpoints[Index];
 
-        if (Endpoint->Owner != NULL && (Endpoint->Owner->PID != Endpoint->PID || Endpoint->Owner->State == TASK_TERMINATED || Endpoint->Owner->State == TASK_KILLED))
+        if (Endpoint->Owner != NULL && (Endpoint->Owner->Process->PID != Endpoint->PID || Endpoint->Owner->State == TASK_TERMINATED || Endpoint->Owner->State == TASK_KILLED))
         {
             IPCClear(Endpoint);
         }
@@ -110,7 +110,7 @@ BOOLEAN SyscallIPCOwns(TASK *Task, UINT64 ID)
 {
     UINT64        Flags = SpinLockAcquireIRQSave(&IPCLock);
     IPC_ENDPOINT *Endpoint = IPCFind(ID);
-    BOOLEAN       Owned = Endpoint != NULL && Endpoint->Owner == Task && Endpoint->PID == Task->PID;
+    BOOLEAN       Owned = Endpoint != NULL && Endpoint->Owner == Task && Endpoint->PID == Task->Process->PID;
 
     SpinLockReleaseIRQRestore(&IPCLock, Flags);
 
@@ -137,7 +137,7 @@ INT64 SyscallIPC(UINT64 Operation, UINT64 UserRequest, UINT64 Size)
     TASK           *Task = LBPWRRGetCurrentTask();
     LOS_IPC_REQUEST Request;
 
-    if (Task == NULL || Task->AddressSpace == NULL)
+    if (Task == NULL || Task->Process->AddressSpace == NULL)
     {
         return -ESRCH;
     }
@@ -147,7 +147,7 @@ INT64 SyscallIPC(UINT64 Operation, UINT64 UserRequest, UINT64 Size)
         return -EINVAL;
     }
 
-    if (!VMMCopyFromUser(Task->AddressSpace, &Request, UserRequest, sizeof(Request)))
+    if (!VMMCopyFromUser(Task->Process->AddressSpace, &Request, UserRequest, sizeof(Request)))
     {
         return -EFAULT;
     }
@@ -173,7 +173,7 @@ INT64 SyscallIPC(UINT64 Operation, UINT64 UserRequest, UINT64 Size)
             return -ENOMEM;
         }
 
-        if (!VMMCopyFromUser(Task->AddressSpace, Outgoing->Data, Request.Data, Request.Size))
+        if (!VMMCopyFromUser(Task->Process->AddressSpace, Outgoing->Data, Request.Data, Request.Size))
         {
             KFree(Outgoing);
 
@@ -206,7 +206,7 @@ INT64 SyscallIPC(UINT64 Operation, UINT64 UserRequest, UINT64 Size)
                     Free = Endpoint;
                 }
             }
-            else if (Request.Name[0] != 0 && Endpoint->UID == Task->RealUID && IPCNameEqual(Endpoint->Name, Request.Name))
+            else if (Request.Name[0] != 0 && Endpoint->UID == Task->Process->RealUID && IPCNameEqual(Endpoint->Name, Request.Name))
             {
                 Result = Operation == LOS_IPC_LOOKUP ? (INT64) Endpoint->ID : -EEXIST;
                 goto Done;
@@ -222,8 +222,8 @@ INT64 SyscallIPC(UINT64 Operation, UINT64 UserRequest, UINT64 Size)
             }
 
             Free->Owner = Task;
-            Free->PID = Task->PID;
-            Free->UID = Task->RealUID;
+            Free->PID = Task->Process->PID;
+            Free->UID = Task->Process->RealUID;
             Free->ID = NextID++;
             KMemCpy(Free->Name, Request.Name, sizeof(Free->Name));
             Result = (INT64) Free->ID;
@@ -240,7 +240,7 @@ INT64 SyscallIPC(UINT64 Operation, UINT64 UserRequest, UINT64 Size)
         goto Done;
     }
 
-    if (Endpoint->Owner != Task || Endpoint->PID != Task->PID)
+    if (Endpoint->Owner != Task || Endpoint->PID != Task->Process->PID)
     {
         Result = -EPERM;
         goto Done;
@@ -272,7 +272,7 @@ INT64 SyscallIPC(UINT64 Operation, UINT64 UserRequest, UINT64 Size)
         Request.UID = Message->UID;
         Request.PID = Message->PID;
 
-        if (!VMMCopyToUser(Task->AddressSpace, Request.Data, Message->Data, Message->Size) || !VMMCopyToUser(Task->AddressSpace, UserRequest, &Request, sizeof(Request)))
+        if (!VMMCopyToUser(Task->Process->AddressSpace, Request.Data, Message->Data, Message->Size) || !VMMCopyToUser(Task->Process->AddressSpace, UserRequest, &Request, sizeof(Request)))
         {
             Result = -EFAULT;
             goto Done;

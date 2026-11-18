@@ -7,3 +7,4 @@
 #include <LineOS/TypeInfo.h>
 
 INT64 SyscallExit(UINT64 ExitCode);
+VOID  SyscallCheckGroupExit(VOID);

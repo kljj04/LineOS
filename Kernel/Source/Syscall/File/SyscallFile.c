@@ -13,7 +13,7 @@
 
 STATIC INT64 FileRelease(OPEN_FILE *File)
 {
-    INT64 Result = File->Failed;
+    INT64 Result = ATOMIC_LOAD(&File->Failed, ATOMIC_RELAXED);
 
     if (ATOMIC_FETCH_SUB(&File->References, 1, ATOMIC_ACQ_REL) == 1)
     {
@@ -34,35 +34,89 @@ STATIC INT64 FileRelease(OPEN_FILE *File)
     return Result;
 }
 
+OPEN_FILE *FileAcquire(TASK *Task, UINT64 FD)
+{
+    if (Task == NULL || FD >= TASK_FILE_LIMIT)
+    {
+        return NULL;
+    }
+
+    PROCESS   *Process = Task->Process;
+    UINT64     Flags = SpinLockAcquireIRQSave(&Process->FileTableLock);
+    OPEN_FILE *File = Process->Files[FD];
+
+    if (File != NULL)
+    {
+        ATOMIC_FETCH_ADD(&File->References, 1, ATOMIC_RELAXED);
+    }
+
+    SpinLockReleaseIRQRestore(&Process->FileTableLock, Flags);
+
+    return File;
+}
+
+VOID FileDrop(OPEN_FILE **File)
+{
+    if (*File != NULL)
+    {
+        FileRelease(*File);
+    }
+}
+
+STATIC OPEN_FILE *FileDetach(PROCESS *Process, UINT64 FD)
+{
+    UINT64     Flags = SpinLockAcquireIRQSave(&Process->FileTableLock);
+    OPEN_FILE *File = Process->Files[FD];
+
+    Process->Files[FD] = NULL;
+    SpinLockReleaseIRQRestore(&Process->FileTableLock, Flags);
+
+    return File;
+}
+
 VOID SyscallFilesRelease(TASK *Task)
 {
     for (UINTN Index = 0; Index < TASK_FILE_LIMIT; Index++)
     {
-        OPEN_FILE *File = Task->Files[Index];
+        OPEN_FILE *File = FileDetach(Task->Process, Index);
 
-        Task->Files[Index] = NULL;
-
-        if (File != NULL)
-        {
-            FileRelease(File);
-        }
+        FileDrop(&File);
     }
 }
 
 BOOLEAN SyscallFilesInherit(TASK *Child, TASK *Parent)
 {
+    if (Parent == NULL)
+    {
+        return TRUE;
+    }
+
+    PROCESS *Process = Parent->Process;
+    UINT64   Flags = SpinLockAcquireIRQSave(&Process->FileTableLock);
+
     for (UINTN Index = 0; Index < TASK_FILE_LIMIT; Index++)
     {
-        if (Parent != NULL && Parent->Files[Index] != NULL)
-        {
-            OPEN_FILE *File = Parent->Files[Index];
+        OPEN_FILE *File = Process->Files[Index];
 
+        if (File != NULL)
+        {
             ATOMIC_FETCH_ADD(&File->References, 1, ATOMIC_RELAXED);
-            Child->Files[Index] = File;
+            Child->Process->Files[Index] = File;
         }
     }
 
+    SpinLockReleaseIRQRestore(&Process->FileTableLock, Flags);
+
     return TRUE;
+}
+
+STATIC VOID FilePublish(PROCESS *Process, UINTN Index, OPEN_FILE *File)
+{
+    UINT64 Flags = SpinLockAcquireIRQSave(&Process->FileTableLock);
+
+    Process->Files[Index] = File;
+    Process->ReservedFiles &= ~(1U << Index);
+    SpinLockReleaseIRQRestore(&Process->FileTableLock, Flags);
 }
 
 INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
@@ -73,7 +127,7 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
     UINTN    Index;
     INT64    Result;
 
-    if (Task == NULL || Task->AddressSpace == NULL || Task->FileContext == NULL)
+    if (Task == NULL || Task->Process->AddressSpace == NULL || Task->Process->FileContext == NULL)
     {
         return -ESRCH;
     }
@@ -90,17 +144,6 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
         return Result;
     }
 
-    for (Index = 0; Index < TASK_FILE_LIMIT && Task->Files[Index] != NULL; Index++)
-    {
-    }
-
-    if (Index == TASK_FILE_LIMIT)
-    {
-        KFree(Name);
-
-        return -EMFILE;
-    }
-
     OPEN_FILE *File = KAlloc(sizeof(*File));
 
     if (File == NULL)
@@ -110,8 +153,26 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
         return -ENOMEM;
     }
 
+    PROCESS *Process = Task->Process;
+    UINT64   IRQFlags = SpinLockAcquireIRQSave(&Process->FileTableLock);
+
+    for (Index = 0; Index < TASK_FILE_LIMIT && (Process->Files[Index] != NULL || (Process->ReservedFiles & (1U << Index)) != 0); Index++)
+    {
+    }
+
+    if (Index == TASK_FILE_LIMIT)
+    {
+        SpinLockReleaseIRQRestore(&Process->FileTableLock, IRQFlags);
+        KFree(File);
+        KFree(Name);
+
+        return -EMFILE;
+    }
+
+    Process->ReservedFiles |= 1U << Index;
+    SpinLockReleaseIRQRestore(&Process->FileTableLock, IRQFlags);
     KMemSet(File, 0, sizeof(*File));
-    Result = SyscallVFSError(VFSOpen(Task->FileContext, Name, (UINT32) Flags, (UINT16) Mode, &Node));
+    Result = SyscallVFSError(VFSOpen(Task->Process->FileContext, Name, (UINT32) Flags, (UINT16) Mode, &Node));
 
     if (Result < 0)
     {
@@ -123,7 +184,7 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
 
     if ((Node.Mode & VFS_MODE_TYPE) == 0x2000U)
     {
-        File->Device = Node.Partition == Task->FileContext->Registry->DevicePartition ? DeviceFSGetNode(Node.Number) : NULL;
+        File->Device = Node.Partition == Task->Process->FileContext->Registry->DevicePartition ? DeviceFSGetNode(Node.Number) : NULL;
 
         if (File->Device == NULL)
         {
@@ -132,9 +193,9 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
             goto Failed;
         }
 
-        UINT32 Permission = Task->FileContext->Credentials.UID == Node.UID ? (Node.Mode >> 6) & 7 : Task->FileContext->Credentials.GID == Node.GID ? (Node.Mode >> 3) & 7 : Node.Mode & 7;
+        UINT32 Permission = Task->Process->FileContext->Credentials.UID == Node.UID ? (Node.Mode >> 6) & 7 : Task->Process->FileContext->Credentials.GID == Node.GID ? (Node.Mode >> 3) & 7 : Node.Mode & 7;
 
-        if (Task->FileContext->Credentials.UID != 0 && (((File->Access & FILE_READ) != 0 && (Permission & 4) == 0) || ((File->Access & FILE_WRITE) != 0 && (Permission & 2) == 0)))
+        if (Task->Process->FileContext->Credentials.UID != 0 && (((File->Access & FILE_READ) != 0 && (Permission & 4) == 0) || ((File->Access & FILE_WRITE) != 0 && (Permission & 2) == 0)))
         {
             Result = -EACCES;
 
@@ -156,7 +217,7 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
         UINT64              Cursor = 0;
         VFS_DIRECTORY_ENTRY Entry;
 
-        Result = SyscallVFSError(VFSReadDirectory(Task->FileContext, Name, &Cursor, &Entry));
+        Result = SyscallVFSError(VFSReadDirectory(Task->Process->FileContext, Name, &Cursor, &Entry));
 
         if (Result < 0)
         {
@@ -166,14 +227,15 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
 
     File->References = 1;
     File->Path = Name;
-    File->OpenContext = *Task->FileContext;
+    File->OpenContext = *Task->Process->FileContext;
     File->NamespaceGeneration = Node.NamespaceGeneration;
     File->Number = Node.Number;
     File->Partition = Node.Partition;
-    Task->Files[Index] = File;
+    FilePublish(Process, Index, File);
 
     return (INT64) Index;
 Failed:
+    FilePublish(Process, Index, NULL);
     KFree(File);
     KFree(Name);
 
@@ -238,7 +300,7 @@ STATIC INT64 FileRead(TASK *Task, OPEN_FILE *File, UINT64 Buffer, UINT64 Count)
         UINT32 Length = Count - Total > BufferSize ? BufferSize : (UINT32) (Count - Total);
         UINT32 ReadLength = 0;
 
-        Error = SyscallVFSError(VFSReadChecked(Task->FileContext, File->Path, &Node, File->Offset, Bytes, Length, &ReadLength));
+        Error = SyscallVFSError(VFSReadChecked(Task->Process->FileContext, File->Path, &Node, File->Offset, Bytes, Length, &ReadLength));
 
         if (Error < 0 || ReadLength > Length)
         {
@@ -262,7 +324,7 @@ STATIC INT64 FileRead(TASK *Task, OPEN_FILE *File, UINT64 Buffer, UINT64 Count)
                 Chunk = ReadLength - Copied;
             }
 
-            if (!VMMCopyToUser(Task->AddressSpace, Buffer + Total, Bytes + Copied, Chunk))
+            if (!VMMCopyToUser(Task->Process->AddressSpace, Buffer + Total, Bytes + Copied, Chunk))
             {
                 Error = -EFAULT;
                 break;
@@ -293,9 +355,11 @@ STATIC INT64 FileWrite(TASK *Task, OPEN_FILE *File, UINT64 Buffer, UINT64 Count)
 {
     VFS_NODE Node = {0};
 
-    if (File->Failed != 0)
+    INT64 Failed = ATOMIC_LOAD(&File->Failed, ATOMIC_RELAXED);
+
+    if (Failed != 0)
     {
-        return File->Failed;
+        return Failed;
     }
 
     if (Count == 0)
@@ -328,7 +392,7 @@ STATIC INT64 FileWrite(TASK *Task, OPEN_FILE *File, UINT64 Buffer, UINT64 Count)
             Chunk = Length - Copied;
         }
 
-        if (!VMMCopyFromUser(Task->AddressSpace, Bytes + Copied, Buffer + Copied, Chunk))
+        if (!VMMCopyFromUser(Task->Process->AddressSpace, Bytes + Copied, Buffer + Copied, Chunk))
         {
             break;
         }
@@ -353,11 +417,11 @@ STATIC INT64 FileWrite(TASK *Task, OPEN_FILE *File, UINT64 Buffer, UINT64 Count)
 
     if (File->Append)
     {
-        Result = SyscallVFSError(VFSAppendChecked(Task->FileContext, File->Path, &Node, Bytes, Length, &EndOffset));
+        Result = SyscallVFSError(VFSAppendChecked(Task->Process->FileContext, File->Path, &Node, Bytes, Length, &EndOffset));
     }
     else
     {
-        Result = SyscallVFSError(VFSWriteChecked(Task->FileContext, File->Path, &Node, File->Offset, Bytes, Length));
+        Result = SyscallVFSError(VFSWriteChecked(Task->Process->FileContext, File->Path, &Node, File->Offset, Bytes, Length));
     }
 
     KFree(Bytes);
@@ -371,7 +435,7 @@ STATIC INT64 FileWrite(TASK *Task, OPEN_FILE *File, UINT64 Buffer, UINT64 Count)
 
     if (Result == -EIO || Result == -EROFS)
     {
-        File->Failed = Result;
+        ATOMIC_STORE(&File->Failed, Result, ATOMIC_RELAXED);
     }
 
     return Result;
@@ -380,9 +444,9 @@ STATIC INT64 FileWrite(TASK *Task, OPEN_FILE *File, UINT64 Buffer, UINT64 Count)
 STATIC INT64 FileData(UINT64 FD, UINT64 Buffer, UINT64 Count, BOOLEAN Write)
 {
     TASK      *Task = LBPWRRGetCurrentTask();
-    OPEN_FILE *File;
+    OPEN_FILE *File __attribute__((cleanup(FileDrop))) = FileAcquire(Task, FD);
 
-    if (Task == NULL || Task->AddressSpace == NULL || FD >= TASK_FILE_LIMIT || (File = Task->Files[FD]) == NULL || (File->Access & (Write ? FILE_WRITE : FILE_READ)) == 0)
+    if (Task == NULL || Task->Process->AddressSpace == NULL || File == NULL || (File->Access & (Write ? FILE_WRITE : FILE_READ)) == 0)
     {
         return -EBADF;
     }
@@ -444,83 +508,10 @@ INT64 SyscallClose(UINT64 FD)
     TASK      *Task = LBPWRRGetCurrentTask();
     OPEN_FILE *File;
 
-    if (Task == NULL || FD >= TASK_FILE_LIMIT || (File = Task->Files[FD]) == NULL)
+    if (Task == NULL || FD >= TASK_FILE_LIMIT || (File = FileDetach(Task->Process, FD)) == NULL)
     {
         return -EBADF;
     }
-
-    Task->Files[FD] = NULL;
 
     return FileRelease(File);
-}
-
-INT64 SyscallSeek(UINT64 FD, INT64 Offset, UINT64 Whence)
-{
-    TASK      *Task = LBPWRRGetCurrentTask();
-    OPEN_FILE *File;
-
-    if (Task == NULL || FD >= TASK_FILE_LIMIT || (File = Task->Files[FD]) == NULL)
-    {
-        return -EBADF;
-    }
-
-    if (File->Device != NULL || File->Directory)
-    {
-        return -ESPIPE;
-    }
-
-    if (Whence > 2)
-    {
-        return -EINVAL;
-    }
-
-    INT64 Result = FileBegin(File);
-
-    if (Result < 0)
-    {
-        return Result;
-    }
-
-    UINT64 Base = Whence == 1 ? File->Offset : 0;
-
-    if (Whence == 2)
-    {
-        VFS_NODE Node;
-        Result = SyscallVFSError(VFSLookup(Task->FileContext, File->Path, &Node));
-
-        if (Result == 0)
-        {
-            if (Node.Partition != File->Partition || Node.Number != File->Number || Node.NamespaceGeneration != File->NamespaceGeneration)
-            {
-                Result = -ESTALE;
-            }
-            else
-            {
-                Base = Node.Size;
-            }
-        }
-    }
-
-    if (Result == 0)
-    {
-        INT128 Position = (INT128) Base + Offset;
-
-        if (Position < 0)
-        {
-            Result = -EINVAL;
-        }
-        else if (Position > 0x7FFFFFFFFFFFFFFFLL)
-        {
-            Result = -EOVERFLOW;
-        }
-        else
-        {
-            File->Offset = (UINT64) Position;
-            Result = (INT64) Position;
-        }
-    }
-
-    FileEnd(File);
-
-    return Result;
 }

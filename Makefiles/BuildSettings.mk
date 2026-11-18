@@ -74,7 +74,7 @@ USER_PROGRAM_CFLAGS = -target $(KERNEL_TYPE_TARGET) \
                       -fno-pie -fno-stack-protector -mcmodel=large \
                       -fno-asynchronous-unwind-tables \
                       -fno-unwind-tables \
-                      -ICommon -ILOSLibC/Include
+                      -ICommon -ILOSLibC/Include -ILibraries/Include
 
 KERN_FLOAT_CFLAGS = $(filter-out -mgeneral-regs-only,$(KERN_CFLAGS)) -msse2 -mfpmath=sse
 KERN_OBJ_CFLAGS = $(KERN_CFLAGS)

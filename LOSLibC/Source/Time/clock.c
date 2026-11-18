@@ -18,16 +18,3 @@ int nanosleep(const struct timespec *Duration, struct timespec *Remaining)
 {
     return (int) LineOSSyscallResult(LineOSSyscall2(SYSCALL_NANOSLEEP, (UINT64) Duration, (UINT64) Remaining));
 }
-
-time_t time(time_t *Result)
-{
-    struct timespec Now;
-    time_t Seconds = clock_gettime(CLOCK_REALTIME, &Now) == 0 ? Now.tv_sec : (time_t) -1;
-
-    if (Result != NULL)
-    {
-        *Result = Seconds;
-    }
-
-    return Seconds;
-}

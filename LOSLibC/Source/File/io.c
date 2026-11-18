@@ -20,8 +20,3 @@ int close(int FD)
 {
     return (int) LineOSSyscallResult(LineOSSyscall1(SYSCALL_CLOSE, (UINT64) FD));
 }
-
-off_t lseek(int FD, off_t Offset, int Whence)
-{
-    return (off_t) LineOSSyscallResult(LineOSSyscall3(SYSCALL_LSEEK, (UINT64) FD, (UINT64) Offset, (UINT64) Whence));
-}

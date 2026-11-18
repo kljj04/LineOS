@@ -18,7 +18,7 @@ INT64 SyscallClockGetTime(INT64 ClockID, UINT64 UserTime)
     CLOCK_TIME Time;
     BOOLEAN    Result;
 
-    if (Task == NULL || Task->AddressSpace == NULL)
+    if (Task == NULL || Task->Process->AddressSpace == NULL)
     {
         return -ESRCH;
     }
@@ -55,7 +55,7 @@ INT64 SyscallClockGetTime(INT64 ClockID, UINT64 UserTime)
 
     TIME_SPEC Info = {(INT64) Time.Seconds, Time.Nanoseconds};
 
-    return VMMCopyToUser(Task->AddressSpace, UserTime, &Info, sizeof(Info)) ? 0 : -EFAULT;
+    return VMMCopyToUser(Task->Process->AddressSpace, UserTime, &Info, sizeof(Info)) ? 0 : -EFAULT;
 }
 
 INT64 SyscallNanosleep(UINT64 Duration, UINT64 Remaining)
@@ -65,12 +65,12 @@ INT64 SyscallNanosleep(UINT64 Duration, UINT64 Remaining)
     TASK     *Task = LBPWRRGetCurrentTask();
     TIME_SPEC Time;
 
-    if (Task == NULL || Task->AddressSpace == NULL)
+    if (Task == NULL || Task->Process->AddressSpace == NULL)
     {
         return -ESRCH;
     }
 
-    if (!VMMCopyFromUser(Task->AddressSpace, &Time, Duration, sizeof(Time)))
+    if (!VMMCopyFromUser(Task->Process->AddressSpace, &Time, Duration, sizeof(Time)))
     {
         return -EFAULT;
     }

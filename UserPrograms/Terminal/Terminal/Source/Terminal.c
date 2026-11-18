@@ -8,7 +8,7 @@
 
 #include <TerminalScreen.h>
 #include <LOSLibC/TypeInfo.h>
-#include <TrueTypeEngine.h>
+#include <TrueType/TrueTypeEngine.h>
 #include <Display.h>
 #include <ANSI.h>
 #include <fcntl.h>

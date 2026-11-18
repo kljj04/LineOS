@@ -12,7 +12,7 @@ INT64 SyscallChown(UINT64 Path, UINT64 UID, UINT64 GID)
     TASK  *Task = LBPWRRGetCurrentTask();
     CHAR8 *Name;
 
-    if (Task == NULL || Task->FileContext == NULL)
+    if (Task == NULL || Task->Process->FileContext == NULL)
     {
         return -ESRCH;
     }
@@ -26,7 +26,7 @@ INT64 SyscallChown(UINT64 Path, UINT64 UID, UINT64 GID)
 
     if (Result == 0)
     {
-        Result = SyscallVFSError(VFSSetOwner(Task->FileContext, Name, (UINT32) UID, (UINT32) GID));
+        Result = SyscallVFSError(VFSSetOwner(Task->Process->FileContext, Name, (UINT32) UID, (UINT32) GID));
         KFree(Name);
     }
 

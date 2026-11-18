@@ -9,11 +9,14 @@
 #include <Scheduler/LBPWRRRunQueue.h>
 #include <Scheduler/LBPWRRHelper.h>
 #include <Scheduler/Task.h>
+#include <Scheduler/WaitQueue.h>
 #include <Multicore/SMP.h>
 #include <Memory/PMM.h>
 #include <Timer/TSC.h>
 #include <Arch/AMD64/CPU.h>
 #include <Memory/VMM.h>
+
+#define IA32_FS_BASE 0xC0000100U
 
 EXTERN VOID LBPWRRRestoreContext(UINT64 RSP) NORETURN;
 
@@ -132,7 +135,7 @@ VOID LBPWRRStart(VOID)
 
     SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
 
-    if (Task->AddressSpace != NULL && !VMMSwitchAddressSpace(Task->AddressSpace))
+    if (Task->Process->AddressSpace != NULL && !VMMSwitchAddressSpace(Task->Process->AddressSpace))
     {
         Panic(L"LBPWRR: Initial CR3 switch failed");
     }
@@ -140,6 +143,9 @@ VOID LBPWRRStart(VOID)
     UsageStart(CPUID);
 
     TSCSetDeadline(RDTSC() + TSCGetFrequency() / 200);
+
+    WriteMSR(IA32_FS_BASE, Task->FSBase);
+    ASM("fxrstor64 %0" ::"m"(Task->FPState) : "memory");
 
     LBPWRRRestoreContext(Task->RSP);
 }
@@ -200,6 +206,7 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *Frame)
         return (UINT64) Frame;
     }
 
+    WaitQueueExpireCPU(CPUID, RDTSC());
     Flags = SpinLockAcquireIRQSave(&RunQueue->Lock);
 
     CurrentTask = LBPWRRGetCurrentTaskFromCPU(CPUID);
@@ -218,6 +225,8 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *Frame)
     if (CurrentTask != NULL)
     {
         CurrentTask->RSP = (UINT64) Frame;
+        CurrentTask->FSBase = ReadMSR(IA32_FS_BASE);
+        ASM("fxsave64 %0" : "=m"(CurrentTask->FPState)::"memory");
 
         if (CurrentTask->State == TASK_RUNNING)
         {
@@ -330,12 +339,18 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *Frame)
 
     UsageSampleTasks();
 
-    if (NextTask != NULL && (CurrentTask == NULL ? NextTask->AddressSpace != NULL : NextTask->AddressSpace != CurrentTask->AddressSpace))
+    if (NextTask != NULL && (CurrentTask == NULL ? NextTask->Process->AddressSpace != NULL : NextTask->Process->AddressSpace != CurrentTask->Process->AddressSpace))
     {
-        if (!VMMSwitchAddressSpace(NextTask->AddressSpace))
+        if (!VMMSwitchAddressSpace(NextTask->Process->AddressSpace))
         {
             Panic(L"LBPWRR: CR3 switch failed");
         }
+    }
+
+    if (NextTask != NULL && NextTask != CurrentTask)
+    {
+        WriteMSR(IA32_FS_BASE, NextTask->FSBase);
+        ASM("fxrstor64 %0" ::"m"(NextTask->FPState) : "memory");
     }
 
     return NextRSP;

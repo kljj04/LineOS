@@ -3,7 +3,6 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <locale.h>
-#include <LOSLibC/TypeInfo.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
