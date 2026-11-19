@@ -27,3 +27,5 @@ int chown(const char *Path, uid_t UID, gid_t GID);
 
 uid_t getuid(void);
 uid_t geteuid(void);
+
+long syscall(long Number, ...);
