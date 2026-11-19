@@ -28,6 +28,12 @@ typedef struct ELF64_EXECUTION
     INT64              Error;
     TASK              *Task;
     VMM_ADDRESS_SPACE *AddressSpace;
+    CHAR8              ExecPath[4096];
+    UINT64             Entry;
+    UINT64             InterpreterBase;
+    UINT64             ProgramHeaders;
+    UINT16             ProgramHeaderCount;
+    BOOLEAN            LinuxStack;
     UINT64             PageCount;
     VOID              *Pages[ELF64_EXEC_MAX_PAGES];
 } ELF64_EXECUTION;

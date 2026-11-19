@@ -49,3 +49,5 @@ typedef struct
 BOOLEAN VMMMapUserPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, CONST UINT64 *Pages, UINT32 Count, UINT64 Flags);
 BOOLEAN VMMUnmapUserPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, CONST UINT64 *Pages, UINT32 Count);
 BOOLEAN VMMListUserPages(VMM_ADDRESS_SPACE *AddressSpace, VMM_USER_PAGE *Pages, UINT64 Capacity, UINT64 *Count);
+
+BOOLEAN VMMProtectUserPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, UINT32 Count, UINT64 Flags);

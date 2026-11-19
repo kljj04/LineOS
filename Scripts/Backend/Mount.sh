@@ -331,6 +331,7 @@ MountUpdate()
     local MountPoint=""
     local Mounted=0
     local File Command ProgramFile Program CopyPath FontFile
+    local -a LibraryFiles=()
     local -a FontFiles=()
     local -a ProgramPaths=()
     local -a ProgramModes=()
@@ -397,6 +398,15 @@ MountUpdate()
     done <<< "$Manifest"
 
     shopt -s nullglob
+    LibraryFiles=("$MountRoot"/LineOS/Libraries/*.so "$MountRoot"/LineOS/Libraries/*.so.*)
+
+    for File in "${LibraryFiles[@]}"; do
+        if [[ -L "$File" || ! -f "$File" || ! -r "$File" ]]; then
+            printf 'Invalid shared library: %s\n' "$File" >&2
+            return 1
+        fi
+    done
+
     FontFiles=("$MountRoot"/Assets/Fonts/*.ttf)
     if (( ${#FontFiles[@]} == 0 )); then
         printf 'No TTF fonts found in: %s\n' "$MountRoot/Assets/Fonts" >&2
@@ -485,6 +495,13 @@ MountUpdate()
             return 1
         fi
     fi
+
+    for File in "${LibraryFiles[@]}"; do
+        if ! MountProgramCopy "$File" "/lib" "$MountPoint" 0755; then
+            printf 'Shared library copy failed: %s\n' "$File" >&2
+            return 1
+        fi
+    done
 
     local Index=0
 

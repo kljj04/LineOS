@@ -143,6 +143,11 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
             return (UINT64) SyscallMmap(Frame->RDI, Frame->RSI, Frame->RDX, Frame->R10, (INT64) Frame->R8, Frame->R9);
         }
 
+        case SYSCALL_MPROTECT:
+        {
+            return (UINT64) SyscallMprotect(Frame->RDI, Frame->RSI, Frame->RDX);
+        }
+
         case SYSCALL_MUNMAP:
         {
             return (UINT64) SyscallMunmap(Frame->RDI, Frame->RSI);
