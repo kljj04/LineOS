@@ -12,6 +12,7 @@ include Makefiles/BootLoader.mk
 include Makefiles/Kernel.mk
 include Makefiles/LOSLibC.mk
 include Makefiles/Libraries.mk
+include Makefiles/Loader.mk
 include Makefiles/UserPrograms.mk
 
 .PHONY: All Clean Format CompileBoot LinkBoot CompileKernel LinkKernel CompileLOSLibC LinkLOSLibC CompileUserPrograms LinkUserPrograms

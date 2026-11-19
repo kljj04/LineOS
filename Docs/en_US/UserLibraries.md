@@ -19,8 +19,7 @@ process concurrently edits image contents.
 ## Userspace TrueType
 
 `Libraries/TrueType/Include` and `Libraries/TrueType/Source` contain a user port of the kernel implementation. Make
-builds `Build/Libraries/libtruetype.a` and links it for programs listing `TrueType` in `Program.cfg` under `Dependencies`. Archive members are included
-only when referenced. The user library has no PMM, VirtIO GPU, kernel lock or kernel font-symbol dependencies. Kernel
+builds `LineOS/Libraries/libtruetype.so` and links it for programs listing `TrueType` in `Program.cfg` under `Dependencies`. Programs record shared library dependencies for runtime loading. The user library has no PMM, VirtIO GPU, kernel lock or kernel font-symbol dependencies. Kernel
 TrueType and panic output remain intact. The kernel console has been removed. The Terminal user program renders bytes
 received through its terminal master descriptor; ordinary programs use `read` and `write`.
 

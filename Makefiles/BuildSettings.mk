@@ -41,10 +41,10 @@ USER_PROGRAM_OBJS = $(foreach Program,$(USER_PROGRAMS),$(USER_PROGRAM_OBJS_$(Pro
 USER_PROGRAM_OUTPUTS = $(foreach Program,$(USER_PROGRAMS),$(USER_PROGRAM_OUTPUT_$(Program)))
 USER_PROGRAM_DEPS = $(USER_PROGRAM_OBJS:.o=.d)
 
-LOSLIBC_TARGET := Build/Libraries/liblosc.a
+LOSLIBC_TARGET := LineOS/Libraries/liblosc.so
 
-LOSLIBC_C_SRCS = $(call RWildcard,LOSLibC,*.c)
-LOSLIBC_ASM_SRCS = $(call RWildcard,LOSLibC,*.S)
+LOSLIBC_C_SRCS = $(call RWildcard,Libraries/LOSLibC/Source,*.c)
+LOSLIBC_ASM_SRCS = $(call RWildcard,Libraries/LOSLibC/Source,*.S)
 
 LOSLIBC_C_OBJS = $(patsubst %.c,Build/Objects/%.o,$(LOSLIBC_C_SRCS))
 LOSLIBC_ASM_OBJS = $(patsubst %.S,Build/Objects/%.o,$(LOSLIBC_ASM_SRCS))
@@ -71,10 +71,10 @@ KERN_CFLAGS = -target $(KERNEL_TYPE_TARGET) \
 USER_PROGRAM_CFLAGS = -target $(KERNEL_TYPE_TARGET) \
                       -Wall -Wextra -nostdlib -fno-builtin \
                       -ffreestanding -mno-red-zone \
-                      -fno-pie -fno-stack-protector -mcmodel=large \
+                      -fPIC -fno-stack-protector \
                       -fno-asynchronous-unwind-tables \
                       -fno-unwind-tables \
-                      -ICommon -ILOSLibC/Include
+                      -ICommon -ILibraries/LOSLibC/Include
 
 KERN_FLOAT_CFLAGS = $(filter-out -mgeneral-regs-only,$(KERN_CFLAGS)) -msse2 -mfpmath=sse
 KERN_OBJ_CFLAGS = $(KERN_CFLAGS)
@@ -86,7 +86,6 @@ FORMAT_ALL_SRCS = $(call RWildcard,Libraries,*.c) $(call RWildcard,Libraries,*.h
                   $(call RWildcard,BootLoader,*.c) $(call RWildcard,BootLoader,*.h) \
                   $(call RWildcard,Common,*.c) $(call RWildcard,Common,*.h) \
                   $(call RWildcard,Kernel,*.c) $(call RWildcard,Kernel,*.h) \
-                  $(call RWildcard,LOSLibC,*.c) $(call RWildcard,LOSLibC,*.h) \
                   $(call RWildcard,UserPrograms,*.c) $(call RWildcard,UserPrograms,*.h)
 
 FORMAT_SRCS = $(filter-out $(FORMAT_EXCLUDE_SRCS),$(FORMAT_ALL_SRCS))

@@ -251,21 +251,13 @@ STATIC VOID *ELF64MapOwnedPage(ELF64_EXECUTION *Execution, UINT64 Address, UINT6
 
 STATIC BOOLEAN ELF64SetArguments(ELF64_EXECUTION *Execution, CONST ELF64_ARGUMENTS *Arguments);
 
-BOOLEAN ELF64Load(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUTION *Execution)
+STATIC BOOLEAN ELF64MapImage(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUTION *Execution, UINT64 Bias, UINT64 *Entry, UINT64 *ProgramHeaders)
 {
     ELF64_HEADER         Header;
     ELF64_PROGRAM_HEADER Segment;
     ELF64_PROGRAM_HEADER Other;
     CONST UINT8         *Data = FileData;
-    UINT64               PageCount = ELF64_EXEC_STACK_PAGES;
-
-    if (Execution == NULL || Execution->Task != NULL || Execution->AddressSpace != NULL || Execution->PageCount != 0)
-    {
-        return FALSE;
-    }
-
-    KMemSet(Execution, 0, sizeof(*Execution));
-    Execution->Error = -ENOEXEC;
+    UINT64               PageCount = Execution->PageCount + ELF64_EXEC_STACK_PAGES;
 
     if (!ELF64Validate(FileData, FileSize))
     {
@@ -274,19 +266,27 @@ BOOLEAN ELF64Load(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUTION *Execut
 
     KMemCpy(&Header, Data, sizeof(Header));
 
-    if (Header.Type != ELF64_ET_EXEC)
+    if (Header.Type == ELF64_ET_EXEC)
+    {
+        Bias = 0;
+    }
+
+    if (__builtin_add_overflow(Header.Entry, Bias, Entry))
     {
         return FALSE;
     }
 
+    *ProgramHeaders = 0;
+
     for (UINT32 Index = 0; Index < Header.PHNum; Index++)
     {
         KMemCpy(&Segment, Data + Header.PHOff + Index * sizeof(Segment), sizeof(Segment));
-
-        if (Segment.Type == ELF64_PT_INTERP || Segment.Type == ELF64_PT_DYNAMIC || Segment.Type == ELF64_PT_TLS)
+        if (__builtin_add_overflow(Segment.VAddr, Bias, &Segment.VAddr))
         {
             return FALSE;
         }
+
+
 
         if (Segment.Type != ELF64_PT_LOAD)
         {
@@ -296,6 +296,16 @@ BOOLEAN ELF64Load(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUTION *Execut
         if (Segment.VAddr < ELF64_EXEC_PAGE_SIZE || Segment.VAddr >= ELF64_EXEC_STACK - ELF64_EXEC_PAGE_SIZE || Segment.MemSize > ELF64_EXEC_STACK - ELF64_EXEC_PAGE_SIZE - Segment.VAddr || (Segment.Flags & ~7U) != 0 || (Segment.Flags & ELF64_PF_R) == 0 || (Segment.Flags & (ELF64_PF_W | ELF64_PF_X)) == (ELF64_PF_W | ELF64_PF_X) || (Segment.VAddr & 4095) != (Segment.Offset & 4095))
         {
             return FALSE;
+        }
+
+        if (Segment.Align > 1 && Bias % Segment.Align != 0)
+        {
+            return FALSE;
+        }
+
+        if (Header.PHOff >= Segment.Offset && Header.PHOff - Segment.Offset <= Segment.FileSize && (UINT64) Header.PHNum * sizeof(Segment) <= Segment.FileSize - (Header.PHOff - Segment.Offset))
+        {
+            *ProgramHeaders = Segment.VAddr + Header.PHOff - Segment.Offset;
         }
 
         UINT64 Start = Segment.VAddr & ~4095ULL;
@@ -311,6 +321,7 @@ BOOLEAN ELF64Load(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUTION *Execut
         for (UINT32 Previous = 0; Previous < Index; Previous++)
         {
             KMemCpy(&Other, Data + Header.PHOff + Previous * sizeof(Other), sizeof(Other));
+            Other.VAddr += Bias;
 
             if (Other.Type == ELF64_PT_LOAD && Start < ((Other.VAddr + Other.MemSize + 4095) & ~4095ULL) && (Other.VAddr & ~4095ULL) < End)
             {
@@ -321,7 +332,7 @@ BOOLEAN ELF64Load(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUTION *Execut
 
     Execution->Error = -ENOMEM;
 
-    if (!VMMCreateAddressSpace(&Execution->AddressSpace))
+    if (Execution->AddressSpace == NULL && !VMMCreateAddressSpace(&Execution->AddressSpace))
     {
         return FALSE;
     }
@@ -329,6 +340,11 @@ BOOLEAN ELF64Load(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUTION *Execut
     for (UINT32 Index = 0; Index < Header.PHNum; Index++)
     {
         KMemCpy(&Segment, Data + Header.PHOff + Index * sizeof(Segment), sizeof(Segment));
+        if (__builtin_add_overflow(Segment.VAddr, Bias, &Segment.VAddr))
+        {
+            return FALSE;
+        }
+
 
         if (Segment.Type != ELF64_PT_LOAD)
         {
@@ -339,11 +355,11 @@ BOOLEAN ELF64Load(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUTION *Execut
 
         for (UINT64 Address = Segment.VAddr & ~4095ULL; Address < End; Address += ELF64_EXEC_PAGE_SIZE)
         {
-            VOID *Page = ELF64MapOwnedPage(Execution, Address, (Segment.Flags & ELF64_PF_W) != 0 ? VMM_FLAG_WRITABLE : 0);
+            VOID *Page = ELF64MapOwnedPage(Execution, Address, ((Segment.Flags & ELF64_PF_W) != 0 ? VMM_FLAG_WRITABLE : 0) | ((Segment.Flags & ELF64_PF_X) == 0 ? VMM_FLAG_NO_EXECUTE : 0));
 
             if (Page == NULL)
             {
-                goto Failure;
+                return FALSE;
             }
 
             UINT64 Start = Address < Segment.VAddr ? Segment.VAddr : Address;
@@ -359,6 +375,35 @@ BOOLEAN ELF64Load(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUTION *Execut
                 KMemCpy((UINT8 *) Page + Start - Address, Data + Segment.Offset + Start - Segment.VAddr, CopyEnd - Start);
             }
         }
+    }
+
+    return TRUE;
+}
+
+BOOLEAN ELF64Load(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUTION *Execution)
+{
+    ELF64_HEADER Header;
+
+    if (Execution == NULL || Execution->Task != NULL || Execution->AddressSpace != NULL || Execution->PageCount != 0)
+    {
+        return FALSE;
+    }
+
+    KMemSet(Execution, 0, sizeof(*Execution));
+    Execution->Error = -ENOEXEC;
+
+    if (!ELF64Validate(FileData, FileSize))
+    {
+        return FALSE;
+    }
+
+    KMemCpy(&Header, FileData, sizeof(Header));
+    Execution->LinuxStack = Header.Type == ELF64_ET_DYN;
+    Execution->ProgramHeaderCount = Header.PHNum;
+
+    if (!ELF64MapImage(FileData, FileSize, Execution, 0x400000000000ULL, &Execution->Entry, &Execution->ProgramHeaders))
+    {
+        goto Failure;
     }
 
     for (UINT32 Index = 0; Index < ELF64_EXEC_STACK_PAGES; Index++)
@@ -383,7 +428,7 @@ BOOLEAN ELF64Load(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUTION *Execut
     Task->UserStackBase = ELF64_EXEC_STACK;
     Task->UserStackSize = ELF64_EXEC_STACK_PAGES * ELF64_EXEC_PAGE_SIZE;
     KMemSet(&Task->Context, 0, sizeof(Task->Context));
-    Task->Context.RIP = Header.Entry;
+    Task->Context.RIP = Execution->Entry;
     Task->Context.CS = GDT_USER_CODE_SELECTOR | 3;
     Task->Context.SS = GDT_USER_DATA_SELECTOR | 3;
     Task->Context.RFLAGS = 0x202;
@@ -408,6 +453,118 @@ Failure:
     ELF64Release(Execution);
 
     return FALSE;
+}
+
+STATIC BOOLEAN ELF64SetLinuxStack(ELF64_EXECUTION *Execution)
+{
+    TASK *Task = Execution->Task;
+    UINT64 Vector[2 * ELF64_ARG_MAX_COUNT + 64];
+    UINT64 Count = 0;
+    UINT64 ArgCount = Task->Context.RDI;
+    UINT64 Random[2];
+    UINT64 Top = Task->Context.RSP;
+    UINT64 EnvCount = 0;
+
+    if (!Execution->LinuxStack)
+    {
+        return TRUE;
+    }
+
+    UINT32 EAX;
+    UINT32 EBX;
+    UINT32 ECX;
+    UINT32 EDX;
+    CPUID(1, 0, &EAX, &EBX, &ECX, &EDX);
+
+    if ((ECX & (1U << 30)) == 0)
+    {
+        Execution->Error = -EOPNOTSUPP;
+        return FALSE;
+    }
+
+    for (UINT32 Index = 0; Index < 2; Index++)
+    {
+        UINT8 Ready = 0;
+
+        for (UINT32 Attempt = 0; Attempt < 256 && !Ready; Attempt++)
+        {
+            ASM("rdrand %0; setc %1" : "=r"(Random[Index]), "=qm"(Ready));
+        }
+
+        if (!Ready)
+        {
+            Execution->Error = -EAGAIN;
+            return FALSE;
+        }
+    }
+
+    UINT64 RandomAddress = (Top - sizeof(Random)) & ~15ULL;
+
+    if (!VMMCopyToUser(Execution->AddressSpace, RandomAddress, Random, sizeof(Random)))
+    {
+        return FALSE;
+    }
+
+    Vector[Count++] = ArgCount;
+
+    for (UINT64 Index = 0; Index < ArgCount; Index++)
+    {
+        if (!VMMCopyFromUser(Execution->AddressSpace, &Vector[Count++], Task->Context.RSI + Index * 8, 8))
+        {
+            return FALSE;
+        }
+    }
+
+    UINT64 PathLength = 0;
+
+    while (Execution->ExecPath[PathLength] != 0 && PathLength + 1 < sizeof(Execution->ExecPath))
+    {
+        PathLength++;
+    }
+
+    UINT64 ExecName = RandomAddress - PathLength - 1;
+
+    if (!VMMCopyToUser(Execution->AddressSpace, ExecName, Execution->ExecPath, PathLength + 1))
+    {
+        return FALSE;
+    }
+    Vector[Count++] = 0;
+
+    if (Task->Context.RDX != 0)
+    {
+        for (; EnvCount < ELF64_ARG_MAX_COUNT; EnvCount++)
+        {
+            UINT64 Pointer;
+
+            if (!VMMCopyFromUser(Execution->AddressSpace, &Pointer, Task->Context.RDX + EnvCount * 8, 8))
+            {
+                return FALSE;
+            }
+
+            if (Pointer == 0)
+            {
+                break;
+            }
+
+            Vector[Count++] = Pointer;
+        }
+    }
+
+    Vector[Count++] = 0;
+    CONST UINT64 Aux[] = {3, Execution->ProgramHeaders, 4, sizeof(ELF64_PROGRAM_HEADER), 5, Execution->ProgramHeaderCount, 6, 4096, 7, Execution->InterpreterBase, 9, Execution->Entry, 11, Task->Process->RealUID, 12, Task->Process->RealUID, 13, Task->Process->RealGID, 14, Task->Process->RealGID, 23, 0, 25, RandomAddress, 31, ExecName, 0, 0};
+    KMemCpy(Vector + Count, Aux, sizeof(Aux));
+    Count += sizeof(Aux) / sizeof(Aux[0]);
+    UINT64 Stack = (ExecName - Count * 8) & ~15ULL;
+
+    if (!VMMCopyToUser(Execution->AddressSpace, Stack, Vector, Count * 8))
+    {
+        return FALSE;
+    }
+
+    Task->Context.RSP = Stack;
+    Task->Context.RDX = 0;
+    KMemCpy((VOID *) Task->RSP, &Task->Context, sizeof(Task->Context));
+    return TRUE;
 }
 
 STATIC BOOLEAN ELF64SetArguments(ELF64_EXECUTION *Execution, CONST ELF64_ARGUMENTS *Arguments)
@@ -456,6 +613,101 @@ STATIC BOOLEAN ELF64SetArguments(ELF64_EXECUTION *Execution, CONST ELF64_ARGUMEN
     Task->Context.RSI = Vector;
     Task->Context.RSP = (Vector & ~15ULL) - 8;
     KMemCpy((VOID *) Task->RSP, &Task->Context, sizeof(Task->Context));
+
+    return TRUE;
+}
+
+STATIC BOOLEAN ELF64LoadInterpreter(VFS_CONTEXT *Context, CONST VOID *Data, UINT64 Size, ELF64_EXECUTION *Execution)
+{
+    CONST ELF64_HEADER *Header = Data;
+
+    for (UINT32 Index = 0; Index < Header->PHNum; Index++)
+    {
+        ELF64_PROGRAM_HEADER Segment;
+        KMemCpy(&Segment, (CONST UINT8 *) Data + Header->PHOff + Index * sizeof(Segment), sizeof(Segment));
+
+        if (Segment.Type != ELF64_PT_INTERP)
+        {
+            continue;
+        }
+
+        if (Segment.FileSize > 4096 || !ELF64RangeValid(Segment.Offset, Segment.FileSize, Size))
+        {
+            return FALSE;
+        }
+
+        CONST CHAR8 *Path = (CONST CHAR8 *) Data + Segment.Offset;
+
+        if (Path[0] != '/' || Path[Segment.FileSize - 1] != 0)
+        {
+            return FALSE;
+        }
+
+        for (UINT64 Position = 0; Position + 1 < Segment.FileSize; Position++)
+        {
+            if (Path[Position] == 0)
+            {
+                return FALSE;
+            }
+        }
+
+        VFS_NODE Node;
+        UINT32 ReadLength;
+
+        Execution->Error = SyscallVFSError(VFSLookup(Context, Path, &Node));
+
+        if (Execution->Error != 0)
+        {
+            return FALSE;
+        }
+
+        if (Node.Size < sizeof(ELF64_HEADER) || Node.Size > ELF64_EXEC_MAX_FILE || (Node.Mode & VFS_MODE_TYPE) != 0x8000 || (Node.Mode & 0111) == 0)
+        {
+            Execution->Error = -ENOEXEC;
+            return FALSE;
+        }
+
+        VOID *Image = KAlloc(Node.Size);
+
+        if (Image == NULL)
+        {
+            Execution->Error = -ENOMEM;
+            return FALSE;
+        }
+
+        Execution->Error = SyscallVFSError(VFSRead(Context, Path, 0, Image, (UINT32) Node.Size, &ReadLength));
+        BOOLEAN Loaded = Execution->Error == 0 && ReadLength == Node.Size && ELF64Validate(Image, Node.Size);
+        ELF64_HEADER Interpreter;
+
+        if (Loaded)
+        {
+            KMemCpy(&Interpreter, Image, sizeof(Interpreter));
+            Loaded = Interpreter.Type == ELF64_ET_DYN;
+
+            for (UINT32 PH = 0; Loaded && PH < Interpreter.PHNum; PH++)
+            {
+                ELF64_PROGRAM_HEADER Program;
+                KMemCpy(&Program, (UINT8 *) Image + Interpreter.PHOff + PH * sizeof(Program), sizeof(Program));
+                Loaded = Program.Type != ELF64_PT_INTERP;
+            }
+        }
+
+        UINT64 Entry = 0;
+        UINT64 ProgramHeaders = 0;
+        Execution->InterpreterBase = 0x400100000000ULL;
+        Loaded = Loaded && ELF64MapImage(Image, Node.Size, Execution, Execution->InterpreterBase, &Entry, &ProgramHeaders);
+        KFree(Image);
+
+        if (!Loaded)
+        {
+            Execution->Error = -ENOEXEC;
+            return FALSE;
+        }
+
+        Execution->LinuxStack = TRUE;
+        Execution->Task->Context.RIP = Entry;
+        return TRUE;
+    }
 
     return TRUE;
 }
@@ -518,6 +770,17 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONS
     if (Loaded)
     {
         Loaded = ELF64Load(Data, Node.Size, Execution);
+
+        if (Loaded)
+        {
+            Loaded = ELF64LoadInterpreter(Context, Data, Node.Size, Execution);
+
+            if (!Loaded)
+            {
+                TaskKill(Execution->Task);
+                ELF64Release(Execution);
+            }
+        }
     }
     else if (Execution->Error == 0)
     {
@@ -533,7 +796,7 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONS
         return FALSE;
     }
 
-    if (Arguments != NULL && !ELF64SetArguments(Execution, Arguments))
+    if (!ELF64SetArguments(Execution, Arguments))
     {
         TaskKill(Execution->Task);
         ELF64Release(Execution);
@@ -577,10 +840,35 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONS
     Execution->Task->Process->RealUID = Context->Credentials.UID;
     Execution->Task->Process->RealGID = Context->Credentials.GID;
 
+    if (Execution->LinuxStack && (Node.Mode & 06000U) != 0)
+    {
+        Execution->Error = -EOPNOTSUPP;
+        TaskKill(Execution->Task);
+        ELF64Release(Execution);
+        return FALSE;
+    }
+
     if ((Node.Mode & 04000U) != 0)
     {
         Execution->Task->Process->FileContext->Credentials.UID = Node.UID;
         Execution->Task->Process->FileContext->Credentials.Administrator = Node.UID == 0;
+    }
+
+    UINT64 PathLength = 0;
+
+    while (Path[PathLength] != 0 && PathLength + 1 < sizeof(Execution->ExecPath))
+    {
+        Execution->ExecPath[PathLength] = Path[PathLength];
+        PathLength++;
+    }
+
+    Execution->ExecPath[PathLength] = 0;
+
+    if (!ELF64SetLinuxStack(Execution))
+    {
+        TaskKill(Execution->Task);
+        ELF64Release(Execution);
+        return FALSE;
     }
 
     Execution->Task->Process->AssetPublisher = AssetPublisher;
@@ -652,5 +940,5 @@ BOOLEAN ELF64SetEnvironment(ELF64_EXECUTION *Execution, CONST ELF64_ARGUMENTS *E
     Task->Context.RSP = (Vector & ~15ULL) - 8;
     KMemCpy((VOID *) Task->RSP, &Task->Context, sizeof(Task->Context));
 
-    return TRUE;
+    return ELF64SetLinuxStack(Execution);
 }

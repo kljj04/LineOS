@@ -34,6 +34,6 @@ puts(gettext("Usage: cat [FILE ...]"));
 printf(gettext("[sudo] password for %s: "), Username);
 ```
 
-`LOSLibC/Source/Locale/gettext.c`의 내장 번역표에 영어 원문과 한국어 문구를 등록합니다. 표는 영어 원문 기준 strcmp 순서를 유지합니다. `LC_MESSAGES`가 `ko_KR.UTF-8`이면 한국어를 반환하고, 그 외 로켈이거나 번역이 없으면 원문을 반환합니다. 서식 인자의 개수와 타입은 원문과 동일해야 합니다. 외부 `.mo` 파일, 번역 도메인 및 복수형 API는 아직 지원하지 않습니다.
+`Libraries/LOSLibC/Source/Locale/gettext.c`의 내장 번역표에 영어 원문과 한국어 문구를 등록합니다. 표는 영어 원문 기준 strcmp 순서를 유지합니다. `LC_MESSAGES`가 `ko_KR.UTF-8`이면 한국어를 반환하고, 그 외 로켈이거나 번역이 없으면 원문을 반환합니다. 서식 인자의 개수와 타입은 원문과 동일해야 합니다. 외부 `.mo` 파일, 번역 도메인 및 복수형 API는 아직 지원하지 않습니다.
 
 셸 명령, 계정 관리 명령, 로그인 및 복구 안내가 이 API를 사용합니다. sudo는 전체 환경을 복사하지 않고, 현재 적용된 여섯 로켈 카테고리만 생성한 관리자 환경에 추가합니다. btop의 상태명은 한글 표시 폭을 반영하여 열을 맞춥니다. 숫자·CPU·PID 등 공통 단위와 식별자는 그대로 표시합니다.

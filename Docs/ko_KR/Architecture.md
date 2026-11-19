@@ -31,7 +31,7 @@ IDT의 예외·인터럽트 처리, 커널 panic, LAPIC 초기화와 EOI, HPET, 
 | `Kernel/Source/PCI/`, `VirtIO/` | 장치 공통 기반 |
 | `Kernel/Source/Disk/`, `FS/` | 블록 장치와 파일시스템 |
 | `Kernel/Source/Network/`, `Render/`, `Input/` | 네트워크·그래픽·입력 |
-| `UserPrograms/`, `LOSLibC/`, `Libraries/` | 유저 프로그램과 정적 라이브러리 |
+| `UserPrograms/`, `Libraries/LOSLibC/`, `Libraries/` | 유저 프로그램과 정적 라이브러리 |
 | `Kernel/Include/`, `Link/` | 공개 인터페이스와 링커 설정 |
 
 장치 초기화와 사용자에게 보이는 기능 실행은 별개입니다. 현재 기본 동작은 `Kernel/Kernel.c`를 기준으로 확인합니다.

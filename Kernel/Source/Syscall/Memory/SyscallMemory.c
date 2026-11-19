@@ -221,6 +221,11 @@ STATIC INT64 MemoryMap(UINT64 Address, UINT64 Length, UINT64 Protection, UINT64 
         {
             goto Failed;
         }
+
+        if (Owned)
+        {
+            KMemSet((VOID *) Region->Pages[Index], 0, 4096);
+        }
     }
 
     if (!VMMMapUserPages(Task->Process->AddressSpace, Address, Region->Pages, Count, ((Protection & PROT_WRITE) != 0 ? VMM_FLAG_WRITABLE : 0) | ((Protection & PROT_EXEC) == 0 ? VMM_FLAG_NO_EXECUTE : 0)))
@@ -330,4 +335,40 @@ INT64 SyscallMunmap(UINT64 Address, UINT64 Length)
     }
 
     return ProcessEnd(MemoryUnmap(Address, Length));
+}
+
+INT64 SyscallMprotect(UINT64 Address, UINT64 Length, UINT64 Protection)
+{
+    TASK *Task = LBPWRRGetCurrentTask();
+
+    if (Task == NULL || Task->Process->AddressSpace == NULL)
+    {
+        return -ESRCH;
+    }
+
+    if ((Address & 4095) != 0 || Length > UINT64_MAX - 4095 || (Protection & ~7ULL) != 0)
+    {
+        return -EINVAL;
+    }
+
+    if (Protection == PROT_NONE)
+    {
+        return -EOPNOTSUPP;
+    }
+
+    if (Length == 0)
+    {
+        return 0;
+    }
+
+    UINT64 Count = (Length + 4095) / 4096;
+
+    if (Count > UINT32_MAX || !ProcessBegin())
+    {
+        return -ENOMEM;
+    }
+
+    UINT64 Flags = ((Protection & PROT_WRITE) != 0 ? VMM_FLAG_WRITABLE : 0) | ((Protection & PROT_EXEC) == 0 ? VMM_FLAG_NO_EXECUTE : 0);
+
+    return ProcessEnd(VMMProtectUserPages(Task->Process->AddressSpace, Address, (UINT32) Count, Flags) ? 0 : -EBUSY);
 }

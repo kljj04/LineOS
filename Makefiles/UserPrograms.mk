@@ -14,7 +14,9 @@ ProgramLibraries = $(foreach Library,$(subst $(Comma), ,$(1)),$(USER_LIBRARY_$(L
 USER_LIBRARY_LOSLibC := $(LOSLIBC_TARGET)
 USER_PROGRAMS := $(foreach Row,$(USER_PROGRAM_MANIFEST),$(word 1,$(call ProgramFields,$(Row))))
 
-USER_CRT0_TARGET := Build/Objects/LOSLibC/crt0.o
+USER_CRT0_TARGET := Build/Objects/Libraries/LOSLibC/Runtime/crt0.o
+USER_START_TARGET := Build/Objects/Libraries/LOSLibC/Runtime/Start.o
+USER_INTERPRETER := /lib/ld-lineos-x86_64.so.1
 
 ifneq ($(strip $(Program)),)
 ifneq ($(filter $(Program),$(USER_PROGRAMS)),$(Program))
@@ -30,11 +32,13 @@ All CompileUserPrograms LinkUserPrograms UserProgram: PrepareUserPrograms
 PrepareUserPrograms:
 	@$(call RM_RF,$(USER_PROGRAM_OUTPUT_DIR))
 
-$(USER_CRT0_TARGET): LOSLibC/crt0.c Makefiles/BuildSettings.mk Makefiles/UserPrograms.mk
+Build/Objects/Libraries/LOSLibC/Runtime/%.o: Libraries/LOSLibC/Runtime/%.c Makefiles/BuildSettings.mk Makefiles/UserPrograms.mk
 	@$(call MKDIR_P,$(dir $@))
-	@$(call BUILD_PROGRESS,$<)
-	@$(CC) $(USER_PROGRAM_CFLAGS) -c $< -o $@
-	@$(call BUILD_DONE,$<)
+	@$(CC) $(USER_PROGRAM_CFLAGS) $(DEPFLAGS) -c $< -o $@
+
+Build/Objects/Libraries/LOSLibC/Runtime/%.o: Libraries/LOSLibC/Runtime/%.S Makefiles/BuildSettings.mk Makefiles/UserPrograms.mk
+	@$(call MKDIR_P,$(dir $@))
+	@$(CC) $(USER_PROGRAM_CFLAGS) $(DEPFLAGS) -c $< -o $@
 
 define USER_PROGRAM_TEMPLATE
 USER_PROGRAM_SRCS_$(1) := $(filter-out -,$(subst $(Comma), ,$(4)))
@@ -44,16 +48,16 @@ USER_PROGRAM_LIBS_$(1) := $(filter-out $(LOSLIBC_TARGET),$(call ProgramLibraries
 
 $$(USER_PROGRAM_OBJS_$(1)): private USER_PROGRAM_INCLUDE := -I$(USER_PROGRAM_ROOT)/$(1)/Include $(call ProgramLibraryIncludes,$(3))
 $$(USER_PROGRAM_OBJS_$(1)): $(USER_PROGRAM_ROOT)/$(1)/Program.cfg
-$$(USER_PROGRAM_OUTPUT_$(1)): PrepareUserPrograms $(USER_CRT0_TARGET) $$(USER_PROGRAM_OBJS_$(1)) $$(USER_PROGRAM_LIBS_$(1)) $(USER_PROGRAM_ROOT)/$(1)/Program.cfg $(shell find $(USER_PROGRAM_ROOT)/$(1) -type d) Link/UserProgram.ld Makefiles/UserPrograms.mk Scripts/Backend/Programs.sh
+$$(USER_PROGRAM_OUTPUT_$(1)): PrepareUserPrograms $(USER_CRT0_TARGET) $(USER_START_TARGET) $$(USER_PROGRAM_OBJS_$(1)) $$(USER_PROGRAM_LIBS_$(1)) $(USER_PROGRAM_ROOT)/$(1)/Program.cfg $(shell find $(USER_PROGRAM_ROOT)/$(1) -type d) Link/UserProgram.ld Makefiles/UserPrograms.mk Scripts/Backend/Programs.sh
 	@$$(call MKDIR_P,$$(dir $$@))
 	@$$(call BUILD_PROGRESS,$$@)
-	@$$(LD) -static -T Link/UserProgram.ld -e _Start -o $$@ $(USER_CRT0_TARGET) $$(USER_PROGRAM_OBJS_$(1)) --start-group $$(USER_PROGRAM_LIBS_$(1)) --end-group
+	@$$(LD) -pie -z max-page-size=4096 --dynamic-linker $(USER_INTERPRETER) -z noexecstack -e _Start -o $$@ $(USER_CRT0_TARGET) $(USER_START_TARGET) $$(USER_PROGRAM_OBJS_$(1)) --start-group $$(USER_PROGRAM_LIBS_$(1)) --end-group
 	@$$(call BUILD_DONE,$$@)
 endef
 
 $(foreach Row,$(USER_PROGRAM_MANIFEST),$(if $(filter $(word 1,$(call ProgramFields,$(Row))),$(USER_PROGRAMS)),$(eval $(call USER_PROGRAM_TEMPLATE,$(word 1,$(call ProgramFields,$(Row))),$(word 2,$(call ProgramFields,$(Row))),$(word 3,$(call ProgramFields,$(Row))),$(word 4,$(call ProgramFields,$(Row)))))))
 
-CompileUserPrograms: $(USER_PROGRAM_OBJS) $(USER_CRT0_TARGET)
+CompileUserPrograms: $(USER_PROGRAM_OBJS) $(USER_CRT0_TARGET) $(USER_START_TARGET)
 LinkUserPrograms: $(USER_PROGRAM_OUTPUTS)
 UserProgram: $(USER_PROGRAM_OUTPUTS)
 
@@ -69,4 +73,4 @@ Build/Objects/UserPrograms/%.o: UserPrograms/%.S Makefiles/BuildSettings.mk Make
 	@$(CC) $(USER_PROGRAM_CFLAGS) $(USER_PROGRAM_INCLUDE) -I$(dir $<) $(DEPFLAGS) -c $< -o $@
 	@$(call BUILD_DONE,$<)
 
--include $(USER_PROGRAM_DEPS)
+-include $(USER_PROGRAM_DEPS) $(USER_CRT0_TARGET:.o=.d) $(USER_START_TARGET:.o=.d)

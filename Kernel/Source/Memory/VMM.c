@@ -1176,7 +1176,7 @@ BOOLEAN VMMMapAddressSpacePage(VMM_ADDRESS_SPACE *AddressSpace, UINT64 VirtAddr,
         return FALSE;
     }
 
-    if ((Flags & VMM_FLAG_USER) == 0 || (Flags & ~(VMM_FLAG_USER | VMM_FLAG_WRITABLE)) != 0)
+    if ((Flags & VMM_FLAG_USER) == 0 || (Flags & ~(VMM_FLAG_USER | VMM_FLAG_WRITABLE | VMM_FLAG_NO_EXECUTE)) != 0)
     {
         return FALSE;
     }
@@ -1840,6 +1840,43 @@ Cleanup:
     SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
 
     return FALSE;
+}
+
+BOOLEAN VMMProtectUserPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, UINT32 Count, UINT64 Flags)
+{
+    UINT64 IRQFlags;
+
+    if (Count == 0 || Address < 4096 || (Address & 4095) != 0 || Address >= (1ULL << 47) || Count > ((1ULL << 47) - Address) / 4096 || (Flags & ~(VMM_FLAG_WRITABLE | VMM_FLAG_NO_EXECUTE)) != 0 || !VMMWaitLock(&IRQFlags))
+    {
+        return FALSE;
+    }
+
+    if (!VMMUserMutable(AddressSpace))
+    {
+        SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+        return FALSE;
+    }
+
+    for (UINT32 Index = 0; Index < Count; Index++)
+    {
+        UINT64 *Entry = VMMAddressSpaceLeaf(AddressSpace, Address + (UINT64) Index * 4096);
+
+        if (Entry == NULL || (*Entry & (VMM_PAGE_PRESENT | VMM_PAGE_USER)) != (VMM_PAGE_PRESENT | VMM_PAGE_USER))
+        {
+            SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+            return FALSE;
+        }
+    }
+
+    for (UINT32 Index = 0; Index < Count; Index++)
+    {
+        UINT64 *Entry = VMMAddressSpaceLeaf(AddressSpace, Address + (UINT64) Index * 4096);
+        *Entry = (*Entry & ~(VMM_FLAG_WRITABLE | VMM_FLAG_NO_EXECUTE)) | Flags;
+    }
+
+    VMMUserReload(AddressSpace);
+    SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
+    return TRUE;
 }
 
 BOOLEAN VMMUnmapUserPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, CONST UINT64 *Pages, UINT32 Count)

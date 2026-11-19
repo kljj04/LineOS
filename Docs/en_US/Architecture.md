@@ -30,7 +30,7 @@ Application processors enter `APMain()`, initialize their CPU-local facilities, 
 | `Kernel/Source/Disk/`, `FS/` | Block devices, GPT, EXT2 and VFS |
 | `Kernel/Source/Network/` | VirtIO-Net and network protocols |
 | `Kernel/Source/Render/`, `Input/` | GPU, fonts and input devices |
-| `UserPrograms/`, `LOSLibC/`, `Libraries/` | Userspace programs and static libraries |
+| `UserPrograms/`, `Libraries/LOSLibC/`, `Libraries/` | Userspace programs and static libraries |
 | `Kernel/Include/` | Kernel interfaces |
 | `Link/` | Kernel linker configuration |
 
