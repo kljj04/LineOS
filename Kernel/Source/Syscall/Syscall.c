@@ -303,6 +303,11 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
             return 0;
         }
 
+        case SYSCALL_WRITEV:
+        {
+            return (UINT64) SyscallFileWritev(Frame->RDI, Frame->RSI, Frame->RDX);
+        }
+
         case SYSCALL_WRITE:
         {
             return (UINT64) SyscallFileWrite(Frame->RDI, Frame->RSI, Frame->RDX);

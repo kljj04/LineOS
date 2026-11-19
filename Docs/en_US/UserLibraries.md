@@ -2,6 +2,29 @@
 
 [Documentation index](README.md) · [한국어](../ko_KR/UserLibraries.md) · [English](../en_US/UserLibraries.md)
 
+
+## Library build configuration
+
+Ordinary libraries use `Libraries/<Name>/Library.cfg`, headers in `Include/`, and C or assembly sources in `Source/`. `Enable` defaults to `true`; optional `CFlags` apply to generic compilation. Generic builds produce `LineOS/Libraries/lib<lowercase-name>.so`.
+
+A library with its own build system can use:
+
+```ini
+Enable = true
+IncludedMakefile = Makefile
+so = lib/libc.so
+```
+
+The backend runs `$(MAKE) -C Libraries/<Name> -f Makefile` on every build of this library target. Nested relative Makefile paths are supported; the working directory remains the library root. Failure stops the parent build, and recursive make preserves jobserver and dry-run behavior. Generic source discovery, object compilation and shared-library linking are skipped.
+
+The Makefile must exist as a regular file. Paths must be relative, use ASCII letters, digits, underscores, hyphens or dots, and each component must begin with a letter, digit or underscore. Empty components, dot/dot-dot components and symlink traversal are rejected. Configuration rejects unknown or duplicate keys and is parsed as data; blank lines, full-line comments and CRLF are accepted.
+
+The internal manifest has six nonempty pipe-separated fields: name, library directory, encoded C flags, comma-separated sources, included Makefile, and optional `so` path. `-` denotes an absent value; custom builds have no generic sources. Spaces and tabs in C flags are encoded as commas.
+
+`so` optionally copies one `.so` output to `LineOS/Libraries/` with its original basename after successful make. The source is relative to the library root and is checked for existence and symlink traversal after make, so clean builds are supported. Missing outputs and copy failures stop the build; output name collisions are rejected. Existing image deployment copies this directory into `/lib`. Omit literal backticks around the configured path. A configured `so` also exports a link target for `Program.cfg` dependencies, with a build dependency on the custom make invocation. Custom builds without `so` still have no exported link target. Custom header paths are not inferred.
+
+`Dependencies = musl` selects musl headers, `Scrt1.o`/`crti.o`/`crtn.o`, entry `_start`, and `/lib/libc.so` as interpreter; it omits LOSLibC headers, startup and linkage. For now musl must be the only dependency: the bundled generic libraries are built against LOSLibC. The existing `hello` command uses this path. The copied `libc.so` doubles as musl’s dynamic loader, so no loader alias is required. Run `bash Scripts/Validation/Musl.sh` to build the runtime fixture. A copied-image 2-vCPU KVM test verified allocator/TLS/errno/stdio, memory protection, fork/unmap and `hello` output; this does not establish full musl/POSIX compatibility.
+
 ## Deployment
 
 Set `CopyPath=/usr/bin/` in `UserPrograms/<ProgramName>/Program.conf` to copy `LineOS/Programs/<ProgramName>.lix` into
@@ -87,7 +110,7 @@ objects, glyph caches, allocators and surfaces remain private. The asset API doe
 
 The current `syscall`/`sysretq` dispatch exposes exit, read, write, open, close, getpid, display information/presentation, fork/execve, chdir, stat/lstat/fstat,
 and asset publication/acquisition/release. Yield hands the CPU to the scheduler and returns 0 on success. File and
-process interfaces expose the subset described here. Raw calls return Linux negative errors; libc returns -1 and sets `errno` for errors in -4095..-1. `LOSOutputStreamRead` has been removed. Number 10 is reserved for Linux `mprotect` and is currently unsupported.
+process interfaces expose the subset described here. Raw calls return Linux negative errors; libc returns -1 and sets `errno` for errors in -4095..-1. `LOSOutputStreamRead` has been removed. `mprotect` (10), `writev` (20), and the 64-bit no-op `O_LARGEFILE` open flag are supported.
 
 `RAX` carries the syscall number and result. Arguments use `RDI`, `RSI`, `RDX`, `R10`, `R8`, and `R9`.
 `RCX` and `R11` are clobbered. Each CPU configures the entry MSRs and switches to the current task's kernel stack.
@@ -104,6 +127,8 @@ The former user-callable `int 0x80` gate is removed. Standard calls use Linux x8
 | `lstat` | 6 |
 | `mmap` | 9 |
 | `munmap` | 11 |
+| `mprotect` | 10 |
+| `writev` | 20 |
 | `ioctl` | 16 |
 | `sched_yield` | 24 |
 | `getpid` | 39 |

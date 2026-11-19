@@ -8,6 +8,7 @@
 
 INT64   SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode);
 INT64   SyscallRead(UINT64 FD, UINT64 Buffer, UINT64 Count);
+INT64   SyscallFileWritev(UINT64 FD, UINT64 Vectors, UINT64 Count);
 INT64   SyscallFileWrite(UINT64 FD, UINT64 Buffer, UINT64 Count);
 INT64   SyscallClose(UINT64 FD);
 BOOLEAN SyscallFilesInherit(TASK *Child, TASK *Parent);

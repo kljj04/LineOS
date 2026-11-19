@@ -2,6 +2,29 @@
 
 [문서 목록](README.md) · [한국어](../ko_KR/UserLibraries.md) · [English](../en_US/UserLibraries.md)
 
+
+## 라이브러리 빌드 설정
+
+일반 라이브러리는 `Libraries/<Name>/Library.cfg`, `Include/` 헤더, `Source/`의 C·어셈블리 소스를 사용합니다. `Enable` 기본값은 `true`이며, 선택적인 `CFlags`는 일반 컴파일에 적용합니다. 결과물은 `LineOS/Libraries/lib<소문자 이름>.so`입니다.
+
+자체 빌드 시스템을 사용하는 라이브러리는 다음처럼 설정합니다.
+
+```ini
+Enable = true
+IncludedMakefile = Makefile
+so = lib/libc.so
+```
+
+백엔드는 해당 라이브러리 타깃을 빌드할 때마다 `$(MAKE) -C Libraries/<Name> -f Makefile`을 실행합니다. 하위 디렉터리의 상대 Makefile 경로도 지원하며 작업 디렉터리는 라이브러리 루트입니다. 실패는 상위 빌드에 전달되고 병렬 빌드와 dry-run 설정도 재귀 make에 전달됩니다. 일반 소스 탐색·오브젝트 컴파일·공유 라이브러리 링크는 건너뜁니다.
+
+Makefile은 실제 일반 파일이어야 합니다. 경로는 상대 경로이며 ASCII 영문·숫자·밑줄·하이픈·점을 허용하고 각 구성요소는 영문·숫자·밑줄로 시작해야 합니다. 빈 구성요소, 단독 점·두 점, 심볼릭 링크 경유는 거부합니다. 설정은 데이터로 파싱하며 알 수 없는 키와 중복 키를 거부합니다. 빈 줄·전체 행 주석·CRLF는 허용합니다.
+
+내부 매니페스트는 이름, 라이브러리 디렉터리, 인코딩한 C 플래그, 쉼표로 구분한 소스, 지정 Makefile, 선택적인 `so` 경로의 여섯 필드를 파이프로 구분합니다. 빈 값은 `-`로 표시하며 자체 빌드에는 일반 소스가 없습니다. C 플래그의 공백과 탭은 쉼표로 인코딩합니다.
+
+`so`는 make 성공 후 지정한 `.so` 파일 하나를 원래 파일명으로 `LineOS/Libraries/`에 복사하는 선택 옵션입니다. 경로는 라이브러리 루트 기준이며 실제 설정값에는 백틱을 넣지 않습니다. 파일 존재와 심볼릭 링크 경유는 make 이후 검사하므로 최초 빌드도 지원합니다. 파일 누락·복사 실패는 빌드를 중단하고 결과물 이름 충돌도 거부합니다. 기존 이미지 배포 단계에서 이 디렉터리를 `/lib`로 복사합니다. `so`를 지정하면 `Program.cfg` 의존성이 사용할 링크 타깃도 등록하고 자체 make가 끝난 뒤 링크합니다. `so`가 없는 자체 빌드는 링크 타깃을 제공하지 않습니다. 헤더 경로는 자동 추론하지 않습니다.
+
+`Dependencies = musl`이면 musl 헤더, `Scrt1.o`·`crti.o`·`crtn.o`, `_start` 진입점과 `/lib/libc.so` 인터프리터를 선택하고 LOSLibC 헤더·시작 코드·링크를 제외합니다. 기존 일반 라이브러리는 LOSLibC로 빌드하므로 현재 musl은 단독 의존성으로만 지원합니다. `hello` 명령이 이 경로를 사용합니다. `libc.so` 자체가 musl 동적 로더이므로 별도 로더 별칭은 필요하지 않습니다. `bash Scripts/Validation/Musl.sh`로 실행 검증용 프로그램을 빌드할 수 있습니다. 복사 이미지의 2-vCPU KVM에서 할당·TLS·errno·stdio, 메모리 보호, fork·해제 및 hello 출력을 검증했으며 musl·POSIX 전체 호환을 뜻하지는 않습니다.
+
 ## 프로그램 배치
 
 프로그램별 `UserPrograms/<ProgramName>/Program.conf`에 다음 값을 지정합니다.
@@ -82,7 +105,7 @@ if (LOSAssetAcquire("Fonts/JetBrainsMono", &Asset) == 0)
 ## 시스템 호출 인터페이스
 
 현재 `syscall`/`sysretq` 호출은 종료, 읽기, 쓰기, 열기, 닫기, PID 조회, 화면 정보·표시, fork/execve, chdir, stat/lstat/fstat와 에셋 등록·획득·해제를 제공합니다. yield는 스케줄러에 CPU를 양보하고 성공 시 0을 반환합니다.
-파일과 프로세스 인터페이스는 여기서 설명한 부분집합입니다. 커널은 Linux의 음수 오류 번호를 반환하고 libc는 -4095~-1을 `errno`로 변환하여 -1을 반환합니다. `LOSOutputStreamRead`는 제거했습니다. 번호 10은 Linux `mprotect`용으로 비워 두며 현재는 지원하지 않습니다.
+파일과 프로세스 인터페이스는 여기서 설명한 부분집합입니다. 커널은 Linux의 음수 오류 번호를 반환하고 libc는 -4095~-1을 `errno`로 변환하여 -1을 반환합니다. `LOSOutputStreamRead`는 제거했습니다. `mprotect`(10), `writev`(20)와 64비트에서 무시하는 `O_LARGEFILE` open 플래그를 지원합니다.
 
 `RAX`는 시스템 호출 번호와 반환값을 전달하며, 인자는 `RDI`, `RSI`, `RDX`, `R10`, `R8`, `R9`를 사용합니다. `RCX`와 `R11`은 보존하지 않습니다.
 각 CPU에서 진입 MSR을 설정하고 현재 태스크의 커널 스택으로 전환합니다. 기존 사용자 호출용 `int 0x80` 게이트는 제거했습니다. 표준 호출 번호는 Linux x86-64와 일치합니다. LineOS 전용 호출은 1024번부터 사용하며, 기존 화면·에셋 호출은 유지합니다. 장치 `ioctl`, 익명 private `mmap`, `/dev/fb0` shared `mmap`을 구현했으며 [DeviceFS와 프로세스 ABI](DeviceFS.md)에 범위를 설명합니다.
@@ -98,6 +121,8 @@ if (LOSAssetAcquire("Fonts/JetBrainsMono", &Asset) == 0)
 | `lstat` | 6 |
 | `mmap` | 9 |
 | `munmap` | 11 |
+| `mprotect` | 10 |
+| `writev` | 20 |
 | `ioctl` | 16 |
 | `sched_yield` | 24 |
 | `getpid` | 39 |

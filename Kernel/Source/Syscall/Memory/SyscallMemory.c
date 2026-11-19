@@ -127,7 +127,7 @@ STATIC INT64 MemoryMap(UINT64 Address, UINT64 Length, UINT64 Protection, UINT64 
         return -EINVAL;
     }
 
-    if ((Flags & ~(MAP_PRIVATE | MAP_SHARED | MAP_ANONYMOUS)) != 0 || Protection == PROT_NONE)
+    if ((Flags & ~(MAP_PRIVATE | MAP_SHARED | MAP_ANONYMOUS)) != 0)
     {
         return -EOPNOTSUPP;
     }
@@ -228,7 +228,7 @@ STATIC INT64 MemoryMap(UINT64 Address, UINT64 Length, UINT64 Protection, UINT64 
         }
     }
 
-    if (!VMMMapUserPages(Task->Process->AddressSpace, Address, Region->Pages, Count, ((Protection & PROT_WRITE) != 0 ? VMM_FLAG_WRITABLE : 0) | ((Protection & PROT_EXEC) == 0 ? VMM_FLAG_NO_EXECUTE : 0)))
+    if (!VMMMapUserPages(Task->Process->AddressSpace, Address, Region->Pages, Count, ((Protection & PROT_WRITE) != 0 ? VMM_FLAG_WRITABLE : 0) | ((Protection & PROT_EXEC) == 0 ? VMM_FLAG_NO_EXECUTE : 0) | (Protection == PROT_NONE ? VMM_FLAG_NO_ACCESS : 0)))
     {
         goto Failed;
     }
@@ -351,11 +351,6 @@ INT64 SyscallMprotect(UINT64 Address, UINT64 Length, UINT64 Protection)
         return -EINVAL;
     }
 
-    if (Protection == PROT_NONE)
-    {
-        return -EOPNOTSUPP;
-    }
-
     if (Length == 0)
     {
         return 0;
@@ -368,7 +363,7 @@ INT64 SyscallMprotect(UINT64 Address, UINT64 Length, UINT64 Protection)
         return -ENOMEM;
     }
 
-    UINT64 Flags = ((Protection & PROT_WRITE) != 0 ? VMM_FLAG_WRITABLE : 0) | ((Protection & PROT_EXEC) == 0 ? VMM_FLAG_NO_EXECUTE : 0);
+    UINT64 Flags = ((Protection & PROT_WRITE) != 0 ? VMM_FLAG_WRITABLE : 0) | ((Protection & PROT_EXEC) == 0 ? VMM_FLAG_NO_EXECUTE : 0) | (Protection == PROT_NONE ? VMM_FLAG_NO_ACCESS : 0);
 
     return ProcessEnd(VMMProtectUserPages(Task->Process->AddressSpace, Address, (UINT32) Count, Flags) ? 0 : -EBUSY);
 }

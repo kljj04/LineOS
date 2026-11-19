@@ -9,7 +9,8 @@
 
 #include <Syscall/Memory/Memory.h>
 
-#define FILE_BUFFER_SIZE (1024U * 1024U)
+#define FILE_OPEN_LARGEFILE 0100000ULL
+#define FILE_BUFFER_SIZE    (1024U * 1024U)
 
 STATIC INT64 FileRelease(OPEN_FILE *File)
 {
@@ -131,6 +132,8 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
     {
         return -ESRCH;
     }
+
+    Flags &= ~FILE_OPEN_LARGEFILE;
 
     if (Flags > UINT32_MAX || (Flags & ~(VFS_OPEN_ACCMODE | VFS_OPEN_CREATE | VFS_OPEN_EXCLUSIVE | VFS_OPEN_TRUNCATE | VFS_OPEN_APPEND)) != 0 || (Flags & VFS_OPEN_ACCMODE) == 3 || ((Flags & VFS_OPEN_CREATE) != 0 && Mode > 0777))
     {
@@ -501,6 +504,107 @@ INT64 SyscallRead(UINT64 FD, UINT64 Buffer, UINT64 Count)
 INT64 SyscallFileWrite(UINT64 FD, UINT64 Buffer, UINT64 Count)
 {
     return FileData(FD, Buffer, Count, TRUE);
+}
+
+INT64 SyscallFileWritev(UINT64 FD, UINT64 Vectors, UINT64 Count)
+{
+    typedef struct
+    {
+        UINT64 Buffer;
+        UINT64 Length;
+    } FILE_VECTOR;
+
+    TASK        *Task = LBPWRRGetCurrentTask();
+    OPEN_FILE   *File __attribute__((cleanup(FileDrop))) = FileAcquire(Task, FD);
+    FILE_VECTOR *Items;
+    UINT64       Length = 0;
+    INT64        Total = 0;
+
+    if (Task == NULL || Task->Process->AddressSpace == NULL || File == NULL || (File->Access & FILE_WRITE) == 0)
+    {
+        return -EBADF;
+    }
+    if (File->Directory)
+    {
+        return -EISDIR;
+    }
+    if (Count > 1024)
+    {
+        return -EINVAL;
+    }
+    if (Count == 0)
+    {
+        return 0;
+    }
+    Items = KAlloc(Count * sizeof(*Items));
+    if (Items == NULL)
+    {
+        return -ENOMEM;
+    }
+    if (!VMMCopyFromUser(Task->Process->AddressSpace, Items, Vectors, Count * sizeof(*Items)))
+    {
+        KFree(Items);
+        return -EFAULT;
+    }
+    for (UINT64 Index = 0; Index < Count; Index++)
+    {
+        if (Items[Index].Length > INT64_MAX - Length)
+        {
+            KFree(Items);
+            return -EINVAL;
+        }
+        Length += Items[Index].Length;
+    }
+    BOOLEAN Serialized = File->Device == NULL || File->Device->Seekable;
+    INT64   Result = Serialized ? FileBegin(File) : 0;
+    if (Result < 0)
+    {
+        KFree(Items);
+        return Result;
+    }
+    for (UINT64 Index = 0; Index < Count && Total < 0x7FFFF000; Index++)
+    {
+        UINT64 Size = Items[Index].Length;
+        if (Size == 0)
+        {
+            continue;
+        }
+        if (Size > 0x7FFFF000ULL - (UINT64) Total)
+        {
+            Size = 0x7FFFF000ULL - (UINT64) Total;
+        }
+        if (Items[Index].Buffer >= (1ULL << 47) || Size > (1ULL << 47) - Items[Index].Buffer)
+        {
+            Result = -EFAULT;
+        }
+        else if (File->Device != NULL)
+        {
+            Result = File->Device->Operations->Write == NULL ? -EINVAL : File->Device->Operations->Write(Task, File->DeviceState, &File->Offset, Items[Index].Buffer, Size);
+        }
+        else
+        {
+            Result = FileWrite(Task, File, Items[Index].Buffer, Size);
+        }
+        if (Result < 0)
+        {
+            if (Total == 0)
+            {
+                Total = Result;
+            }
+            break;
+        }
+        Total += Result;
+        if ((UINT64) Result < Size)
+        {
+            break;
+        }
+    }
+    if (Serialized)
+    {
+        FileEnd(File);
+    }
+    KFree(Items);
+    return Total;
 }
 
 INT64 SyscallClose(UINT64 FD)

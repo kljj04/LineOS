@@ -8,3 +8,6 @@ __pycache__/
 Tools/
 compile_commands.json
 Tests/
+Libraries/musl/dist
+Libraries/musl/obj
+Libraries/musl/config.mak

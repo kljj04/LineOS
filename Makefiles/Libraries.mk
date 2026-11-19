@@ -10,11 +10,12 @@ endif
 Comma := ,
 LibraryFields = $(subst |, ,$(1))
 LIBRARIES := $(foreach Row,$(LIBRARY_MANIFEST),$(word 1,$(call LibraryFields,$(Row))))
-LIBRARY_TARGETS = $(foreach Library,$(LIBRARIES),$(USER_LIBRARY_$(Library)))
+LIBRARY_TARGETS = $(foreach Library,$(LIBRARIES),$(LIBRARY_TARGET_$(Library)))
 LIBRARY_OBJS = $(foreach Library,$(LIBRARIES),$(LIBRARY_OBJS_$(Library)))
 
 define LIBRARY_TEMPLATE
 USER_LIBRARY_$(1) := LineOS/Libraries/lib$(shell printf '%s' '$(1)' | tr '[:upper:]' '[:lower:]').so
+LIBRARY_TARGET_$(1) = $$(USER_LIBRARY_$(1))
 USER_LIBRARY_INCLUDE_$(1) := -ILibraries/$(2)/Include
 LIBRARY_SRCS_$(1) := $(filter-out -,$(subst $(Comma), ,$(4)))
 LIBRARY_OBJS_$(1) := $$(addprefix Build/Objects/,$$(addsuffix .o,$$(basename $$(LIBRARY_SRCS_$(1)))))
@@ -29,7 +30,20 @@ $$(USER_LIBRARY_$(1)): $$(LIBRARY_OBJS_$(1)) $(LOSLIBC_TARGET) Libraries/$(2)/Li
 	@$$(call BUILD_DONE,$$@)
 endef
 
-$(foreach Row,$(LIBRARY_MANIFEST),$(eval $(call LIBRARY_TEMPLATE,$(word 1,$(call LibraryFields,$(Row))),$(word 2,$(call LibraryFields,$(Row))),$(word 3,$(call LibraryFields,$(Row))),$(word 4,$(call LibraryFields,$(Row))))))
+define LIBRARY_MAKEFILE_TEMPLATE
+LIBRARY_TARGET_$(1) := LibraryMakefile_$(1)
+$(if $(filter-out -,$(6)),USER_LIBRARY_$(1) := LineOS/Libraries/$(notdir $(6)))
+$(if $(filter-out -,$(6)),USER_LIBRARY_LINK_$(1) := -LLineOS/Libraries -l:$(notdir $(6)))
+$(if $(filter-out -,$(6)),LineOS/Libraries/$(notdir $(6)): LibraryMakefile_$(1))
+.PHONY: LibraryMakefile_$(1)
+LibraryMakefile_$(1): Libraries/$(2)/Library.cfg Libraries/$(2)/$(5)
+	@$$(call BUILD_PROGRESS,Libraries/$(2)/$(5))
+	+$$(MAKE) -C Libraries/$(2) -f $(5)
+	$(if $(filter-out -,$(6)),@bash Scripts/Backend/Libraries.sh --copy-so . $(2) $(6))
+	@$$(call BUILD_DONE,Libraries/$(2)/$(5))
+endef
+
+$(foreach Row,$(LIBRARY_MANIFEST),$(eval $(call $(if $(filter -,$(word 5,$(call LibraryFields,$(Row)))),LIBRARY_TEMPLATE,LIBRARY_MAKEFILE_TEMPLATE),$(word 1,$(call LibraryFields,$(Row))),$(word 2,$(call LibraryFields,$(Row))),$(word 3,$(call LibraryFields,$(Row))),$(word 4,$(call LibraryFields,$(Row))),$(word 5,$(call LibraryFields,$(Row))),$(word 6,$(call LibraryFields,$(Row))))))
 
 Build/Objects/Libraries/%.o: Libraries/%.c Makefiles/BuildSettings.mk Makefiles/Libraries.mk
 	@$(call MKDIR_P,$(dir $@))

@@ -1176,7 +1176,7 @@ BOOLEAN VMMMapAddressSpacePage(VMM_ADDRESS_SPACE *AddressSpace, UINT64 VirtAddr,
         return FALSE;
     }
 
-    if ((Flags & VMM_FLAG_USER) == 0 || (Flags & ~(VMM_FLAG_USER | VMM_FLAG_WRITABLE | VMM_FLAG_NO_EXECUTE)) != 0)
+    if ((Flags & VMM_FLAG_USER) == 0 || (Flags & ~(VMM_FLAG_USER | VMM_FLAG_WRITABLE | VMM_FLAG_NO_EXECUTE | VMM_FLAG_NO_ACCESS)) != 0)
     {
         return FALSE;
     }
@@ -1271,7 +1271,7 @@ BOOLEAN VMMMapAddressSpacePage(VMM_ADDRESS_SPACE *AddressSpace, UINT64 VirtAddr,
             goto Cleanup;
         }
 
-        Table[Index] = PhysAddr | VMM_PAGE_PRESENT | Flags;
+        Table[Index] = PhysAddr | VMM_PAGE_PRESENT | ((Flags & VMM_FLAG_NO_ACCESS) != 0 ? (Flags & ~VMM_FLAG_USER) : Flags);
     }
 
     AddressSpace->Root[RootIndex] = (UINT64) Root | (RootEntry & (0x18ULL | (1ULL << 5))) | VMM_PAGE_PRESENT | VMM_PAGE_USER | VMM_PAGE_WRITABLE;
@@ -1315,7 +1315,7 @@ BOOLEAN VMMUnmapAddressSpacePage(VMM_ADDRESS_SPACE *AddressSpace, UINT64 VirtAdd
 
     Entry = VMMAddressSpaceLeaf(AddressSpace, VirtAddr);
 
-    if (Entry != NULL && (*Entry & (VMM_PAGE_PRESENT | VMM_PAGE_USER)) == (VMM_PAGE_PRESENT | VMM_PAGE_USER))
+    if (Entry != NULL && (*Entry & VMM_PAGE_PRESENT) != 0 && (*Entry & (VMM_PAGE_USER | VMM_FLAG_NO_ACCESS)) != 0)
     {
         *PhysAddr = *Entry & VMM_PAGE_MASK;
         *Entry = 0;
@@ -1762,7 +1762,7 @@ BOOLEAN VMMMapUserPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, CONST U
     UINT64 PhysMask;
     UINT32 Mapped = 0;
 
-    if (Pages == NULL || Count == 0 || Address < 4096 || (Address & 4095) != 0 || Address >= (1ULL << 47) || Count > ((1ULL << 47) - Address) / 4096 || (Flags & ~(VMM_FLAG_WRITABLE | VMM_FLAG_NO_EXECUTE)) != 0 || !VMMGetPhysicalAddressMask(&PhysMask) || !VMMWaitLock(&IRQFlags))
+    if (Pages == NULL || Count == 0 || Address < 4096 || (Address & 4095) != 0 || Address >= (1ULL << 47) || Count > ((1ULL << 47) - Address) / 4096 || (Flags & ~(VMM_FLAG_WRITABLE | VMM_FLAG_NO_EXECUTE | VMM_FLAG_NO_ACCESS)) != 0 || !VMMGetPhysicalAddressMask(&PhysMask) || !VMMWaitLock(&IRQFlags))
     {
         return FALSE;
     }
@@ -1816,7 +1816,7 @@ BOOLEAN VMMMapUserPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, CONST U
             break;
         }
 
-        Table[Index] = Pages[Mapped] | VMM_PAGE_PRESENT | VMM_PAGE_USER | Flags;
+        Table[Index] = Pages[Mapped] | VMM_PAGE_PRESENT | Flags | ((Flags & VMM_FLAG_NO_ACCESS) != 0 ? 0 : VMM_PAGE_USER);
     }
 
     if (Mapped == Count)
@@ -1846,7 +1846,7 @@ BOOLEAN VMMProtectUserPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, UIN
 {
     UINT64 IRQFlags;
 
-    if (Count == 0 || Address < 4096 || (Address & 4095) != 0 || Address >= (1ULL << 47) || Count > ((1ULL << 47) - Address) / 4096 || (Flags & ~(VMM_FLAG_WRITABLE | VMM_FLAG_NO_EXECUTE)) != 0 || !VMMWaitLock(&IRQFlags))
+    if (Count == 0 || Address < 4096 || (Address & 4095) != 0 || Address >= (1ULL << 47) || Count > ((1ULL << 47) - Address) / 4096 || (Flags & ~(VMM_FLAG_WRITABLE | VMM_FLAG_NO_EXECUTE | VMM_FLAG_NO_ACCESS)) != 0 || !VMMWaitLock(&IRQFlags))
     {
         return FALSE;
     }
@@ -1861,7 +1861,7 @@ BOOLEAN VMMProtectUserPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, UIN
     {
         UINT64 *Entry = VMMAddressSpaceLeaf(AddressSpace, Address + (UINT64) Index * 4096);
 
-        if (Entry == NULL || (*Entry & (VMM_PAGE_PRESENT | VMM_PAGE_USER)) != (VMM_PAGE_PRESENT | VMM_PAGE_USER))
+        if (Entry == NULL || ((*Entry & VMM_PAGE_PRESENT) == 0 || (*Entry & (VMM_PAGE_USER | VMM_FLAG_NO_ACCESS)) == 0))
         {
             SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
             return FALSE;
@@ -1871,7 +1871,7 @@ BOOLEAN VMMProtectUserPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, UIN
     for (UINT32 Index = 0; Index < Count; Index++)
     {
         UINT64 *Entry = VMMAddressSpaceLeaf(AddressSpace, Address + (UINT64) Index * 4096);
-        *Entry = (*Entry & ~(VMM_FLAG_WRITABLE | VMM_FLAG_NO_EXECUTE)) | Flags;
+        *Entry = (*Entry & ~(VMM_FLAG_WRITABLE | VMM_FLAG_NO_EXECUTE | VMM_FLAG_NO_ACCESS | VMM_PAGE_USER)) | Flags | ((Flags & VMM_FLAG_NO_ACCESS) != 0 ? 0 : VMM_PAGE_USER);
     }
 
     VMMUserReload(AddressSpace);
@@ -1904,7 +1904,7 @@ BOOLEAN VMMUnmapUserPages(VMM_ADDRESS_SPACE *AddressSpace, UINT64 Address, CONST
 
         UINT64 *Entry = VMMAddressSpaceLeaf(AddressSpace, Address + (UINT64) Index * 4096);
 
-        if (Entry == NULL || (*Entry & VMM_PAGE_MASK) != Pages[Index] || (*Entry & (VMM_PAGE_PRESENT | VMM_PAGE_USER)) != (VMM_PAGE_PRESENT | VMM_PAGE_USER))
+        if (Entry == NULL || (*Entry & VMM_PAGE_MASK) != Pages[Index] || ((*Entry & VMM_PAGE_PRESENT) == 0 || (*Entry & (VMM_PAGE_USER | VMM_FLAG_NO_ACCESS)) == 0))
         {
             SpinLockReleaseIRQRestore(&VMMMapLock, IRQFlags);
 
@@ -1932,7 +1932,7 @@ STATIC BOOLEAN VMMListUserTable(UINT64 *Table, UINT32 Level, UINT64 Base, VMM_US
     {
         UINT64 Entry = Table[Index];
 
-        if ((Entry & (VMM_PAGE_PRESENT | VMM_PAGE_USER)) != (VMM_PAGE_PRESENT | VMM_PAGE_USER))
+        if ((Entry & VMM_PAGE_PRESENT) == 0 || ((Entry & VMM_PAGE_USER) == 0 && (Level != 3 || (Entry & VMM_FLAG_NO_ACCESS) == 0)))
         {
             continue;
         }
@@ -1948,7 +1948,7 @@ STATIC BOOLEAN VMMListUserTable(UINT64 *Table, UINT32 Level, UINT64 Base, VMM_US
                     return FALSE;
                 }
 
-                Pages[*Count] = (VMM_USER_PAGE) {Address, Entry & VMM_PAGE_MASK, Entry & (VMM_FLAG_WRITABLE | VMM_FLAG_NO_EXECUTE)};
+                Pages[*Count] = (VMM_USER_PAGE) {Address, Entry & VMM_PAGE_MASK, Entry & (VMM_FLAG_WRITABLE | VMM_FLAG_NO_EXECUTE | VMM_FLAG_NO_ACCESS)};
             }
 
             (*Count)++;
