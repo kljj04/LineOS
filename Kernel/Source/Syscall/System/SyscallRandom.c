@@ -9,8 +9,12 @@
 #include <Scheduler/LBPWRR.h>
 #include <Syscall/Errno.h>
 
-INT64 SyscallGetRandom(UINT64 Buffer, UINT64 Count, UINT64 Flags)
+INT64 SyscallGetRandom(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Buffer = Context->Args.RDI;
+    UINT64 Count  = Context->Args.RSI;
+    UINT64 Flags  = Context->Args.RDX;
+
     TASK   *Task = LBPWRRGetCurrentTask();
     UINT8   Bytes[256];
     UINT32  EAX;

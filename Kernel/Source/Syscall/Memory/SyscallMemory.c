@@ -443,8 +443,15 @@ STATIC INT64 MemoryUnmap(UINT64 Address, UINT64 Length)
     return 0;
 }
 
-INT64 SyscallMmap(UINT64 Address, UINT64 Length, UINT64 Protection, UINT64 Flags, INT64 FD, UINT64 Offset)
+INT64 SyscallMmap(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Address    = Context->Args.RDI;
+    UINT64 Length     = Context->Args.RSI;
+    UINT64 Protection = Context->Args.RDX;
+    UINT64 Flags      = Context->Args.R10;
+    INT64  FD         = (INT64) Context->Args.R8;
+    UINT64 Offset     = Context->Args.R9;
+
     if (!ProcessBegin())
     {
         return -EINTR;
@@ -453,8 +460,11 @@ INT64 SyscallMmap(UINT64 Address, UINT64 Length, UINT64 Protection, UINT64 Flags
     return ProcessEnd(MemoryMap(Address, Length, Protection, Flags, FD, Offset));
 }
 
-INT64 SyscallMunmap(UINT64 Address, UINT64 Length)
+INT64 SyscallMunmap(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Address = Context->Args.RDI;
+    UINT64 Length  = Context->Args.RSI;
+
     if (!ProcessBegin())
     {
         return -EINTR;
@@ -463,8 +473,12 @@ INT64 SyscallMunmap(UINT64 Address, UINT64 Length)
     return ProcessEnd(MemoryUnmap(Address, Length));
 }
 
-INT64 SyscallMprotect(UINT64 Address, UINT64 Length, UINT64 Protection)
+INT64 SyscallMprotect(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Address    = Context->Args.RDI;
+    UINT64 Length     = Context->Args.RSI;
+    UINT64 Protection = Context->Args.RDX;
+
     TASK *Task = LBPWRRGetCurrentTask();
 
     if (Task == NULL || Task->Process->AddressSpace == NULL)
@@ -494,8 +508,10 @@ INT64 SyscallMprotect(UINT64 Address, UINT64 Length, UINT64 Protection)
     return ProcessEnd(VMMProtectUserPages(Task->Process->AddressSpace, Address, (UINT32) Count, Flags) ? 0 : -EBUSY);
 }
 
-INT64 SyscallBrk(UINT64 Address)
+INT64 SyscallBrk(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Address = Context->Args.RDI;
+
     TASK *Task = LBPWRRGetCurrentTask();
     if (Task == NULL || Task->Process->AddressSpace == NULL)
     {

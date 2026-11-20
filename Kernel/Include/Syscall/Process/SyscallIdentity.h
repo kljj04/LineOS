@@ -4,8 +4,10 @@
 
 #pragma once
 
+#include <Syscall/Syscall.h>
+
 #include <LineOS/TypeInfo.h>
 
-INT64 SyscallSetUID(UINT64 UID);
-INT64 SyscallSetGID(UINT64 GID);
-INT64 SyscallGetUID(BOOLEAN Effective);
+INT64 SyscallSetUID(SYSCALL_CONTEXT *Context);
+INT64 SyscallSetGID(SYSCALL_CONTEXT *Context);
+INT64 SyscallGetUID(SYSCALL_CONTEXT *Context);

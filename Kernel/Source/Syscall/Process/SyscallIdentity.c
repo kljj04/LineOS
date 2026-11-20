@@ -9,8 +9,10 @@
 
 STATIC UINT64 NextAuthSession;
 
-INT64 SyscallSetUID(UINT64 UID)
+INT64 SyscallSetUID(SYSCALL_CONTEXT *Context)
 {
+    UINT64 UID = Context->Args.RDI;
+
     TASK *Task = LBPWRRGetCurrentTask();
 
     if (Task == NULL || Task->Process->FileContext == NULL || UID > UINT32_MAX)
@@ -18,9 +20,9 @@ INT64 SyscallSetUID(UINT64 UID)
         return -EINVAL;
     }
 
-    VFS_CONTEXT *Context = Task->Process->FileContext;
+    VFS_CONTEXT *FileContext = Task->Process->FileContext;
 
-    if (Context->Credentials.UID != 0 && Context->Credentials.UID != (UINT32) UID)
+    if (FileContext->Credentials.UID != 0 && FileContext->Credentials.UID != (UINT32) UID)
     {
         return -EPERM;
     }
@@ -30,15 +32,17 @@ INT64 SyscallSetUID(UINT64 UID)
         Task->Process->AuthSession = ATOMIC_FETCH_ADD(&NextAuthSession, 1, ATOMIC_RELAXED) + 1;
     }
 
-    Task->Process->RealUID             = (UINT32) UID;
-    Context->Credentials.UID           = (UINT32) UID;
-    Context->Credentials.Administrator = UID == 0;
+    Task->Process->RealUID                 = (UINT32) UID;
+    FileContext->Credentials.UID           = (UINT32) UID;
+    FileContext->Credentials.Administrator = UID == 0;
 
     return 0;
 }
 
-INT64 SyscallSetGID(UINT64 GID)
+INT64 SyscallSetGID(SYSCALL_CONTEXT *Context)
 {
+    UINT64 GID = Context->Args.RDI;
+
     TASK *Task = LBPWRRGetCurrentTask();
 
     if (Task == NULL || Task->Process->FileContext == NULL || GID > UINT32_MAX)
@@ -59,8 +63,10 @@ INT64 SyscallSetGID(UINT64 GID)
     return 0;
 }
 
-INT64 SyscallGetUID(BOOLEAN Effective)
+INT64 SyscallGetUID(SYSCALL_CONTEXT *Context)
 {
+    BOOLEAN Effective = Context->Number == SYSCALL_GETEUID;
+
     TASK *Task = LBPWRRGetCurrentTask();
 
     if (Task == NULL || Task->Process->FileContext == NULL)

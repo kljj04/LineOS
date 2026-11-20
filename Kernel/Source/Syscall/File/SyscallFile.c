@@ -123,13 +123,22 @@ STATIC VOID FilePublish(PROCESS *Process, UINTN Index, OPEN_FILE *File, BOOLEAN 
     SpinLockReleaseIRQRestore(&Process->FileTableLock, Flags);
 }
 
-INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
+INT64 SyscallOpen(SYSCALL_CONTEXT *Context)
 {
-    return SyscallOpenat(FILE_AT_FDCWD, Path, Flags, Mode);
+    UINT64 Path  = Context->Args.RDI;
+    UINT64 Flags = Context->Args.RSI;
+    UINT64 Mode  = Context->Args.RDX;
+
+    return SyscallOpenat(&(SYSCALL_CONTEXT) {.Args.RDI = (UINT64) (INT32) (FILE_AT_FDCWD), .Args.RSI = (UINT64) (Path), .Args.RDX = (UINT64) (Flags), .Args.R10 = (UINT64) (Mode)});
 }
 
-INT64 SyscallOpenat(INT32 FD, UINT64 Path, UINT64 Flags, UINT64 Mode)
+INT64 SyscallOpenat(SYSCALL_CONTEXT *Context)
 {
+    INT32  FD    = (INT32) Context->Args.RDI;
+    UINT64 Path  = Context->Args.RSI;
+    UINT64 Flags = Context->Args.RDX;
+    UINT64 Mode  = Context->Args.R10;
+
     TASK    *Task = LBPWRRGetCurrentTask();
     CHAR8   *Name;
     VFS_NODE Node;
@@ -520,18 +529,30 @@ STATIC INT64 FileData(UINT64 FD, UINT64 Buffer, UINT64 Count, BOOLEAN Write)
     return Result;
 }
 
-INT64 SyscallRead(UINT64 FD, UINT64 Buffer, UINT64 Count)
+INT64 SyscallRead(SYSCALL_CONTEXT *Context)
 {
+    UINT64 FD     = Context->Args.RDI;
+    UINT64 Buffer = Context->Args.RSI;
+    UINT64 Count  = Context->Args.RDX;
+
     return FileData(FD, Buffer, Count, FALSE);
 }
 
-INT64 SyscallFileWrite(UINT64 FD, UINT64 Buffer, UINT64 Count)
+INT64 SyscallFileWrite(SYSCALL_CONTEXT *Context)
 {
+    UINT64 FD     = Context->Args.RDI;
+    UINT64 Buffer = Context->Args.RSI;
+    UINT64 Count  = Context->Args.RDX;
+
     return FileData(FD, Buffer, Count, TRUE);
 }
 
-INT64 SyscallFileWritev(UINT64 FD, UINT64 Vectors, UINT64 Count)
+INT64 SyscallFileWritev(SYSCALL_CONTEXT *Context)
 {
+    UINT64 FD      = Context->Args.RDI;
+    UINT64 Vectors = Context->Args.RSI;
+    UINT64 Count   = Context->Args.RDX;
+
     typedef struct
     {
         UINT64 Buffer;
@@ -631,8 +652,10 @@ INT64 SyscallFileWritev(UINT64 FD, UINT64 Vectors, UINT64 Count)
     return Total;
 }
 
-INT64 SyscallClose(UINT64 FD)
+INT64 SyscallClose(SYSCALL_CONTEXT *Context)
 {
+    UINT64 FD = Context->Args.RDI;
+
     TASK      *Task = LBPWRRGetCurrentTask();
     OPEN_FILE *File;
 
@@ -742,8 +765,11 @@ INT64 FileResolvePath(TASK *Task, INT32 FD, UINT64 Path, BOOLEAN Empty, CHAR8 **
     return 0;
 }
 
-INT64 SyscallAccess(UINT64 Path, UINT64 Mode)
+INT64 SyscallAccess(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Path = Context->Args.RDI;
+    UINT64 Mode = Context->Args.RSI;
+
     TASK    *Task = LBPWRRGetCurrentTask();
     CHAR8   *Name;
     VFS_NODE Node;
@@ -757,21 +783,21 @@ INT64 SyscallAccess(UINT64 Path, UINT64 Mode)
     {
         return Result;
     }
-    VFS_CONTEXT *Context = KAlloc(sizeof(*Context));
-    if (Context == NULL)
+    VFS_CONTEXT *FileContext = KAlloc(sizeof(*FileContext));
+    if (FileContext == NULL)
     {
         KFree(Name);
         return -ENOMEM;
     }
-    *Context                           = *Task->Process->FileContext;
-    Context->Credentials.UID           = Task->Process->RealUID;
-    Context->Credentials.GID           = Task->Process->RealGID;
-    Context->Credentials.Administrator = Context->Credentials.UID == 0;
-    Result                             = SyscallVFSError(VFSLookup(Context, Name, &Node));
+    *FileContext                           = *Task->Process->FileContext;
+    FileContext->Credentials.UID           = Task->Process->RealUID;
+    FileContext->Credentials.GID           = Task->Process->RealGID;
+    FileContext->Credentials.Administrator = FileContext->Credentials.UID == 0;
+    Result                                 = SyscallVFSError(VFSLookup(FileContext, Name, &Node));
     if (Result == 0)
     {
-        UINT32 Permission = Context->Credentials.UID == Node.UID ? (Node.Mode >> 6) & 7 : Context->Credentials.GID == Node.GID ? (Node.Mode >> 3) & 7 : Node.Mode & 7;
-        if (Context->Credentials.UID == 0)
+        UINT32 Permission = FileContext->Credentials.UID == Node.UID ? (Node.Mode >> 6) & 7 : FileContext->Credentials.GID == Node.GID ? (Node.Mode >> 3) & 7 : Node.Mode & 7;
+        if (FileContext->Credentials.UID == 0)
         {
             Permission = 6 | (((Node.Mode & 0111) != 0 || (Node.Mode & VFS_MODE_TYPE) == VFS_MODE_DIRECTORY) ? 1 : 0);
         }
@@ -780,13 +806,18 @@ INT64 SyscallAccess(UINT64 Path, UINT64 Mode)
             Result = -EACCES;
         }
     }
-    KFree(Context);
+    KFree(FileContext);
     KFree(Name);
     return Result;
 }
 
-INT64 SyscallPread64(UINT64 FD, UINT64 Buffer, UINT64 Count, INT64 Offset)
+INT64 SyscallPread64(SYSCALL_CONTEXT *Context)
 {
+    UINT64 FD     = (UINT32) Context->Args.RDI;
+    UINT64 Buffer = Context->Args.RSI;
+    UINT64 Count  = Context->Args.RDX;
+    INT64  Offset = (INT64) Context->Args.R10;
+
     TASK      *Task                                    = LBPWRRGetCurrentTask();
     OPEN_FILE *File __attribute__((cleanup(FileDrop))) = FileAcquire(Task, FD);
     if (Offset < 0)
@@ -837,8 +868,12 @@ INT64 SyscallPread64(UINT64 FD, UINT64 Buffer, UINT64 Count, INT64 Offset)
 #define FILE_OPEN_ASYNC      0x2000U
 #define FILE_OPEN_DIRECT     0x4000U
 
-INT64 SyscallFcntl(UINT64 FD, INT32 Command, UINT64 Argument)
+INT64 SyscallFcntl(SYSCALL_CONTEXT *Context)
 {
+    UINT64 FD       = (UINT32) Context->Args.RDI;
+    INT32  Command  = (INT32) Context->Args.RSI;
+    UINT64 Argument = Context->Args.RDX;
+
     TASK      *Task                                    = LBPWRRGetCurrentTask();
     OPEN_FILE *File __attribute__((cleanup(FileDrop))) = FileAcquire(Task, FD);
     if (File == NULL)
@@ -914,8 +949,12 @@ INT64 SyscallFcntl(UINT64 FD, INT32 Command, UINT64 Argument)
     return -EINVAL;
 }
 
-INT64 SyscallPoll(UINT64 Descriptors, UINT64 Count, INT32 Timeout)
+INT64 SyscallPoll(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Descriptors = Context->Args.RDI;
+    UINT64 Count       = Context->Args.RSI;
+    INT32  Timeout     = (INT32) Context->Args.RDX;
+
     typedef struct
     {
         INT32 FD;

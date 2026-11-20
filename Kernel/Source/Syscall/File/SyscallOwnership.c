@@ -7,8 +7,12 @@
 #include <Scheduler/LBPWRR.h>
 #include <Memory/PMM.h>
 
-INT64 SyscallChown(UINT64 Path, UINT64 UID, UINT64 GID)
+INT64 SyscallChown(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Path = Context->Args.RDI;
+    UINT64 UID  = Context->Args.RSI;
+    UINT64 GID  = Context->Args.RDX;
+
     TASK  *Task = LBPWRRGetCurrentTask();
     CHAR8 *Name;
 

@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include <Syscall/Syscall.h>
+
 #include <LineOS/TypeInfo.h>
 
-INT64 SyscallRename(UINT64 OldPath, UINT64 NewPath);
-INT64 SyscallRemove(UINT64 Path);
+INT64 SyscallRename(SYSCALL_CONTEXT *Context);
+INT64 SyscallRemove(SYSCALL_CONTEXT *Context);

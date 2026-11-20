@@ -8,8 +8,12 @@
 #include <Scheduler/LBPWRR.h>
 #include <Memory/PMM.h>
 
-INT64 SyscallIoctl(UINT64 FD, UINT64 Request, UINT64 Argument)
+INT64 SyscallIoctl(SYSCALL_CONTEXT *Context)
 {
+    UINT64 FD       = Context->Args.RDI;
+    UINT64 Request  = Context->Args.RSI;
+    UINT64 Argument = Context->Args.RDX;
+
     TASK      *Task                                    = LBPWRRGetCurrentTask();
     OPEN_FILE *File __attribute__((cleanup(FileDrop))) = FileAcquire(Task, (UINT64) FD);
 

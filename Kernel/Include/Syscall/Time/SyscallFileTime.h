@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <Syscall/Syscall.h>
+
 #include <LineOS/TypeInfo.h>
 
-INT64 SyscallUtimensat(INT64 DirFD, UINT64 Path, UINT64 Times, UINT64 Flags);
+INT64 SyscallUtimensat(SYSCALL_CONTEXT *Context);

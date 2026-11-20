@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <Syscall/Syscall.h>
+
 #include <LineOS/TypeInfo.h>
 
-INT64 SyscallIoctl(UINT64 FD, UINT64 Request, UINT64 Argument);
+INT64 SyscallIoctl(SYSCALL_CONTEXT *Context);

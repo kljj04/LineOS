@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <Syscall/Syscall.h>
+
 #include <LineOS/TypeInfo.h>
 
-INT64 SyscallGetRandom(UINT64 Buffer, UINT64 Count, UINT64 Flags);
+INT64 SyscallGetRandom(SYSCALL_CONTEXT *Context);

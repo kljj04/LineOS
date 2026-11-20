@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <Syscall/Syscall.h>
+
 #include <LineOS/TypeInfo.h>
 
-INT64 SyscallChown(UINT64 Path, UINT64 UID, UINT64 GID);
+INT64 SyscallChown(SYSCALL_CONTEXT *Context);

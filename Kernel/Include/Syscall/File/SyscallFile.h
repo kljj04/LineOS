@@ -4,22 +4,24 @@
 
 #pragma once
 
+#include <Syscall/Syscall.h>
+
 #include <Scheduler/TaskTypes.h>
 
-INT64   SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode);
-INT64   SyscallRead(UINT64 FD, UINT64 Buffer, UINT64 Count);
-INT64   SyscallFileWritev(UINT64 FD, UINT64 Vectors, UINT64 Count);
-INT64   SyscallFileWrite(UINT64 FD, UINT64 Buffer, UINT64 Count);
-INT64   SyscallClose(UINT64 FD);
+INT64   SyscallOpen(SYSCALL_CONTEXT *Context);
+INT64   SyscallRead(SYSCALL_CONTEXT *Context);
+INT64   SyscallFileWritev(SYSCALL_CONTEXT *Context);
+INT64   SyscallFileWrite(SYSCALL_CONTEXT *Context);
+INT64   SyscallClose(SYSCALL_CONTEXT *Context);
 BOOLEAN SyscallFilesInherit(TASK *Child, TASK *Parent);
 VOID    SyscallFilesRelease(TASK *Task);
 
-INT64 SyscallOpenat(INT32 FD, UINT64 Path, UINT64 Flags, UINT64 Mode);
-INT64 SyscallAccess(UINT64 Path, UINT64 Mode);
+INT64 SyscallOpenat(SYSCALL_CONTEXT *Context);
+INT64 SyscallAccess(SYSCALL_CONTEXT *Context);
 VOID  SyscallFilesExec(TASK *Task);
 
-INT64 SyscallPread64(UINT64 FD, UINT64 Buffer, UINT64 Count, INT64 Offset);
+INT64 SyscallPread64(SYSCALL_CONTEXT *Context);
 
-INT64 SyscallFcntl(UINT64 FD, INT32 Command, UINT64 Argument);
+INT64 SyscallFcntl(SYSCALL_CONTEXT *Context);
 
-INT64 SyscallPoll(UINT64 Descriptors, UINT64 Count, INT32 Timeout);
+INT64 SyscallPoll(SYSCALL_CONTEXT *Context);

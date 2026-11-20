@@ -323,12 +323,12 @@ STATIC INT64 FramebufferIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
             return -EFAULT;
         }
 
-        return SyscallDisplayPresent(Present.Buffer, Present.Size);
+        return SyscallDisplayPresent(&(SYSCALL_CONTEXT) {.Args.RDI = (UINT64) (Present.Buffer), .Args.RSI = (UINT64) (Present.Size)});
     }
 
     if (Request == LOS_FBIO_PRESENT_RECT)
     {
-        return SyscallDisplayPresentRect(Argument);
+        return SyscallDisplayPresentRect(&(SYSCALL_CONTEXT) {.Args.RDI = (UINT64) (Argument)});
     }
 
     VirtIOGPUMarkDirty(0, 0, GPU->FrameBufferWidth, GPU->FrameBufferHeight);

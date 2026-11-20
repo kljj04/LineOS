@@ -33,8 +33,12 @@ STATIC INT64 FileStat(TASK *Task, CONST VFS_NODE *Node, UINT64 Buffer)
     return VMMCopyToUser(Task->Process->AddressSpace, Buffer, &Info, sizeof(Info)) ? 0 : -EFAULT;
 }
 
-INT64 SyscallStat(UINT64 Path, UINT64 Buffer, BOOLEAN Follow)
+INT64 SyscallStat(SYSCALL_CONTEXT *Context)
 {
+    UINT64  Path   = Context->Args.RDI;
+    UINT64  Buffer = Context->Args.RSI;
+    BOOLEAN Follow = Context->Number == SYSCALL_STAT;
+
     TASK    *Task = LBPWRRGetCurrentTask();
     CHAR8   *Name;
     VFS_NODE Node;
@@ -57,8 +61,11 @@ INT64 SyscallStat(UINT64 Path, UINT64 Buffer, BOOLEAN Follow)
     return Result < 0 ? Result : FileStat(Task, &Node, Buffer);
 }
 
-INT64 SyscallFstat(UINT64 FD, UINT64 Buffer)
+INT64 SyscallFstat(SYSCALL_CONTEXT *Context)
 {
+    UINT64 FD     = Context->Args.RDI;
+    UINT64 Buffer = Context->Args.RSI;
+
     TASK      *Task                                    = LBPWRRGetCurrentTask();
     OPEN_FILE *File __attribute__((cleanup(FileDrop))) = FileAcquire(Task, (UINT64) FD);
     VFS_NODE   Node;
@@ -83,8 +90,13 @@ INT64 SyscallFstat(UINT64 FD, UINT64 Buffer)
     return FileStat(Task, &Node, Buffer);
 }
 
-INT64 SyscallNewfstatat(INT32 FD, UINT64 Path, UINT64 Buffer, UINT64 Flags)
+INT64 SyscallNewfstatat(SYSCALL_CONTEXT *Context)
 {
+    INT32  FD     = (INT32) Context->Args.RDI;
+    UINT64 Path   = Context->Args.RSI;
+    UINT64 Buffer = Context->Args.RDX;
+    UINT64 Flags  = Context->Args.R10;
+
     TASK    *Task = LBPWRRGetCurrentTask();
     CHAR8   *Name;
     VFS_NODE Node;
@@ -106,7 +118,7 @@ INT64 SyscallNewfstatat(INT32 FD, UINT64 Path, UINT64 Buffer, UINT64 Flags)
         }
         if (First == 0 && FD != FILE_AT_FDCWD)
         {
-            return SyscallFstat((UINT32) FD, Buffer);
+            return SyscallFstat(&(SYSCALL_CONTEXT) {.Args.RDI = (UINT64) ((UINT32) FD), .Args.RSI = (UINT64) (Buffer)});
         }
     }
     INT64 Result = FileResolvePath(Task, FD, Path, (Flags & FILE_AT_EMPTY_PATH) != 0, &Name);

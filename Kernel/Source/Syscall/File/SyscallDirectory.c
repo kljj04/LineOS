@@ -8,8 +8,11 @@
 #include <Scheduler/LBPWRR.h>
 #include <Memory/PMM.h>
 
-INT64 SyscallMkdir(UINT64 Path, UINT64 Mode)
+INT64 SyscallMkdir(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Path = Context->Args.RDI;
+    UINT64 Mode = Context->Args.RSI;
+
     TASK  *Task = LBPWRRGetCurrentTask();
     CHAR8 *Name;
 
@@ -29,8 +32,12 @@ INT64 SyscallMkdir(UINT64 Path, UINT64 Mode)
     return Result;
 }
 
-INT64 SyscallGetDents64(UINT64 FD, UINT64 Buffer, UINT64 Count)
+INT64 SyscallGetDents64(SYSCALL_CONTEXT *Context)
 {
+    UINT64 FD     = Context->Args.RDI;
+    UINT64 Buffer = Context->Args.RSI;
+    UINT64 Count  = Context->Args.RDX;
+
     TASK      *Task                                    = LBPWRRGetCurrentTask();
     OPEN_FILE *File __attribute__((cleanup(FileDrop))) = FileAcquire(Task, (UINT64) FD);
 
@@ -114,8 +121,10 @@ INT64 SyscallGetDents64(UINT64 FD, UINT64 Buffer, UINT64 Count)
     return Total != 0 ? (INT64) Total : Error;
 }
 
-INT64 SyscallChdir(UINT64 Path)
+INT64 SyscallChdir(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Path = Context->Args.RDI;
+
     TASK  *Task = LBPWRRGetCurrentTask();
     CHAR8 *Name;
 
@@ -137,8 +146,11 @@ INT64 SyscallChdir(UINT64 Path)
     return Result;
 }
 
-INT64 SyscallGetCwd(UINT64 Buffer, UINT64 Size)
+INT64 SyscallGetCwd(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Buffer = Context->Args.RDI;
+    UINT64 Size   = Context->Args.RSI;
+
     TASK *Task = LBPWRRGetCurrentTask();
     CHAR8 Path[VFS_MAX_PATH];
 

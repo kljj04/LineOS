@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <Syscall/Syscall.h>
+
 #include <LineOS/TypeInfo.h>
 
-INT64 SyscallSudoCache(UINT64 Operation);
+INT64 SyscallSudoCache(SYSCALL_CONTEXT *Context);

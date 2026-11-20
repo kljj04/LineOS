@@ -12,8 +12,11 @@
 
 _Static_assert(sizeof(TIME_SPEC) == 16, "timespec ABI");
 
-INT64 SyscallClockGetTime(INT64 ClockID, UINT64 UserTime)
+INT64 SyscallClockGetTime(SYSCALL_CONTEXT *Context)
 {
+    INT64  ClockID  = (INT64) Context->Args.RDI;
+    UINT64 UserTime = Context->Args.RSI;
+
     TASK      *Task = LBPWRRGetCurrentTask();
     CLOCK_TIME Time;
     BOOLEAN    Result;
@@ -58,8 +61,11 @@ INT64 SyscallClockGetTime(INT64 ClockID, UINT64 UserTime)
     return VMMCopyToUser(Task->Process->AddressSpace, UserTime, &Info, sizeof(Info)) ? 0 : -EFAULT;
 }
 
-INT64 SyscallNanosleep(UINT64 Duration, UINT64 Remaining)
+INT64 SyscallNanosleep(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Duration  = Context->Args.RDI;
+    UINT64 Remaining = Context->Args.RSI;
+
     (VOID) Remaining;
 
     TASK     *Task = LBPWRRGetCurrentTask();

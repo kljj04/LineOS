@@ -7,8 +7,11 @@
 #include <Scheduler/LBPWRR.h>
 #include <Memory/PMM.h>
 
-INT64 SyscallRename(UINT64 OldPath, UINT64 NewPath)
+INT64 SyscallRename(SYSCALL_CONTEXT *Context)
 {
+    UINT64 OldPath = Context->Args.RDI;
+    UINT64 NewPath = Context->Args.RSI;
+
     TASK  *Task = LBPWRRGetCurrentTask();
     CHAR8 *OldName;
     CHAR8 *NewName;
@@ -32,8 +35,10 @@ INT64 SyscallRename(UINT64 OldPath, UINT64 NewPath)
     return Result;
 }
 
-INT64 SyscallRemove(UINT64 Path)
+INT64 SyscallRemove(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Path = Context->Args.RDI;
+
     TASK  *Task = LBPWRRGetCurrentTask();
     CHAR8 *Name;
     INT64  Result = SyscallCopyPath(Task, Path, &Name);

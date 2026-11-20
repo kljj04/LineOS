@@ -8,8 +8,10 @@
 #include <Scheduler/LBPWRR.h>
 #include <Memory/PMM.h>
 
-INT64 SyscallParentChdir(UINT64 Path)
+INT64 SyscallParentChdir(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Path = Context->Args.RDI;
+
     TASK *Task = LBPWRRGetCurrentTask();
 
     if (Task == NULL || Task->Process->FileContext == NULL)

@@ -4,8 +4,10 @@
 
 #pragma once
 
+#include <Syscall/Syscall.h>
+
 #include <Scheduler/TaskTypes.h>
 
-INT64   SyscallIPC(UINT64 Operation, UINT64 UserRequest, UINT64 Size);
+INT64   SyscallIPC(SYSCALL_CONTEXT *Context);
 VOID    SyscallIPCRelease(TASK *Task);
 BOOLEAN SyscallIPCOwns(TASK *Task, UINT64 Endpoint);

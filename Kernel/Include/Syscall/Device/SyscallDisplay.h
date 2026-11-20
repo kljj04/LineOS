@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <Syscall/Syscall.h>
+
 #include <LineOS/TypeInfo.h>
 
 #define DISPLAY_FORMAT_BGRA8888 1U
@@ -25,6 +27,6 @@ typedef struct
     UINT64 Buffer;
 } DISPLAY_RECT;
 
-INT64 SyscallDisplayInfo(UINT64 UserInfo);
-INT64 SyscallDisplayPresent(UINT64 UserBuffer, UINT64 BufferSize);
-INT64 SyscallDisplayPresentRect(UINT64 UserRect);
+INT64 SyscallDisplayInfo(SYSCALL_CONTEXT *Context);
+INT64 SyscallDisplayPresent(SYSCALL_CONTEXT *Context);
+INT64 SyscallDisplayPresentRect(SYSCALL_CONTEXT *Context);

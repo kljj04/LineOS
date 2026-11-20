@@ -4,8 +4,10 @@
 
 #pragma once
 
+#include <Syscall/Syscall.h>
+
 #include <LineOS/TypeInfo.h>
 
-INT64 SyscallClockGetTime(INT64 ClockID, UINT64 UserTime);
+INT64 SyscallClockGetTime(SYSCALL_CONTEXT *Context);
 
-INT64 SyscallNanosleep(UINT64 Duration, UINT64 Remaining);
+INT64 SyscallNanosleep(SYSCALL_CONTEXT *Context);

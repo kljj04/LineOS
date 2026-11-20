@@ -12,8 +12,10 @@
 #include <Scheduler/Task.h>
 #include <Memory/PMM.h>
 
-INT64 SyscallSysInfo(UINT64 UserInfo)
+INT64 SyscallSysInfo(SYSCALL_CONTEXT *Context)
 {
+    UINT64 UserInfo = Context->Args.RDI;
+
     TASK    *Task;
     SYS_INFO Info = {0};
 

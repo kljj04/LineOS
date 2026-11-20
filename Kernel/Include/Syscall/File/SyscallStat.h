@@ -4,9 +4,11 @@
 
 #pragma once
 
+#include <Syscall/Syscall.h>
+
 #include <LineOS/TypeInfo.h>
 
-INT64 SyscallStat(UINT64 Path, UINT64 Buffer, BOOLEAN Follow);
-INT64 SyscallFstat(UINT64 FD, UINT64 Buffer);
+INT64 SyscallStat(SYSCALL_CONTEXT *Context);
+INT64 SyscallFstat(SYSCALL_CONTEXT *Context);
 
-INT64 SyscallNewfstatat(INT32 FD, UINT64 Path, UINT64 Buffer, UINT64 Flags);
+INT64 SyscallNewfstatat(SYSCALL_CONTEXT *Context);

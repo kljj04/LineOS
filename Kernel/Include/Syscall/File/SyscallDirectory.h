@@ -4,9 +4,11 @@
 
 #pragma once
 
+#include <Syscall/Syscall.h>
+
 #include <LineOS/TypeInfo.h>
 
-INT64 SyscallMkdir(UINT64 Path, UINT64 Mode);
-INT64 SyscallGetDents64(UINT64 FD, UINT64 Buffer, UINT64 Count);
-INT64 SyscallChdir(UINT64 Path);
-INT64 SyscallGetCwd(UINT64 Buffer, UINT64 Size);
+INT64 SyscallMkdir(SYSCALL_CONTEXT *Context);
+INT64 SyscallGetDents64(SYSCALL_CONTEXT *Context);
+INT64 SyscallChdir(SYSCALL_CONTEXT *Context);
+INT64 SyscallGetCwd(SYSCALL_CONTEXT *Context);

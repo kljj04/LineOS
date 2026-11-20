@@ -28,16 +28,11 @@
 #include <Syscall/Security/SyscallSudo.h>
 #include <Syscall/System/SyscallMonitor.h>
 #include <Syscall/IPC/SyscallIPC.h>
+#include <Syscall/System/SyscallAffinity.h>
 
 #include <Arch/AMD64/CPU.h>
 #include <Debug/Panic.h>
 #include <Syscall/Errno.h>
-
-typedef struct
-{
-    UINT64 KernelStack;
-    UINT64 UserStack;
-} SYSCALL_CPU;
 
 STATIC_ASSERT(GDT_KERNEL_DATA_SELECTOR == GDT_KERNEL_CODE_SELECTOR + 8, "SYSCALL kernel selectors");
 STATIC_ASSERT(GDT_USER_DATA_SELECTOR == GDT_USER_CODE_SELECTOR - 8, "SYSRET user selectors");
@@ -45,9 +40,107 @@ STATIC_ASSERT(GDT_USER_DATA_SELECTOR == 0x18 && GDT_USER_CODE_SELECTOR == 0x20, 
 STATIC_ASSERT(OFFSET_OF(SYSCALL_CPU, KernelStack) == 0 && OFFSET_OF(SYSCALL_CPU, UserStack) == 8, "SyscallEntry CPU offsets");
 STATIC_ASSERT(OFFSET_OF(INTERRUPT_FRAME, RAX) == 112 && OFFSET_OF(INTERRUPT_FRAME, RIP) == 136 && OFFSET_OF(INTERRUPT_FRAME, RFLAGS) == 152 && OFFSET_OF(INTERRUPT_FRAME, RSP) == 160 && sizeof(INTERRUPT_FRAME) == 176, "SyscallEntry frame layout");
 
+STATIC INT64 SyscallMembarrier(SYSCALL_CONTEXT *Context)
+{
+    return Context->Args.RDI == 0 && Context->Args.RSI == 0 ? 0 : -EINVAL;
+}
+
+STATIC INT64 SyscallYield(SYSCALL_CONTEXT *Context)
+{
+    (VOID) Context;
+    LBPWRRYield();
+
+    return 0;
+}
+
+STATIC INT64 SyscallGetPID(SYSCALL_CONTEXT *Context)
+{
+    (VOID) Context;
+    TASK *Task = LBPWRRGetCurrentTask();
+
+    if (Task == NULL)
+    {
+        return -ESRCH;
+    }
+
+    return Task->Process->PID;
+}
+
+STATIC CONST SYSCALL_ENTRY SyscallTable[] = {
+    {SYSCALL_READ,                 SyscallRead              },
+    {SYSCALL_WRITE,                SyscallFileWrite         },
+    {SYSCALL_OPEN,                 SyscallOpen              },
+    {SYSCALL_CLOSE,                SyscallClose             },
+    {SYSCALL_STAT,                 SyscallStat              },
+    {SYSCALL_FSTAT,                SyscallFstat             },
+    {SYSCALL_LSTAT,                SyscallStat              },
+    {SYSCALL_POLL,                 SyscallPoll              },
+    {SYSCALL_MMAP,                 SyscallMmap              },
+    {SYSCALL_MPROTECT,             SyscallMprotect          },
+    {SYSCALL_MUNMAP,               SyscallMunmap            },
+    {SYSCALL_BRK,                  SyscallBrk               },
+    {SYSCALL_RT_SIGPROCMASK,       SyscallRTSigprocmask     },
+    {SYSCALL_IOCTL,                SyscallIoctl             },
+    {SYSCALL_PREAD64,              SyscallPread64           },
+    {SYSCALL_WRITEV,               SyscallFileWritev        },
+    {SYSCALL_ACCESS,               SyscallAccess            },
+    {SYSCALL_YIELD,                SyscallYield             },
+    {SYSCALL_NANOSLEEP,            SyscallNanosleep         },
+    {SYSCALL_GETPID,               SyscallGetPID            },
+    {SYSCALL_CLONE,                SyscallClone             },
+    {SYSCALL_FORK,                 SyscallFork              },
+    {SYSCALL_EXECVE,               SyscallExecVE            },
+    {SYSCALL_EXIT,                 SyscallExit              },
+    {SYSCALL_WAIT4,                SyscallWait4             },
+    {SYSCALL_FCNTL,                SyscallFcntl             },
+    {SYSCALL_GETCWD,               SyscallGetCwd            },
+    {SYSCALL_CHDIR,                SyscallChdir             },
+    {SYSCALL_RENAME,               SyscallRename            },
+    {SYSCALL_MKDIR,                SyscallMkdir             },
+    {SYSCALL_CHOWN,                SyscallChown             },
+    {SYSCALL_SYSINFO,              SyscallSysInfo           },
+    {SYSCALL_GETUID,               SyscallGetUID            },
+    {SYSCALL_SETUID,               SyscallSetUID            },
+    {SYSCALL_SETGID,               SyscallSetGID            },
+    {SYSCALL_GETEUID,              SyscallGetUID            },
+    {SYSCALL_ARCH_PRCTL,           SyscallArchPrctl         },
+    {SYSCALL_GETTID,               SyscallGetTID            },
+    {SYSCALL_FUTEX,                SyscallFutex             },
+    {SYSCALL_AFFINITY,             SyscallSchedGetAffinity  },
+    {SYSCALL_GETDENTS64,           SyscallGetDents64        },
+    {SYSCALL_SET_TID_ADDRESS,      SyscallSetTIDAddress     },
+    {SYSCALL_CLOCK_GETTIME,        SyscallClockGetTime      },
+    {SYSCALL_EXIT_GROUP,           SyscallExitGroup         },
+    {SYSCALL_OPENAT,               SyscallOpenat            },
+    {SYSCALL_NEWFSTATAT,           SyscallNewfstatat        },
+    {SYSCALL_SET_ROBUST_LIST,      SyscallSetRobustList     },
+    {SYSCALL_GET_ROBUST_LIST,      SyscallGetRobustList     },
+    {SYSCALL_UTIMENSAT,            SyscallUtimensat         },
+    {SYSCALL_GETRANDOM,            SyscallGetRandom         },
+    {SYSCALL_MEMBARRIER,           SyscallMembarrier        },
+    {SYSCALL_CLONE3,               SyscallClone3            },
+
+    {SYSCALL_DISPLAY_INFO,         SyscallDisplayInfo       },
+    {SYSCALL_DISPLAY_PRESENT,      SyscallDisplayPresent    },
+    {SYSCALL_DISPLAY_PRESENT_RECT, SyscallDisplayPresentRect},
+    {SYSCALL_ASSET_PUBLISH,        SyscallAssetPublish      },
+    {SYSCALL_ASSET_ACQUIRE,        SyscallAssetAcquire      },
+    {SYSCALL_ASSET_RELEASE,        SyscallAssetRelease      },
+    {SYSCALL_REMOVE,               SyscallRemove            },
+    {SYSCALL_PARENT_CHDIR,         SyscallParentChdir       },
+    {SYSCALL_SUDO_CACHE,           SyscallSudoCache         },
+    {SYSCALL_SYSTEM_MONITOR,       SyscallSystemMonitor     },
+    {SYSCALL_IPC,                  SyscallIPC               }
+};
+
 STATIC SYSCALL_CPU SyscallCPUs[GDT_MAX_CPUS];
 
 EXTERN VOID SyscallEntry(VOID);
+
+STATIC SYSCALL_ABI_ARGS SyscallGetABIArgs(INTERRUPT_FRAME *Frame)
+{
+    return (SYSCALL_ABI_ARGS) {.RDI = Frame->RDI, .RSI = Frame->RSI, .RDX = Frame->RDX, .R10 = Frame->R10, .R8 = Frame->R8, .R9 = Frame->R9};
+}
 
 VOID SyscallInitCurrentCPU(UINT32 CPUIndex)
 {
@@ -90,324 +183,19 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
         return (UINT64) -ENOSYS;
     }
 
-    switch (Frame->RAX)
+    SYSCALL_CONTEXT Context = {.Number = Frame->RAX, .Args = SyscallGetABIArgs(Frame), .Frame = Frame};
+
+    for (UINT64 Index = 0; Index < sizeof(SyscallTable) / sizeof(SyscallTable[0]); Index++)
     {
-        case SYSCALL_BRK:
+        if (SyscallTable[Index].Number == Context.Number)
         {
-            return (UINT64) SyscallBrk(Frame->RDI);
-        }
-
-        case SYSCALL_ACCESS:
-        {
-            return (UINT64) SyscallAccess(Frame->RDI, Frame->RSI);
-        }
-
-        case SYSCALL_OPENAT:
-        {
-            return (UINT64) SyscallOpenat((INT32) Frame->RDI, Frame->RSI, Frame->RDX, Frame->R10);
-        }
-
-        case SYSCALL_NEWFSTATAT:
-        {
-            return (UINT64) SyscallNewfstatat((INT32) Frame->RDI, Frame->RSI, Frame->RDX, Frame->R10);
-        }
-
-        case SYSCALL_PREAD64:
-        {
-            return (UINT64) SyscallPread64((UINT32) Frame->RDI, Frame->RSI, Frame->RDX, (INT64) Frame->R10);
-        }
-
-        case SYSCALL_RT_SIGPROCMASK:
-        {
-            return (UINT64) SyscallRTSigprocmask((INT32) Frame->RDI, Frame->RSI, Frame->RDX, Frame->R10);
-        }
-
-        case SYSCALL_FCNTL:
-        {
-            return (UINT64) SyscallFcntl((UINT32) Frame->RDI, (INT32) Frame->RSI, Frame->RDX);
-        }
-
-        case SYSCALL_MEMBARRIER:
-        {
-            return Frame->RDI == 0 && Frame->RSI == 0 ? 0 : (UINT64) -EINVAL;
-        }
-
-        case SYSCALL_POLL:
-        {
-            return (UINT64) SyscallPoll(Frame->RDI, Frame->RSI, (INT32) Frame->RDX);
-        }
-
-        case SYSCALL_NANOSLEEP:
-        {
-            return (UINT64) SyscallNanosleep(Frame->RDI, Frame->RSI);
-        }
-
-        case SYSCALL_CLOCK_GETTIME:
-        {
-            return (UINT64) SyscallClockGetTime((INT64) Frame->RDI, Frame->RSI);
-        }
-
-        case SYSCALL_IPC:
-        {
-            return (UINT64) SyscallIPC(Frame->RDI, Frame->RSI, Frame->RDX);
-        }
-
-        case SYSCALL_SYSTEM_MONITOR:
-        {
-            return (UINT64) SyscallSystemMonitor(Frame->RDI, Frame->RSI);
-        }
-
-        case SYSCALL_SUDO_CACHE:
-        {
-            return (UINT64) SyscallSudoCache(Frame->RDI);
-        }
-
-        case SYSCALL_GETUID:
-        case SYSCALL_GETEUID:
-        {
-            return (UINT64) SyscallGetUID(Frame->RAX == SYSCALL_GETEUID);
-        }
-
-        case SYSCALL_PARENT_CHDIR:
-        {
-            return (UINT64) SyscallParentChdir(Frame->RDI);
-        }
-
-        case SYSCALL_STAT:
-        case SYSCALL_LSTAT:
-        {
-            return (UINT64) SyscallStat(Frame->RDI, Frame->RSI, Frame->RAX == SYSCALL_STAT);
-        }
-
-        case SYSCALL_FSTAT:
-        {
-            return (UINT64) SyscallFstat(Frame->RDI, Frame->RSI);
-        }
-
-        case SYSCALL_MMAP:
-        {
-            return (UINT64) SyscallMmap(Frame->RDI, Frame->RSI, Frame->RDX, Frame->R10, (INT64) Frame->R8, Frame->R9);
-        }
-
-        case SYSCALL_MPROTECT:
-        {
-            return (UINT64) SyscallMprotect(Frame->RDI, Frame->RSI, Frame->RDX);
-        }
-
-        case SYSCALL_MUNMAP:
-        {
-            return (UINT64) SyscallMunmap(Frame->RDI, Frame->RSI);
-        }
-
-        case SYSCALL_CLONE:
-        {
-            return (UINT64) SyscallClone(Frame);
-        }
-
-        case SYSCALL_CLONE3:
-        {
-            return (UINT64) SyscallClone3(Frame);
-        }
-
-        case SYSCALL_GETTID:
-        {
-            return (UINT64) SyscallGetTID();
-        }
-
-        case SYSCALL_FUTEX:
-        {
-            return (UINT64) SyscallFutex(Frame->RDI, Frame->RSI, Frame->RDX, Frame->R10, Frame->R8, Frame->R9);
-        }
-
-        case SYSCALL_SET_TID_ADDRESS:
-        {
-            return (UINT64) SyscallSetTIDAddress(Frame->RDI);
-        }
-
-        case SYSCALL_ARCH_PRCTL:
-        {
-            return (UINT64) SyscallArchPrctl(Frame->RDI, Frame->RSI);
-        }
-
-        case SYSCALL_SET_ROBUST_LIST:
-        {
-            return (UINT64) SyscallSetRobustList(Frame->RDI, Frame->RSI);
-        }
-
-        case SYSCALL_GET_ROBUST_LIST:
-        {
-            return (UINT64) SyscallGetRobustList(Frame->RDI, Frame->RSI, Frame->RDX);
-        }
-
-        case SYSCALL_EXIT_GROUP:
-        {
-            return (UINT64) SyscallExitGroup(Frame->RDI);
-        }
-
-        case SYSCALL_FORK:
-        {
-            return (UINT64) SyscallFork(Frame);
-        }
-
-        case SYSCALL_WAIT4:
-        {
-            return (UINT64) SyscallWait4((INT64) Frame->RDI, Frame->RSI, Frame->RDX, Frame->R10);
-        }
-
-        case SYSCALL_EXECVE:
-        {
-            return (UINT64) SyscallExecVE(Frame);
-        }
-
-        case SYSCALL_GETDENTS64:
-        {
-            return (UINT64) SyscallGetDents64(Frame->RDI, Frame->RSI, Frame->RDX);
-        }
-
-        case SYSCALL_IOCTL:
-        {
-            return (UINT64) SyscallIoctl(Frame->RDI, Frame->RSI, Frame->RDX);
-        }
-
-        case SYSCALL_EXIT:
-        {
-            return (UINT64) SyscallExit(Frame->RDI);
-        }
-
-        case SYSCALL_CHOWN:
-            return (UINT64) SyscallChown(Frame->RDI, Frame->RSI, Frame->RDX);
-
-        case SYSCALL_SETUID:
-        {
-            return (UINT64) SyscallSetUID(Frame->RDI);
-        }
-
-        case SYSCALL_SETGID:
-        {
-            return (UINT64) SyscallSetGID(Frame->RDI);
-        }
-
-        case SYSCALL_GETRANDOM:
-        {
-            return (UINT64) SyscallGetRandom(Frame->RDI, Frame->RSI, Frame->RDX);
-        }
-
-        case SYSCALL_READ:
-        {
-            return (UINT64) SyscallRead(Frame->RDI, Frame->RSI, Frame->RDX);
-        }
-
-        case SYSCALL_OPEN:
-        {
-            return (UINT64) SyscallOpen(Frame->RDI, Frame->RSI, Frame->RDX);
-        }
-
-        case SYSCALL_GETCWD:
-        {
-            return (UINT64) SyscallGetCwd(Frame->RDI, Frame->RSI);
-        }
-
-        case SYSCALL_CHDIR:
-        {
-            return (UINT64) SyscallChdir(Frame->RDI);
-        }
-
-        case SYSCALL_RENAME:
-        {
-            return (UINT64) SyscallRename(Frame->RDI, Frame->RSI);
-        }
-
-        case SYSCALL_UTIMENSAT:
-        {
-            return (UINT64) SyscallUtimensat((INT64) Frame->RDI, Frame->RSI, Frame->RDX, Frame->R10);
-        }
-
-        case SYSCALL_MKDIR:
-        {
-            return (UINT64) SyscallMkdir(Frame->RDI, Frame->RSI);
-        }
-
-        case SYSCALL_SYSINFO:
-        {
-            return SyscallSysInfo(Frame->RDI);
-        }
-
-        case SYSCALL_REMOVE:
-        {
-            return (UINT64) SyscallRemove(Frame->RDI);
-        }
-
-        case SYSCALL_CLOSE:
-        {
-            return (UINT64) SyscallClose(Frame->RDI);
-        }
-
-        case SYSCALL_YIELD:
-        {
-            LBPWRRYield();
-
-            return 0;
-        }
-
-        case SYSCALL_WRITEV:
-        {
-            return (UINT64) SyscallFileWritev(Frame->RDI, Frame->RSI, Frame->RDX);
-        }
-
-        case SYSCALL_WRITE:
-        {
-            return (UINT64) SyscallFileWrite(Frame->RDI, Frame->RSI, Frame->RDX);
-        }
-
-        case SYSCALL_GETPID:
-        {
-            TASK *Task = LBPWRRGetCurrentTask();
-
-            if (Task == NULL)
-            {
-                return (UINT64) -ESRCH;
-            }
-
-            return Task->Process->PID;
-        }
-
-        case SYSCALL_DISPLAY_INFO:
-        {
-            return (UINT64) SyscallDisplayInfo(Frame->RDI);
-        }
-
-        case SYSCALL_DISPLAY_PRESENT:
-        {
-            return (UINT64) SyscallDisplayPresent(Frame->RDI, Frame->RSI);
-        }
-
-        case SYSCALL_DISPLAY_PRESENT_RECT:
-        {
-            return (UINT64) SyscallDisplayPresentRect(Frame->RDI);
-        }
-
-        case SYSCALL_ASSET_PUBLISH:
-        {
-            return (UINT64) SyscallAssetPublish(Frame->RDI, Frame->RSI, Frame->RDX);
-        }
-
-        case SYSCALL_ASSET_ACQUIRE:
-        {
-            return (UINT64) SyscallAssetAcquire(Frame->RDI, Frame->RSI);
-        }
-
-        case SYSCALL_ASSET_RELEASE:
-        {
-            return (UINT64) SyscallAssetRelease(Frame->RDI);
-        }
-
-        default:
-        {
-            DebugWrite("Unhandled syscall: ");
-            DebugWriteDec(Frame->RAX);
-            DebugWrite("\n");
-
-            return (UINT64) -ENOSYS;
+            return (UINT64) SyscallTable[Index].Handler(&Context);
         }
     }
+
+    DebugWrite("Unhandled syscall: ");
+    DebugWriteDec(Context.Number);
+    DebugWrite("\n");
+
+    return (UINT64) -ENOSYS;
 }

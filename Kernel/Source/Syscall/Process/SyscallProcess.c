@@ -187,8 +187,10 @@ STATIC INT64 ProcessCopyArguments(TASK *Task, UINT64 Vector, ELF64_ARGUMENTS *Ar
 
 STATIC VOID ForkUnusedEntry(VOID) {}
 
-INT64 SyscallFork(INTERRUPT_FRAME *Frame)
+INT64 SyscallFork(SYSCALL_CONTEXT *Context)
 {
+    INTERRUPT_FRAME *Frame = Context->Frame;
+
     TASK  *Parent = LBPWRRGetCurrentTask();
     UINT64 Count  = 0;
     INT64  Result = -ENOMEM;
@@ -338,8 +340,10 @@ Failed:
     return ProcessEnd(Result);
 }
 
-INT64 SyscallExecVE(INTERRUPT_FRAME *Frame)
+INT64 SyscallExecVE(SYSCALL_CONTEXT *Context)
 {
+    INTERRUPT_FRAME *Frame = Context->Frame;
+
     TASK  *Task = LBPWRRGetCurrentTask();
     CHAR8 *Name;
 
@@ -360,7 +364,7 @@ INT64 SyscallExecVE(INTERRUPT_FRAME *Frame)
         return ProcessEnd(-EBUSY);
     }
 
-    INT64 Result = SyscallCopyPath(Task, Frame->RDI, &Name);
+    INT64 Result = SyscallCopyPath(Task, Context->Args.RDI, &Name);
 
     if (Result < 0)
     {
@@ -383,11 +387,11 @@ INT64 SyscallExecVE(INTERRUPT_FRAME *Frame)
         return ProcessEnd(-ENOMEM);
     }
 
-    Result = ProcessCopyArguments(Task, Frame->RSI, Arguments);
+    Result = ProcessCopyArguments(Task, Context->Args.RSI, Arguments);
 
     if (Result == 0)
     {
-        Result = ProcessCopyArguments(Task, Frame->RDX, Arguments + 1);
+        Result = ProcessCopyArguments(Task, Context->Args.RDX, Arguments + 1);
     }
 
     if (Result == 0 && Arguments[0].Bytes + Arguments[1].Bytes > ELF64_ARG_MAX_BYTES)
@@ -546,8 +550,13 @@ INT64 SyscallProcessExit(TASK *Task, UINT64 Code, BOOLEAN Group)
     return -EIO;
 }
 
-INT64 SyscallWait4(INT64 PID, UINT64 Status, UINT64 Options, UINT64 Usage)
+INT64 SyscallWait4(SYSCALL_CONTEXT *Context)
 {
+    INT64  PID     = (INT64) Context->Args.RDI;
+    UINT64 Status  = Context->Args.RSI;
+    UINT64 Options = Context->Args.RDX;
+    UINT64 Usage   = Context->Args.R10;
+
     TASK *Parent = LBPWRRGetCurrentTask();
 
     if (Parent == NULL || Parent->Process->AddressSpace == NULL)

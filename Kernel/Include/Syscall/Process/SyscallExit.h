@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include <Syscall/Syscall.h>
+
 #include <LineOS/TypeInfo.h>
 
-INT64 SyscallExit(UINT64 ExitCode);
+INT64 SyscallExit(SYSCALL_CONTEXT *Context);
 VOID  SyscallCheckGroupExit(VOID);

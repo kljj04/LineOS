@@ -4,8 +4,10 @@
 
 #pragma once
 
+#include <Syscall/Syscall.h>
+
 #include <LineOS/TypeInfo.h>
 
-INT64 SyscallAssetPublish(UINT64 Name, UINT64 Data, UINT64 Size);
-INT64 SyscallAssetAcquire(UINT64 Name, UINT64 UserAsset);
-INT64 SyscallAssetRelease(UINT64 Handle);
+INT64 SyscallAssetPublish(SYSCALL_CONTEXT *Context);
+INT64 SyscallAssetAcquire(SYSCALL_CONTEXT *Context);
+INT64 SyscallAssetRelease(SYSCALL_CONTEXT *Context);

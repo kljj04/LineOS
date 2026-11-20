@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include <Syscall/Syscall.h>
+
 #include <LineOS/TypeInfo.h>
 #include <Syscall/System/Sysinfo.h>
 
-INT64 SyscallSysInfo(UINT64 UserInfo);
+INT64 SyscallSysInfo(SYSCALL_CONTEXT *Context);

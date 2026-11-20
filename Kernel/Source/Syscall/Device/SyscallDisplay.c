@@ -9,8 +9,10 @@
 #include <Memory/VMM.h>
 #include <Syscall/Errno.h>
 
-INT64 SyscallDisplayInfo(UINT64 UserInfo)
+INT64 SyscallDisplayInfo(SYSCALL_CONTEXT *Context)
 {
+    UINT64 UserInfo = Context->Args.RDI;
+
     TASK            *Task;
     VIRTIO_GPU_INFO *GPU;
     DISPLAY_INFO     Info;
@@ -42,8 +44,11 @@ INT64 SyscallDisplayInfo(UINT64 UserInfo)
     return 0;
 }
 
-INT64 SyscallDisplayPresent(UINT64 UserBuffer, UINT64 BufferSize)
+INT64 SyscallDisplayPresent(SYSCALL_CONTEXT *Context)
 {
+    UINT64 UserBuffer = Context->Args.RDI;
+    UINT64 BufferSize = Context->Args.RSI;
+
     TASK            *Task;
     VIRTIO_GPU_INFO *GPU;
     UINT64           RequiredSize;
@@ -111,8 +116,10 @@ INT64 SyscallDisplayPresent(UINT64 UserBuffer, UINT64 BufferSize)
     return Success ? 0 : -EFAULT;
 }
 
-INT64 SyscallDisplayPresentRect(UINT64 UserRect)
+INT64 SyscallDisplayPresentRect(SYSCALL_CONTEXT *Context)
 {
+    UINT64 UserRect = Context->Args.RDI;
+
     TASK            *Task;
     VIRTIO_GPU_INFO *GPU;
     DISPLAY_RECT     Rect;

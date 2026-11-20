@@ -131,8 +131,10 @@ STATIC INT64 CloneThread(TASK *Parent, INTERRUPT_FRAME *Frame, CONST CLONE_ARGS 
     return ProcessEnd(Result);
 }
 
-INT64 SyscallClone(INTERRUPT_FRAME *Frame)
+INT64 SyscallClone(SYSCALL_CONTEXT *Context)
 {
+    INTERRUPT_FRAME *Frame = Context->Frame;
+
     TASK *Parent = LBPWRRGetCurrentTask();
 
     if (Parent == NULL || Parent->Process->AddressSpace == NULL || Parent->Process->Execution == NULL)
@@ -140,15 +142,17 @@ INT64 SyscallClone(INTERRUPT_FRAME *Frame)
         return -ESRCH;
     }
 
-    CLONE_ARGS Args = {.Flags = Frame->RDI, .ParentTID = Frame->RDX, .ChildTID = Frame->R10, .TLS = Frame->R8};
+    CLONE_ARGS Args = {.Flags = Context->Args.RDI, .ParentTID = Context->Args.RDX, .ChildTID = Context->Args.R10, .TLS = Context->Args.R8};
 
-    return CloneThread(Parent, Frame, &Args, Frame->RSI);
+    return CloneThread(Parent, Frame, &Args, Context->Args.RSI);
 }
 
-INT64 SyscallClone3(INTERRUPT_FRAME *Frame)
+INT64 SyscallClone3(SYSCALL_CONTEXT *Context)
 {
+    INTERRUPT_FRAME *Frame = Context->Frame;
+
     TASK      *Parent = LBPWRRGetCurrentTask();
-    UINT64     Size   = Frame->RSI;
+    UINT64     Size   = Context->Args.RSI;
     CLONE_ARGS Args   = {0};
 
     if (Parent == NULL || Parent->Process->AddressSpace == NULL || Parent->Process->Execution == NULL)
@@ -166,7 +170,7 @@ INT64 SyscallClone3(INTERRUPT_FRAME *Frame)
         return -E2BIG;
     }
 
-    if (!VMMCopyFromUser(Parent->Process->AddressSpace, &Args, Frame->RDI, Size))
+    if (!VMMCopyFromUser(Parent->Process->AddressSpace, &Args, Context->Args.RDI, Size))
     {
         return -EFAULT;
     }
@@ -186,8 +190,10 @@ INT64 SyscallClone3(INTERRUPT_FRAME *Frame)
     return CloneThread(Parent, Frame, &Args, Stack);
 }
 
-INT64 SyscallGetTID(VOID)
+INT64 SyscallGetTID(SYSCALL_CONTEXT *Context)
 {
+    (VOID) Context;
+
     TASK *Task = LBPWRRGetCurrentTask();
 
     if (Task == NULL || Task->Idle)
@@ -198,8 +204,15 @@ INT64 SyscallGetTID(VOID)
     return Task->TID;
 }
 
-INT64 SyscallFutex(UINT64 Address, UINT64 Operation, UINT64 Value, UINT64 Timeout, UINT64 Address2, UINT64 Value3)
+INT64 SyscallFutex(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Address   = Context->Args.RDI;
+    UINT64 Operation = Context->Args.RSI;
+    UINT64 Value     = Context->Args.RDX;
+    UINT64 Timeout   = Context->Args.R10;
+    UINT64 Address2  = Context->Args.R8;
+    UINT64 Value3    = Context->Args.R9;
+
     TASK *Task = LBPWRRGetCurrentTask();
 
     (VOID) Address2;
@@ -294,8 +307,10 @@ INT64 SyscallFutex(UINT64 Address, UINT64 Operation, UINT64 Value, UINT64 Timeou
     return Result;
 }
 
-INT64 SyscallSetTIDAddress(UINT64 Address)
+INT64 SyscallSetTIDAddress(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Address = Context->Args.RDI;
+
     TASK *Task = LBPWRRGetCurrentTask();
 
     if (Task == NULL || Task->Idle)
@@ -328,8 +343,11 @@ VOID SyscallClearTIDAddress(TASK *Task)
     }
 }
 
-INT64 SyscallArchPrctl(UINT64 Code, UINT64 Address)
+INT64 SyscallArchPrctl(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Code    = Context->Args.RDI;
+    UINT64 Address = Context->Args.RSI;
+
     TASK *Task = LBPWRRGetCurrentTask();
 
     if (Task == NULL || Task->Process->AddressSpace == NULL)
@@ -375,8 +393,11 @@ typedef struct ROBUST_LIST_HEAD
     UINT64 Pending;
 } ROBUST_LIST_HEAD;
 
-INT64 SyscallSetRobustList(UINT64 Head, UINT64 Length)
+INT64 SyscallSetRobustList(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Head   = Context->Args.RDI;
+    UINT64 Length = Context->Args.RSI;
+
     TASK *Task = LBPWRRGetCurrentTask();
 
     if (Length != sizeof(ROBUST_LIST_HEAD))
@@ -394,8 +415,12 @@ INT64 SyscallSetRobustList(UINT64 Head, UINT64 Length)
     return 0;
 }
 
-INT64 SyscallGetRobustList(UINT64 TID, UINT64 HeadAddress, UINT64 LengthAddress)
+INT64 SyscallGetRobustList(SYSCALL_CONTEXT *Context)
 {
+    UINT64 TID           = Context->Args.RDI;
+    UINT64 HeadAddress   = Context->Args.RSI;
+    UINT64 LengthAddress = Context->Args.RDX;
+
     TASK *Task = LBPWRRGetCurrentTask();
 
     if (Task == NULL || Task->Process->AddressSpace == NULL)
@@ -509,13 +534,20 @@ VOID SyscallReleaseRobustList(TASK *Task)
     }
 }
 
-INT64 SyscallExitGroup(UINT64 Status)
+INT64 SyscallExitGroup(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Status = Context->Args.RDI;
+
     return SyscallProcessExit(LBPWRRGetCurrentTask(), Status, TRUE);
 }
 
-INT64 SyscallRTSigprocmask(INT32 How, UINT64 Set, UINT64 OldSet, UINT64 Size)
+INT64 SyscallRTSigprocmask(SYSCALL_CONTEXT *Context)
 {
+    INT32  How    = (INT32) Context->Args.RDI;
+    UINT64 Set    = Context->Args.RSI;
+    UINT64 OldSet = Context->Args.RDX;
+    UINT64 Size   = Context->Args.R10;
+
     TASK *Task = LBPWRRGetCurrentTask();
     if (Task == NULL || Task->Process->AddressSpace == NULL)
     {

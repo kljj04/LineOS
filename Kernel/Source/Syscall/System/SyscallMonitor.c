@@ -13,8 +13,11 @@
 #include <Memory/VMM.h>
 #include <Timer/Clock.h>
 
-INT64 SyscallSystemMonitor(UINT64 UserInfo, UINT64 Size)
+INT64 SyscallSystemMonitor(SYSCALL_CONTEXT *Context)
 {
+    UINT64 UserInfo = Context->Args.RDI;
+    UINT64 Size     = Context->Args.RSI;
+
     TASK *Task = LBPWRRGetCurrentTask();
 
     if (Task == NULL || Task->Process->AddressSpace == NULL)

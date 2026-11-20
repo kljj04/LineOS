@@ -10,8 +10,13 @@
 
 #include <Syscall/Time/Time.h>
 
-INT64 SyscallUtimensat(INT64 DirFD, UINT64 Path, UINT64 TimesAddress, UINT64 Flags)
+INT64 SyscallUtimensat(SYSCALL_CONTEXT *Context)
 {
+    INT64  DirFD        = (INT64) Context->Args.RDI;
+    UINT64 Path         = Context->Args.RSI;
+    UINT64 TimesAddress = Context->Args.RDX;
+    UINT64 Flags        = Context->Args.R10;
+
     TASK     *Task     = LBPWRRGetCurrentTask();
     TIME_SPEC Times[2] = {
         {0, LOS_UTIME_NOW},
@@ -54,8 +59,8 @@ INT64 SyscallUtimensat(INT64 DirFD, UINT64 Path, UINT64 TimesAddress, UINT64 Fla
         }
     }
 
-    VFS_CONTEXT Context = *Task->Process->FileContext;
-    INT64       Result  = 0;
+    VFS_CONTEXT FileContext = *Task->Process->FileContext;
+    INT64       Result      = 0;
 
     if (Path != 0)
     {
@@ -78,17 +83,17 @@ INT64 SyscallUtimensat(INT64 DirFD, UINT64 Path, UINT64 TimesAddress, UINT64 Fla
             return -EBADF;
         }
 
-        Context             = File->OpenContext;
-        Context.Credentials = Task->Process->FileContext->Credentials;
-        Expected.Generation = File->Generation;
-        Expected.Partition  = File->Partition;
-        Expected.Number     = File->Number;
+        FileContext             = File->OpenContext;
+        FileContext.Credentials = Task->Process->FileContext->Credentials;
+        Expected.Generation     = File->Generation;
+        Expected.Partition      = File->Partition;
+        Expected.Number         = File->Number;
 
         if (Path == 0)
         {
             ExpectedPointer = &Expected;
 
-            return SyscallVFSError(VFSSetTimes(&Context, File->Path, ExpectedPointer, TRUE, Times));
+            return SyscallVFSError(VFSSetTimes(&FileContext, File->Path, ExpectedPointer, TRUE, Times));
         }
 
         if (!File->Directory)
@@ -100,7 +105,7 @@ INT64 SyscallUtimensat(INT64 DirFD, UINT64 Path, UINT64 TimesAddress, UINT64 Fla
 
         VFS_NODE Directory;
 
-        Result = SyscallVFSError(VFSLookup(&Context, File->Path, &Directory));
+        Result = SyscallVFSError(VFSLookup(&FileContext, File->Path, &Directory));
 
         if (Result == 0 && (Directory.Number != Expected.Number || Directory.Partition != Expected.Partition || Directory.Generation != Expected.Generation))
         {
@@ -109,13 +114,13 @@ INT64 SyscallUtimensat(INT64 DirFD, UINT64 Path, UINT64 TimesAddress, UINT64 Fla
 
         if (Result == 0)
         {
-            Result = SyscallVFSError(VFSChangeDirectory(&Context, File->Path));
+            Result = SyscallVFSError(VFSChangeDirectory(&FileContext, File->Path));
         }
     }
 
     if (Result == 0)
     {
-        Result = SyscallVFSError(VFSSetTimes(&Context, Name, NULL, (Flags & 0x100) == 0, Times));
+        Result = SyscallVFSError(VFSSetTimes(&FileContext, Name, NULL, (Flags & 0x100) == 0, Times));
     }
 
     KFree(Name);

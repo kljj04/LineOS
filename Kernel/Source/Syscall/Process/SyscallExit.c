@@ -6,8 +6,10 @@
 #include <Syscall/Process/SyscallProcess.h>
 #include <Scheduler/LBPWRR.h>
 
-INT64 SyscallExit(UINT64 ExitCode)
+INT64 SyscallExit(SYSCALL_CONTEXT *Context)
 {
+    UINT64 ExitCode = Context->Args.RDI;
+
     return SyscallProcessExit(LBPWRRGetCurrentTask(), ExitCode, FALSE);
 }
 

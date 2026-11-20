@@ -21,8 +21,10 @@ typedef struct
 STATIC SUDO_CACHE_ENTRY SudoCache[SUDO_CACHE_LIMIT];
 STATIC SPIN_LOCK        SudoCacheLock;
 
-INT64 SyscallSudoCache(UINT64 Operation)
+INT64 SyscallSudoCache(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Operation = Context->Args.RDI;
+
     TASK *Task = LBPWRRGetCurrentTask();
 
     if (Task == NULL || Task->Process->FileContext == NULL)

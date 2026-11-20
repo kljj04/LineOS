@@ -68,8 +68,12 @@ STATIC BOOLEAN AssetNameEqual(CONST CHAR8 *Left, CONST CHAR8 *Right)
     return FALSE;
 }
 
-INT64 SyscallAssetPublish(UINT64 Name, UINT64 Data, UINT64 Size)
+INT64 SyscallAssetPublish(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Name = Context->Args.RDI;
+    UINT64 Data = Context->Args.RSI;
+    UINT64 Size = Context->Args.RDX;
+
     TASK        *Task                         = LBPWRRGetCurrentTask();
     CHAR8        Buffer[LOS_ASSET_NAME_LIMIT] = {0};
     ASSET_ENTRY *Entry                        = NULL;
@@ -172,8 +176,11 @@ Cleanup:
     return Result;
 }
 
-INT64 SyscallAssetAcquire(UINT64 Name, UINT64 UserAsset)
+INT64 SyscallAssetAcquire(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Name      = Context->Args.RDI;
+    UINT64 UserAsset = Context->Args.RSI;
+
     TASK        *Task = LBPWRRGetCurrentTask();
     CHAR8        Buffer[LOS_ASSET_NAME_LIMIT];
     ASSET_ENTRY *Entry   = NULL;
@@ -273,8 +280,10 @@ Cleanup:
     return Result;
 }
 
-INT64 SyscallAssetRelease(UINT64 Handle)
+INT64 SyscallAssetRelease(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Handle = Context->Args.RDI;
+
     TASK  *Task = LBPWRRGetCurrentTask();
     UINT64 Flags;
     INT64  Result = -EINVAL;

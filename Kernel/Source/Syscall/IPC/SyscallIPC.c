@@ -132,8 +132,12 @@ VOID SyscallIPCRelease(TASK *Task)
     SpinLockReleaseIRQRestore(&IPCLock, Flags);
 }
 
-INT64 SyscallIPC(UINT64 Operation, UINT64 UserRequest, UINT64 Size)
+INT64 SyscallIPC(SYSCALL_CONTEXT *Context)
 {
+    UINT64 Operation   = Context->Args.RDI;
+    UINT64 UserRequest = Context->Args.RSI;
+    UINT64 Size        = Context->Args.RDX;
+
     TASK           *Task = LBPWRRGetCurrentTask();
     LOS_IPC_REQUEST Request;
 
