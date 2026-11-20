@@ -2,7 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <libintl.h>
+#include <LOSLocale.h>
 
 #include <Sudo.h>
 #include <Argon2.h>
@@ -98,7 +98,12 @@ BOOLEAN SudoAuthenticate(CONST char *Username, USER_DB_ACCOUNT *Account)
     BOOLEAN Complete                           = FALSE;
     UINT8   Byte;
 
-    printf(gettext("[sudo] password for %s: "), Username);
+    printf(LOSGettext("[sudo] password for %s: "), Username);
+    if (fflush(stdout) == EOF)
+    {
+        CryptoWipe(Password, sizeof(Password));
+        return FALSE;
+    }
 
     while (read(0, &Byte, 1) == 1)
     {

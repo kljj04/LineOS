@@ -2,11 +2,12 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <libintl.h>
+#include <LOSLocale.h>
 
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 #include <locale.h>
 #include <stdio.h>
+#include <LOS.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -80,7 +81,7 @@ STATIC BOOLEAN LocaleWrite(CONST char *Name)
 
     if (Error != 0)
     {
-        remove(Path);
+        LOSRemove(Path);
         errno = Error;
 
         return FALSE;
@@ -91,16 +92,16 @@ STATIC BOOLEAN LocaleWrite(CONST char *Name)
 
 INT32 main(INT32 Argc, char **Argv)
 {
-    if (setlocale(LC_ALL, "") == NULL)
+    if (LOSLocaleRefresh() == NULL)
     {
         setlocale(LC_ALL, "C");
     }
 
     if (Argc == 1)
     {
-        if (setlocale(LC_ALL, "") == NULL)
+        if (LOSLocaleRefresh() == NULL)
         {
-            puts(gettext("locale: invalid locale environment"));
+            puts(LOSGettext("locale: invalid locale environment"));
 
             return 1;
         }
@@ -119,11 +120,11 @@ INT32 main(INT32 Argc, char **Argv)
 
     if (Argc == 3 && strcmp(Argv[1], "set") == 0)
     {
-        char *Name = setlocale(LC_ALL, Argv[2]);
+        CONST char *Name = LOSLocaleNormalize(Argv[2]);
 
         if (Name == NULL || Argv[2][0] == 0 || strchr(Argv[2], '=') != NULL)
         {
-            printf(gettext("locale: unsupported locale '%s'\n"), Argv[2]);
+            printf(LOSGettext("locale: unsupported locale '%s'\n"), Argv[2]);
 
             return 1;
         }
@@ -135,7 +136,7 @@ INT32 main(INT32 Argc, char **Argv)
             return 1;
         }
 
-        if (!LocaleWrite(Name))
+        if (setlocale(LC_ALL, Name) == NULL || !LocaleWrite(Name))
         {
             int Error = errno;
 
@@ -144,12 +145,12 @@ INT32 main(INT32 Argc, char **Argv)
             return 1;
         }
 
-        printf(gettext("Locale set: %s\n"), Name);
+        printf(LOSGettext("Locale set: %s\n"), Name);
 
         return 0;
     }
 
-    puts(gettext("Usage: locale [-a | set <LOCALE> | --help]"));
+    puts(LOSGettext("Usage: locale [-a | set <LOCALE> | --help]"));
 
     return Argc == 2 && strcmp(Argv[1], "--help") == 0 ? 0 : 1;
 }

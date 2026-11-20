@@ -1,58 +1,45 @@
-# DeviceFS and process ABI
+# DeviceFS and userspace ABI
 
-## Errors
+[Documentation index](README.md) · [한국어](../ko_KR/DeviceFS.md) · [English](../en_US/DeviceFS.md)
 
-`Common/Syscall/Errno.h` defines Linux x86-64 error numbers. Kernel calls return negative errors and unknown syscall numbers return -ENOSYS. Libc translates -4095..-1 to errno and -1 (MAP_FAILED for mmap), preserving errno on success. The raw LineOSSyscall entry functions preserve raw results.
+## Runtime and syscall ABI
 
-`__errno_location()` accesses an internal LIBC_THREAD_STATE. Storage is currently private to each single-threaded process, copied by fork and reset by a new image. Thread support must replace the accessor with TLS selection before shared-address-space threads are enabled; this is not a pthread-safe TLS implementation.
+Project musl supplies standard C/POSIX APIs, TLS and thread-local errno. `LOSLib` (`liblos.so`) supplies only LOS APIs. The kernel implements a subset of Linux x86-64 syscalls; a function existing in musl does not imply kernel support. `RAX` carries the number/result; arguments use `RDI`, `RSI`, `RDX`, `R10`, `R8`, `R9`. `RCX` and `R11` are clobbered. Ordinary errors are negative errno values, converted by libc. `brk` instead returns the previous break on failure.
 
-FD errors distinguish EBADF, EFAULT, EACCES, ENOENT, EISDIR, ENOTDIR, EMFILE and backend errors. Partial transfers return the transferred count. Existing sticky regular-file write errors remain; close consumes the FD before reporting an error. VFS lock contention is serialized while preserving interrupt state and servicing TLB shootdowns.
+The authoritative dispatch is `Kernel/Source/Syscall/Syscall.c`, with numbers in `Common/Syscall/Numbers.h`. See the [syscall inventory](Syscalls.md) for numbers and limits.
 
-## Device tree and descriptors
+## Files and descriptors
 
-Boot registers a fixed DeviceFS backend at /dev, without changing the root design or adding a general mount API. VFS resolves absolute/relative paths, symlink targets and /dev/.., enumerates the subtree and includes dev once in the root directory. Nodes are a read-only registry. These special nodes exist in the running kernel VFS; mounting the EXT2 image on the host does not expose /dev. No placeholder or ordinary device files are created on EXT2. Keyboard input continues through lsh1 and its master queue. The kernel mouse task consumes pointer events and updates the hardware cursor; raw keyboard/mouse device-file protocols are not registered.
+Each process has 16 descriptor slots. Fork and F_DUPFD share open-file offsets/status flags; CLOEXEC belongs to each descriptor. Successful exec closes CLOEXEC descriptors; failed exec preserves the old state. Regular-file identity checks use path, partition, inode and inode generation. Unrelated directory changes no longer invalidate descriptors. Open-inode lifetime across rename/unlink is still not fully POSIX-compatible.
 
-| Node | Behavior |
-| --- | --- |
-| /dev/null | EOF on read; discard writes. |
-| /dev/zero | Zero-filled reads; discard writes. |
-| /dev/full | Zero-filled reads; nonempty writes fail with ENOSPC. |
-| /dev/lsh1 | Existing program terminal queues. |
-| /dev/lsh1-master | Existing master queues; boot Init only; one open object. |
-| /dev/fb0 | Pixel read/write, screen-info and presentation ioctl, shared mmap. |
+Open/openat support access modes, CREATE, EXCL, TRUNC, APPEND, DIRECTORY, NOFOLLOW and CLOEXEC, accepting x86-64 O_LARGEFILE. Openat resolves relative paths against AT_FDCWD or a directory descriptor and ignores dirfd for absolute paths. O_PATH, O_TMPFILE and other unsupported flags are rejected. Pread64 reads regular files without moving the shared offset; access checks real UID/GID.
 
-Init now uses /dev/lsh1-master instead of the non-UNIX character-device child path /dev/lsh1/master. The old path is not retained as an alias. Device operations provide open/read/write/close/ioctl/map. Inherited descriptors share open-object references and offsets; final close releases the device. Read-only directory FDs support getdents64 (217), using Linux x86-64 dirent64 records. stat/lstat/fstat (4/6/5) report node type, permissions, identity, size and timestamps using a 144-byte x86-64 layout. Device st_rdev identifies the fixed registry node; device timestamps and size are zero. Regular-file fstat retains the existing path and namespace-generation checks. opendir/readdir, mknod and dynamic device registration remain unsupported.
+Stat/lstat/fstat/newfstatat use the 144-byte Linux x86-64 stat layout. Newfstatat handles AT_SYMLINK_NOFOLLOW and AT_EMPTY_PATH and accepts AT_NO_AUTOMOUNT. Getdents64 produces Linux dirent64 records used by musl directory APIs.
 
-## ioctl and display
+Fcntl supports GETFD, SETFD, GETFL, SETFL, DUPFD and DUPFD_CLOEXEC. SETFL handles APPEND and regular-file NONBLOCK status, but device asynchronous/nonblocking I/O, file locks and O_DIRECT are unsupported. Poll only validates descriptors with timeout=0 and events=0; general readiness waiting is not implemented.
 
-ioctl (16) returns EBADF for invalid descriptors and ENOTTY for unsupported files/devices/commands. User pointers use checked VMM copy operations.
+## DeviceFS and terminal
 
-| Command | ABI | Behavior |
-| --- | --- | --- |
-| FBIOGET_VSCREENINFO, 0x4600 | Linux, 160-byte layout | Read the fixed 32-bit BGRA mode. |
-| FBIOGET_FSCREENINFO, 0x4602 | Linux x86-64, 80-byte layout | Read stride, byte size and truecolor metadata. Physical/MMIO addresses are zero. |
-| LOS_FBIO_PRESENT | LineOS, _IOW('L', 1, ...) | Reuse full-screen presentation. |
-| LOS_FBIO_PRESENT_RECT | LineOS, _IOW('L', 2, ...) | Reuse rectangle presentation. |
-| LOS_FBIO_FLUSH | LineOS, _IO('L', 3) | Mark the full screen dirty and issue VirtIO transfer/flush. |
+DeviceFS mounts at `/dev` with fixed nodes including `/dev/null`, `/dev/fb0`, `/dev/lsh1` and `/dev/lsh1-master`. Device operations provide open/read/write/close/ioctl/map; the final open-object reference closes the device. Dynamic registration and mknod are unsupported.
 
-Mode changes, panning, colormaps, DRM/KMS and vsync are unsupported. Private presentation commands require write access. fb0 writes transfer/flush accepted pixels; mmap writes require an explicit LOS_FBIO_FLUSH. Clients must coordinate concurrent shared framebuffer writes. Terminal opens fb0 with O_RDWR, queries both screen-info ioctls, validates the fixed 32-bit layout, and maps the pixel span with MAP_SHARED. It keeps its private rendering buffer so cursor restoration does not alter the displayed pixels, copies each completed frame into the mapping, and calls LOS_FBIO_FLUSH. Existing read(3), TTF fonts, UTF-8 decoding and scrolling remain. Existing Display library wrappers and display/asset syscalls remain available for other clients.
+Init opens the program endpoint as descriptors 0–2 and the master as descriptor 3. Only Terminal inherits the master; Login and the shell use program endpoints. Separate 64 KiB input/output queues block empty reads and full writes on Wait Queues. Only boot Init may open the master; final master close allows input to drain to EOF. Ioctl commands are normalized to their low 32 bits for musl signed-int compatibility.
 
-## mmap and munmap
+Framebuffer controls include Linux screen-information requests and LOS flush/present, display ownership and input forwarding. Fb0 MAP_SHARED shares framebuffer RAM and writable mappings require a writable FD. Executable/private framebuffer mappings, dynamic modes, DRM/KMS and vsync are unsupported. Writes through mappings require LOS flush/present. See [lwm](Lwm.md) and [IPC](IPC.md) for ownership and GUI behavior.
 
-mmap (9) uses the six-argument Linux x86-64 register ABI; munmap is 11. Anonymous MAP_PRIVATE pages are zeroed with requested R/W/X permissions. fb0 MAP_SHARED maps framebuffer RAM, requiring read access and write access for writable mappings. Mappings survive FD close. The mapping validates page alignment and the rounded page span against the framebuffer allocation, whose padding is zeroed by the page allocator. Executable and private framebuffer mappings are rejected. Framebuffer recreation is rejected once allocated, preserving mapped page lifetime; dynamic display resizing is unsupported. Partial munmap and already-unmapped holes within the mmap arena are supported. Process image cleanup releases owned pages.
+## mmap and brk
 
-The arena is 0x600000000000..0x600100000000, with 64 MiB per call and 128 MiB of reserved region spans per process. Addresses are hints; callers must use the returned address. Fixed mappings, anonymous MAP_SHARED and ordinary file mappings are unsupported. Unsupported mapping combinations return EOPNOTSUPP; ordinary files return ENODEV. munmap does not remove ELF or asset pages outside this arena. Anonymous PROT_NONE mappings and mprotect permission changes are supported; protected pages remain tracked across fork and munmap. msync and file writeback remain unimplemented. VMM serializes page-table changes and flushes the local TLB before freeing pages; an address space running on another CPU cannot be modified. Shared-address-space threads remain unsupported.
+Anonymous MAP_PRIVATE, regular-file MAP_PRIVATE, framebuffer MAP_SHARED, PROT_NONE and mprotect are supported. Regular-file mapping eagerly copies bytes into private pages and zero-fills the remainder without changing the FD offset. It does not synchronize subsequent disk changes or implement Linux SIGBUS beyond EOF. Regular-file MAP_SHARED, msync and writeback are unsupported.
 
-## fork and execve
+The arena is `0x600000000000..0x600100000000`, with 64 MiB per call and 128 MiB total reserved spans per process. MAP_FIXED and MAP_FIXED_NOREPLACE operate within this arena. Replacement is limited to supported existing private mappings, not arbitrary ownership classes. Partial munmap and holes are handled; ELF/asset pages outside the arena cannot be arbitrarily unmapped. VMM locking and SMP TLB shootdowns synchronize shared address-space updates.
 
-fork (57) returns the child PID in the parent and zero in the child. It eagerly copies private user pages, registers and stack; assets/framebuffer shared mappings and open-file offsets remain shared. Cwd and credentials are copied. Boot Init asset-publisher authority is not granted to fork children. COW is not implemented.
+Brk(0) queries the current break; success returns the requested address and failure returns the previous break. The heap is limited to 64 MiB from its initial break. Musl malloc uses these kernel facilities.
 
-execve (59) prepares an image before committing, preserves PID/FDs/cwd/credentials, replaces the address space on success and preserves the old image on failure. Limits are 64 argv entries and 64 envp entries, 4096 bytes per string and 16384 combined string bytes. The existing LineOS entry convention passes RDI=argc, RSI=argv and RDX=envp; Linux initial-stack/auxv compatibility is not implemented. Only static LineOS ELF images are supported, without a dynamic linker, scripts or ELF TLS.
+## Processes, threads and ELF
 
-Creation/replacement uses a wait queue to serialize fork and execve. Slot exhaustion returns EAGAIN. Fork retains at most 16 execution records and reaps terminated records during the next creation call. All bundled program launches use fork followed by execve in the child, with argv[0]. Login supplies USER and PATH=/bin/lsh to the shell, which inherits its environment when executing children; other launch sites supply an empty environment. The spawn/spawnv extension and syscall numbers 1030/1031 are removed. Exec failure is reported by the child, which exits with 127; the parent receives only the fork result. The shell waits for each external child with waitpid before printing the next prompt and supports relative executable paths and cd [PATH] through chdir (80); cd without a path selects /. It has no built-in ls. The two-line prompt displays the current path from getcwd (79) and the USER environment value: `┏━[PATH]━(USER)` followed by `┗━>`. waitpid/wait use wait4 (61) with a positive child PID or -1, blocking mode or WNOHANG, and optional exit status. Unsupported process-group selection and rusage return EOPNOTSUPP; unsupported flags return EINVAL. Uncollected child status is retained while the parent lives; wait consumes it once, with ECHILD thereafter. Dead-parent records are reclaimed on later creation calls without reparenting. Signal delivery and threads remain unsupported. Existing regular-file path and namespace-generation checks remain, so open-inode lifetime across rename/unlink is not Linux-compatible.
+Programs are dynamic PIE ELF images. The kernel maps PT_INTERP and builds a Linux argc/argv/envp/auxv initial stack. The default `/lib/libc.so` interpreter loads shared libraries and prepares TLS. The separate LineOS loader remains for experimentation/validation. This does not provide arbitrary Linux binary compatibility; shebang scripts are unsupported.
 
-## References and follow-up
+PROCESS shares the address space, descriptors, cwd, credentials and mappings. TASK owns TID, registers, FS base, kernel stack and signal mask. Clone/clone3 support thread flag combinations, FS-based TLS, private FUTEX_WAIT/WAKE, clear_child_tid and robust lists. Basic musl pthread creation/join works; signal delivery, asynchronous cancellation and the full futex operation set do not. Rt_sigprocmask handles per-thread 64-bit BLOCK/UNBLOCK/SETMASK and queries, not handler delivery. Membarrier QUERY returns a zero supported-command mask.
 
-See the Linux [syscall table](https://github.com/torvalds/linux/blob/master/arch/x86/entry/syscalls/syscall_64.tbl), [errno UAPI](https://github.com/torvalds/linux/blob/master/include/uapi/asm-generic/errno.h) and [framebuffer UAPI](https://github.com/torvalds/linux/blob/master/include/uapi/linux/fb.h). Follow-up work includes TLS errno, wait/reaping, inode lifetime, file mmap/mprotect/msync, display ownership and replacing the retained display/asset extensions after the device path is validated.
+Fork eagerly copies private pages without COW, sharing open objects, framebuffer and shared assets. Fork/execve from multithreaded processes return EBUSY. Exec prepares a replacement before committing and preserves PID. Limits: 64 argv and 64 envp entries, 4096 bytes per string, 16384 combined bytes. Process execution records use 128 slots. Wait4 supports child PID or -1, WNOHANG and one-time status collection, not process groups, rusage or reparenting.
 
-Commands without / are searched in colon-separated PATH entries, trying the exact filename and then a .lix suffix unless already present. Empty PATH entries select the current directory. An unset PATH defaults to /bin/lsh. Paths containing / execute exactly as entered. Shell lookup runs in the fork child and keeps inherited environment and waitpid ordering.
+Root-owned setuid execution, AT_SECURE and trusted-path checks are implemented; setgid execution is unsupported. See [users and sudo](Users.md) for the custom authentication model. Memfd_create/sealing, general poll waits, socket syscalls, job control and ordinary signal delivery remain unsupported.

@@ -350,6 +350,11 @@ STATIC BOOLEAN ELF64MapImage(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUT
 
         UINT64 End = (Segment.VAddr + Segment.MemSize + 4095) & ~4095ULL;
 
+        if (Execution->Task == NULL && End > Execution->BreakBase)
+        {
+            Execution->BreakBase = End;
+        }
+
         for (UINT64 Address = Segment.VAddr & ~4095ULL; Address < End; Address += ELF64_EXEC_PAGE_SIZE)
         {
             VOID *Page = ELF64MapOwnedPage(Execution, Address, ((Segment.Flags & ELF64_PF_W) != 0 ? VMM_FLAG_WRITABLE : 0) | ((Segment.Flags & ELF64_PF_X) == 0 ? VMM_FLAG_NO_EXECUTE : 0));
@@ -422,6 +427,8 @@ BOOLEAN ELF64Load(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUTION *Execut
 
     Task->Process->AddressSpace = Execution->AddressSpace;
     Task->Process->Execution    = Execution;
+    Task->Process->BreakBase    = Execution->BreakBase;
+    Task->Process->Break        = Execution->BreakBase;
     Task->UserStackBase         = ELF64_EXEC_STACK;
     Task->UserStackSize         = ELF64_EXEC_STACK_PAGES * ELF64_EXEC_PAGE_SIZE;
     KMemSet(&Task->Context, 0, sizeof(Task->Context));
@@ -548,7 +555,7 @@ STATIC BOOLEAN ELF64SetLinuxStack(ELF64_EXECUTION *Execution)
     }
 
     Vector[Count++]    = 0;
-    CONST UINT64 Aux[] = {3, Execution->ProgramHeaders, 4, sizeof(ELF64_PROGRAM_HEADER), 5, Execution->ProgramHeaderCount, 6, 4096, 7, Execution->InterpreterBase, 9, Execution->Entry, 11, Task->Process->RealUID, 12, Task->Process->RealUID, 13, Task->Process->RealGID, 14, Task->Process->RealGID, 23, 0, 25, RandomAddress, 31, ExecName, 0, 0};
+    CONST UINT64 Aux[] = {3, Execution->ProgramHeaders, 4, sizeof(ELF64_PROGRAM_HEADER), 5, Execution->ProgramHeaderCount, 6, 4096, 7, Execution->InterpreterBase, 9, Execution->Entry, 11, Task->Process->RealUID, 12, Task->Process->FileContext->Credentials.UID, 13, Task->Process->RealGID, 14, Task->Process->FileContext->Credentials.GID, 23, Task->Process->SecureExecution ? 1U : 0U, 25, RandomAddress, 31, ExecName, 0, 0};
     KMemCpy(Vector + Count, Aux, sizeof(Aux));
     Count += sizeof(Aux) / sizeof(Aux[0]);
     UINT64 Stack = (ExecName - Count * 8) & ~15ULL;
@@ -614,7 +621,7 @@ STATIC BOOLEAN ELF64SetArguments(ELF64_EXECUTION *Execution, CONST ELF64_ARGUMEN
     return TRUE;
 }
 
-STATIC BOOLEAN ELF64LoadInterpreter(VFS_CONTEXT *Context, CONST VOID *Data, UINT64 Size, ELF64_EXECUTION *Execution)
+STATIC BOOLEAN ELF64LoadInterpreter(VFS_CONTEXT *Context, CONST VOID *Data, UINT64 Size, ELF64_EXECUTION *Execution, BOOLEAN Secure)
 {
     CONST ELF64_HEADER *Header = Data;
 
@@ -648,6 +655,21 @@ STATIC BOOLEAN ELF64LoadInterpreter(VFS_CONTEXT *Context, CONST VOID *Data, UINT
             }
         }
 
+        if (Secure)
+        {
+            CONST CHAR8 *Expected = (CONST CHAR8 *) "/lib/libc.so";
+            UINT32       Position = 0;
+            while (Path[Position] != 0 && Path[Position] == Expected[Position])
+            {
+                Position++;
+            }
+            if (Path[Position] != Expected[Position] || !VFSIsTrustedPath(Context, Path))
+            {
+                Execution->Error = -EACCES;
+                return FALSE;
+            }
+        }
+
         VFS_NODE Node;
         UINT32   ReadLength;
 
@@ -672,7 +694,7 @@ STATIC BOOLEAN ELF64LoadInterpreter(VFS_CONTEXT *Context, CONST VOID *Data, UINT
             return FALSE;
         }
 
-        Execution->Error    = SyscallVFSError(VFSRead(Context, Path, 0, Image, (UINT32) Node.Size, &ReadLength));
+        Execution->Error    = SyscallVFSError(VFSReadChecked(Context, Path, &Node, 0, Image, (UINT32) Node.Size, &ReadLength));
         BOOLEAN      Loaded = Execution->Error == 0 && ReadLength == Node.Size && ELF64Validate(Image, Node.Size);
         ELF64_HEADER Interpreter;
 
@@ -751,6 +773,26 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONS
         return FALSE;
     }
 
+    TASK  *Caller  = LBPWRRGetCurrentTask();
+    UINT32 RealUID = Context->Credentials.UID;
+    UINT32 RealGID = Context->Credentials.GID;
+    if (Caller != NULL && Caller->Process->FileContext == Context)
+    {
+        RealUID = Caller->Process->RealUID;
+        RealGID = Caller->Process->RealGID;
+    }
+    BOOLEAN Secure = (Node.Mode & 04000U) != 0 || RealUID != Context->Credentials.UID || RealGID != Context->Credentials.GID;
+    if ((Node.Mode & 02000U) != 0)
+    {
+        Execution->Error = -EOPNOTSUPP;
+        return FALSE;
+    }
+    if (Secure && !VFSIsTrustedPath(Context, Path))
+    {
+        Execution->Error = -EACCES;
+        return FALSE;
+    }
+
     Data = KAlloc(Node.Size);
 
     if (Data == NULL)
@@ -761,7 +803,7 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONS
         return FALSE;
     }
 
-    Execution->Error = SyscallVFSError(VFSRead(Context, Path, 0, Data, (UINT32) Node.Size, &ReadLength));
+    Execution->Error = SyscallVFSError(VFSReadChecked(Context, Path, &Node, 0, Data, (UINT32) Node.Size, &ReadLength));
     Loaded           = Execution->Error == 0 && ReadLength == Node.Size;
 
     if (Loaded)
@@ -770,7 +812,7 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONS
 
         if (Loaded)
         {
-            Loaded = ELF64LoadInterpreter(Context, Data, Node.Size, Execution);
+            Loaded = ELF64LoadInterpreter(Context, Data, Node.Size, Execution, Secure);
 
             if (!Loaded)
             {
@@ -834,16 +876,9 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONS
     }
 
     Execution->Task->Process->Name[NameLength] = 0;
-    Execution->Task->Process->RealUID          = Context->Credentials.UID;
-    Execution->Task->Process->RealGID          = Context->Credentials.GID;
-
-    if (Execution->LinuxStack && (Node.Mode & 06000U) != 0)
-    {
-        Execution->Error = -EOPNOTSUPP;
-        TaskKill(Execution->Task);
-        ELF64Release(Execution);
-        return FALSE;
-    }
+    Execution->Task->Process->RealUID          = RealUID;
+    Execution->Task->Process->RealGID          = RealGID;
+    Execution->Task->Process->SecureExecution  = Secure;
 
     if ((Node.Mode & 04000U) != 0)
     {

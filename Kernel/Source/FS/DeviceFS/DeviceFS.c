@@ -945,7 +945,15 @@ STATIC CONST DEVICE_OPERATIONS FullOperations        = {DeviceOpen, DeviceZeroRe
 STATIC CONST DEVICE_OPERATIONS TerminalOperations    = {DeviceTerminalOpen, DeviceTerminalRead, DeviceTerminalWrite, DeviceTerminalClose, NULL, DeviceTerminalIoctl};
 STATIC CONST DEVICE_OPERATIONS MasterOperations      = {DeviceMasterOpen, DeviceMasterRead, DeviceMasterWrite, DeviceMasterClose, NULL, DeviceMasterIoctl};
 STATIC CONST DEVICE_OPERATIONS FramebufferOperations = {FramebufferOpen, FramebufferRead, FramebufferWrite, DeviceClose, FramebufferMap, FramebufferIoctl};
-STATIC CONST DEVICE_NODE       DeviceNodes[]         = {{(CONST CHAR8 *) "null", 0666, FALSE, &NullOperations}, {(CONST CHAR8 *) "zero", 0666, FALSE, &ZeroOperations}, {(CONST CHAR8 *) "full", 0666, FALSE, &FullOperations}, {(CONST CHAR8 *) "lsh1", 0666, FALSE, &TerminalOperations}, {(CONST CHAR8 *) "lsh1-master", 0600, FALSE, &MasterOperations}, {(CONST CHAR8 *) "fb0", 0666, TRUE, &FramebufferOperations}, {(CONST CHAR8 *) "virgl0", 0444, FALSE, &VirGLOperations}};
+STATIC CONST DEVICE_NODE       DeviceNodes[]         = {
+    {(CONST CHAR8 *) "null",        0666, FALSE, &NullOperations       },
+    {(CONST CHAR8 *) "zero",        0666, FALSE, &ZeroOperations       },
+    {(CONST CHAR8 *) "full",        0666, FALSE, &FullOperations       },
+    {(CONST CHAR8 *) "lsh1",        0666, FALSE, &TerminalOperations   },
+    {(CONST CHAR8 *) "lsh1-master", 0600, FALSE, &MasterOperations     },
+    {(CONST CHAR8 *) "fb0",         0666, TRUE,  &FramebufferOperations},
+    {(CONST CHAR8 *) "virgl0",      0444, FALSE, &VirGLOperations      }
+};
 
 CONST DEVICE_NODE *DeviceFSGetNode(UINT32 Number)
 {

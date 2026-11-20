@@ -2,11 +2,11 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <libintl.h>
+#include <LOSLocale.h>
 
 #include <locale.h>
 
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/sysinfo.h>
@@ -32,7 +32,7 @@ STATIC VOID UptimeDuration(UINT64 Seconds)
     CONST char  *Names[] = {"day", "hour", "minute", "second"};
     BOOLEAN      Printed = FALSE;
 
-    printf("%s", gettext("up "));
+    printf("%s", LOSGettext("up "));
 
     for (UINTN Index = 0; Index < 4; Index++)
     {
@@ -50,7 +50,7 @@ STATIC VOID UptimeDuration(UINT64 Seconds)
             printf(", ");
         }
 
-        printf("%llu %s", Value, gettext(Names[Index]));
+        printf("%llu %s", Value, LOSGettext(Names[Index]));
 
         if (Value != 1 && strcmp(setlocale(LC_MESSAGES, NULL), "ko_KR.UTF-8") != 0)
         {
@@ -62,13 +62,13 @@ STATIC VOID UptimeDuration(UINT64 Seconds)
 
     if (!Printed)
     {
-        printf("%s", gettext("0 seconds"));
+        printf("%s", LOSGettext("0 seconds"));
     }
 }
 
 INT32 main(INT32 Argc, char **Argv)
 {
-    if (setlocale(LC_ALL, "") == NULL)
+    if (LOSLocaleRefresh() == NULL)
     {
         setlocale(LC_ALL, "C");
     }
@@ -88,15 +88,15 @@ INT32 main(INT32 Argc, char **Argv)
         }
         else if (strcmp(Argv[Index], "-h") == 0 || strcmp(Argv[Index], "--help") == 0)
         {
-            puts(gettext("Usage: uptime [-p|--pretty] [-s|--since]"));
-            puts(gettext("  -p  Show elapsed time only"));
-            puts(gettext("  -s  Show boot time in the configured timezone"));
+            puts(LOSGettext("Usage: uptime [-p|--pretty] [-s|--since]"));
+            puts(LOSGettext("  -p  Show elapsed time only"));
+            puts(LOSGettext("  -s  Show boot time in the configured timezone"));
 
             return 0;
         }
         else
         {
-            printf(gettext("uptime: unknown argument: %s\n"), Argv[Index]);
+            printf(LOSGettext("uptime: unknown argument: %s\n"), Argv[Index]);
 
             return 1;
         }
@@ -104,23 +104,23 @@ INT32 main(INT32 Argc, char **Argv)
 
     if (Pretty && Since)
     {
-        puts(gettext("uptime: --pretty and --since cannot be combined"));
+        puts(LOSGettext("uptime: --pretty and --since cannot be combined"));
 
         return 1;
     }
 
-    SYS_INFO Info;
+    struct sysinfo Info;
 
-    if (sysinfo(&Info) != 0 || Info.Uptime < 0)
+    if (sysinfo(&Info) != 0 || Info.uptime < 0)
     {
-        puts(gettext("uptime: cannot read system information"));
+        puts(LOSGettext("uptime: cannot read system information"));
 
         return 1;
     }
 
     if (Pretty)
     {
-        UptimeDuration((UINT64) Info.Uptime);
+        UptimeDuration((UINT64) Info.uptime);
         putchar('\n');
 
         return 0;
@@ -132,7 +132,7 @@ INT32 main(INT32 Argc, char **Argv)
 
     if (clock_gettime(CLOCK_REALTIME, &Real) != 0)
     {
-        puts(gettext("uptime: cannot read current time"));
+        puts(LOSGettext("uptime: cannot read current time"));
 
         return 1;
     }
@@ -143,7 +143,7 @@ INT32 main(INT32 Argc, char **Argv)
     {
         if (clock_gettime(CLOCK_MONOTONIC, &Monotonic) != 0)
         {
-            puts(gettext("uptime: cannot read monotonic time"));
+            puts(LOSGettext("uptime: cannot read monotonic time"));
 
             return 1;
         }
@@ -158,7 +158,7 @@ INT32 main(INT32 Argc, char **Argv)
 
     if (localtime_r(&Display, &Date) == NULL)
     {
-        puts(gettext("uptime: cannot convert time"));
+        puts(LOSGettext("uptime: cannot convert time"));
 
         return 1;
     }
@@ -178,7 +178,7 @@ INT32 main(INT32 Argc, char **Argv)
 
     UptimeClock(&Date);
     printf(" %s  ", Date.tm_zone);
-    UptimeDuration((UINT64) Info.Uptime);
+    UptimeDuration((UINT64) Info.uptime);
     putchar('\n');
 
     return 0;

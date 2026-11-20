@@ -2,13 +2,14 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <libintl.h>
+#include <LOSLocale.h>
 
 #include <UserDB.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <stdio.h>
+#include <LOS.h>
 #include <string.h>
 
 #define USER_DB_CAPACITY  65536U
@@ -277,7 +278,7 @@ STATIC BOOLEAN UserDBPublishNames(CONST char *Text, UINTN Length)
             break;
         }
 
-        Result = UserDBWriteAll(FD, Text + Start, Fields[0] - Start) && UserDBWriteAll(FD, ":x:", 3) && UserDBWriteAll(FD, Text + Fields[0] + 1, Fields[2] - Fields[0] - 1) && UserDBWriteAll(FD, "::/home/", 8) && UserDBWriteAll(FD, Text + Start, Fields[0] - Start) && UserDBWriteAll(FD, ":/bin/lsh.lix\n", sizeof(":/bin/lsh.lix\n") - 1);
+        Result = UserDBWriteAll(FD, Text + Start, Fields[0] - Start) && UserDBWriteAll(FD, ":x:", 3) && UserDBWriteAll(FD, Text + Fields[0] + 1, Fields[2] - Fields[0] - 1) && UserDBWriteAll(FD, "::/home/", 8) && UserDBWriteAll(FD, Text + Start, Fields[0] - Start) && UserDBWriteAll(FD, ":/bin/lsh/lsh.lix\n", sizeof(":/bin/lsh/lsh.lix\n") - 1);
 
         if (Position < Length)
         {
@@ -295,7 +296,7 @@ STATIC BOOLEAN UserDBPublishNames(CONST char *Text, UINTN Length)
         return TRUE;
     }
 
-    remove("/etc/passwd.tmp");
+    LOSRemove("/etc/passwd.tmp");
 
     return FALSE;
 }
@@ -315,7 +316,7 @@ STATIC USER_DB_RESULT UserDBSave(UINTN Length, BOOLEAN Initial)
 
     if (!Written || Closed != 0)
     {
-        if (remove(Path) != 0)
+        if (LOSRemove(Path) != 0)
         {
             return USER_DB_CLEANUP;
         }
@@ -325,7 +326,7 @@ STATIC USER_DB_RESULT UserDBSave(UINTN Length, BOOLEAN Initial)
 
     if (!Initial && rename(USER_DB_TEMP, USER_DB_PATH) != 0)
     {
-        return remove(USER_DB_TEMP) == 0 ? USER_DB_IO : USER_DB_CLEANUP;
+        return LOSRemove(USER_DB_TEMP) == 0 ? USER_DB_IO : USER_DB_CLEANUP;
     }
 
     return UserDBPublishNames(Replacement, Length) ? USER_DB_OK : USER_DB_COMMITTED_CLEANUP;
@@ -353,7 +354,7 @@ STATIC UINTN UserDBDecimal(char *Text, UINT32 Value)
 STATIC USER_DB_RESULT UserDBUnlock(INT32 LockFD, USER_DB_RESULT Result)
 {
     INT32 Closed  = close(LockFD);
-    INT32 Removed = remove(USER_DB_LOCK);
+    INT32 Removed = LOSRemove(USER_DB_LOCK);
 
     if (Closed != 0 || Removed != 0)
     {
@@ -521,46 +522,46 @@ CONST char *UserDBResultText(USER_DB_RESULT Result)
     switch (Result)
     {
         case USER_DB_OK:
-            return gettext("account database updated");
+            return LOSGettext("account database updated");
 
         case USER_DB_INVALID_NAME:
-            return gettext("invalid username");
+            return LOSGettext("invalid username");
 
         case USER_DB_UNAVAILABLE:
-            return gettext("cannot open account database");
+            return LOSGettext("cannot open account database");
 
         case USER_DB_INVALID:
-            return gettext("invalid account database or password encoding; no recovery overwrite performed");
+            return LOSGettext("invalid account database or password encoding; no recovery overwrite performed");
 
         case USER_DB_EXISTS:
-            return gettext("user already exists");
+            return LOSGettext("user already exists");
 
         case USER_DB_NOT_FOUND:
-            return gettext("user not found");
+            return LOSGettext("user not found");
 
         case USER_DB_ROOT_REQUIRED:
-            return gettext("initialize root first");
+            return LOSGettext("initialize root first");
 
         case USER_DB_ROOT_PROTECTED:
-            return gettext("root account is protected");
+            return LOSGettext("root account is protected");
 
         case USER_DB_LIMIT:
-            return gettext("account database limit reached");
+            return LOSGettext("account database limit reached");
 
         case USER_DB_LOCKED:
-            return gettext("cannot acquire account database lock");
+            return LOSGettext("cannot acquire account database lock");
 
         case USER_DB_IO:
-            return gettext("account database I/O failed");
+            return LOSGettext("account database I/O failed");
 
         case USER_DB_CLEANUP:
-            return gettext("update failed; lock or temporary file cleanup may be required");
+            return LOSGettext("update failed; lock or temporary file cleanup may be required");
 
         case USER_DB_COMMITTED_CLEANUP:
-            return gettext("account updated; lock cleanup required; do not repeat the update");
+            return LOSGettext("account updated; lock cleanup required; do not repeat the update");
 
         default:
-            return gettext("unknown account database error");
+            return LOSGettext("unknown account database error");
     }
 }
 

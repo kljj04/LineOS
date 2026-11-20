@@ -248,6 +248,8 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
 
     Child->Process->AddressSpace = Execution->AddressSpace;
     Child->Process->Execution    = Execution;
+    Child->Process->BreakBase    = Parent->Process->BreakBase;
+    Child->Process->Break        = Parent->Process->Break;
 
     for (UINT64 Index = 0; Index < Count; Index++)
     {
@@ -280,12 +282,14 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
         goto Failed;
     }
 
-    *Child->Process->FileContext = *Parent->Process->FileContext;
-    Child->Process->RealUID      = Parent->Process->RealUID;
-    Child->Process->RealGID      = Parent->Process->RealGID;
-    Child->Process->AuthSession  = Parent->Process->AuthSession;
+    *Child->Process->FileContext    = *Parent->Process->FileContext;
+    Child->Process->RealUID         = Parent->Process->RealUID;
+    Child->Process->RealGID         = Parent->Process->RealGID;
+    Child->Process->AuthSession     = Parent->Process->AuthSession;
+    Child->Process->SecureExecution = Parent->Process->SecureExecution;
     KMemCpy(Child->Process->Name, Parent->Process->Name, sizeof(Child->Process->Name));
     ASM("fxsave64 %0" : "=m"(Child->FPState)::"memory");
+    Child->SignalMask    = Parent->SignalMask;
     Child->FSBase        = ReadMSR(IA32_FS_BASE);
     Child->UserStackBase = Parent->UserStackBase;
     Child->UserStackSize = Parent->UserStackSize;
@@ -430,9 +434,15 @@ INT64 SyscallExecVE(INTERRUPT_FRAME *Frame)
             Owner->PageCount    = New->PageCount;
             KMemCpy(Owner->Pages, New->Pages, New->PageCount * sizeof(VOID *));
             Task->Process->FileContext->Credentials = New->Task->Process->FileContext->Credentials;
+            Task->Process->RealUID                  = New->Task->Process->RealUID;
+            Task->Process->RealGID                  = New->Task->Process->RealGID;
+            Task->Process->SecureExecution          = New->Task->Process->SecureExecution;
             Task->Process->AddressSpace             = New->AddressSpace;
-            Task->UserStackBase                     = New->Task->UserStackBase;
-            Task->UserStackSize                     = New->Task->UserStackSize;
+            Task->Process->BreakBase                = New->Task->Process->BreakBase;
+            Task->Process->Break                    = New->Task->Process->Break;
+            SyscallFilesExec(Task);
+            Task->UserStackBase = New->Task->UserStackBase;
+            Task->UserStackSize = New->Task->UserStackSize;
             KMemCpy(Task->Process->Name, New->Task->Process->Name, sizeof(Task->Process->Name));
             WriteMSR(IA32_FS_BASE, 0);
             ASM("fxrstor64 %0" ::"m"(New->Task->FPState) : "memory");

@@ -321,6 +321,23 @@ MountProgramCopy()
     MountPrivilege install -T -o 0 -g 0 -m "$Mode" -- "$Source" "$Destination"
 }
 
+MountProgramFileExists()
+{
+    local Path="$1" Root="$2" Directory="$2" Component Target
+    local -a Components=()
+    IFS=/ read -r -a Components <<< "${Path#/}"
+    for Component in "${Components[@]}"; do
+        Directory+="/$Component"
+        if MountPrivilege test -L "$Directory"; then
+            return 1
+        fi
+        if ! Target=$(findmnt --raw --noheadings --target "$Directory" --output TARGET) || [[ "$Target" != "$Root" ]]; then
+            return 1
+        fi
+    done
+    MountPrivilege test -f "$Directory"
+}
+
 MountUpdate()
 (
     local ImagePath="$MountRoot/$DiskImage"
@@ -331,11 +348,13 @@ MountUpdate()
     local MountPoint=""
     local Mounted=0
     local File Command ProgramFile Program CopyPath FontFile
-    local -a LibraryFiles=()
+    local -a LibraryFiles=() LibraryPaths=()
+    local LibraryManifestText LibraryName LibraryDirectory LibraryFlags LibrarySources LibraryMakefile LibraryArtifact LibraryOutput LibraryCopyPath LibraryLibC LibraryDeps LibraryClosure LibraryIndex
     local -a FontFiles=()
     local -a ProgramPaths=()
     local -a ProgramModes=()
     local -a ProgramFiles=()
+    local -a PublishPaths=() PublishItems=()
 
     MountCleanup()
     {
@@ -378,29 +397,47 @@ MountUpdate()
         return 1
     fi
 
-    local Manifest Dependencies Sources Destination ProgramMode
+    local Manifest Dependencies Sources Destination Publication ProgramMode ProgramName ProgramLibC ProgramInterpreter ProgramAssets ProgramPublish
     local -A Destinations=()
     if ! Manifest=$(ProgramManifest "$MountRoot"); then
         return 1
     fi
-    while IFS='|' read -r Program CopyPath Dependencies Sources ProgramMode; do
+    while IFS='|' read -r Program CopyPath Dependencies Sources ProgramMode ProgramName ProgramLibC ProgramInterpreter ProgramAssets ProgramPublish; do
         [[ -z "$Program" ]] && continue
-        ProgramFile="$ProgramsDir/$Program/${Program##*/}.lix"
+        ProgramFile="$ProgramsDir/$Program/$ProgramName.lix"
         if [[ -L "$ProgramFile" || ! -f "$ProgramFile" || ! -r "$ProgramFile" ]]; then
             printf 'Missing or invalid program output: %s\n' "$ProgramFile" >&2
             return 1
         fi
-        Destination="${CopyPath%/}/${Program##*/}.lix"
+        Destination="${CopyPath%/}/$ProgramName.lix"
         Destinations[$Destination]=1
         ProgramFiles+=("$ProgramFile")
         ProgramPaths+=("$CopyPath")
         ProgramModes+=("${ProgramMode:-0755}")
+        if [[ "$ProgramPublish" != - ]]; then
+            IFS=, read -r -a PublishItems <<< "$ProgramPublish"
+            for Publication in "${PublishItems[@]}"; do
+                PublishPaths+=("${Publication#*:}")
+            done
+        fi
     done <<< "$Manifest"
 
     shopt -s nullglob
-    LibraryFiles=("$MountRoot"/LineOS/Libraries/*.so "$MountRoot"/LineOS/Libraries/*.so.*)
+    LibraryManifestText=$(LibraryManifest "$MountRoot") || return 1
+    while IFS='|' read -r LibraryName LibraryDirectory LibraryFlags LibrarySources LibraryMakefile LibraryArtifact LibraryOutput LibraryCopyPath LibraryLibC LibraryDeps LibraryClosure; do
+        [[ -z "$LibraryName" ]] && continue
+        LibraryFiles+=("$MountRoot/LineOS/Libraries/$LibraryOutput")
+        LibraryPaths+=("$LibraryCopyPath")
+    done <<< "$LibraryManifestText"
+    LibraryFiles+=("$MountRoot/LineOS/Libraries/ld-lineos-x86_64.so.1")
+    LibraryPaths+=("/lib")
 
+    LibraryIndex=0
     for File in "${LibraryFiles[@]}"; do
+        Destination="${LibraryPaths[$LibraryIndex]}/${File##*/}"
+        ProgramDestinationCheck "$Destination" "${!Destinations[@]}" || return 1
+        Destinations[$Destination]=1
+        LibraryIndex=$((LibraryIndex + 1))
         if [[ -L "$File" || ! -f "$File" || ! -r "$File" ]]; then
             printf 'Invalid shared library: %s\n' "$File" >&2
             return 1
@@ -496,11 +533,13 @@ MountUpdate()
         fi
     fi
 
+    LibraryIndex=0
     for File in "${LibraryFiles[@]}"; do
-        if ! MountProgramCopy "$File" "/lib" "$MountPoint" 0755; then
+        if ! MountProgramCopy "$File" "${LibraryPaths[$LibraryIndex]}" "$MountPoint" 0755; then
             printf 'Shared library copy failed: %s\n' "$File" >&2
             return 1
         fi
+        LibraryIndex=$((LibraryIndex + 1))
     done
 
     local Index=0
@@ -516,6 +555,13 @@ MountUpdate()
     for FontFile in "${FontFiles[@]}"; do
         if ! MountProgramCopy "$FontFile" "/sys/fonts" "$MountPoint" 0644; then
             printf 'Font copy rejected or failed: %s\n' "$FontFile" >&2
+            return 1
+        fi
+    done
+
+    for Publication in "${PublishPaths[@]}"; do
+        if ! MountProgramFileExists "$Publication" "$MountPoint"; then
+            printf 'Missing or unsafe asset publication source: %s\n' "$Publication" >&2
             return 1
         fi
     done

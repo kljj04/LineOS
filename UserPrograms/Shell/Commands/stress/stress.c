@@ -2,7 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <libintl.h>
+#include <LOSLocale.h>
 
 #include <locale.h>
 
@@ -18,7 +18,7 @@
 
 int main(void)
 {
-    if (setlocale(LC_ALL, "") == NULL)
+    if (LOSLocaleRefresh() == NULL)
     {
         setlocale(LC_ALL, "C");
     }
@@ -33,15 +33,15 @@ int main(void)
 
     if (Supervisor < 0)
     {
-        printf("%s", gettext("Failed to create stress supervisor.\n"));
+        printf("%s", LOSGettext("Failed to create stress supervisor.\n"));
 
         return 1;
     }
 
     if (Supervisor > 0)
     {
-        printf("%s", gettext("Stress test started in background.\n"));
-        printf(gettext("Workers: %u | Duration: %u seconds\n"), STRESS_WORKERS, STRESS_DURATION);
+        printf("%s", LOSGettext("Stress test started in background.\n"));
+        printf(LOSGettext("Workers: %u | Duration: %u seconds\n"), STRESS_WORKERS, STRESS_DURATION);
 
         return 0;
     }

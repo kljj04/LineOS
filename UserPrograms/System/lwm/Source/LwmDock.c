@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <libintl.h>
+#include <LOSLocale.h>
 
 STATIC UINT32 LwmDockSlot(LWM *Manager)
 {
@@ -25,7 +25,7 @@ VOID LwmDock(LWM *Manager)
     LwmFill(Manager, (LWM_RECT) {116, (INT32) Manager->Height - 54, 120, 44}, 0x00354860U);
     LwmText(Manager, "TestGUI +", 126, Manager->Height - 24, 21, 0x00FFFFFFU, 232);
     LwmFill(Manager, (LWM_RECT) {(INT32) Manager->Width - 80, (INT32) Manager->Height - 54, 68, 44}, 0x00423038U);
-    LwmText(Manager, gettext("Exit"), Manager->Width - 70, Manager->Height - 24, 21, 0x00FFB4B4U, Manager->Width - 16);
+    LwmText(Manager, LOSGettext("Exit"), Manager->Width - 70, Manager->Height - 24, 21, 0x00FFB4B4U, Manager->Width - 16);
 
     UINT32 Slot = LwmDockSlot(Manager);
 

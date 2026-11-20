@@ -4,7 +4,7 @@
 // Original from stb_truetype.h
 #pragma once
 
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 
 #define LINEOS_POINT_SIZE(x) (-(x))
 #define VERTEX_TYPE          short

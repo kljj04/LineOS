@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 #include <stddef.h>
 #include <TrueTypeEngine.h>
 #include <Syscall/Device/Input.h>

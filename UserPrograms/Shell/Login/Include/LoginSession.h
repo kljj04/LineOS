@@ -4,6 +4,6 @@
 
 #pragma once
 
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 
 INT32 LoginSessionRun(char **Environment);

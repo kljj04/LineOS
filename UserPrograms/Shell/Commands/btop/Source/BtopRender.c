@@ -2,7 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <libintl.h>
+#include <LOSLocale.h>
 
 #include <Btop.h>
 #include <unistd.h>
@@ -153,7 +153,7 @@ STATIC VOID BtopTasks(CONST BTOP *Monitor)
     STATIC CONST char *States[] = {"ready", "run", "block", "sleep", "exit", "killed"};
 
     BtopText("\033[38;2;0;134;255m");
-    BtopText(gettext("  PID    UID  CPU   CPU% STATE   TYPE NAME"));
+    BtopText(LOSGettext("  PID    UID  CPU   CPU% STATE   TYPE NAME"));
     BtopText("\033[0m\n");
 
     UINT32 Start = Monitor->TaskPage * Monitor->TaskRows;
@@ -181,7 +181,7 @@ STATIC VOID BtopTasks(CONST BTOP *Monitor)
 
         if (Task->State < sizeof(States) / sizeof(States[0]))
         {
-            State = gettext(States[Task->State]);
+            State = LOSGettext(States[Task->State]);
         }
 
         UINTN Length = 0;
@@ -208,7 +208,7 @@ STATIC VOID BtopTasks(CONST BTOP *Monitor)
             BtopCharacter(' ');
         }
 
-        BtopText(Task->Kernel ? gettext("kern ") : gettext("user "));
+        BtopText(Task->Kernel ? LOSGettext("kern ") : LOSGettext("user "));
 
         CONST char *Name = Task->Name;
 
@@ -245,7 +245,7 @@ STATIC VOID BtopTasks(CONST BTOP *Monitor)
         BtopCharacter('\n');
     }
 
-    BtopText(gettext("\nTasks: "));
+    BtopText(LOSGettext("\nTasks: "));
 
     UINT32 RegularTasks = Monitor->Info.TaskCount;
 
@@ -255,11 +255,11 @@ STATIC VOID BtopTasks(CONST BTOP *Monitor)
     }
 
     BtopNumber(RegularTasks, 0);
-    BtopText(gettext("  page "));
+    BtopText(LOSGettext("  page "));
     BtopNumber(Monitor->TaskPage + 1, 0);
-    BtopText(gettext("  returned "));
+    BtopText(LOSGettext("  returned "));
     BtopNumber(Monitor->Info.TasksReturned, 0);
-    BtopText(Monitor->SortPID ? gettext("  sort: PID\n") : gettext("  sort: CPU\n"));
+    BtopText(Monitor->SortPID ? LOSGettext("  sort: PID\n") : LOSGettext("  sort: CPU\n"));
 }
 
 INT32 BtopRender(CONST BTOP *Monitor)
@@ -286,14 +286,14 @@ INT32 BtopRender(CONST BTOP *Monitor)
 
     if (Monitor->Paused)
     {
-        BtopText(gettext("  [PAUSED]"));
+        BtopText(LOSGettext("  [PAUSED]"));
     }
 
     BtopText("\n\nCPU  ");
     BtopBar(Monitor->Info.CPUUsage, Monitor->Columns - 28);
     BtopText("  ");
     BtopNumber(Monitor->Info.CPUCount, 0);
-    BtopText(gettext(" cores\n     "));
+    BtopText(LOSGettext(" cores\n     "));
 
     STATIC CONST char *CONST Levels[] = {" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"};
     BtopText("\033[38;2;79;208;176m");
@@ -368,9 +368,9 @@ INT32 BtopRender(CONST BTOP *Monitor)
     BtopNumber(Used / (1024 * 1024), 0);
     BtopText(" / ");
     BtopNumber(Total / (1024 * 1024), 0);
-    BtopText(gettext(" MiB managed  |  up "));
+    BtopText(LOSGettext(" MiB managed  |  up "));
     BtopNumber(Monitor->Info.UptimeMls / 1000, 0);
-    BtopText(gettext(" s\n"));
+    BtopText(LOSGettext(" s\n"));
     BtopText("\033[38;2;215;205;111mIDLE\033[0m ");
 
     UINT32 Busy = Monitor->Info.CPUUsage;
@@ -381,9 +381,9 @@ INT32 BtopRender(CONST BTOP *Monitor)
     }
 
     BtopNumber(100 - Busy, 3);
-    BtopText(gettext("% idle time  |  "));
+    BtopText(LOSGettext("% idle time  |  "));
     BtopNumber(Monitor->Info.IdleTaskCount, 0);
-    BtopText(gettext(" idle tasks (excluded)\n\n"));
+    BtopText(LOSGettext(" idle tasks (excluded)\n\n"));
     BtopTasks(Monitor);
 
     while (FrameRow + 1 < Monitor->Rows)
@@ -391,7 +391,7 @@ INT32 BtopRender(CONST BTOP *Monitor)
         BtopCharacter('\n');
     }
 
-    BtopText(gettext("q quit | space pause | s sort | n/p tasks | c cores"));
+    BtopText(LOSGettext("q quit | space pause | s sort | n/p tasks | c cores"));
 
     UINTN FrameLength = OutputLength;
 

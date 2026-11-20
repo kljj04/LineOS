@@ -6,6 +6,14 @@
 
 enum SYSCALL_TYPE
 {
+    SYSCALL_POLL            = 7,
+    SYSCALL_MEMBARRIER      = 324,
+    SYSCALL_RT_SIGPROCMASK  = 14,
+    SYSCALL_FCNTL           = 72,
+    SYSCALL_BRK             = 12,
+    SYSCALL_ACCESS          = 21,
+    SYSCALL_OPENAT          = 257,
+    SYSCALL_NEWFSTATAT      = 262,
     SYSCALL_READ            = 0,
     SYSCALL_WRITE           = 1,
     SYSCALL_OPEN            = 2,
@@ -16,6 +24,7 @@ enum SYSCALL_TYPE
     SYSCALL_MMAP            = 9,
     SYSCALL_MPROTECT        = 10,
     SYSCALL_MUNMAP          = 11,
+    SYSCALL_PREAD64         = 17,
     SYSCALL_IOCTL           = 16,
     SYSCALL_WRITEV          = 20,
     SYSCALL_YIELD           = 24,

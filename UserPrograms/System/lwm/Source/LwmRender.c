@@ -5,7 +5,8 @@
 #include <Lwm.h>
 #include <string.h>
 #include <sys/ioctl.h>
-#include <libintl.h>
+#include <Syscall/Device/Ioctl.h>
+#include <LOSLocale.h>
 
 #define LWM_GLYPH_CACHE_COUNT 256U
 #define LWM_GLYPH_BITMAP_SIZE 4096U

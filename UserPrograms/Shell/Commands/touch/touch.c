@@ -2,11 +2,11 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <libintl.h>
+#include <LOSLocale.h>
 
 #include <locale.h>
 
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -75,7 +75,7 @@ STATIC INT32 TouchFile(CONST char *Path, BOOLEAN NoCreate)
 
 INT32 main(INT32 Argc, char **Argv)
 {
-    if (setlocale(LC_ALL, "") == NULL)
+    if (LOSLocaleRefresh() == NULL)
     {
         setlocale(LC_ALL, "C");
     }
@@ -99,13 +99,13 @@ INT32 main(INT32 Argc, char **Argv)
         }
         else if (strcmp(Argument, "--help") == 0)
         {
-            puts(gettext("Usage: touch [-c|--no-create] [--] FILE..."));
+            puts(LOSGettext("Usage: touch [-c|--no-create] [--] FILE..."));
 
             return 0;
         }
         else if (Argument[0] == '-' && Argument[1] != 0)
         {
-            printf(gettext("touch: unknown option: %s\n"), Argument);
+            printf(LOSGettext("touch: unknown option: %s\n"), Argument);
 
             return 1;
         }
@@ -117,7 +117,7 @@ INT32 main(INT32 Argc, char **Argv)
 
     if (First == Argc)
     {
-        puts(gettext("touch: missing file operand"));
+        puts(LOSGettext("touch: missing file operand"));
 
         return 1;
     }

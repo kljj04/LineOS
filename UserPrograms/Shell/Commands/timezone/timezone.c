@@ -2,11 +2,11 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <libintl.h>
+#include <LOSLocale.h>
 
 #include <locale.h>
 
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 #include <Syscall/Time/TimeZone.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -96,10 +96,10 @@ STATIC VOID TimezonePrint(CONST TIMEZONE_ENTRY *Entry)
     INT32  Offset   = Entry->Offset;
     UINT32 Absolute = Offset < 0 ? (UINT32) -Offset : (UINT32) Offset;
 
-    printf(gettext("Timezone: %s\n"), Entry->Name);
-    printf(gettext("Name:     %s\n"), Entry->Abbreviation);
-    printf(gettext("Offset:   UTC%c%02u:%02u\n"), Offset < 0 ? '-' : '+', Absolute / TIMEZONE_SECONDS_PER_HOUR, (Absolute % TIMEZONE_SECONDS_PER_HOUR) / TIMEZONE_SECONDS_PER_MINUTE);
-    puts(gettext("DST:      Disabled"));
+    printf(LOSGettext("Timezone: %s\n"), Entry->Name);
+    printf(LOSGettext("Name:     %s\n"), Entry->Abbreviation);
+    printf(LOSGettext("Offset:   UTC%c%02u:%02u\n"), Offset < 0 ? '-' : '+', Absolute / TIMEZONE_SECONDS_PER_HOUR, (Absolute % TIMEZONE_SECONDS_PER_HOUR) / TIMEZONE_SECONDS_PER_MINUTE);
+    puts(LOSGettext("DST:      Disabled"));
 }
 
 STATIC BOOLEAN TimezoneSet(CONST TIMEZONE_ENTRY *Entry)
@@ -152,7 +152,7 @@ STATIC BOOLEAN TimezoneSet(CONST TIMEZONE_ENTRY *Entry)
 
 INT32 main(INT32 Argc, char **Argv)
 {
-    if (setlocale(LC_ALL, "") == NULL)
+    if (LOSLocaleRefresh() == NULL)
     {
         setlocale(LC_ALL, "C");
     }
@@ -163,7 +163,7 @@ INT32 main(INT32 Argc, char **Argv)
     {
         if (!TimezoneRead(&Entry))
         {
-            puts(gettext("timezone: cannot read current timezone"));
+            puts(LOSGettext("timezone: cannot read current timezone"));
 
             return 1;
         }
@@ -185,10 +185,10 @@ INT32 main(INT32 Argc, char **Argv)
 
     if (Argc == 2 && strcmp(Argv[1], "--help") == 0)
     {
-        puts(gettext("Usage:"));
+        puts(LOSGettext("Usage:"));
         puts("  timezone");
         puts("  timezone -a");
-        puts(gettext("  timezone set <TIMEZONE>"));
+        puts(LOSGettext("  timezone set <TIMEZONE>"));
 
         return 0;
     }
@@ -199,7 +199,7 @@ INT32 main(INT32 Argc, char **Argv)
 
         if (Entry == NULL)
         {
-            printf(gettext("timezone: unknown timezone '%s'\n"), Argv[2]);
+            printf(LOSGettext("timezone: unknown timezone '%s'\n"), Argv[2]);
 
             return 1;
         }
@@ -215,17 +215,17 @@ INT32 main(INT32 Argc, char **Argv)
 
         if (Previous != NULL)
         {
-            printf(gettext("Timezone changed: %s -> %s\n"), Previous->Abbreviation, Entry->Abbreviation);
+            printf(LOSGettext("Timezone changed: %s -> %s\n"), Previous->Abbreviation, Entry->Abbreviation);
         }
         else
         {
-            printf(gettext("Timezone set: %s\n"), Entry->Abbreviation);
+            printf(LOSGettext("Timezone set: %s\n"), Entry->Abbreviation);
         }
 
         return 0;
     }
 
-    puts(gettext("Usage: timezone [-a | set <TIMEZONE> | --help]"));
+    puts(LOSGettext("Usage: timezone [-a | set <TIMEZONE> | --help]"));
 
     return 1;
 }

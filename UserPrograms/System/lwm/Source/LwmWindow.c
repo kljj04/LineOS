@@ -5,7 +5,7 @@
 #include <Lwm.h>
 #include <sys/mman.h>
 #include <string.h>
-#include <libintl.h>
+#include <LOSLocale.h>
 #include <errno.h>
 
 STATIC BOOLEAN LwmContains(LWM_RECT Rect, CONST POINTER_INFO *Pointer)
@@ -61,7 +61,7 @@ VOID LwmPaintWindow(LWM *Manager, LWM_WINDOW *Window, BOOLEAN Focused)
     LwmFill(Manager, (LWM_RECT) {0, 0, Width, Height}, 0x00414D61U);
     LwmFill(Manager, (LWM_RECT) {1, LWM_TITLE_HEIGHT, Width - 2, Height - LWM_TITLE_HEIGHT - 1}, 0x00252B38U);
     LwmFill(Manager, (LWM_RECT) {1, 1, Width - 2, LWM_TITLE_HEIGHT - 1}, Focused ? 0x00354860U : 0x002F3540U);
-    LwmText(Manager, Window->Endpoint != 0 ? Window->Title : gettext("lwm demo"), 16, 31, 25, 0x00FFFFFFU, Width - 120);
+    LwmText(Manager, Window->Endpoint != 0 ? Window->Title : LOSGettext("lwm demo"), 16, 31, 25, 0x00FFFFFFU, Width - 120);
     LwmFill(Manager, (LWM_RECT) {(INT32) Width - 110, 8, 28, 28}, 0x00485B72U);
     LwmText(Manager, "-", Width - 103, 29, 22, 0x00FFFFFFU, Width - 82);
     LwmFill(Manager, (LWM_RECT) {(INT32) Width - 74, 8, 28, 28}, 0x00485B72U);
@@ -96,14 +96,14 @@ VOID LwmPaintWindow(LWM *Manager, LWM_WINDOW *Window, BOOLEAN Focused)
         return;
     }
 
-    LwmText(Manager, gettext("Hello, LineOS!"), 24, 100, 32, 0x00FFFFFFU, Width - 20);
-    LwmText(Manager, gettext("Drag the title bar to move."), 24, 143, 21, 0x00C4D0E3U, Width - 20);
-    LwmText(Manager, gettext("Drag any edge or corner to resize."), 24, 175, 21, 0x00C4D0E3U, Width - 20);
+    LwmText(Manager, LOSGettext("Hello, LineOS!"), 24, 100, 32, 0x00FFFFFFU, Width - 20);
+    LwmText(Manager, LOSGettext("Drag the title bar to move."), 24, 143, 21, 0x00C4D0E3U, Width - 20);
+    LwmText(Manager, LOSGettext("Drag any edge or corner to resize."), 24, 175, 21, 0x00C4D0E3U, Width - 20);
 
     LWM_RECT Button = {24, (INT32) Height - 72, 152, 44};
 
     LwmFill(Manager, Button, Window->Hover ? 0x003B9FFFU : 0x000086FFU);
-    LwmText(Manager, gettext("Click me"), 38, Height - 42, 23, 0x00FFFFFFU, 166);
+    LwmText(Manager, LOSGettext("Click me"), 38, Height - 42, 23, 0x00FFFFFFU, 166);
 
     char   Digits[11];
     char   Reversed[10];

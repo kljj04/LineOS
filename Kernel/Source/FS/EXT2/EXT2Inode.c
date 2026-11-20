@@ -56,12 +56,21 @@ BOOLEAN EXT2WriteInode(EXT2_VOLUME *Volume, UINT32 Number, CONST EXT2_INODE *Ino
 
     Data += Offset % Volume->BlockSize;
 
+    UINT32 Generation = EXT2Load32(Data + 100);
     if (New)
     {
+        if (Generation == UINT32_MAX)
+        {
+            return EXT2Fail(Volume, EXT2_ERROR_LIMIT);
+        }
         KMemSet(Data, 0, Volume->InodeSize);
     }
 
     KMemCpy(Data, Inode->Raw, 128);
+    if (New)
+    {
+        EXT2Store32(Data + 100, Generation + 1);
+    }
 
     return TRUE;
 }

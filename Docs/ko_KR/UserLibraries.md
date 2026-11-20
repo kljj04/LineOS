@@ -2,180 +2,54 @@
 
 [문서 목록](README.md) · [한국어](../ko_KR/UserLibraries.md) · [English](../en_US/UserLibraries.md)
 
+## 런타임 구성
 
-## 라이브러리 빌드 설정
+모든 기본 프로그램은 프로젝트 musl을 사용합니다. stdio·malloc·문자열·pthread·errno·TLS는 musl이 제공하고, `LOSLib`는 LOS 전용 syscall API만 제공합니다. 호스트 Ubuntu glibc는 현재 기본 런타임이 아닙니다. 실행 파일은 musl Scrt1.o·crti.o·crtn.o와 `_start`를 사용하며 PT_INTERP는 기본 `/lib/libc.so`입니다.
 
-일반 라이브러리는 `Libraries/<Name>/Library.cfg`, `Include/` 헤더, `Source/`의 C·어셈블리 소스를 사용합니다. `Enable` 기본값은 `true`이며, 선택적인 `CFlags`는 일반 컴파일에 적용합니다. 결과물은 `LineOS/Libraries/lib<소문자 이름>.so`입니다.
+| 논리 이름 | 결과물 | 역할 |
+| --- | --- | --- |
+| musl | libc.so | libc와 동적 인터프리터 |
+| LOSLib | liblos.so | 에셋·화면·IPC·시스템 모니터·LOS 확장 |
+| Window | libwindow.so | IPC 기반 창 클라이언트 API |
+| Locale | liblocale.so | 내장 번역과 LOS 로켈·시간대 기본 설정 |
+| TrueType | libtruetype.so | 유저 공간 글꼴 파싱·측정·래스터화 |
+| UserDB | libuserdb.so | LOS 계정 DB·Argon2id 인증·계정 관리 |
+| VirGL | libvirgl.so | LOS VirGL 장치 접근 API |
 
-자체 빌드 시스템을 사용하는 라이브러리는 다음처럼 설정합니다.
+Loader는 별도 전용 빌드의 `ld-lineos-x86_64.so.1`이며 기본 musl 인터프리터를 대체하지 않습니다. VirGL 장치 API가 있다는 사실만으로 Mesa OpenGL/EGL 전체가 지원되는 것은 아닙니다.
 
-```ini
-Enable = true
-IncludedMakefile = Makefile
-so = lib/libc.so
-```
+## 설정과 자동 처리 범위
 
-백엔드는 해당 라이브러리 타깃을 빌드할 때마다 `$(MAKE) -C Libraries/<Name> -f Makefile`을 실행합니다. 하위 디렉터리의 상대 Makefile 경로도 지원하며 작업 디렉터리는 라이브러리 루트입니다. 실패는 상위 빌드에 전달되고 병렬 빌드와 dry-run 설정도 재귀 make에 전달됩니다. 일반 소스 탐색·오브젝트 컴파일·공유 라이브러리 링크는 건너뜁니다.
+[Program.cfg](ProgramConfig.md)는 실행 파일명·설치·라이브러리·에셋·게시·인터프리터를 선언하고, [Library.cfg](LibraryConfig.md)는 공유 라이브러리 빌드·설치·libc·다른 라이브러리 의존성을 선언합니다. 새 설정 파일을 자동 발견하므로 일반 프로그램·라이브러리 추가에 공통 Makefile 수정은 필요하지 않습니다.
 
-Makefile은 실제 일반 파일이어야 합니다. 경로는 상대 경로이며 ASCII 영문·숫자·밑줄·하이픈·점을 허용하고 각 구성요소는 영문·숫자·밑줄로 시작해야 합니다. 빈 구성요소, 단독 점·두 점, 심볼릭 링크 경유는 거부합니다. 설정은 데이터로 파싱하며 알 수 없는 키와 중복 키를 거부합니다. 빈 줄·전체 행 주석·CRLF는 허용합니다.
+`LibC = musl`이면 musl을 자동 연결하고, 라이브러리의 `LibC = none`은 freestanding 빌드를 선택합니다. 프로그램의 `LibC = none`은 아직 지원하지 않습니다. 프로그램은 현재 LOSLib를 기본 링크 입력에 포함하고 에셋 사용·게시 설정은 의존성 목록에도 LOSLib를 추가합니다. 나머지 직접 사용하는 라이브러리는 `[Dependencies] Libraries`에 명시합니다. 소스의 include나 함수 호출을 분석하여 자동 등록하지 않습니다. 선언한 라이브러리의 전이적 헤더·빌드 순서·검색 경로는 자동 연결합니다. 사용하지 않는 링크 입력은 `--as-needed`로 제거합니다.
 
-내부 매니페스트는 이름, 라이브러리 디렉터리, 인코딩한 C 플래그, 쉼표로 구분한 소스, 지정 Makefile, 선택적인 `so` 경로의 여섯 필드를 파이프로 구분합니다. 빈 값은 `-`로 표시하며 자체 빌드에는 일반 소스가 없습니다. C 플래그의 공백과 탭은 쉼표로 인코딩합니다.
+`Source/`의 일반 빌드 또는 `[Build] Makefile`·`Artifact` 자체 빌드를 선택합니다. 결과물은 `LineOS/Libraries/`에 모으고 `CopyPath`에 따라 이미지에 설치합니다. 프로그램과 일반 라이브러리에는 의존성의 게스트 경로를 RUNPATH로 기록합니다. 자체 Makefile은 자신의 SONAME·RUNPATH와 컴파일 옵션을 담당합니다.
 
-`so`는 make 성공 후 지정한 `.so` 파일 하나를 원래 파일명으로 `LineOS/Libraries/`에 복사하는 선택 옵션입니다. 경로는 라이브러리 루트 기준이며 실제 설정값에는 백틱을 넣지 않습니다. 파일 존재와 심볼릭 링크 경유는 make 이후 검사하므로 최초 빌드도 지원합니다. 파일 누락·복사 실패는 빌드를 중단하고 결과물 이름 충돌도 거부합니다. 기존 이미지 배포 단계에서 이 디렉터리를 `/lib`로 복사합니다. `so`를 지정하면 `Program.cfg` 의존성이 사용할 링크 타깃도 등록하고 자체 make가 끝난 뒤 링크합니다. `so`가 없는 자체 빌드는 링크 타깃을 제공하지 않습니다. 헤더 경로는 자동 추론하지 않습니다.
+## 에셋과 글꼴
 
-`Dependencies = musl`이면 musl 헤더, `Scrt1.o`·`crti.o`·`crtn.o`, `_start` 진입점과 `/lib/libc.so` 인터프리터를 선택하고 LOSLibC 헤더·시작 코드·링크를 제외합니다. 기존 일반 라이브러리는 LOSLibC로 빌드하므로 현재 musl은 단독 의존성으로만 지원합니다. `hello` 명령이 이 경로를 사용합니다. `libc.so` 자체가 musl 동적 로더이므로 별도 로더 별칭은 필요하지 않습니다. `bash Scripts/Validation/Musl.sh`로 실행 검증용 프로그램을 빌드할 수 있습니다. 복사 이미지의 2-vCPU KVM에서 할당·TLS·errno·stdio, 메모리 보호, fork·해제 및 hello 출력을 검증했으며 musl·POSIX 전체 호환을 뜻하지는 않습니다.
+Init의 `[Publish] Assets`는 `/sys/fonts/JBMNFSB.ttf`와 `/sys/fonts/PTDSB.ttf`를 `Fonts/JetBrainsMono`·`Fonts/Pretendard`로 게시합니다. 생성한 constructor가 main 전에 파일을 읽어 게시하고 이어서 필요한 에셋을 검사합니다. 커널이 읽기 전용 공유 데이터를 보관하며 소비자는 LOSAssetAcquire/Release로 매핑 수명을 관리합니다. 설정은 게시 권한을 부여하지 않습니다.
 
-## 프로그램 배치
+TrueType은 이 바이트를 읽지만 글꼴 객체·글리프 캐시·할당자·렌더링 버퍼는 프로세스별입니다. 커널 패닉 출력용 내장 폰트는 별도입니다. API는 `Libraries/TrueType/Include/`, 구현은 `Source/`에 있습니다.
 
-프로그램별 `UserPrograms/<ProgramName>/Program.conf`에 다음 값을 지정합니다.
+## 시작과 대화형 환경
 
-```ini
-CopyPath=/usr/bin/
-```
+커널이 `/sbin/Init.lix`를 시작합니다. Init이 TTY를 열고 Terminal과 Login을 실행합니다. Login은 UserDB 인증 후 UID/GID와 홈 디렉터리를 설정하고 사용자 autostart 및 `/bin/lsh/lsh.lix`를 실행합니다. 기본 autostart는 `/sys/lwm/lwm.lix`이며 기존 사용자 파일은 덮어쓰지 않습니다.
 
-이미지 갱신 시 `LineOS/Programs/<ProgramName>.lix`를 EXT2의 `/usr/bin/<ProgramName>.lix`에 복사합니다. ELF64 내용과 이름을 유지합니다. 설정 파일이 없으면
-`/bin/`을 사용합니다. 루트 `/`도 허용합니다. 설정 파일이 존재하면 `CopyPath` 한 개가 필요하며 빈 줄과 `#`으로 시작하는 주석을 허용합니다. CRLF도 지원합니다. 설정은 셸 코드로 실행하지
-않습니다.
+Terminal은 마스터 출력·폰트·framebuffer를 관리하고 UTF-8, ANSI 색·커서·화면 갱신을 처리합니다. lwm이 화면을 소유하면 Terminal은 IPC 배경 레이어로 프레임을 보내고 입력을 셸에 전달합니다. 창 포커스·독·크기 변경의 실제 범위는 [lwm](Lwm.md)·[IPC](IPC.md), 세션 수명은 [autostart](Autostart.md)를 참고합니다.
 
-경로 구성 요소에는 영문자, 숫자, `_`, `-`, `.`만 허용합니다. 상대 경로, 독립적인 `.` 및 `..`, 중복 슬래시, 중복 키, 알 수 없는 키, 빈 값, 설정 파일 심볼릭 링크를 거부합니다. 프로그램
-디렉터리 이름에는 영문자, 숫자, `_`, `-`를 허용합니다. 대상 디렉터리의 심볼릭 링크 및 별도 마운트, 대상 파일의 심볼릭 링크와 하드 링크를 거부합니다. 기존 이미지 포맷과 마운트 수명 관리는 변경하지
-않습니다. 경로를 변경해도 이전 위치의 파일은 자동 삭제하지 않습니다. 이미지 갱신은 게스트가 실행되지 않고 다른 프로세스가 이미지 내용을 동시에 변경하지 않는 기존 관리 흐름을 전제로 합니다.
+lsh는 명령 입력·인용/확장·변수·히스토리·경로 검색·fork/execve/wait를 사용하는 대화형 셸입니다. 두 줄 프롬프트는 `┏━[경로]━(사용자)`와 `┗━>`이며 표준 출력은 프롬프트와 ANSI 커서 순서를 유지하도록 버퍼링하지 않습니다. Login·sudo의 입력 안내는 읽기 전에 flush합니다. 셸 변수 문법은 [별도 문서](ShellVariables.md)를 참고합니다. 전체 POSIX 셸, 파이프·작업 제어·일반 시그널 전달을 지원한다는 의미는 아닙니다.
 
-## 유저 TrueType
+## 계정·번역·지원 범위
 
-`Libraries/TrueType/Include`과 `Libraries/TrueType/Source`은 커널 포트를 기반으로 한 유저 전용 TrueType 구현입니다.
-`LineOS/Libraries/libtruetype.so`를 생성하며 `Program.cfg`의 `Dependencies`에 `TrueType`을 명시한 프로그램에 링크합니다. 실행 파일에는 공유 라이브러리 의존성을 기록합니다. 커널의 PMM, VirtIO GPU, 잠금,
-폰트 심볼을 참조하지 않습니다. 커널 TrueType 및 패닉 출력은 유지합니다. 커널 콘솔은 제거했습니다. Terminal 유저 프로그램이 터미널 master 디스크립터에서 받은 바이트를 렌더링하며 일반 프로그램은
-`read`와 `write`를 사용합니다.
+[사용자와 sudo](Users.md)는 자체 인증과 표준 계정 조회의 경계를 설명합니다. [로켈](Locale.md)은 파일 기본값과 환경변수 우선순위, 내장 번역의 한계를 설명합니다. 커널 기능과 제한·오류값은 [DeviceFS와 ABI](DeviceFS.md)·[시스템 호출 목록](Syscalls.md), 검증 명령은 [검증 안내](Validation.md)를 참고합니다.
 
-`TrueType/TrueTypeEngine.h`를 포함하고 다음 리소스를 호출자가 준비합니다.
+## TrueType API와 수명
 
-- 신뢰할 수 있는 TTF 데이터 버퍼. 사용할 폰트마다 하나씩 준비합니다
-- `TTF_ALLOCATOR`의 `Allocate`, `Free`, `Context`: 정렬된 메모리를 충분히 제공하고 개별 할당을 반환하는 콜백
-- `TRUE_TYPE_SURFACE`: `UINT32` BGRA8888 픽셀 버퍼와 폭·높이. 행 패딩 없이 `폭 * 높이 * 4` 바이트 이상을 할당합니다.
+`<TrueTypeEngine.h>`를 포함하고 할당·해제 콜백과 문맥이 있는 TTF_ALLOCATOR, 연속된 32비트 BGRA8888 버퍼의 TRUE_TYPE_SURFACE를 제공합니다. `TrueTypeInit(&Allocator, &Surface)`는 상태를 설정하며 파일을 열지 않습니다. 0으로 초기화한 TRUE_TYPE_FONT마다 `TrueTypeRegisterFont(&Font, FontData)`를 호출한 뒤 DrawTrueTypeCodepoint·DrawTrueTypeText·MeasureTrueTypeText를 사용합니다. 문자열은 CHAR16/UTF-16이며 surrogate pair를 처리합니다. 글꼴 바이트·객체·할당자·surface는 사용 중 살아 있어야 합니다.
 
-`TrueTypeInit(&Allocator, &Surface)`는 할당자와 화면 버퍼를 설정하며 파일을 읽지 않습니다. 각 폰트 데이터를 `TRUE_TYPE_FONT Font = {0};`와
-`TrueTypeRegisterFont(&Font, FontData)`로 등록한 뒤 `DrawTrueTypeCodepoint(&Font, ...)`, `DrawTrueTypeText(&Font, ...)`,
-`MeasureTrueTypeText(&Font, ...)`에 전달합니다. 폰트마다 별도 객체를 사용하며 데이터 버퍼와 객체는 사용이 끝날 때까지 유지해야 합니다. 폰트 자동 대체는 없습니다. 텍스트는
-`CHAR16` 배열이며 UTF-16 서로게이트를 처리합니다. 모든 리소스는 사용 중 유효해야 합니다. 저수준 `FONT_INFO` API를 직접 사용한다면 `InitFont` 이후 `Info.UserData`에
-`TTF_ALLOCATOR *`를 지정해야 합니다. 팩 API에는 해당 할당자를 `AllocContext`로 전달합니다.
+그리기는 CPU 버퍼만 수정하므로 화면 소유권·pitch·용량을 확인한 뒤 DisplayPresent 또는 framebuffer/창 API로 별도 표시합니다. 엔진은 프로세스별 surface·할당자 상태 하나를 사용하므로 호출을 직렬화합니다. 입력 글꼴은 신뢰할 수 있어야 하며 완전한 길이 검증·할당 실패 복구·자동 fallback 선택을 제공하지 않습니다. 셸은 글꼴 advance 측정에 이 라이브러리를 사용할 수 있지만 실제 글리프 렌더링은 Terminal이 담당합니다.
 
-렌더링 결과는 CPU 메모리에만 기록됩니다. 기존
-`DisplayPresent(Surface.FrameBuffer, (UINT64) Surface.FrameBufferWidth * Surface.FrameBufferHeight * 4)`로 표시할 수 있습니다.
-호출자가 Display 화면 크기를 조회하고 크기·피치 및 버퍼 용량을 확인해야 합니다. 라이브러리가 디스플레이 syscall을 직접 호출하거나 커널 화면 소유권을 변경하지 않습니다.
+## 에셋 용량과 소유권
 
-현재 엔진은 프로세스별 단일 화면·할당자 상태를 사용하므로 호출을 직렬화해야 합니다. 신뢰하지 않는 TTF 입력의 길이 검증이나 메모리 부족에서의 완전한 복구는 보장하지 않습니다. 기존 수학 근사와 단일 행 중심
-측정 동작을 유지합니다. Terminal이 자체 라이브러리 상태를 초기화하고 Init이 등록한 폰트를 매핑합니다. Shell은 TrueType이나 디스플레이 API를 사용하지 않습니다.
-
-## 파일과 프로세스 생성
-
-이미지 갱신은 `Assets/Fonts/*.ttf`를 EXT2 `/sys/fonts/`에 원래 이름과 0644 권한으로 복사합니다. `fcntl.h`의 `open(Path, O_RDONLY)`와 `unistd.h`의
-`read`·`close`로 읽습니다. 태스크당 16개 FD 슬롯에서 파일과 터미널 연결을 함께 관리합니다. 일반 파일은 지원 플래그로 읽기·쓰기·생성·잘라내기를 제공합니다. 오류는 -1과 `errno`, EOF는 0을 반환합니다.
-매번 경로와 노드 식별자를 다시 확인하므로 이름 변경·삭제 이후에도 열린 파일을 유지하는 POSIX 의미론은 구현하지 않았습니다. 실행 시 제공된 VFS 문맥으로 권한을 검사하며 Init은 현재 관리자 문맥을
-사용합니다.
-
-`fork()`는 호출자를 복제하고 부모에 자식 PID, 자식에 0을 반환합니다. 자식은 `execve(Path, Argv, Envp)`로 이미지를 교체하며 PID, 상속된 열린 파일 객체, 자격 정보와 cwd를 유지합니다. Init, Login, UserRescue와 Shell 모두 이 순서를 사용하며 spawn/spawnv 확장은 제거했습니다. execve 실패는 자식에 -1과 errno를 반환하며 각 호출부는 오류를 출력하고 127로 종료합니다. waitpid/wait로 자식 종료 상태를 수집하며 셸은 외부 자식이 종료된 뒤 프롬프트를 출력합니다. 자식 실행 기록은 최대 16개이며 이후 fork에서 종료 기록을 정리합니다. 에셋 게시 권한은 fork 자식에 상속하지 않습니다. 태스크별 SSE 상태 보존은 미구현이며 동시 부동소수점·SIMD 실행은 검증하지 않았습니다. TrueType 상태와 캐시는 독립적이며 원본 글꼴 에셋은 공유합니다.
-
-## 공용 에셋
-
-`Asset.h`에서 다음 함수를 제공합니다. 성공은 0이며 실패하면 `errno`를 설정하고 -1을 반환합니다.
-
-- `LOSAssetPublish(Name, Data, Size)`: 부팅 Init만 호출할 수 있습니다. 원본을 커널 소유 페이지로 한 번 복사하므로 반환 후 원본 버퍼를 재사용할 수 있고 Init 종료에도
-  유지됩니다. 이름은 비어 있지 않은 최대 63바이트 문자열입니다. 이름은 불변이며 중복 등록과 교체를 거부합니다.
-- `LOSAssetAcquire(Name, &Asset)`: 호출 프로세스에 같은 물리 페이지를 읽기 전용으로 매핑하고 `LOS_ASSET`의 `Data`, `Size`, `Handle`을 반환합니다. 같은
-  프로그램에서 같은 이름을 다시 획득하면 같은 매핑의 참조 수를 증가시킵니다. 각 획득에는 별도 구조체를 사용하고 각각 해제합니다. 구조체를 복사하는 것만으로 참조가 늘어나지는 않습니다.
-- `LOSAssetRelease(&Asset)`: 해당 프로세스의 참조를 해제합니다. 마지막 참조에서 매핑을 제거하고 호출자의 구조체를 비웁니다. 다른 프로세스의 매핑과 등록된 원본은 유지합니다. 프로세스 주소
-  공간 파괴 시 남은 매핑과 페이지 테이블도 정리하며 커널의 에셋 원본은 해제하지 않습니다.
-
-등록 상한은 16개, 개별 크기는 16MiB, 원본 페이지 총량은 페이지 반올림 후 64MiB입니다. 프로세스별 서로 다른 에셋 매핑은 8개입니다. 이 상한과 별도로 페이지 테이블·핸들 메타데이터가 사용됩니다. 첫
-버전은 재부팅까지 유지하며 등록 해제·교체·동적 퇴출을 제공하지 않습니다. 읽기 전용 영역에 쓰면 보호 예외가 발생합니다. 프로그램은 `Size` 밖의 데이터를 사용하면 안 됩니다.
-
-```c
-LOS_ASSET Asset = {0};
-
-if (LOSAssetAcquire("Fonts/JetBrainsMono", &Asset) == 0)
-{
-    TrueTypeRegisterFont(&Font, Asset.Data);
-}
-```
-
-폰트를 사용하는 동안 매핑을 유지하고, 폰트 객체와 글리프 캐시가 해당 데이터를 더 참조하지 않을 때 해제합니다. TTF 바이트만 공유하며 `TRUE_TYPE_FONT`, 할당자, 화면, 글리프 캐시는 각 프로세스가
-소유합니다. 에셋 API는 파일 형식을 검증하지 않습니다.
-
-## 시스템 호출 인터페이스
-
-현재 `syscall`/`sysretq` 호출은 종료, 읽기, 쓰기, 열기, 닫기, PID 조회, 화면 정보·표시, fork/execve, chdir, stat/lstat/fstat와 에셋 등록·획득·해제를 제공합니다. yield는 스케줄러에 CPU를 양보하고 성공 시 0을 반환합니다.
-파일과 프로세스 인터페이스는 여기서 설명한 부분집합입니다. 커널은 Linux의 음수 오류 번호를 반환하고 libc는 -4095~-1을 `errno`로 변환하여 -1을 반환합니다. `LOSOutputStreamRead`는 제거했습니다. `mprotect`(10), `writev`(20)와 64비트에서 무시하는 `O_LARGEFILE` open 플래그를 지원합니다.
-
-`RAX`는 시스템 호출 번호와 반환값을 전달하며, 인자는 `RDI`, `RSI`, `RDX`, `R10`, `R8`, `R9`를 사용합니다. `RCX`와 `R11`은 보존하지 않습니다.
-각 CPU에서 진입 MSR을 설정하고 현재 태스크의 커널 스택으로 전환합니다. 기존 사용자 호출용 `int 0x80` 게이트는 제거했습니다. 표준 호출 번호는 Linux x86-64와 일치합니다. LineOS 전용 호출은 1024번부터 사용하며, 기존 화면·에셋 호출은 유지합니다. 장치 `ioctl`, 익명 private `mmap`, `/dev/fb0` shared `mmap`을 구현했으며 [DeviceFS와 프로세스 ABI](DeviceFS.md)에 범위를 설명합니다.
-
-| 호출 | 번호 |
-| --- | --- |
-| `read` | 0 |
-| `write` | 1 |
-| `open` | 2 |
-| `close` | 3 |
-| `stat` | 4 |
-| `fstat` | 5 |
-| `lstat` | 6 |
-| `mmap` | 9 |
-| `munmap` | 11 |
-| `mprotect` | 10 |
-| `writev` | 20 |
-| `ioctl` | 16 |
-| `sched_yield` | 24 |
-| `getpid` | 39 |
-| `fork` | 57 |
-| `execve` | 59 |
-| `exit` | 60 |
-| `wait4` | 61 |
-| `getcwd` | 79 |
-| `chdir` | 80 |
-| `rename` | 82 |
-| `mkdir` | 83 |
-| `setuid` | 105 |
-| `setgid` | 106 |
-| `getdents64` | 217 |
-| `getrandom` | 318 |
-| `display_info` | 1024 |
-| `display_present` | 1025 |
-| `display_present_rect` | 1026 |
-| `asset_publish` | 1027 |
-| `asset_acquire` | 1028 |
-| `asset_release` | 1029 |
-| `remove (LineOS)` | 1032 |
-
-`remove`는 파일과 디렉터리를 모두 처리하므로 LineOS 전용 호출로 유지합니다. Linux의 `unlink` 또는 `rmdir`에 해당하지 않습니다.
-지원하는 호출 번호, 오류 번호와 화면 정보 구조체의 바이너리 배치를 맞추었으나 Linux 실행 파일 전체와 호환되는 단계는 아닙니다. [지원 범위와 제한](DeviceFS.md)을 참고합니다.
-
-## 터미널과 Shell
-
-Init은 `/dev/lsh1`을 `O_RDONLY`로 열어 FD 0에, `O_WRONLY`로 두 번 열어 FD 1과 2에 연결합니다. 폰트를 등록하고 `/dev/lsh1-master`를 `O_RDWR`로 FD 3에
-연 뒤 `/sbin/Terminal.lix`를 실행합니다. Init의 master 참조를 닫은 다음 `/bin/Shell.lix`를 실행하므로 Shell과 자식은 프로그램용 연결만 상속합니다.
-`Program.cfg`는 Init과 Terminal을 `/sbin/`, Shell을 `/bin/`에 설치하며 커널은 `/sbin/Init.lix`를 실행합니다.
-
-프로그램 쪽 `read`는 입력을 받고 `write`는 출력을 보냅니다. master 쪽 `read`는 출력을 받고 `write`는 입력을 주입합니다. 독립적인 64 KiB 큐 두 개로 저장 공간을 제한합니다. 빈
-큐 읽기와 가득 찬 큐 쓰기는 대기 큐에서 잠들고 반대쪽 전송으로 깨어납니다. 일부 전송 후 복사 또는 대기가 실패하면 전송한 길이를 반환합니다. 수락한 출력만 debugcon에 복제합니다. 일반 프로그램은
-프로그램용 장치를 `O_RDONLY`·`O_WRONLY`·`O_RDWR`로 열 수 있습니다. master는 부팅 Init만 열 수 있으며 동시에 하나의 열린 객체만 허용합니다. 상속된 참조가 객체 수명을 유지하며
-마지막 master 참조를 닫으면 대기자를 깨웁니다. 남은 입력을 읽은 뒤 EOF가 되고 새 쓰기는 실패합니다. 큐 저장 공간은 재부팅까지 유지합니다.
-
-DeviceFS는 VFS의 고정 `/dev` 하위 트리로 연결되며 `getdents64`로 디렉터리를 열거합니다. 터미널 FD는 장치 동작 테이블을 사용하고 기존 큐와 상속 동작을 유지합니다. 키보드 작업자는 US 배열 키 이벤트를 터미널 입력 큐에 전달합니다. 자세한 내용은 [DeviceFS](DeviceFS.md)에 설명합니다.
-
-Terminal은 TrueType 상태, 읽기 전용 JetBrains Mono 매핑과 프레임버퍼를 소유합니다. 최대 2560 × 1440 화면에서 글자 크기 36과 줄 높이 40을 사용하고 가로 이동 폭은 폰트
-메트릭으로 계산하며 ASCII·줄바꿈·캐리지 리턴·백스페이스·스크롤을 처리합니다. 출력이 없으면 FD 3 읽기에서 잠듭니다. Shell은 libc 입출력, fork/execve와 chdir를 사용합니다. 길이를 제한한 줄
-편집, `help`, `cd [PATH]`, 상대·절대 실행 경로의 실행과 종료 대기를 제공하며 ls 내장 명령은 제공하지 않습니다. 전경 작업 관리는 없으므로 같은 터미널을 읽는 프로그램끼리는 입력을 경쟁합니다.
-
-libc는 제한된 freestanding 부분집합이며 표준 함수명이 완전한 C·POSIX 호환성을 뜻하지 않습니다. 파이프, FD 복제, `termios`, 정규 입력 모드, 시그널, 작업 제어,
-범용 유저 할당자는 구현 범위에 포함하지 않습니다. 디스플레이와 에셋 API는 LineOS 확장입니다. 사용자 메모리 복사와 관리 주소 공간 연산은 VMM 잠금 대기 중 TLB
-shootdown 요청을 처리하며 일시적인 잠금 경합을 잘못된 사용자 버퍼나 ELF 매핑 실패로 취급하지 않습니다.
-
-## 터미널 ANSI 색상
-
-Terminal은 read 경계에 걸쳐 SGR 색상 코드를 처리합니다. 30–37/40–47, 90–97/100–107, 38;5;N / 48;5;N(256색), 38;2;R;G;B / 48;2;R;G;B(24비트 RGB 전체)를 지원합니다. SGR 0 또는 빈 인자는 속성을 초기화하며 39/49는 기본 글자색·배경색을 복원합니다. 1/22는 기본 글자색의 밝은 색상, 7/27은 반전을 켜고 끕니다. 배경색은 글꼴 메트릭에 따른 영역과 공백에 칠합니다. 스크롤은 표시된 픽셀을 보존하고 새 영역을 현재 배경색으로 채웁니다.
-
-예를 들어 `printf("\033[38;2;145;231;57mColor\033[0m\n");`로 RGB 글자색을 지정합니다. 인자 개수와 수치 범위를 제한하고 미지원 CSI 명령과 OSC 문자열을 소비하여 제어 코드가 글자로 출력되지 않게 합니다. 이 색상 확장에는 커서 위치 이동, 화면 지우기, 밑줄, 이탤릭 등은 포함하지 않습니다. 기존 UTF-8, 글꼴, 입력, 커서와 공유 프레임버퍼 표시는 유지합니다. SGR 규약은 [XTerm 제어 코드](https://invisible-island.net/xterm/ctlseqs/ctlseqs.html)를 참고합니다.
-
-프롬프트는 원래 TTF의 굵은 ┏━와 ┗━> 글리프를 사용합니다. 배경 지우기 영역을 실제 폰트 상승 높이와 줄 높이로 계산하여 현재 줄 바깥의 연결 픽셀을 보존하며 글리프를 교체하거나 늘리지 않습니다. 가로 이동 폭은 글꼴 메트릭을 유지합니다.
-
-첫 명령어만 강조합니다. help/cd/pwd/echo에 정확히 일치하면 RGB(214,122,122), 실행과 같은 PATH 검색으로 찾은 실행 파일이면 RGB(128,184,136)입니다. 없거나 아직 찾지 못한 명령어는 흰색 RGB(255,255,255) 글씨와 RGB(255,95,95) 배경으로 표시합니다. 뒤의 인자는 기본 흰색입니다. 분류가 바뀌면 CR/CSI 2 K로 다시 칠하며 일반 입력과 한글 조합은 점진적으로 표시하고 출력 전에는 속성을 초기화합니다. 외부 명령의 인자는 공백으로 구분해 최대 64개를 전달하며 따옴표·이스케이프 해석은 미구현입니다.
+커널 게시 슬롯은 16개, 전체 페이지 합계는 64 MiB, 한 에셋은 최대 16 MiB, 이름은 NUL을 제외한 최대 63바이트입니다. 프로세스당 서로 다른 매핑은 8개이고 같은 에셋의 반복 acquire는 참조 횟수를 늘립니다. release는 해당 프로세스의 매핑 참조만 해제하며 게시 자체를 삭제하지 않습니다. 게시 취소·교체·파일 형식 검증은 지원하지 않습니다. 디스크 경로와 게시 이름은 별도 이름 공간입니다.

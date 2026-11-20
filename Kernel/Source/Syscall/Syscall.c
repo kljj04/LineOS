@@ -92,6 +92,51 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
 
     switch (Frame->RAX)
     {
+        case SYSCALL_BRK:
+        {
+            return (UINT64) SyscallBrk(Frame->RDI);
+        }
+
+        case SYSCALL_ACCESS:
+        {
+            return (UINT64) SyscallAccess(Frame->RDI, Frame->RSI);
+        }
+
+        case SYSCALL_OPENAT:
+        {
+            return (UINT64) SyscallOpenat((INT32) Frame->RDI, Frame->RSI, Frame->RDX, Frame->R10);
+        }
+
+        case SYSCALL_NEWFSTATAT:
+        {
+            return (UINT64) SyscallNewfstatat((INT32) Frame->RDI, Frame->RSI, Frame->RDX, Frame->R10);
+        }
+
+        case SYSCALL_PREAD64:
+        {
+            return (UINT64) SyscallPread64((UINT32) Frame->RDI, Frame->RSI, Frame->RDX, (INT64) Frame->R10);
+        }
+
+        case SYSCALL_RT_SIGPROCMASK:
+        {
+            return (UINT64) SyscallRTSigprocmask((INT32) Frame->RDI, Frame->RSI, Frame->RDX, Frame->R10);
+        }
+
+        case SYSCALL_FCNTL:
+        {
+            return (UINT64) SyscallFcntl((UINT32) Frame->RDI, (INT32) Frame->RSI, Frame->RDX);
+        }
+
+        case SYSCALL_MEMBARRIER:
+        {
+            return Frame->RDI == 0 && Frame->RSI == 0 ? 0 : (UINT64) -EINVAL;
+        }
+
+        case SYSCALL_POLL:
+        {
+            return (UINT64) SyscallPoll(Frame->RDI, Frame->RSI, (INT32) Frame->RDX);
+        }
+
         case SYSCALL_NANOSLEEP:
         {
             return (UINT64) SyscallNanosleep(Frame->RDI, Frame->RSI);

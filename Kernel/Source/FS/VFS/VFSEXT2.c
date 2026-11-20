@@ -56,6 +56,7 @@ STATIC VFS_ERROR VFSEXT2Error(EXT2_ERROR Error)
 
 STATIC VOID VFSEXT2Node(UINT32 Number, CONST EXT2_INODE *Inode, VFS_NODE *Node)
 {
+    Node->Generation = EXT2Load32(Inode->Raw + 100);
     Node->Number     = Number;
     Node->Partition  = VFS_INVALID_PARTITION;
     Node->Mode       = EXT2Load16(Inode->Raw);

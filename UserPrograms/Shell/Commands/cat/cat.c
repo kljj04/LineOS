@@ -2,9 +2,9 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <libintl.h>
+#include <LOSLocale.h>
 
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 #include <errno.h>
 #include <locale.h>
 #include <fcntl.h>
@@ -147,14 +147,14 @@ INT32 main(INT32 Argc, CHAR8 **Argv)
 {
     INT32 Status = 0;
 
-    if (setlocale(LC_ALL, "") == NULL)
+    if (LOSLocaleRefresh() == NULL)
     {
         setlocale(LC_ALL, "C");
     }
 
     if (Argc <= 1)
     {
-        puts(gettext("cat: missing file operand"));
+        puts(LOSGettext("cat: missing file operand"));
 
         return 1;
     }
@@ -165,9 +165,9 @@ INT32 main(INT32 Argc, CHAR8 **Argv)
 
         if (strcmp(Argument, "--help") == 0)
         {
-            puts(gettext("Usage: cat [FILE ...]"));
-            puts(gettext("  FILE  Read and print a file"));
-            puts(gettext("  -     Read standard input"));
+            puts(LOSGettext("Usage: cat [FILE ...]"));
+            puts(LOSGettext("  FILE  Read and print a file"));
+            puts(LOSGettext("  -     Read standard input"));
 
             return 0;
         }

@@ -2,6 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
+#include <LOSLocale.h>
 #include <Shell.h>
 #include <locale.h>
 #include <string.h>
@@ -11,7 +12,7 @@
 
 VOID ShellLocaleRefresh(VOID)
 {
-    if (setlocale(LC_ALL, "") == NULL)
+    if (LOSLocaleRefresh() == NULL)
     {
         setlocale(LC_ALL, "C");
     }

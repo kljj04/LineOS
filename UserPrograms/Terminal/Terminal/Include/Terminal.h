@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 #include <TrueTypeEngine.h>
 #include <Display.h>
 #include <ANSI.h>

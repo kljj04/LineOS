@@ -2,17 +2,18 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <libintl.h>
+#include <LOSLocale.h>
 
 #include <locale.h>
 
 #include <TerminalScreen.h>
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 #include <TrueTypeEngine.h>
 #include <Display.h>
 #include <ANSI.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <Syscall/Device/Ioctl.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <Asset.h>
@@ -24,7 +25,7 @@ TRUE_TYPE_SURFACE TerminalSurface;
 
 INT32 main(VOID)
 {
-    if (setlocale(LC_ALL, "") == NULL)
+    if (LOSLocaleRefresh() == NULL)
     {
         setlocale(LC_ALL, "C");
     }
@@ -44,7 +45,7 @@ INT32 main(VOID)
 
     if (FramebufferFD < 0 || ioctl(FramebufferFD, FBIOGET_VSCREENINFO, &Variable) < 0 || ioctl(FramebufferFD, FBIOGET_FSCREENINFO, &Fixed) < 0 || Variable.BitsPerPixel != 32 || Variable.Red.Offset != 16 || Variable.Green.Offset != 8 || Variable.Blue.Offset != 0 || Variable.Red.Length != 8 || Variable.Green.Length != 8 || Variable.Blue.Length != 8 || Fixed.LineLength != (UINT64) Variable.XRes * sizeof(UINT32) || Fixed.SmemLen != (UINT64) Fixed.LineLength * Variable.YRes)
     {
-        puts(gettext("Terminal: framebuffer initialization failed"));
+        puts(LOSGettext("Terminal: framebuffer initialization failed"));
 
         return 1;
     }
@@ -56,7 +57,7 @@ INT32 main(VOID)
 
     if (Info.Width < TERMINAL_MARGIN * 2U + TERMINAL_FONT_HEIGHT || Info.Height < TERMINAL_LINE_HEIGHT * 2U || Info.Width > TERMINAL_MAX_WIDTH || Info.Height > TERMINAL_MAX_HEIGHT || Info.Format != DISPLAY_FORMAT_BGRA8888 || LOSAssetAcquire("Fonts/JetBrainsMono", &FontAsset) != 0 || LOSAssetAcquire("Fonts/Pretendard", &FallbackAsset) != 0)
     {
-        puts(gettext("Terminal: initialization failed"));
+        puts(LOSGettext("Terminal: initialization failed"));
 
         return 1;
     }
@@ -65,7 +66,7 @@ INT32 main(VOID)
 
     if (MappedBuffer == MAP_FAILED)
     {
-        puts(gettext("Terminal: framebuffer mapping failed"));
+        puts(LOSGettext("Terminal: framebuffer mapping failed"));
 
         return 1;
     }
@@ -76,7 +77,7 @@ INT32 main(VOID)
 
     if (!TrueTypeInit(&Allocator, &TerminalSurface) || !TrueTypeRegisterFont(&Font, FontAsset.Data) || !TrueTypeRegisterFont(&Fallback, FallbackAsset.Data))
     {
-        puts(gettext("Terminal: font initialization failed"));
+        puts(LOSGettext("Terminal: font initialization failed"));
 
         return 1;
     }
@@ -118,7 +119,7 @@ INT32 main(VOID)
 
     if (ioctl(3, TIOCSWINSZ, &Size) < 0)
     {
-        puts(gettext("Terminal: cannot publish terminal size"));
+        puts(LOSGettext("Terminal: cannot publish terminal size"));
 
         return 1;
     }

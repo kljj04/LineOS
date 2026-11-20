@@ -1,0 +1,112 @@
+#include <LOSLib/TypeInfo.h>
+#include <Asset.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+typedef struct
+{
+    CONST char *Name;
+    CONST char *Path;
+} PROGRAM_PUBLICATION;
+
+STATIC CONST char *ProgramAssets[] =
+{
+@ASSETS@
+};
+
+STATIC CONST PROGRAM_PUBLICATION ProgramPublications[] =
+{
+@PUBLICATIONS@
+};
+
+STATIC INT32 ProgramPublish(CONST PROGRAM_PUBLICATION *Publication)
+{
+    INT32 FD = open(Publication->Path, O_RDONLY | O_CLOEXEC);
+    if (FD < 0)
+    {
+        return -1;
+    }
+    struct stat Info;
+    INT32 Error = 0;
+    VOID *Data = NULL;
+    if (fstat(FD, &Info) != 0)
+    {
+        Error = errno;
+        goto Done;
+    }
+    if (!S_ISREG(Info.st_mode) || Info.st_size <= 0 || Info.st_size > LOS_ASSET_MAX_SIZE)
+    {
+        Error = EINVAL;
+        goto Done;
+    }
+    Data = malloc((size_t) Info.st_size);
+    if (Data == NULL)
+    {
+        Error = ENOMEM;
+        goto Done;
+    }
+    UINT64 Position = 0;
+    while (Position < (UINT64) Info.st_size)
+    {
+        ssize_t Count = read(FD, (UINT8 *) Data + Position, (size_t) Info.st_size - Position);
+        if (Count < 0 && errno == EINTR)
+        {
+            continue;
+        }
+        if (Count <= 0 || (UINT64) Count > (UINT64) Info.st_size - Position)
+        {
+            Error = Count < 0 ? errno : EIO;
+            goto Done;
+        }
+        Position += (UINT64) Count;
+    }
+    UINT8 Extra;
+    ssize_t Count;
+    do
+    {
+        Count = read(FD, &Extra, 1);
+    } while (Count < 0 && errno == EINTR);
+    if (Count != 0)
+    {
+        Error = Count < 0 ? errno : EIO;
+        goto Done;
+    }
+    if (LOSAssetPublish(Publication->Name, Data, (UINT64) Info.st_size) != 0)
+    {
+        Error = errno;
+    }
+Done:
+    free(Data);
+    if (close(FD) != 0 && Error == 0)
+    {
+        Error = errno;
+    }
+    errno = Error;
+    return Error == 0 ? 0 : -1;
+}
+
+STATIC VOID __attribute__((constructor(200))) ProgramPrepare(VOID)
+{
+    for (UINT32 Index = 0; Index < @PUBLISH_COUNT@; Index++)
+    {
+        if (ProgramPublish(&ProgramPublications[Index]) != 0)
+        {
+            fprintf(stderr, "asset publication failed: %s: %s\n", ProgramPublications[Index].Name, strerror(errno));
+            _exit(127);
+        }
+    }
+    for (UINT32 Index = 0; Index < @ASSET_COUNT@; Index++)
+    {
+        LOS_ASSET Asset = {0};
+        if (LOSAssetAcquire(ProgramAssets[Index], &Asset) != 0 || LOSAssetRelease(&Asset) != 0)
+        {
+            fprintf(stderr, "asset dependency unavailable: %s: %s\n", ProgramAssets[Index], strerror(errno));
+            _exit(127);
+        }
+    }
+}

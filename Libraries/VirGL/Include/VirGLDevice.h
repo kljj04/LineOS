@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 #include <Syscall/Device/VirGL.h>
 
 int VirGLOpenDevice(VOID);

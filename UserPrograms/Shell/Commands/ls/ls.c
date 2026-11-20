@@ -2,9 +2,9 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <libintl.h>
+#include <LOSLocale.h>
 
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stddef.h>
@@ -13,6 +13,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <sys/syscall.h>
 #include <time.h>
 #include <locale.h>
 
@@ -533,7 +534,7 @@ STATIC INT32 LSListDirectoryPass(CONST CHAR8 *Path, CONST LS_OPTIONS *Options, B
 
     for (;;)
     {
-        INT64 Count = getdents64(FD, Buffer, sizeof(Buffer));
+        INT64 Count = syscall(SYS_getdents64, FD, Buffer, sizeof(Buffer));
 
         if (Count == 0)
         {
@@ -549,7 +550,7 @@ STATIC INT32 LSListDirectoryPass(CONST CHAR8 *Path, CONST LS_OPTIONS *Options, B
 
         if ((UINT64) Count > sizeof(Buffer))
         {
-            printf(gettext("ls: invalid directory data in '%s'\n"), (CONST char *) Path);
+            printf(LOSGettext("ls: invalid directory data in '%s'\n"), (CONST char *) Path);
             Status = 1;
             break;
         }
@@ -562,7 +563,7 @@ STATIC INT32 LSListDirectoryPass(CONST CHAR8 *Path, CONST LS_OPTIONS *Options, B
 
             if (!LSValidEntry(Entry, (UINTN) Count - Position))
             {
-                printf(gettext("ls: invalid directory entry in '%s'\n"), (CONST char *) Path);
+                printf(LOSGettext("ls: invalid directory entry in '%s'\n"), (CONST char *) Path);
                 Status = 1;
                 break;
             }
@@ -576,7 +577,7 @@ STATIC INT32 LSListDirectoryPass(CONST CHAR8 *Path, CONST LS_OPTIONS *Options, B
 
                     if (!LSBuildPath(Path, Entry->Name, FullPath, sizeof(FullPath)))
                     {
-                        printf(gettext("ls: path too long: '%s'\n"), (CONST char *) Entry->Name);
+                        printf(LOSGettext("ls: path too long: '%s'\n"), (CONST char *) Entry->Name);
                         Status = 1;
                     }
                     else if (lstat((CONST char *) FullPath, &Info) < 0)
@@ -659,7 +660,7 @@ STATIC INT32 LSListPath(CONST CHAR8 *Path, CONST LS_OPTIONS *Options)
             return Result;
         }
 
-        printf(gettext("total %lu\n"), (unsigned long) ((Columns.Blocks + 1) / 2));
+        printf(LOSGettext("total %lu\n"), (unsigned long) ((Columns.Blocks + 1) / 2));
     }
 
     return LSListDirectoryPass(Path, Options, FALSE);
@@ -667,17 +668,17 @@ STATIC INT32 LSListPath(CONST CHAR8 *Path, CONST LS_OPTIONS *Options)
 
 STATIC VOID LSUsage(VOID)
 {
-    puts(gettext("Usage: ls [-aAlF1] [PATH ...]"));
-    puts(gettext("  -a  Show all entries"));
-    puts(gettext("  -A  Show hidden entries except . and .."));
-    puts(gettext("  -l  Use a long listing format"));
-    puts(gettext("  -1  Print one entry per line"));
-    puts(gettext("  -F  Append / to directories and @ to symlinks"));
+    puts(LOSGettext("Usage: ls [-aAlF1] [PATH ...]"));
+    puts(LOSGettext("  -a  Show all entries"));
+    puts(LOSGettext("  -A  Show hidden entries except . and .."));
+    puts(LOSGettext("  -l  Use a long listing format"));
+    puts(LOSGettext("  -1  Print one entry per line"));
+    puts(LOSGettext("  -F  Append / to directories and @ to symlinks"));
 }
 
 INT32 main(INT32 Argc, CHAR8 **Argv)
 {
-    if (setlocale(LC_ALL, "") == NULL)
+    if (LOSLocaleRefresh() == NULL)
     {
         setlocale(LC_ALL, "C");
     }
@@ -747,7 +748,7 @@ INT32 main(INT32 Argc, CHAR8 **Argv)
 
                 default:
                 {
-                    printf(gettext("ls: invalid option -- '%c'\n"), Argument[Index]);
+                    printf(LOSGettext("ls: invalid option -- '%c'\n"), Argument[Index]);
                     LSUsage();
 
                     return 2;

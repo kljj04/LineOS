@@ -10,11 +10,11 @@ include Makefiles/BuildSettings.mk
 include Makefiles/Utils.mk
 include Makefiles/BootLoader.mk
 include Makefiles/Kernel.mk
-include Makefiles/LOSLibC.mk
 include Makefiles/Libraries.mk
+include Makefiles/LOSLib.mk
 include Makefiles/Loader.mk
 include Makefiles/UserPrograms.mk
 
-.PHONY: All Clean Format CompileBoot LinkBoot CompileKernel LinkKernel CompileLOSLibC LinkLOSLibC CompileUserPrograms LinkUserPrograms
+.PHONY: All Clean Format CompileBoot LinkBoot CompileKernel LinkKernel CompileLOSLib LinkLOSLib CompileUserPrograms LinkUserPrograms
 
-All: $(LIBRARY_TARGETS) $(BOOT_TARGET) $(KERN_TARGET) $(LOSLIBC_TARGET) $(USER_PROGRAM_OUTPUTS)
+All: $(LIBRARY_TARGETS) $(BOOT_TARGET) $(KERN_TARGET) $(LOSLIB_TARGET) $(USER_PROGRAM_OUTPUTS)

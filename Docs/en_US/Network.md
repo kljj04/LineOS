@@ -43,3 +43,5 @@ Interfaces are in `Kernel/Include/Network/`. Implementations are in `Kernel/Sour
 TCP listen, SACK, window scaling and full congestion control are not implemented. TCP uses a simple sequential send scheme with MSS 536. IPv6, IPv4 fragment reassembly and DHCP address-conflict detection are also unsupported. NAT does not replace packet validation.
 
 See [clock and NTP](Clock.md) for UDP time synchronization and independent uptime.
+
+KMain registers ClockNTPTask, but that worker only waits for network configuration and does not replace NetworkTask or drive background DHCP receive processing.

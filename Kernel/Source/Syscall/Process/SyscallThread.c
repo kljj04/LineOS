@@ -101,6 +101,7 @@ STATIC INT64 CloneThread(TASK *Parent, INTERRUPT_FRAME *Frame, CONST CLONE_ARGS 
     }
 
     ASM("fxsave64 %0" : "=m"(Child->FPState)::"memory");
+    Child->SignalMask      = Parent->SignalMask;
     Child->FSBase          = (Args->Flags & CLONE_SETTLS) != 0 ? Args->TLS : ReadMSR(IA32_FS_BASE);
     Child->ClearTIDAddress = (Args->Flags & CLONE_CHILD_CLEARTID) != 0 ? Args->ChildTID : 0;
     KMemCpy(&Child->Context, Frame, sizeof(Child->Context));
@@ -511,4 +512,33 @@ VOID SyscallReleaseRobustList(TASK *Task)
 INT64 SyscallExitGroup(UINT64 Status)
 {
     return SyscallProcessExit(LBPWRRGetCurrentTask(), Status, TRUE);
+}
+
+INT64 SyscallRTSigprocmask(INT32 How, UINT64 Set, UINT64 OldSet, UINT64 Size)
+{
+    TASK *Task = LBPWRRGetCurrentTask();
+    if (Task == NULL || Task->Process->AddressSpace == NULL)
+    {
+        return -ESRCH;
+    }
+    if (Size != sizeof(UINT64) || (Set != 0 && (How < 0 || How > 2)))
+    {
+        return -EINVAL;
+    }
+    UINT64 Mask = 0;
+    if (Set != 0 && !VMMCopyFromUser(Task->Process->AddressSpace, &Mask, Set, sizeof(Mask)))
+    {
+        return -EFAULT;
+    }
+    UINT64 Previous = Task->SignalMask;
+    if (OldSet != 0 && !VMMCopyToUser(Task->Process->AddressSpace, OldSet, &Previous, sizeof(Previous)))
+    {
+        return -EFAULT;
+    }
+    Mask &= ~((1ULL << 8) | (1ULL << 18));
+    if (Set != 0)
+    {
+        Task->SignalMask = How == 0 ? Previous | Mask : How == 1 ? Previous & ~Mask : Mask;
+    }
+    return 0;
 }

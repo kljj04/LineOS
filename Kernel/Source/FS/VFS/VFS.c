@@ -556,9 +556,8 @@ STATIC VFS_ERROR VFSLookupMode(VFS_CONTEXT *Context, CONST CHAR8 *Path, VFS_NODE
 
     if (Error == VFS_OK)
     {
-        *Node                     = Resolved.Node;
-        Node->NamespaceGeneration = Context->Registry->NamespaceGeneration;
-        Node->Partition           = Resolved.Partition;
+        *Node           = Resolved.Node;
+        Node->Partition = Resolved.Partition;
     }
 
     return VFSUnlock(Context->Registry, Error);
@@ -631,8 +630,7 @@ VFS_ERROR VFSReadDirectory(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 *Curs
 
     if (Error == VFS_OK && !Entry->End)
     {
-        Entry->Node.NamespaceGeneration = Context->Registry->NamespaceGeneration;
-        Entry->Node.Partition           = Root && VFSEqual(Entry->Name, (CONST CHAR8 *) "dev") ? Context->Registry->DevicePartition : Resolved.Partition;
+        Entry->Node.Partition = Root && VFSEqual(Entry->Name, (CONST CHAR8 *) "dev") ? Context->Registry->DevicePartition : Resolved.Partition;
     }
 
     return VFSUnlock(Context->Registry, Error);
@@ -660,7 +658,7 @@ STATIC VFS_ERROR VFSData(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT64 Offset,
 
     Error = VFSResolve(Context, Path, TRUE, &Resolved);
 
-    if (Error == VFS_OK && Expected != NULL && (Resolved.Partition != Expected->Partition || Resolved.Node.Number != Expected->Number || Context->Registry->NamespaceGeneration != Expected->NamespaceGeneration))
+    if (Error == VFS_OK && Expected != NULL && (Resolved.Partition != Expected->Partition || Resolved.Node.Number != Expected->Number || Resolved.Node.Generation != Expected->Generation))
     {
         Error = VFS_NOT_FOUND;
     }
@@ -958,6 +956,11 @@ VFS_ERROR VFSWriteChecked(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST VFS_NOD
 
 VFS_ERROR VFSOpen(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT32 Flags, UINT16 Mode, VFS_NODE *Node)
 {
+    return VFSOpenPath(Context, Path, Flags, Mode, Node, NULL);
+}
+
+VFS_ERROR VFSOpenPath(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT32 Flags, UINT16 Mode, VFS_NODE *Node, CHAR8 *Canonical)
+{
     VFS_RESOLVED   Resolved;
     VFS_PARTITION *Partition;
     VFS_ERROR      Error;
@@ -966,7 +969,7 @@ VFS_ERROR VFSOpen(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT32 Flags, UINT16 
     UINT32         ReadLength;
     UINT32         Access = Flags & VFS_OPEN_ACCMODE;
 
-    if (Context == NULL || Context->Registry == NULL || Node == NULL || Access == 3 || (Flags & ~(VFS_OPEN_ACCMODE | VFS_OPEN_CREATE | VFS_OPEN_EXCLUSIVE | VFS_OPEN_TRUNCATE | VFS_OPEN_APPEND)) != 0 || ((Flags & VFS_OPEN_EXCLUSIVE) != 0 && (Flags & VFS_OPEN_CREATE) == 0) || ((Flags & VFS_OPEN_TRUNCATE) != 0 && Access == 0) || ((Flags & VFS_OPEN_CREATE) != 0 && (Mode & ~0777U) != 0))
+    if (Context == NULL || Context->Registry == NULL || Node == NULL || Access == 3 || (Flags & ~(VFS_OPEN_ACCMODE | VFS_OPEN_CREATE | VFS_OPEN_EXCLUSIVE | VFS_OPEN_TRUNCATE | VFS_OPEN_APPEND | VFS_OPEN_DIRECTORY | VFS_OPEN_NOFOLLOW)) != 0 || ((Flags & VFS_OPEN_TRUNCATE) != 0 && Access == 0) || ((Flags & VFS_OPEN_CREATE) != 0 && (Mode & ~0777U) != 0))
     {
         return VFS_INVALID;
     }
@@ -983,7 +986,12 @@ VFS_ERROR VFSOpen(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT32 Flags, UINT16 
         return VFSUnlock(Context->Registry, VFS_EXISTS);
     }
 
-    if (Error == VFS_NOT_FOUND && (Flags & VFS_OPEN_CREATE) != 0)
+    if (Error == VFS_OK && (Flags & VFS_OPEN_NOFOLLOW) != 0 && (Resolved.Node.Mode & VFS_MODE_TYPE) == VFS_MODE_SYMLINK)
+    {
+        return VFSUnlock(Context->Registry, VFS_LOOP);
+    }
+
+    if (Error == VFS_NOT_FOUND && (Flags & VFS_OPEN_CREATE) != 0 && (Flags & VFS_OPEN_DIRECTORY) == 0)
     {
         Error = VFSParent(Context, Path, &Resolved, Name);
 
@@ -1007,6 +1015,16 @@ VFS_ERROR VFSOpen(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT32 Flags, UINT16 
         Error = VFSResolve(Context, Path, TRUE, &Resolved);
     }
 
+    if (Error == VFS_OK && (Flags & VFS_OPEN_DIRECTORY) != 0 && (Resolved.Node.Mode & VFS_MODE_TYPE) != VFS_MODE_DIRECTORY)
+    {
+        return VFSUnlock(Context->Registry, VFS_NOT_DIRECTORY);
+    }
+
+    if (Error == VFS_OK && Canonical != NULL)
+    {
+        KMemCpy(Canonical, Resolved.Path, VFSLength(Resolved.Path, VFS_MAX_PATH) + 1);
+    }
+
     if (Error == VFS_OK && (Resolved.Node.Mode & VFS_MODE_TYPE) == VFS_MODE_DIRECTORY)
     {
         if (Access != 0 || (Flags & (VFS_OPEN_CREATE | VFS_OPEN_TRUNCATE)) != 0)
@@ -1014,18 +1032,16 @@ VFS_ERROR VFSOpen(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT32 Flags, UINT16 
             return VFSUnlock(Context->Registry, VFS_IS_DIRECTORY);
         }
 
-        *Node                     = Resolved.Node;
-        Node->NamespaceGeneration = Context->Registry->NamespaceGeneration;
-        Node->Partition           = Resolved.Partition;
+        *Node           = Resolved.Node;
+        Node->Partition = Resolved.Partition;
 
         return VFSUnlock(Context->Registry, VFS_OK);
     }
 
     if (Error == VFS_OK && (Resolved.Node.Mode & VFS_MODE_TYPE) == 0x2000U)
     {
-        *Node                     = Resolved.Node;
-        Node->NamespaceGeneration = Context->Registry->NamespaceGeneration;
-        Node->Partition           = Resolved.Partition;
+        *Node           = Resolved.Node;
+        Node->Partition = Resolved.Partition;
 
         return VFSUnlock(Context->Registry, VFS_OK);
     }
@@ -1060,9 +1076,8 @@ VFS_ERROR VFSOpen(VFS_CONTEXT *Context, CONST CHAR8 *Path, UINT32 Flags, UINT16 
 
         if (Error == VFS_OK)
         {
-            *Node                     = Resolved.Node;
-            Node->NamespaceGeneration = Context->Registry->NamespaceGeneration;
-            Node->Partition           = Resolved.Partition;
+            *Node           = Resolved.Node;
+            Node->Partition = Resolved.Partition;
         }
     }
 
@@ -1086,7 +1101,7 @@ VFS_ERROR VFSSetTimes(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST VFS_NODE *E
 
     VFS_ERROR Error = VFSResolve(Context, Path, Follow, &Resolved);
 
-    if (Error == VFS_OK && Expected != NULL && (Resolved.Partition != Expected->Partition || Resolved.Node.Number != Expected->Number || Context->Registry->NamespaceGeneration != Expected->NamespaceGeneration))
+    if (Error == VFS_OK && Expected != NULL && (Resolved.Partition != Expected->Partition || Resolved.Node.Number != Expected->Number || Resolved.Node.Generation != Expected->Generation))
     {
         Error = VFS_NOT_FOUND;
     }
@@ -1118,4 +1133,57 @@ VFS_ERROR VFSAppendChecked(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST VFS_NO
     }
 
     return VFSData(Context, Path, 0, (VOID *) Buffer, Length, NULL, TRUE, Expected, TRUE, EndOffset);
+}
+
+BOOLEAN VFSIsTrustedPath(VFS_CONTEXT *Context, CONST CHAR8 *Path)
+{
+    if (Context == NULL || Path == NULL)
+    {
+        return FALSE;
+    }
+    UINT32 Length = VFSLength(Path, VFS_MAX_PATH);
+    UINT32 Prefix = Path[0] == '/' ? 0 : VFSLength(Context->Cwd, VFS_MAX_PATH);
+    if (Length == 0 || Length >= VFS_MAX_PATH || Prefix >= VFS_MAX_PATH || Prefix + Length + (Prefix != 0 ? 1U : 0U) >= VFS_MAX_PATH)
+    {
+        return FALSE;
+    }
+    CHAR8 *Buffer = KAlloc(VFS_MAX_PATH);
+    if (Buffer == NULL)
+    {
+        return FALSE;
+    }
+    if (Prefix != 0)
+    {
+        KMemCpy(Buffer, Context->Cwd, Prefix);
+        Buffer[Prefix++] = '/';
+    }
+    KMemCpy(Buffer + Prefix, Path, Length + 1);
+    Length += Prefix;
+    VFS_NODE Node;
+    BOOLEAN  Trusted = VFSLookupNoFollow(Context, (CONST CHAR8 *) "/", &Node) == VFS_OK && Node.UID == 0 && (Node.Mode & 0022U) == 0;
+    UINT32   Start   = 1;
+    for (UINT32 Index = 1; Trusted && Index <= Length; Index++)
+    {
+        if (Buffer[Index] != '/' && Buffer[Index] != 0)
+        {
+            continue;
+        }
+        UINT32 Count = Index - Start;
+        if ((Count == 1 && Buffer[Start] == '.') || (Count == 2 && Buffer[Start] == '.' && Buffer[Start + 1] == '.'))
+        {
+            Trusted = FALSE;
+            break;
+        }
+        Start = Index + 1;
+        if (Count == 0)
+        {
+            continue;
+        }
+        CHAR8 Saved   = Buffer[Index];
+        Buffer[Index] = 0;
+        Trusted       = VFSLookupNoFollow(Context, Buffer, &Node) == VFS_OK && Node.UID == 0 && (Node.Mode & 0022U) == 0 && (Node.Mode & VFS_MODE_TYPE) != VFS_MODE_SYMLINK && (Index == Length || (Node.Mode & VFS_MODE_TYPE) == VFS_MODE_DIRECTORY);
+        Buffer[Index] = Saved;
+    }
+    KFree(Buffer);
+    return Trusted;
 }

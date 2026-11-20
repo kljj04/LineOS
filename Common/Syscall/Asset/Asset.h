@@ -7,7 +7,7 @@
 #ifdef LINEOS_KERNEL_BUILD
 #include <LineOS/TypeInfo.h>
 #else
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 #endif
 
 #define LOS_ASSET_NAME_LIMIT    64U

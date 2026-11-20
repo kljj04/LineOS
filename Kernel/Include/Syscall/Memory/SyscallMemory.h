@@ -13,3 +13,5 @@ BOOLEAN SyscallMemoryClone(TASK *Child, TASK *Parent);
 INT64   SyscallMapDevice(INT64 FD, UINT64 Length, UINT64 Protection, UINT64 Flags, UINT64 Offset, UINT64 *Physical);
 
 INT64 SyscallMprotect(UINT64 Address, UINT64 Length, UINT64 Protection);
+
+INT64 SyscallBrk(UINT64 Address);

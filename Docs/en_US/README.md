@@ -1,24 +1,55 @@
 # LineOS documentation
 
-[한국어](../ko_KR/README.md) · [English](../en_US/README.md) · [Project](../../README.md)
+[Language index](../README.md) · [한국어](../ko_KR/README.md) · [Project](../../README.md)
 
-Start with build and run, then choose a subsystem. Source paths and commands are relative to the project root.
+Start with [Build and run](Build.md). Source paths and commands are relative to the repository root. Each page links to the matching Korean reference.
 
-Configuration and startup reflect the current checkout. Start with `./Scripts/Run.sh --help`; VM settings are in `Configs/QEMUSettings.sh`. The default workload starts Init and the output-only Shell.
+## Getting started
 
 | Document | Contents |
 | --- | --- |
-| [Architecture and boot](Architecture.md) | Startup, SMP, interrupts and source map |
-| [Build and run](Build.md) | Requirements, disk image, VM configuration and logs |
-| [Memory](Memory.md) | PMM, heap, VMM and ownership |
-| [Scheduler](Scheduler.md) | LBPWRR, Wait Queues, CPU usage, task lifetime and migration |
-| [Devices and rendering](Devices.md) | PCI, VirtIO, GPU, input and fonts |
-| [Storage and filesystems](Storage.md) | Block devices, GPT, EXT2, VFS and timestamps |
-| [User programs and libraries](UserLibraries.md) | Deployment, syscalls, TrueType and Shell |
-| [Networking](Network.md) | VirtIO-Net, NAT, DHCP, UDP, DNS and TCP |
-| [Clock and NTP](Clock.md) | RTC, UTC, uptime and optional NTP worker |
-| [Coding conventions](Directions.md) | Naming, formatting and kernel macros |
+| [Build and run](Build.md) | Tools, commands, images and IDE setup |
+| [Architecture and boot](Architecture.md) | Initialization, user sessions and source map |
 
-[Third-party notices](../THIRD_PARTY_NOTICES.md) and `Docs/LICENSES/` are shared. Each subsystem page describes its implementation scope.
+## Kernel
 
-- [DeviceFS and process ABI](DeviceFS.md)
+| Document | Contents |
+| --- | --- |
+| [Memory](Memory.md) | PMM, heap and address spaces |
+| [Scheduler](Scheduler.md) | LBPWRR, waits, processes and threads |
+| [Devices and rendering](Devices.md) | VirtIO, GPU, fonts and input |
+| [Storage and filesystems](Storage.md) | GPT, EXT2, VFS and open-file identity |
+| [Networking](Network.md) | Packets, DHCP, UDP, TCP and limits |
+| [Clock and NTP](Clock.md) | UTC, monotonic time and synchronization |
+| [DeviceFS and userspace ABI](DeviceFS.md) | Descriptors, mmap, ELF and threads |
+| [System call inventory](Syscalls.md) | Numbers, supported operations and LOS extensions |
+
+## Userspace
+
+| Document | Contents |
+| --- | --- |
+| [Programs and libraries](UserLibraries.md) | Musl, LOSLib, TrueType and assets |
+| [Accounts and sudo](Users.md) | UserDB, elevation and authentication boundaries |
+| [Locale and timezone](Locale.md) | Defaults, environment and translation scope |
+| [Shell variables](ShellVariables.md) | Assignments, expansion and input layout |
+| [User autostart](Autostart.md) | Configuration, startup apps and session lifetime |
+| [IPC and window protocol](IPC.md) | Ownership, APIs, messages and errors |
+| [lwm](Lwm.md) | Window controls, input, composition and limits |
+
+## Build configuration
+
+| Document | Contents |
+| --- | --- |
+| [Program.cfg](ProgramConfig.md) | Names, deployment, dependencies and publication |
+| [Library.cfg](LibraryConfig.md) | Musl/none, library graph and custom make |
+
+## Development and validation
+
+| Document | Contents |
+| --- | --- |
+| [Coding conventions](Directions.md) | Naming, formatting and file banners |
+| [Validation](Validation.md) | Host checks, disposable VMs and reporting |
+
+## Licenses
+
+[Third-party notices](../THIRD_PARTY_NOTICES.md) and [license texts](../LICENSES/) are shared.

@@ -107,12 +107,16 @@ typedef struct PROCESS
     UINT16             PID;
     VMM_ADDRESS_SPACE *AddressSpace;
     MMAP_REGION       *Mappings;
+    UINT64             BreakBase;
+    UINT64             Break;
     ELF64_EXECUTION   *Execution;
     VFS_CONTEXT       *FileContext;
     BOOLEAN            AssetPublisher;
+    BOOLEAN            SecureExecution;
     TASK_ASSET         Assets[LOS_ASSET_MAPPING_LIMIT];
     SPIN_LOCK          FileTableLock;
     UINT32             ReservedFiles;
+    UINT32             CloseOnExecFiles;
     OPEN_FILE         *Files[TASK_FILE_LIMIT];
     CHAR8              Name[16];
     UINT32             RealUID;
@@ -135,6 +139,7 @@ typedef struct TASK
     UINT8        FPState[512] __attribute__((aligned(16)));
     UINT64       ClearTIDAddress;
     UINT64       RobustListHead;
+    UINT64       SignalMask;
     UINT64       FutexAddress;
     UINT64       KernelStackBase;
     UINT64       KernelStackSize;

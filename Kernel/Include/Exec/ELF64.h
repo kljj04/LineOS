@@ -30,6 +30,7 @@ typedef struct ELF64_EXECUTION
     VMM_ADDRESS_SPACE *AddressSpace;
     CHAR8              ExecPath[4096];
     UINT64             Entry;
+    UINT64             BreakBase;
     UINT64             InterpreterBase;
     UINT64             ProgramHeaders;
     UINT16             ProgramHeaderCount;

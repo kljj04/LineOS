@@ -12,8 +12,11 @@
 
 INT64 SyscallUtimensat(INT64 DirFD, UINT64 Path, UINT64 TimesAddress, UINT64 Flags)
 {
-    TASK     *Task            = LBPWRRGetCurrentTask();
-    TIME_SPEC Times[2]        = {{0, LOS_UTIME_NOW}, {0, LOS_UTIME_NOW}};
+    TASK     *Task     = LBPWRRGetCurrentTask();
+    TIME_SPEC Times[2] = {
+        {0, LOS_UTIME_NOW},
+        {0, LOS_UTIME_NOW}
+    };
     CHAR8    *Name            = NULL;
     VFS_NODE  Expected        = {0};
     VFS_NODE *ExpectedPointer = NULL;
@@ -75,11 +78,11 @@ INT64 SyscallUtimensat(INT64 DirFD, UINT64 Path, UINT64 TimesAddress, UINT64 Fla
             return -EBADF;
         }
 
-        Context                      = File->OpenContext;
-        Context.Credentials          = Task->Process->FileContext->Credentials;
-        Expected.NamespaceGeneration = File->NamespaceGeneration;
-        Expected.Partition           = File->Partition;
-        Expected.Number              = File->Number;
+        Context             = File->OpenContext;
+        Context.Credentials = Task->Process->FileContext->Credentials;
+        Expected.Generation = File->Generation;
+        Expected.Partition  = File->Partition;
+        Expected.Number     = File->Number;
 
         if (Path == 0)
         {
@@ -99,7 +102,7 @@ INT64 SyscallUtimensat(INT64 DirFD, UINT64 Path, UINT64 TimesAddress, UINT64 Fla
 
         Result = SyscallVFSError(VFSLookup(&Context, File->Path, &Directory));
 
-        if (Result == 0 && (Directory.Number != Expected.Number || Directory.Partition != Expected.Partition || Directory.NamespaceGeneration != Expected.NamespaceGeneration))
+        if (Result == 0 && (Directory.Number != Expected.Number || Directory.Partition != Expected.Partition || Directory.Generation != Expected.Generation))
         {
             Result = -ESTALE;
         }

@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <LOS.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -133,7 +134,7 @@ STATIC BOOLEAN ShellHistorySave(VOID)
         return TRUE;
     }
 
-    remove(HistoryTemporary);
+    LOSRemove(HistoryTemporary);
     puts("lsh: cannot save command history");
 
     return FALSE;

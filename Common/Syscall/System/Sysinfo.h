@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 
 #define SI_LOAD_SHIFT 16
 

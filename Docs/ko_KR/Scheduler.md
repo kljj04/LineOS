@@ -6,7 +6,7 @@ LBPWRR(Load-Balanced Primary Weighted Round Robin)은 CPU별 실행 큐·현재 
 
 ## 선택과 스택 소유권
 
-작업 풀과 CPU별 실행 목록은 `LBPWRR_MAX_TASKS`인 1024개, 가중 실행 청크는 중복 가중치 자리를 포함하여 `CHUNK_MAX_COUNT`인 1024칸으로 제한합니다. 각 작업에는 4 GiB 아래에서 할당한 16페이지 스택을 제공하며 첫 인터럽트 프레임도 이 스택에 복사합니다.
+작업 슬롯·CPU별 실행 목록·가중 청크는 동적 배열로 관리하며 필요할 때 용량을 늘립니다. 이전의 고정 1024개 제한은 사용하지 않습니다. 메모리 할당이나 ID·용량 표현 범위의 한계에서는 추가가 실패할 수 있습니다. 각 작업에는 4 GiB 아래에서 할당한 16페이지 커널 스택을 제공하며 첫 인터럽트 프레임을 이 스택에 복사합니다.
 
 `LBPWRRStart()`는 로컬 작업을 즉시 선택·복원하므로 필요한 작업을 먼저 생성·등록합니다. 첫 문맥 복원 직전에 TSC deadline을 설정합니다. 벡터 64의 타이머 스케줄링 간격은 명목상 5ms이며 명시적 yield는 소프트웨어 인터럽트 67(`0x43`)을 사용합니다. 일반 READY 작업을 우선하고 없으면 로컬 idle을 선택합니다. BLOCKED와 SLEEPING은 선택하지 않습니다.
 
@@ -42,8 +42,12 @@ Wait Queue의 BLOCKED 작업은 청크의 가중치 자리를 예약하지만 RE
 
 `Usage.c`는 스케줄링 경계에서 TSC 시간을 busy·idle로 누적하고 약 100ms 간격으로 표본을 갱신합니다. `UsageGetCPU()`는 정수 백분율, `UsageGetTotal()`은 활성 CPU의 산술 평균을 반환합니다. TASK의 CPUTimeTSC·CPUUsage는 작업별 시간과 백분율입니다. 호스트 QEMU 프로세스의 사용률이 아닌 스케줄러 회계 값입니다.
 
-현재 시작 경로는 Init을 등록하고 Init이 Shell을 실행합니다. 사용률 화면과 키보드·마우스 소비자 작업은 등록하지 않습니다. Shell은 출력 스트림을 반복 확인하며 유저 yield 시스템 호출이 현재 실패를 반환하므로 CPU를 사용할 수 있습니다. [장치](Devices.md)·[아키텍처](Architecture.md)를 참고합니다.
+현재 KMain은 키보드·마우스 소비자와 NTP 작업을 등록하고 Init을 시작합니다. Init은 Terminal과 Login을 실행하며 Login이 인증 후 사용자 세션을 시작합니다. 터미널 읽기는 Wait Queue에서 대기하고 sched_yield는 스케줄러에 양보한 뒤 0을 반환합니다. PROCESS와 TASK를 분리하여 하나의 주소 공간에서 여러 커널 스케줄링 스레드를 실행합니다. 자세한 유저 ABI는 [DeviceFS](DeviceFS.md)를 참고합니다.
 
 ## 관련 소스와 제한
 
 인터페이스는 `Kernel/Include/Scheduler/`, 구현은 `Kernel/Source/Scheduler/`, 스택 복원은 `Kernel/Source/Interrupt/ISR.S`에 있습니다. CPU affinity 정책, 추가 공정성 분석과 작업 풀·시간 기반 sleep의 동시성 강화는 후속 과제입니다. 대기 목록은 공통 잠금 하나를 공유하며 대규모 경합은 별도 평가가 필요합니다.
+
+## 프로세스와 스레드
+
+PROCESS는 PID·주소 공간·파일 문맥·FD·자격 정보·에셋·매핑·스레드 목록을 소유합니다. TASK는 TID·레지스터·커널 스택·FS base·FPU 상태·대기 상태·시그널 마스크를 소유합니다. 스레드 종료와 그룹 종료를 구분하고 마지막 스레드가 프로세스 자원을 해제합니다. 스케줄러 작업 배열의 동적 용량과 별개로 fork/exec 실행 기록은 현재 128슬롯입니다.

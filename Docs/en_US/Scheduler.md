@@ -6,7 +6,7 @@ LBPWRR (Load-Balanced Primary Weighted Round Robin) manages a run queue, current
 
 ## Scheduling and stack ownership
 
-The task pool and each run-queue list are bounded by `LBPWRR_MAX_TASKS` (1024); each weighted Chunk has `CHUNK_MAX_COUNT` (1024) entries, counting repeated weight slots. Each task receives 16 stack pages allocated below 4 GiB. Its initial interrupt frame is copied onto that allocated stack.
+Task slots, CPU run lists and weighted chunks use growing dynamic arrays rather than the former fixed 1024-entry limits. Allocation failure and ID/capacity representation still bound growth. Each task receives a 16-page kernel stack allocated below 4 GiB, with its initial interrupt frame copied onto that stack.
 
 `LBPWRRStart()` selects and restores a local task immediately; create/register the workload before calling it. It arms the first TSC deadline immediately before restoring the saved context. Vector 64 schedules timer ticks at nominal 5 ms intervals; explicit yield uses software interrupt 67 (`0x43`). Non-idle READY tasks are preferred, with the local idle task as fallback. BLOCKED and SLEEPING tasks are not selected.
 
@@ -42,8 +42,12 @@ Removal requires a terminal task that is neither current nor OnCPU. Migration is
 
 `Usage.c` accounts TSC time as busy or idle at scheduling boundaries and samples at approximately 100 ms. `UsageGetCPU()` returns an integer percentage; `UsageGetTotal()` returns the arithmetic mean across active CPUs. TASK CPUTimeTSC and CPUUsage track per-task time and percentage. These are scheduler accounting values, not host process CPU measurements.
 
-Current startup schedules Init, which starts Shell. It does not register the usage display, keyboard or mouse consumer tasks. Shell polls its output stream; its user yield syscall currently returns failure, so this loop can consume CPU. See [devices](Devices.md) and [architecture](Architecture.md).
+KMain registers keyboard/mouse consumers and an NTP worker, then starts Init. Init launches Terminal and Login; Login starts an authenticated user session. Terminal reads block on Wait Queues and sched_yield yields to the scheduler and returns zero. PROCESS/TASK separation permits multiple independently scheduled kernel threads in one user address space. See [DeviceFS/ABI](DeviceFS.md).
 
 ## Limits and source
 
 Public interfaces are under `Kernel/Include/Scheduler/`; implementations are under `Kernel/Source/Scheduler/`, with stack restoration in `Kernel/Source/Interrupt/ISR.S`. CPU affinity policy, broader fairness analysis and hardening of task-pool/timed-sleep concurrency remain future work. Wait lists share one lock; large-scale contention has not been characterized.
+
+## Processes and threads
+
+PROCESS owns PID, address space, file context, descriptors, credentials, assets, mappings and the thread list. TASK owns TID, registers, kernel stack, FS base, FPU state, wait state and signal mask. Thread exit and group exit are distinct; the last thread releases process resources. The fork/exec execution-record table remains limited to 128 slots independently of dynamic scheduler arrays.

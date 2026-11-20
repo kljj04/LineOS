@@ -2,7 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <libintl.h>
+#include <LOSLocale.h>
 
 #include <locale.h>
 
@@ -11,33 +11,33 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
-#include <syscall.h>
+#include <LOS.h>
 #include <Syscall/Security/Sudo.h>
 
 INT32 main(INT32 Argc, char **Argv)
 {
-    if (setlocale(LC_ALL, "") == NULL)
+    if (LOSLocaleRefresh() == NULL)
     {
         setlocale(LC_ALL, "C");
     }
 
     if (Argc < 2)
     {
-        puts(gettext("Usage: sudo COMMAND [ARGUMENT ...] | sudo -k"));
+        puts(LOSGettext("Usage: sudo COMMAND [ARGUMENT ...] | sudo -k"));
 
         return 1;
     }
 
     if (geteuid() != 0)
     {
-        puts(gettext("sudo: executable must be owned by root with mode 4755"));
+        puts(LOSGettext("sudo: executable must be owned by root with mode 4755"));
 
         return 1;
     }
 
     if (Argc == 2 && strcmp(Argv[1], "-k") == 0)
     {
-        INT64 Result = LineOSSyscallResult(LineOSSyscall1(SYSCALL_SUDO_CACHE, SUDO_CACHE_CLEAR));
+        INT64 Result = LOSSudoCache(SUDO_CACHE_CLEAR);
 
         return Result < 0 ? 1 : 0;
     }
@@ -47,7 +47,7 @@ INT32 main(INT32 Argc, char **Argv)
 
     if (UserDBLookupUID(getuid(), Username, &Account) != USER_DB_OK)
     {
-        puts(gettext("sudo: cannot identify calling user"));
+        puts(LOSGettext("sudo: cannot identify calling user"));
 
         return 1;
     }
@@ -55,23 +55,23 @@ INT32 main(INT32 Argc, char **Argv)
     if (!SudoAllowed(Username))
     {
         CryptoWipe(&Account, sizeof(Account));
-        puts(gettext("sudo: user is not allowed by /etc/sudoers"));
+        puts(LOSGettext("sudo: user is not allowed by /etc/sudoers"));
 
         return 1;
     }
 
-    INT64 Cached = LineOSSyscallResult(LineOSSyscall1(SYSCALL_SUDO_CACHE, SUDO_CACHE_CHECK));
+    INT64 Cached = LOSSudoCache(SUDO_CACHE_CHECK);
 
     if (Cached != 1)
     {
         if (!SudoAuthenticate(Username, &Account))
         {
-            puts(gettext("sudo: authentication failed"));
+            puts(LOSGettext("sudo: authentication failed"));
 
             return 1;
         }
 
-        LineOSSyscall1(SYSCALL_SUDO_CACHE, SUDO_CACHE_RECORD);
+        LOSSudoCache(SUDO_CACHE_RECORD);
     }
     else
     {

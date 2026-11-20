@@ -8,7 +8,7 @@
 
 VirtIO-Net, Ethernet, ARP, IPv4, ICMP, UDP, DNS A 조회, DHCPv4 및 TCP 클라이언트를 제공합니다. HTTP와 웹 렌더러는 커널에서 제거했습니다. HTTP/HTTPS/TLS는 이후 유저스페이스 범위입니다.
 
-`NetworkTask`가 NetworkPoll과 1ms 시간 대기로 수신 처리와 DHCP 임대 갱신을 수행합니다. 현재 KMain은 이 작업을 등록하지 않으며, `NetworkInit()`만으로 작업을 생성하거나 DHCP 임대를 획득하지 않습니다. 입력 Wait Queue 변경은 네트워크 작업까지 인터럽트 기반 블로킹으로 전환하지 않습니다. DHCP로 주소, 서브넷 마스크, 게이트웨이와 DNS를 얻습니다. `NetworkConfigure()`로 정적 설정을 적용하면 DHCP가 비활성화됩니다. 설정 완료 여부와 값은 `NetworkGetConfig()`로 확인합니다.
+`NetworkTask`가 NetworkPoll과 1ms 시간 대기로 수신 처리와 DHCP 임대 갱신을 수행합니다. 현재 KMain은 NetworkTask를 등록하지 않으며, `NetworkInit()`만으로 작업을 생성하거나 DHCP 임대를 획득하지 않습니다. 입력 Wait Queue 변경은 네트워크 작업까지 인터럽트 기반 블로킹으로 전환하지 않습니다. 별도로 등록된 ClockNTPTask는 네트워크 설정 준비를 기다릴 뿐 NetworkTask를 대체하지 않습니다. DHCP로 주소, 서브넷 마스크, 게이트웨이와 DNS를 얻습니다. `NetworkConfigure()`로 정적 설정을 적용하면 DHCP가 비활성화됩니다. 설정 완료 여부와 값은 `NetworkGetConfig()`로 확인합니다.
 
 UDP는 최대 8개 소켓과 소켓별 8개 수신 큐를 제공합니다. `NetworkUDPOpen`, `NetworkUDPSendTo`, `NetworkUDPReceiveFrom`, `NetworkUDPClose`를 사용합니다. 수신 시 송신 주소와 포트를 반환하며, 작은 버퍼에는 필요한 길이를 알리고 패킷을 보존합니다. `NetworkUDPExchange`는 단일 요청/응답 편의 API입니다.
 

@@ -52,7 +52,14 @@ typedef struct
 } PCI_VENDOR_NAME;
 
 STATIC CONST PCI_VENDOR_NAME VendorNames[] = {
-    {0x8086, L"Intel"}, {0x1AF4, L"VirtIO"}, {0x1234, L"QEMU"}, {0x1B36, L"Red Hat"}, {0x10EC, L"Realtek"}, {0x1022, L"AMD"}, {0x1002, L"AMD/ATI"}, {0x15AD, L"VMware"},
+    {0x8086, L"Intel"  },
+    {0x1AF4, L"VirtIO" },
+    {0x1234, L"QEMU"   },
+    {0x1B36, L"Red Hat"},
+    {0x10EC, L"Realtek"},
+    {0x1022, L"AMD"    },
+    {0x1002, L"AMD/ATI"},
+    {0x15AD, L"VMware" },
 };
 
 STATIC BOOLEAN ChecksumValid(CONST VOID *Data, UINT32 Length)

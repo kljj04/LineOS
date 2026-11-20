@@ -2,7 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <libintl.h>
+#include <LOSLocale.h>
 
 #include <locale.h>
 
@@ -10,6 +10,7 @@
 #include <Asset.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <Syscall/Device/Ioctl.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <time.h>
@@ -17,7 +18,7 @@
 
 INT32 main(VOID)
 {
-    if (setlocale(LC_ALL, "") == NULL)
+    if (LOSLocaleRefresh() == NULL)
     {
         setlocale(LC_ALL, "C");
     }
@@ -40,21 +41,21 @@ INT32 main(VOID)
 
     if (TTY < 0 || FB < 0)
     {
-        puts(gettext("TestGUI: cannot open devices"));
+        puts(LOSGettext("TestGUI: cannot open devices"));
 
         goto Cleanup;
     }
 
     if (ioctl(FB, FBIOGET_VSCREENINFO, &Variable) < 0 || ioctl(FB, FBIOGET_FSCREENINFO, &Fixed) < 0)
     {
-        puts(gettext("TestGUI: cannot query framebuffer"));
+        puts(LOSGettext("TestGUI: cannot query framebuffer"));
 
         goto Cleanup;
     }
 
     if (Variable.XRes < 640 || Variable.YRes < 480 || Variable.BitsPerPixel != 32 || Variable.Red.Offset != 16 || Variable.Green.Offset != 8 || Variable.Blue.Offset != 0 || Fixed.LineLength != (UINT64) Variable.XRes * 4 || Fixed.SmemLen != (UINT64) Fixed.LineLength * Variable.YRes)
     {
-        puts(gettext("TestGUI: unsupported framebuffer"));
+        puts(LOSGettext("TestGUI: unsupported framebuffer"));
 
         goto Cleanup;
     }
@@ -81,7 +82,7 @@ INT32 main(VOID)
 
     if (LOSAssetAcquire("Fonts/JetBrainsMono", &FontAsset) < 0)
     {
-        puts(gettext("TestGUI: cannot acquire font"));
+        puts(LOSGettext("TestGUI: cannot acquire font"));
 
         goto Cleanup;
     }
@@ -91,7 +92,7 @@ INT32 main(VOID)
 
     if (!TrueTypeInit(&Allocator, &Surface) || !TrueTypeRegisterFont(&GUI.Font, FontAsset.Data))
     {
-        puts(gettext("TestGUI: cannot initialize font"));
+        puts(LOSGettext("TestGUI: cannot initialize font"));
 
         goto Cleanup;
     }
@@ -105,7 +106,7 @@ INT32 main(VOID)
 
     if (ioctl(TTY, LOS_TIO_GRAPHICS_BEGIN) < 0)
     {
-        puts(gettext("TestGUI: display is busy"));
+        puts(LOSGettext("TestGUI: display is busy"));
 
         goto Cleanup;
     }

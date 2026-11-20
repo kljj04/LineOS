@@ -8,3 +8,5 @@
 
 INT64 SyscallStat(UINT64 Path, UINT64 Buffer, BOOLEAN Follow);
 INT64 SyscallFstat(UINT64 FD, UINT64 Buffer);
+
+INT64 SyscallNewfstatat(INT32 FD, UINT64 Path, UINT64 Buffer, UINT64 Flags);

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#ifdef LINEOS_KERNEL_BUILD
 #define _IOC(Direction, Type, Number, Size) (((unsigned long) (Direction) << 30) | ((unsigned long) (Size) << 16) | ((unsigned long) (Type) << 8) | (Number))
 #define _IO(Type, Number)                   _IOC(0, Type, Number, 0)
 #define _IOR(Type, Number, Data)            _IOC(2, Type, Number, sizeof(Data))
@@ -11,6 +12,10 @@
 #define _IOWR(Type, Number, Data)           _IOC(3, Type, Number, sizeof(Data))
 #define _IOC_DIR(Request)                   (((unsigned long) (Request) >> 30) & 3)
 #define _IOC_SIZE(Request)                  (((unsigned long) (Request) >> 16) & 0x3FFF)
+
+#else
+#include <sys/ioctl.h>
+#endif
 
 #define FBIOGET_VSCREENINFO 0x4600UL
 #define FBIOGET_FSCREENINFO 0x4602UL
@@ -101,6 +106,7 @@ typedef struct
 #define LOS_TIO_GRAPHICS_BEGIN _IO('L', 6)
 #define LOS_TIO_GRAPHICS_END   _IO('L', 7)
 
+#ifdef LINEOS_KERNEL_BUILD
 #define FIONREAD 0x541BU
 
 #define TIOCGWINSZ 0x5413U
@@ -113,6 +119,8 @@ struct winsize
     unsigned short ws_xpixel;
     unsigned short ws_ypixel;
 };
+
+#endif
 
 #define LOS_TIO_SET_COMPOSITOR _IOW('L', 8, unsigned long long)
 #define LOS_TIO_GET_COMPOSITOR _IOR('L', 9, unsigned long long)

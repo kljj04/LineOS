@@ -2,7 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <libintl.h>
+#include <LOSLocale.h>
 
 #include <UserDB.h>
 #include <Argon2.h>
@@ -12,6 +12,11 @@
 
 STATIC BOOLEAN AddUserReadPassword(char Password[USER_DB_PASSWORD_MAX + 1])
 {
+    if (fflush(stdout) == EOF)
+    {
+        return FALSE;
+    }
+
     UINTN   Length = 0;
     UINT8   Byte;
     BOOLEAN Invalid = FALSE;
@@ -74,34 +79,34 @@ INT32 UserDBAddCommand(CONST char *Username)
 
     if (!UserDBValidateName(Username))
     {
-        puts(gettext("AddUser: invalid username"));
+        puts(LOSGettext("AddUser: invalid username"));
 
         return 1;
     }
 
-    printf(gettext("New password for %s: "), Username);
+    printf(LOSGettext("New password for %s: "), Username);
 
     if (!AddUserReadPassword(Password))
     {
-        puts(gettext("AddUser: password must contain 8 to 127 printable characters"));
+        puts(LOSGettext("AddUser: password must contain 8 to 127 printable characters"));
 
         goto Cleanup;
     }
 
-    printf("%s", gettext("Confirm password: "));
+    printf("%s", LOSGettext("Confirm password: "));
 
     if (!AddUserReadPassword(Confirmation) || strcmp(Password, Confirmation) != 0)
     {
-        puts(gettext("AddUser: passwords do not match or confirmation is invalid"));
+        puts(LOSGettext("AddUser: passwords do not match or confirmation is invalid"));
 
         goto Cleanup;
     }
 
-    puts(gettext("AddUser: deriving password hash..."));
+    puts(LOSGettext("AddUser: deriving password hash..."));
 
     if (!UserDBHashPassword(Password, Salt, Hash))
     {
-        puts(gettext("AddUser: secure random source or password hashing unavailable"));
+        puts(LOSGettext("AddUser: secure random source or password hashing unavailable"));
 
         goto Cleanup;
     }

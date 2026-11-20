@@ -2,10 +2,11 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <LOS.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -774,7 +775,7 @@ STATIC BOOLEAN DecodeArchive(RIF_READER *Reader)
         }
         if (!Success)
         {
-            if (remove(Name) < 0)
+            if (LOSRemove(Name) < 0)
             {
                 perror(Name);
             }
@@ -1039,7 +1040,7 @@ STATIC BOOLEAN EncodeArchive(CONST char *Archive, INT32 FileCount, char **Paths)
     {
         Success = FALSE;
     }
-    if (!Success && remove(Archive) < 0)
+    if (!Success && LOSRemove(Archive) < 0)
     {
         perror(Archive);
     }

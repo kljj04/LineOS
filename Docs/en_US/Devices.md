@@ -4,45 +4,24 @@
 
 ## PCI and VirtIO
 
-- PCI configuration space scanning
-- Q35 machine support
-- Generic VirtIO PCI transport infrastructure
-- Generic VirtQueue infrastructure
-- VirtIO network device
-- VirtIO GPU
-- VirtIO keyboard input
-- VirtIO tablet input
-- VirtIO block device with synchronous and asynchronous reads, writes, and flushes
+PCI configuration scanning supports Q35 and supplies common VirtIO PCI transport and virtqueue code.
 
-## Graphics
+| Device | Implemented operations | Source |
+| --- | --- | --- |
+| VirtIO GPU | Framebuffer, scanout, transfer, flush and cursor | Kernel/Source/Render/GPU |
+| VirtIO input | Keyboard and tablet events | Kernel/Source/Input |
+| VirtIO block | Synchronous/asynchronous read, write and flush | Kernel/Source/Disk |
+| VirtIO network | RX/TX queues and network device access | Kernel/Source/Network |
 
-- VirtIO GPU initialization
-- VirtIO GPU framebuffer creation
-- Scanout setup
-- Framebuffer transfer and flushing
-- Dirty rectangle tracking
-- Hardware cursor support
-- Pixel read/write
-- Rectangle drawing
-- Line drawing
-- Circle drawing
-- Alpha blending
-- Framebuffer copy operations
+See [Storage](Storage.md) and [Networking](Network.md) for layers above the devices.
 
-## Text Rendering
+## Graphics and text
 
-- Runtime TrueType parsing and rasterization
-- Embedded fonts through assembler `.incbin`
-- Pretendard SemiBold
-- JetBrains Mono Nerd Font SemiBold
-- ASCII rendering
-- Korean Hangul rendering
-- Nerd Font private-use glyph rendering
-- Runtime glyph blending into the VirtIO GPU framebuffer
+CPU rendering includes pixel access, shapes, alpha blending, framebuffer copies and dirty rectangles. TrueType fonts are parsed/rasterized at runtime; kernel fonts are embedded with assembler incbin. Pretendard SemiBold and JetBrains Mono Nerd Font SemiBold provide ASCII, Hangul and Nerd Font private-use glyphs.
 
 ## Fonts and licenses
 
-The kernel retains embedded fonts and TrueType rendering for panic output. Userspace has a separate static TrueType library and reads deployed font files from `/sys/fonts/`. The current Shell renders ASCII output to a userspace framebuffer and presents it through display syscalls; it is not yet an interactive terminal. See [user programs](UserLibraries.md) and [third-party notices](../THIRD_PARTY_NOTICES.md).
+The kernel retains embedded fonts and TrueType rendering for panic output. Userspace has a separate shared TrueType library and read-only font assets published by Init. Terminal renders UTF-8, Hangul, Nerd Font glyphs and ANSI controls; lsh handles interactive input and lwm composites IPC frames. See [user programs](UserLibraries.md) and [third-party notices](../THIRD_PARTY_NOTICES.md).
 
 ## Input queues and blocking
 
@@ -50,7 +29,7 @@ Keyboard IRQ vector 65 and tablet vector 66 use separate VirtIO queues, 64-entry
 
 `InputMouseHandler()` drains pointer events and calls `InputWaitMouseEvents()`. `InputKeyboardHandler()` drains key events and calls `InputWaitKeyboardEvent()`. Their VirtIO wait functions check ring indices under the same condition lock and call WaitQueueSleep only when empty. A wake cannot be lost between checking and blocking. See [scheduling](Scheduler.md) for IRQ flags, lock ordering and stack ownership.
 
-The current KMain registers neither keyboard nor mouse consumers. Driver IRQ handling alone does not provide keyboard input to Shell or drain the rings into higher-level handlers.
+KMain registers keyboard and mouse consumers. TTY/graphics ownership routes input to Terminal or lwm; device event rings and shell-forwarded input queues are separate.
 
 ## Supported environment
 

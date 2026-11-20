@@ -4,6 +4,7 @@
 
 #include <TerminalScreen.h>
 #include <sys/ioctl.h>
+#include <Syscall/Device/Ioctl.h>
 #include <string.h>
 
 INT32   FramebufferFD = -1;

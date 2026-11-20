@@ -14,10 +14,11 @@ ld.lld -shared --version-script="$Work/Version.map" -soname "$Work/libtest.so" -
 clang -c Scripts/Validation/DynamicLoader/Entry.S -o "$Work/Entry.o"
 ld.lld -pie --allow-shlib-undefined -e _Start --dynamic-linker "$Loader" -o "$Work/TLS" "$Work/Entry.o" "$Work/libtest.so"
 timeout 10 "$Work/TLS"
-clang -target x86_64-elf -fPIC -ffreestanding -fno-builtin -nostdlib -ICommon -ILibraries/LOSLibC/Include -c Scripts/Validation/DynamicLoader/Pthread.c -o "$Work/Pthread.o"
-ld.lld -pie --allow-shlib-undefined -e _Start --dynamic-linker "$Loader" -rpath "$Root/LineOS/Libraries" -o "$Work/Pthread" Build/Objects/Libraries/LOSLibC/Runtime/{crt0,Start}.o "$Work/Pthread.o" LineOS/Libraries/liblosc.so
+Musl="$Root/LineOS/Libraries/libc.so"
+clang -target x86_64-elf -fPIC -ffreestanding -fno-builtin -nostdlib -nostdinc -isystem Libraries/musl/obj/include -isystem Libraries/musl/arch/x86_64 -isystem Libraries/musl/arch/generic -isystem Libraries/musl/include -c Scripts/Validation/DynamicLoader/Pthread.c -o "$Work/Pthread.o"
+ld.lld -pie -e _start --dynamic-linker "$Musl" -rpath "$Root/LineOS/Libraries" -o "$Work/Pthread" Libraries/musl/lib/{Scrt1,crti}.o "$Work/Pthread.o" -LLineOS/Libraries -l:libc.so Libraries/musl/lib/crtn.o
 timeout 10 "$Work/Pthread"
-ld.lld -pie --allow-shlib-undefined -e _Start --dynamic-linker "$Loader" -rpath "$Root/LineOS/Libraries" -o "$Work/PthreadTest" Build/Objects/Libraries/LOSLibC/Runtime/{crt0,Start}.o Build/Objects/UserPrograms/Shell/Commands/pthreadtest/pthreadtest.o LineOS/Libraries/liblosc.so
+ld.lld -pie -e _start --dynamic-linker "$Musl" -rpath "$Root/LineOS/Libraries" -o "$Work/PthreadTest" Libraries/musl/lib/{Scrt1,crti}.o Build/Objects/UserPrograms/Shell/Commands/pthreadtest/pthreadtest.o -LLineOS/Libraries -l:libc.so Libraries/musl/lib/crtn.o
 timeout 10 "$Work/PthreadTest"
 printf '.text\n.global _Start\n_Start: movl $231, %%eax; xorl %%edi, %%edi; syscall\n.section .note.GNU-stack,"",@progbits\n' > "$Work/Empty.S"
 clang -c "$Work/Empty.S" -o "$Work/Empty.o"

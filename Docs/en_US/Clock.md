@@ -10,7 +10,7 @@
 
 ## Synchronization
 
-`ClockNTPTask` is available but is not registered by the current `KMain()`. When a caller schedules it alongside the network worker and address configuration is ready, the task queries `pool.ntp.org` and repeats 600 seconds (10 minutes) after success. Each attempt has a five-second budget. Failures retain the current clock and back off through 64, 128, 256, 512 and 600 seconds.
+`ClockNTPTask` is registered by KMain. NetworkTask is not, so polling/address configuration must be supplied separately. Once configuration is ready, the task queries `pool.ntp.org` and repeats 600 seconds (10 minutes) after success. Each attempt has a five-second budget. Failures retain the current clock and back off through 64, 128, 256, 512 and 600 seconds.
 
 `ClockSyncNTP(Server, TimeoutMls)` accepts a hostname or IPv4 string. `ClockGetNTPStatus()` reports busy/last-success state, failures, server address, measured delay, offset and the next monotonic deadline. Calls are serialized and do not send before the scheduled deadline. `CLOCK_NTP_SERVER` and `CLOCK_NTP_PORT` default to `pool.ntp.org` and UDP 123.
 
@@ -18,7 +18,7 @@ Replies must match the request timestamp, server address/port, length, version, 
 
 ## Display
 
-The current Kernel.c displays CPU usage and mouse input; it has no ClockDisplayTask or automatic clock/NTP status display. A caller can use `ClockGetDateTime()` with an offset of 540 minutes for KST (UTC+09:00).
+KMain starts keyboard/mouse and NTP workers, but no ClockDisplayTask or automatic clock/NTP status display. A caller can use `ClockGetDateTime()` with an offset of 540 minutes for KST (UTC+09:00).
 
 ## Limits and source
 

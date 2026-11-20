@@ -20,10 +20,14 @@ VFS는 파티션별 루트, 경로 해석, 디렉터리 열거와 명령 문맥�
 
 한 트랜잭션은 최대 32768개 변경 블록을 준비하며, 이를 넘으면 commit 전에 실패합니다. dirty 표시와 flush 순서를 적용하지만 저널은 없으므로 실제 전원 손실 시 원자적 복구나 데이터 보존을 보장하지 않습니다. commit 실패 후에는 해당 마운트 접근을 차단하며 다음 쓰기 마운트 전에 오프라인 검사가 필요합니다.
 
-활성 확장 속성·ACL, supplementary groups, journaling 및 지원하지 않는 feature·inode flag의 수정은 지원하지 않습니다. 작업별 읽기 전용 파일 디스크립터는 구현되어 있으며, 완전한 POSIX 열린 파일 수명 계층과 유저 모드 인증은 후속 범위입니다. 호스트가 EFI FAT32 파티션을 준비하는 것과 커널 FAT32 백엔드 구현은 별개입니다.
+활성 확장 속성·ACL, supplementary groups, journaling 및 지원하지 않는 feature·inode flag의 수정은 지원하지 않습니다. 프로세스별 읽기·쓰기 FD, 공유 열린 파일 객체와 유저 모드 Login·sudo 인증을 제공합니다. rename/unlink 뒤 열린 inode를 보존하는 완전한 POSIX 수명은 후속 범위입니다. 호스트가 EFI FAT32 파티션을 준비하는 것과 커널 FAT32 백엔드 구현은 별개입니다.
 
 ## 관련 소스와 실행 상태
 
 GPT·블록 드라이버는 `Kernel/Source/Disk/`, EXT2·VFS는 `Kernel/Source/FS/`, 인터페이스는 `Kernel/Include/FS/`에 있습니다. 예전 개발 셸은 현재 기본 `KMain()`에 포함되지 않습니다.
 
-기본 KMain은 블록 장치를 초기화하고 GPT 2번 파티션의 EXT2를 VFS 루트로 마운트합니다. 현재 유저 Shell은 출력을 표시하지만 명령 입력은 지원하지 않습니다. 호스트 이미지 갱신기는 EXT2에 유저 프로그램과 폰트도 배치합니다. [빌드와 실행](Build.md)을 참고합니다.
+기본 KMain은 블록 장치를 초기화하고 GPT 2번 파티션의 EXT2를 VFS 루트로 마운트합니다. 현재 유저 셸은 Terminal과 연결된 대화형 lsh입니다. 호스트 이미지 갱신기는 EXT2에 설정된 유저 프로그램·공유 라이브러리와 폰트를 배치합니다. [빌드와 실행](Build.md)을 참고합니다.
+
+## 열린 파일의 식별자
+
+EXT2 inode의 i_generation을 VFS 노드와 열린 파일에 보존합니다. inode를 재할당할 때 generation을 갱신하여 재사용된 노드를 이전 FD로 읽지 못하게 합니다. 네임스페이스 전체 generation은 디렉터리 변경 계수이며 개별 FD의 유효성 토큰으로 사용하지 않습니다. 무관한 파일 생성·삭제로 공유 라이브러리 로드나 열린 파일 읽기가 실패하지 않습니다.

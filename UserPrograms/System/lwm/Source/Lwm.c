@@ -2,6 +2,8 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
+#include <LOSLocale.h>
+#include <Syscall/Device/Ioctl.h>
 #include <Lwm.h>
 #include <locale.h>
 #include <stdio.h>
@@ -15,7 +17,7 @@ STATIC LWM Manager;
 
 INT32 main(VOID)
 {
-    if (setlocale(LC_ALL, "") == NULL)
+    if (LOSLocaleRefresh() == NULL)
     {
         setlocale(LC_ALL, "C");
     }

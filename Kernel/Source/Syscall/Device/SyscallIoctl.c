@@ -23,5 +23,5 @@ INT64 SyscallIoctl(UINT64 FD, UINT64 Request, UINT64 Argument)
         return -ENOTTY;
     }
 
-    return File->Device->Operations->Ioctl(Task, File->DeviceState, Request, Argument, File->Access);
+    return File->Device->Operations->Ioctl(Task, File->DeviceState, (UINT32) Request, Argument, File->Access);
 }

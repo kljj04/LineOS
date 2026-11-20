@@ -2,11 +2,11 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <libintl.h>
+#include <LOSLocale.h>
 
 #include <locale.h>
 
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -66,31 +66,31 @@ STATIC BOOLEAN UserRescueReadLine(char *Line, UINTN Capacity)
 
 STATIC VOID UserRescueHelp(VOID)
 {
-    puts(gettext("Available commands:"));
-    puts(gettext("  help              Show available commands"));
-    puts(gettext("  status            Show recovery status"));
-    puts(gettext("  adduser USERNAME  Create user account"));
-    puts(gettext("  deluser USERNAME  Delete user account"));
-    puts(gettext("  exit              Return to Login"));
+    puts(LOSGettext("Available commands:"));
+    puts(LOSGettext("  help              Show available commands"));
+    puts(LOSGettext("  status            Show recovery status"));
+    puts(LOSGettext("  adduser USERNAME  Create user account"));
+    puts(LOSGettext("  deluser USERNAME  Delete user account"));
+    puts(LOSGettext("  exit              Return to Login"));
 }
 
 STATIC VOID UserRescueStatus(VOID)
 {
-    puts(gettext("UserRescue: recovery environment active"));
-    puts(gettext("UserRescue: use adduser root to initialize a missing account database"));
+    puts(LOSGettext("UserRescue: recovery environment active"));
+    puts(LOSGettext("UserRescue: use adduser root to initialize a missing account database"));
 }
 
 INT32 main(VOID)
 {
-    if (setlocale(LC_ALL, "") == NULL)
+    if (LOSLocaleRefresh() == NULL)
     {
         setlocale(LC_ALL, "C");
     }
 
     char Line[USER_RESCUE_LINE_SIZE];
 
-    puts(gettext("LineOS User Rescue"));
-    puts(gettext("Type 'help' for available commands."));
+    puts(LOSGettext("LineOS User Rescue"));
+    puts(LOSGettext("Type 'help' for available commands."));
 
     for (;;)
     {
@@ -120,7 +120,7 @@ INT32 main(VOID)
 
             if (*Username == 0)
             {
-                puts(gettext("Usage: adduser USERNAME"));
+                puts(LOSGettext("Usage: adduser USERNAME"));
             }
             else
             {
@@ -133,7 +133,7 @@ INT32 main(VOID)
 
             if (*Username == 0)
             {
-                puts(gettext("Usage: deluser USERNAME"));
+                puts(LOSGettext("Usage: deluser USERNAME"));
             }
             else
             {
@@ -142,7 +142,7 @@ INT32 main(VOID)
         }
         else if (strcmp(Line, "exit") == 0)
         {
-            puts(gettext("UserRescue: returning to Login"));
+            puts(LOSGettext("UserRescue: returning to Login"));
 
             pid_t Child = fork();
 
@@ -152,14 +152,14 @@ INT32 main(VOID)
                 char *Environment[] = {NULL};
 
                 execve(Arguments[0], Arguments, Environment);
-                puts(gettext("UserRescue: Login execve failed"));
+                puts(LOSGettext("UserRescue: Login execve failed"));
 
                 return 127;
             }
 
             if (Child < 0)
             {
-                puts(gettext("UserRescue: Login fork failed"));
+                puts(LOSGettext("UserRescue: Login fork failed"));
             }
             else
             {
@@ -168,7 +168,7 @@ INT32 main(VOID)
         }
         else
         {
-            puts(gettext("UserRescue: unknown command"));
+            puts(LOSGettext("UserRescue: unknown command"));
         }
     }
 }

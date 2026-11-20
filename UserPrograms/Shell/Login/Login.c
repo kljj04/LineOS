@@ -19,6 +19,11 @@ STATIC INT32 LoginReadLine(char *Buffer, UINTN Capacity, BOOLEAN Echo)
     BOOLEAN Invalid = FALSE;
     UINT8   Byte;
 
+    if (fflush(stdout) == EOF)
+    {
+        return -1;
+    }
+
     Buffer[0] = 0;
 
     for (;;)

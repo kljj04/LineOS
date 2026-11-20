@@ -2,6 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
+#include <Syscall/Device/Ioctl.h>
 #include <TerminalScreen.h>
 #include <Window.h>
 #include <sys/ioctl.h>

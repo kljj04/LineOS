@@ -18,3 +18,5 @@ INT64 SyscallGetRobustList(UINT64 TID, UINT64 HeadAddress, UINT64 LengthAddress)
 INT64 SyscallExitGroup(UINT64 Status);
 VOID  SyscallClearTIDAddress(TASK *Task);
 VOID  SyscallReleaseRobustList(TASK *Task);
+
+INT64 SyscallRTSigprocmask(INT32 How, UINT64 Set, UINT64 OldSet, UINT64 Size);

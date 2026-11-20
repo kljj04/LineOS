@@ -21,8 +21,9 @@ struct OPEN_FILE
     UINT32             Access;
     BOOLEAN            Directory;
     BOOLEAN            Append;
+    UINT32             Flags;
     UINT64             Offset;
-    UINT64             NamespaceGeneration;
+    UINT64             Generation;
     UINT32             Number;
     UINT32             Partition;
     CHAR8             *Path;
@@ -36,3 +37,11 @@ VOID  FileEnd(OPEN_FILE *File);
 
 OPEN_FILE *FileAcquire(TASK *Task, UINT64 FD);
 VOID       FileDrop(OPEN_FILE **File);
+
+INT64 FileResolvePath(TASK *Task, INT32 FD, UINT64 Path, BOOLEAN Empty, CHAR8 **Name);
+
+#define FILE_AT_FDCWD            (-100)
+#define FILE_AT_SYMLINK_NOFOLLOW 0x100U
+#define FILE_AT_NO_AUTOMOUNT     0x800U
+#define FILE_AT_EMPTY_PATH       0x1000U
+#define FILE_OPEN_CLOEXEC        0x80000U

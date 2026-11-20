@@ -2,6 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
+#include <Syscall/Device/Ioctl.h>
 #include <Terminal.h>
 #include <sys/ioctl.h>
 #include <unistd.h>

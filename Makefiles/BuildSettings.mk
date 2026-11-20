@@ -41,16 +41,16 @@ USER_PROGRAM_OBJS = $(foreach Program,$(USER_PROGRAMS),$(USER_PROGRAM_OBJS_$(Pro
 USER_PROGRAM_OUTPUTS = $(foreach Program,$(USER_PROGRAMS),$(USER_PROGRAM_OUTPUT_$(Program)))
 USER_PROGRAM_DEPS = $(USER_PROGRAM_OBJS:.o=.d)
 
-LOSLIBC_TARGET := LineOS/Libraries/liblosc.so
+LOSLIB_TARGET := LineOS/Libraries/liblos.so
 
-LOSLIBC_C_SRCS = $(call RWildcard,Libraries/LOSLibC/Source,*.c)
-LOSLIBC_ASM_SRCS = $(call RWildcard,Libraries/LOSLibC/Source,*.S)
+LOSLIB_C_SRCS = $(call RWildcard,Libraries/LOSLib/Source,*.c)
+LOSLIB_ASM_SRCS = $(call RWildcard,Libraries/LOSLib/Source,*.S)
 
-LOSLIBC_C_OBJS = $(patsubst %.c,Build/Objects/%.o,$(LOSLIBC_C_SRCS))
-LOSLIBC_ASM_OBJS = $(patsubst %.S,Build/Objects/%.o,$(LOSLIBC_ASM_SRCS))
+LOSLIB_C_OBJS = $(patsubst %.c,Build/Objects/%.o,$(LOSLIB_C_SRCS))
+LOSLIB_ASM_OBJS = $(patsubst %.S,Build/Objects/%.o,$(LOSLIB_ASM_SRCS))
 
-LOSLIBC_OBJS = $(LOSLIBC_C_OBJS) $(LOSLIBC_ASM_OBJS)
-LOSLIBC_DEPS = $(LOSLIBC_OBJS:.o=.d)
+LOSLIB_OBJS = $(LOSLIB_C_OBJS) $(LOSLIB_ASM_OBJS)
+LOSLIB_DEPS = $(LOSLIB_OBJS:.o=.d)
 
 EFI_CFLAGS = -target $(EFI_TYPE_TARGET) \
              -Wall -Wextra -nostdlib -fno-builtin \
@@ -74,11 +74,11 @@ USER_PROGRAM_CFLAGS = -target $(KERNEL_TYPE_TARGET) \
                       -fPIC -fno-stack-protector \
                       -fno-asynchronous-unwind-tables \
                       -fno-unwind-tables \
-                      -ICommon -ILibraries/LOSLibC/Include
+                      -D_GNU_SOURCE -ICommon -ILibraries/LOSLib/Include -ILibraries/Locale/Include -nostdinc -isystem Libraries/musl/obj/include -isystem Libraries/musl/arch/x86_64 -isystem Libraries/musl/arch/generic -isystem Libraries/musl/include
 
 KERN_FLOAT_CFLAGS = $(filter-out -mgeneral-regs-only,$(KERN_CFLAGS)) -msse2 -mfpmath=sse
 KERN_OBJ_CFLAGS = $(KERN_CFLAGS)
-LOSLIBC_CFLAGS = $(USER_PROGRAM_CFLAGS)
+LOSLIB_CFLAGS = $(USER_PROGRAM_CFLAGS)
 
 FORMAT_EXCLUDE_SRCS := BootLoader/EDK2/% \
 					   Libraries/musl/%

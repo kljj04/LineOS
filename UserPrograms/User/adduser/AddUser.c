@@ -2,7 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <libintl.h>
+#include <LOSLocale.h>
 
 #include <locale.h>
 
@@ -12,14 +12,14 @@
 
 INT32 main(INT32 Argc, char **Argv)
 {
-    if (setlocale(LC_ALL, "") == NULL)
+    if (LOSLocaleRefresh() == NULL)
     {
         setlocale(LC_ALL, "C");
     }
 
     if (Argc != 2 || Argv == NULL || Argv[1] == NULL)
     {
-        puts(gettext("Usage: adduser USERNAME"));
+        puts(LOSGettext("Usage: adduser USERNAME"));
 
         return 1;
     }

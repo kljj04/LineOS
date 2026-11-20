@@ -37,6 +37,8 @@ On a Linux development host with the required compiler, disk tools and QEMU/KVM:
 
 The Bash launcher uses a Node.js interface and sequential Make builds. It prepares the boot image using `sudo` and starts QEMU/KVM. VM settings are in `Configs/QEMUSettings.sh`; networking defaults to QEMU user NAT without host bridge setup. See [build and run instructions](Docs/en_US/Build.md) for requirements and configuration.
 
+Bundled userspace uses project musl and dynamic shared libraries. Init starts Terminal and Login; authenticated sessions run interactive lsh and configured autostart applications. [Program.cfg](Docs/en_US/ProgramConfig.md) and [Library.cfg](Docs/en_US/LibraryConfig.md) declare builds, dependencies and guest installation paths. Linux x86-64 syscall support is a documented subset, not complete binary compatibility.
+
 ## Documentation
 
 [한국어 문서](Docs/ko_KR/README.md) · [English documentation](Docs/en_US/README.md)

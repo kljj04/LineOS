@@ -2,7 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <libintl.h>
+#include <LOSLocale.h>
 
 #include <locale.h>
 
@@ -31,16 +31,16 @@ STATIC UINT64 BtopNow(VOID)
 
 STATIC BOOLEAN BtopSample(VOID)
 {
-    SYS_INFO System;
+    struct sysinfo System;
 
     if (sysinfo(&System) != 0 || LOSSystemMonitor(&Monitor.Info) != 0)
     {
         return FALSE;
     }
 
-    Monitor.Info.UptimeMls    = (UINT64) System.Uptime * 1000;
-    Monitor.Info.ManagedBytes = System.TotalRAM * System.MemUnit;
-    Monitor.Info.FreeBytes    = System.FreeRAM * System.MemUnit;
+    Monitor.Info.UptimeMls    = (UINT64) System.uptime * 1000;
+    Monitor.Info.ManagedBytes = System.totalram * System.mem_unit;
+    Monitor.Info.FreeBytes    = System.freeram * System.mem_unit;
 
     UINT64 AllBusy = 0;
     UINT64 AllTime = 0;
@@ -91,7 +91,7 @@ STATIC BOOLEAN BtopSample(VOID)
 
 INT32 main(INT32 Argc, char **Argv)
 {
-    if (setlocale(LC_ALL, "") == NULL)
+    if (LOSLocaleRefresh() == NULL)
     {
         setlocale(LC_ALL, "C");
     }
@@ -100,13 +100,13 @@ INT32 main(INT32 Argc, char **Argv)
     {
         if (Argc == 2 && strcmp(Argv[1], "--help") == 0)
         {
-            puts(gettext("Usage: btop"));
-            puts(gettext("q quit, space pause, s CPU/PID sort, n/p task pages, c core pages"));
+            puts(LOSGettext("Usage: btop"));
+            puts(LOSGettext("q quit, space pause, s CPU/PID sort, n/p task pages, c core pages"));
 
             return 0;
         }
 
-        puts(gettext("Usage: btop"));
+        puts(LOSGettext("Usage: btop"));
 
         return 1;
     }
@@ -115,7 +115,7 @@ INT32 main(INT32 Argc, char **Argv)
 
     if (TTY < 0)
     {
-        puts(gettext("btop: cannot open terminal"));
+        puts(LOSGettext("btop: cannot open terminal"));
 
         return 1;
     }
@@ -125,7 +125,7 @@ INT32 main(INT32 Argc, char **Argv)
     if (ioctl(TTY, TIOCGWINSZ, &Size) < 0 || Size.ws_col < 64 || Size.ws_row < 20)
     {
         close(TTY);
-        puts(gettext("btop: terminal must be at least 64 columns by 20 rows"));
+        puts(LOSGettext("btop: terminal must be at least 64 columns by 20 rows"));
 
         return 1;
     }
@@ -275,7 +275,7 @@ INT32 main(INT32 Argc, char **Argv)
     }
     else if (Result != 0)
     {
-        puts(gettext("btop: monitor read or output failed"));
+        puts(LOSGettext("btop: monitor read or output failed"));
     }
 
     return Result;

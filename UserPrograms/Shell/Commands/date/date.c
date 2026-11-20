@@ -2,9 +2,9 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <libintl.h>
+#include <LOSLocale.h>
 
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 #include <stdio.h>
 #include <time.h>
 #include <locale.h>
@@ -13,7 +13,7 @@
 
 INT32 main(INT32 Argc, char **Argv)
 {
-    if (setlocale(LC_ALL, "") == NULL)
+    if (LOSLocaleRefresh() == NULL)
     {
         setlocale(LC_ALL, "C");
     }
@@ -26,7 +26,7 @@ INT32 main(INT32 Argc, char **Argv)
 
     if (Argc != 1)
     {
-        puts(gettext("Usage: date"));
+        puts(LOSGettext("Usage: date"));
 
         return 1;
     }
@@ -42,7 +42,7 @@ INT32 main(INT32 Argc, char **Argv)
 
     if (strftime(Buffer, sizeof(Buffer), "%c %Z", &Date) == 0)
     {
-        puts(gettext("date: cannot format current time"));
+        puts(LOSGettext("date: cannot format current time"));
 
         return 1;
     }

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 
 #define TIMEZONE_PATH               "/etc/timezone"
 #define TIMEZONE_NAME_CAPACITY      64U
@@ -89,4 +89,71 @@ typedef struct
     CONST char *Abbreviation;
 } TIMEZONE_ENTRY;
 
-CONST TIMEZONE_ENTRY TimezoneEntries[TIMEZONE_COUNT] = {[TIMEZONE_UTC] = {"UTC", 0, "UTC"}, [TIMEZONE_ASIA_SEOUL] = {"Asia/Seoul", 9 * 3600, "KST"}, [TIMEZONE_ASIA_TOKYO] = {"Asia/Tokyo", 9 * 3600, "JST"}, [TIMEZONE_ASIA_SHANGHAI] = {"Asia/Shanghai", 8 * 3600, "CST"}, [TIMEZONE_ASIA_HONG_KONG] = {"Asia/Hong_Kong", 8 * 3600, "HKT"}, [TIMEZONE_ASIA_TAIPEI] = {"Asia/Taipei", 8 * 3600, "CST"}, [TIMEZONE_ASIA_SINGAPORE] = {"Asia/Singapore", 8 * 3600, "SGT"}, [TIMEZONE_ASIA_KUALA_LUMPUR] = {"Asia/Kuala_Lumpur", 8 * 3600, "MYT"}, [TIMEZONE_ASIA_BANGKOK] = {"Asia/Bangkok", 7 * 3600, "ICT"}, [TIMEZONE_ASIA_JAKARTA] = {"Asia/Jakarta", 7 * 3600, "WIB"}, [TIMEZONE_ASIA_MANILA] = {"Asia/Manila", 8 * 3600, "PHT"}, [TIMEZONE_ASIA_KOLKATA] = {"Asia/Kolkata", 5 * 3600 + 30 * 60, "IST"}, [TIMEZONE_ASIA_KATHMANDU] = {"Asia/Kathmandu", 5 * 3600 + 45 * 60, "NPT"}, [TIMEZONE_ASIA_DHAKA] = {"Asia/Dhaka", 6 * 3600, "BST"}, [TIMEZONE_ASIA_KARACHI] = {"Asia/Karachi", 5 * 3600, "PKT"}, [TIMEZONE_ASIA_DUBAI] = {"Asia/Dubai", 4 * 3600, "GST"}, [TIMEZONE_ASIA_RIYADH] = {"Asia/Riyadh", 3 * 3600, "AST"}, [TIMEZONE_ASIA_TEHRAN] = {"Asia/Tehran", 3 * 3600 + 30 * 60, "IRST"}, [TIMEZONE_ASIA_JERUSALEM] = {"Asia/Jerusalem", 2 * 3600, "IST"}, [TIMEZONE_EUROPE_LONDON] = {"Europe/London", 0, "GMT"}, [TIMEZONE_EUROPE_PARIS] = {"Europe/Paris", 3600, "CET"}, [TIMEZONE_EUROPE_BERLIN] = {"Europe/Berlin", 3600, "CET"}, [TIMEZONE_EUROPE_ROME] = {"Europe/Rome", 3600, "CET"}, [TIMEZONE_EUROPE_MADRID] = {"Europe/Madrid", 3600, "CET"}, [TIMEZONE_EUROPE_AMSTERDAM] = {"Europe/Amsterdam", 3600, "CET"}, [TIMEZONE_EUROPE_BRUSSELS] = {"Europe/Brussels", 3600, "CET"}, [TIMEZONE_EUROPE_ZURICH] = {"Europe/Zurich", 3600, "CET"}, [TIMEZONE_EUROPE_VIENNA] = {"Europe/Vienna", 3600, "CET"}, [TIMEZONE_EUROPE_STOCKHOLM] = {"Europe/Stockholm", 3600, "CET"}, [TIMEZONE_EUROPE_OSLO] = {"Europe/Oslo", 3600, "CET"}, [TIMEZONE_EUROPE_COPENHAGEN] = {"Europe/Copenhagen", 3600, "CET"}, [TIMEZONE_EUROPE_HELSINKI] = {"Europe/Helsinki", 2 * 3600, "EET"}, [TIMEZONE_EUROPE_ATHENS] = {"Europe/Athens", 2 * 3600, "EET"}, [TIMEZONE_EUROPE_ISTANBUL] = {"Europe/Istanbul", 3 * 3600, "TRT"}, [TIMEZONE_EUROPE_MOSCOW] = {"Europe/Moscow", 3 * 3600, "MSK"}, [TIMEZONE_AMERICA_NEW_YORK] = {"America/New_York", -5 * 3600, "EST"}, [TIMEZONE_AMERICA_CHICAGO] = {"America/Chicago", -6 * 3600, "CST"}, [TIMEZONE_AMERICA_DENVER] = {"America/Denver", -7 * 3600, "MST"}, [TIMEZONE_AMERICA_LOS_ANGELES] = {"America/Los_Angeles", -8 * 3600, "PST"}, [TIMEZONE_AMERICA_ANCHORAGE] = {"America/Anchorage", -9 * 3600, "AKST"}, [TIMEZONE_AMERICA_HONOLULU] = {"America/Honolulu", -10 * 3600, "HST"}, [TIMEZONE_AMERICA_TORONTO] = {"America/Toronto", -5 * 3600, "EST"}, [TIMEZONE_AMERICA_VANCOUVER] = {"America/Vancouver", -8 * 3600, "PST"}, [TIMEZONE_AMERICA_MEXICO_CITY] = {"America/Mexico_City", -6 * 3600, "CST"}, [TIMEZONE_AMERICA_BOGOTA] = {"America/Bogota", -5 * 3600, "COT"}, [TIMEZONE_AMERICA_LIMA] = {"America/Lima", -5 * 3600, "PET"}, [TIMEZONE_AMERICA_CARACAS] = {"America/Caracas", -4 * 3600, "VET"}, [TIMEZONE_AMERICA_SAO_PAULO] = {"America/Sao_Paulo", -3 * 3600, "BRT"}, [TIMEZONE_AMERICA_BUENOS_AIRES] = {"America/Argentina/Buenos_Aires", -3 * 3600, "ART"}, [TIMEZONE_AMERICA_SANTIAGO] = {"America/Santiago", -4 * 3600, "CLT"}, [TIMEZONE_AFRICA_CAIRO] = {"Africa/Cairo", 2 * 3600, "EET"}, [TIMEZONE_AFRICA_JOHANNESBURG] = {"Africa/Johannesburg", 2 * 3600, "SAST"}, [TIMEZONE_AFRICA_LAGOS] = {"Africa/Lagos", 3600, "WAT"}, [TIMEZONE_AFRICA_NAIROBI] = {"Africa/Nairobi", 3 * 3600, "EAT"}, [TIMEZONE_AFRICA_CASABLANCA] = {"Africa/Casablanca", 3600, "WET"}, [TIMEZONE_AUSTRALIA_SYDNEY] = {"Australia/Sydney", 10 * 3600, "AEST"}, [TIMEZONE_AUSTRALIA_MELBOURNE] = {"Australia/Melbourne", 10 * 3600, "AEST"}, [TIMEZONE_AUSTRALIA_BRISBANE] = {"Australia/Brisbane", 10 * 3600, "AEST"}, [TIMEZONE_AUSTRALIA_PERTH] = {"Australia/Perth", 8 * 3600, "AWST"}, [TIMEZONE_AUSTRALIA_ADELAIDE] = {"Australia/Adelaide", 9 * 3600 + 30 * 60, "ACST"}, [TIMEZONE_AUSTRALIA_DARWIN] = {"Australia/Darwin", 9 * 3600 + 30 * 60, "ACST"}, [TIMEZONE_PACIFIC_AUCKLAND] = {"Pacific/Auckland", 12 * 3600, "NZST"}, [TIMEZONE_PACIFIC_FIJI] = {"Pacific/Fiji", 12 * 3600, "FJT"}, [TIMEZONE_PACIFIC_HONOLULU] = {"Pacific/Honolulu", -10 * 3600, "HST"}, [TIMEZONE_PACIFIC_GUAM] = {"Pacific/Guam", 10 * 3600, "ChST"}, [TIMEZONE_PACIFIC_TAHITI] = {"Pacific/Tahiti", -10 * 3600, "TAHT"}};
+CONST TIMEZONE_ENTRY TimezoneEntries[TIMEZONE_COUNT] = {
+    [TIMEZONE_UTC] = {"UTC",                            0,                  "UTC" },
+      [TIMEZONE_ASIA_SEOUL] = {"Asia/Seoul",                     9 * 3600,           "KST" },
+      [TIMEZONE_ASIA_TOKYO] = {"Asia/Tokyo",                     9 * 3600,           "JST" },
+      [TIMEZONE_ASIA_SHANGHAI] = {"Asia/Shanghai",                  8 * 3600,           "CST" },
+      [TIMEZONE_ASIA_HONG_KONG] = {"Asia/Hong_Kong",                 8 * 3600,           "HKT" },
+      [TIMEZONE_ASIA_TAIPEI] = {"Asia/Taipei",                    8 * 3600,           "CST" },
+      [TIMEZONE_ASIA_SINGAPORE] = {"Asia/Singapore",                 8 * 3600,           "SGT" },
+      [TIMEZONE_ASIA_KUALA_LUMPUR] = {"Asia/Kuala_Lumpur",              8 * 3600,           "MYT" },
+      [TIMEZONE_ASIA_BANGKOK] = {"Asia/Bangkok",                   7 * 3600,           "ICT" },
+      [TIMEZONE_ASIA_JAKARTA] = {"Asia/Jakarta",                   7 * 3600,           "WIB" },
+      [TIMEZONE_ASIA_MANILA] = {"Asia/Manila",                    8 * 3600,           "PHT" },
+      [TIMEZONE_ASIA_KOLKATA] = {"Asia/Kolkata",                   5 * 3600 + 30 * 60, "IST" },
+      [TIMEZONE_ASIA_KATHMANDU] = {"Asia/Kathmandu",                 5 * 3600 + 45 * 60, "NPT" },
+      [TIMEZONE_ASIA_DHAKA] = {"Asia/Dhaka",                     6 * 3600,           "BST" },
+      [TIMEZONE_ASIA_KARACHI] = {"Asia/Karachi",                   5 * 3600,           "PKT" },
+      [TIMEZONE_ASIA_DUBAI] = {"Asia/Dubai",                     4 * 3600,           "GST" },
+      [TIMEZONE_ASIA_RIYADH] = {"Asia/Riyadh",                    3 * 3600,           "AST" },
+      [TIMEZONE_ASIA_TEHRAN] = {"Asia/Tehran",                    3 * 3600 + 30 * 60, "IRST"},
+      [TIMEZONE_ASIA_JERUSALEM] = {"Asia/Jerusalem",                 2 * 3600,           "IST" },
+      [TIMEZONE_EUROPE_LONDON] = {"Europe/London",                  0,                  "GMT" },
+      [TIMEZONE_EUROPE_PARIS] = {"Europe/Paris",                   3600,               "CET" },
+      [TIMEZONE_EUROPE_BERLIN] = {"Europe/Berlin",                  3600,               "CET" },
+      [TIMEZONE_EUROPE_ROME] = {"Europe/Rome",                    3600,               "CET" },
+      [TIMEZONE_EUROPE_MADRID] = {"Europe/Madrid",                  3600,               "CET" },
+      [TIMEZONE_EUROPE_AMSTERDAM] = {"Europe/Amsterdam",               3600,               "CET" },
+      [TIMEZONE_EUROPE_BRUSSELS] = {"Europe/Brussels",                3600,               "CET" },
+      [TIMEZONE_EUROPE_ZURICH] = {"Europe/Zurich",                  3600,               "CET" },
+      [TIMEZONE_EUROPE_VIENNA] = {"Europe/Vienna",                  3600,               "CET" },
+      [TIMEZONE_EUROPE_STOCKHOLM] = {"Europe/Stockholm",               3600,               "CET" },
+      [TIMEZONE_EUROPE_OSLO] = {"Europe/Oslo",                    3600,               "CET" },
+      [TIMEZONE_EUROPE_COPENHAGEN] = {"Europe/Copenhagen",              3600,               "CET" },
+      [TIMEZONE_EUROPE_HELSINKI] = {"Europe/Helsinki",                2 * 3600,           "EET" },
+      [TIMEZONE_EUROPE_ATHENS] = {"Europe/Athens",                  2 * 3600,           "EET" },
+      [TIMEZONE_EUROPE_ISTANBUL] = {"Europe/Istanbul",                3 * 3600,           "TRT" },
+      [TIMEZONE_EUROPE_MOSCOW] = {"Europe/Moscow",                  3 * 3600,           "MSK" },
+      [TIMEZONE_AMERICA_NEW_YORK] = {"America/New_York",               -5 * 3600,          "EST" },
+      [TIMEZONE_AMERICA_CHICAGO] = {"America/Chicago",                -6 * 3600,          "CST" },
+      [TIMEZONE_AMERICA_DENVER] = {"America/Denver",                 -7 * 3600,          "MST" },
+      [TIMEZONE_AMERICA_LOS_ANGELES] = {"America/Los_Angeles",            -8 * 3600,          "PST" },
+      [TIMEZONE_AMERICA_ANCHORAGE] = {"America/Anchorage",              -9 * 3600,          "AKST"},
+      [TIMEZONE_AMERICA_HONOLULU] = {"America/Honolulu",               -10 * 3600,         "HST" },
+      [TIMEZONE_AMERICA_TORONTO] = {"America/Toronto",                -5 * 3600,          "EST" },
+      [TIMEZONE_AMERICA_VANCOUVER] = {"America/Vancouver",              -8 * 3600,          "PST" },
+      [TIMEZONE_AMERICA_MEXICO_CITY] = {"America/Mexico_City",            -6 * 3600,          "CST" },
+      [TIMEZONE_AMERICA_BOGOTA] = {"America/Bogota",                 -5 * 3600,          "COT" },
+      [TIMEZONE_AMERICA_LIMA] = {"America/Lima",                   -5 * 3600,          "PET" },
+      [TIMEZONE_AMERICA_CARACAS] = {"America/Caracas",                -4 * 3600,          "VET" },
+      [TIMEZONE_AMERICA_SAO_PAULO] = {"America/Sao_Paulo",              -3 * 3600,          "BRT" },
+      [TIMEZONE_AMERICA_BUENOS_AIRES] = {"America/Argentina/Buenos_Aires", -3 * 3600,          "ART" },
+      [TIMEZONE_AMERICA_SANTIAGO] = {"America/Santiago",               -4 * 3600,          "CLT" },
+      [TIMEZONE_AFRICA_CAIRO] = {"Africa/Cairo",                   2 * 3600,           "EET" },
+      [TIMEZONE_AFRICA_JOHANNESBURG] = {"Africa/Johannesburg",            2 * 3600,           "SAST"},
+      [TIMEZONE_AFRICA_LAGOS] = {"Africa/Lagos",                   3600,               "WAT" },
+      [TIMEZONE_AFRICA_NAIROBI] = {"Africa/Nairobi",                 3 * 3600,           "EAT" },
+      [TIMEZONE_AFRICA_CASABLANCA] = {"Africa/Casablanca",              3600,               "WET" },
+      [TIMEZONE_AUSTRALIA_SYDNEY] = {"Australia/Sydney",               10 * 3600,          "AEST"},
+      [TIMEZONE_AUSTRALIA_MELBOURNE] = {"Australia/Melbourne",            10 * 3600,          "AEST"},
+      [TIMEZONE_AUSTRALIA_BRISBANE] = {"Australia/Brisbane",             10 * 3600,          "AEST"},
+      [TIMEZONE_AUSTRALIA_PERTH] = {"Australia/Perth",                8 * 3600,           "AWST"},
+      [TIMEZONE_AUSTRALIA_ADELAIDE] = {"Australia/Adelaide",             9 * 3600 + 30 * 60, "ACST"},
+      [TIMEZONE_AUSTRALIA_DARWIN] = {"Australia/Darwin",               9 * 3600 + 30 * 60, "ACST"},
+      [TIMEZONE_PACIFIC_AUCKLAND] = {"Pacific/Auckland",               12 * 3600,          "NZST"},
+      [TIMEZONE_PACIFIC_FIJI] = {"Pacific/Fiji",                   12 * 3600,          "FJT" },
+      [TIMEZONE_PACIFIC_HONOLULU] = {"Pacific/Honolulu",               -10 * 3600,         "HST" },
+      [TIMEZONE_PACIFIC_GUAM] = {"Pacific/Guam",                   10 * 3600,          "ChST"},
+      [TIMEZONE_PACIFIC_TAHITI] = {"Pacific/Tahiti",                 -10 * 3600,         "TAHT"}
+};

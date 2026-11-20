@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 
 #define USER_DB_NAME_MAX       32U
 #define USER_DB_PASSWORD_MAX   127U

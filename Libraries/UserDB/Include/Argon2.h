@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <LOSLibC/TypeInfo.h>
+#include <LOSLib/TypeInfo.h>
 
 VOID  CryptoWipe(VOID *Secret, UINTN Size);
 INT32 CryptoVerify32(CONST UINT8 A[32], CONST UINT8 B[32]);

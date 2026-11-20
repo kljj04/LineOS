@@ -2,7 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <libintl.h>
+#include <LOSLocale.h>
 
 #include <Sudo.h>
 #include <locale.h>
@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <syscall.h>
+#include <LOS.h>
 
 STATIC BOOLEAN SudoExecutable(CONST char *Path)
 {
@@ -60,7 +60,7 @@ INT32 SudoExecute(INT32 Argc, char **Argv, CONST char *Username)
     {
         if (Argc > 2)
         {
-            puts(gettext("sudo: cd: too many arguments"));
+            puts(LOSGettext("sudo: cd: too many arguments"));
 
             return 1;
         }
@@ -76,7 +76,7 @@ INT32 SudoExecute(INT32 Argc, char **Argv, CONST char *Username)
         {
             if (strlen(Home) + strlen(Path + 1) >= sizeof(Expanded))
             {
-                puts(gettext("sudo: cd: path too long"));
+                puts(LOSGettext("sudo: cd: path too long"));
 
                 return 1;
             }
@@ -86,7 +86,7 @@ INT32 SudoExecute(INT32 Argc, char **Argv, CONST char *Username)
             Path = Expanded;
         }
 
-        INT64 Result = LineOSSyscallResult(LineOSSyscall1(SYSCALL_PARENT_CHDIR, (UINT64) Path));
+        INT64 Result = LOSParentChdir(Path);
 
         if (Result < 0)
         {
@@ -102,7 +102,7 @@ INT32 SudoExecute(INT32 Argc, char **Argv, CONST char *Username)
 
     if (!SudoFind(Argv[0], Path))
     {
-        printf(gettext("sudo: %s: command not found\n"), Argv[0]);
+        printf(LOSGettext("sudo: %s: command not found\n"), Argv[0]);
 
         return 127;
     }

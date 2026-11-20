@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <LOS.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -74,7 +75,7 @@ STATIC VOID LoginAutostartDefault(VOID)
 
     if (Error != 0)
     {
-        remove(LOGIN_AUTOSTART_PATH);
+        LOSRemove(LOGIN_AUTOSTART_PATH);
         errno = Error;
         perror("Login: autostart");
     }

@@ -6,6 +6,9 @@
 
 #include <LineOS/TypeInfo.h>
 
+#define VFS_OPEN_DIRECTORY 0x10000U
+#define VFS_OPEN_NOFOLLOW  0x20000U
+
 #define VFS_OPEN_ACCMODE   3U
 #define VFS_OPEN_CREATE    0x40U
 #define VFS_OPEN_EXCLUSIVE 0x80U
@@ -53,7 +56,7 @@ typedef struct
 
 typedef struct
 {
-    UINT64 NamespaceGeneration;
+    UINT64 Generation;
     UINT32 Number;
     UINT32 Partition;
     UINT16 Mode;

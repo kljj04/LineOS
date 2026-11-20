@@ -8,6 +8,8 @@
 #include <Syscall/Errno.h>
 #include <Memory/PMM.h>
 #include <Exec/ELF64.h>
+#include <Syscall/File/FileInternal.h>
+#include <Syscall/SyscallError.h>
 #include <Scheduler/LBPWRR.h>
 
 #define MMAP_MAX_LENGTH (64ULL * 1024 * 1024)
@@ -19,6 +21,7 @@ typedef struct MMAP_REGION
     UINT64              Address;
     UINT32              Count;
     BOOLEAN             Owned;
+    BOOLEAN             Heap;
     UINT64              Pages[];
 } MMAP_REGION;
 
@@ -94,6 +97,7 @@ BOOLEAN SyscallMemoryClone(TASK *Child, TASK *Parent)
         Copy->Address            = Region->Address;
         Copy->Count              = Region->Count;
         Copy->Owned              = Region->Owned;
+        Copy->Heap               = Region->Heap;
         Copy->Next               = Child->Process->Mappings;
         Child->Process->Mappings = Copy;
 
@@ -114,74 +118,108 @@ BOOLEAN SyscallMemoryClone(TASK *Child, TASK *Parent)
 
 STATIC INT64 MemoryMap(UINT64 Address, UINT64 Length, UINT64 Protection, UINT64 Flags, INT64 FD, UINT64 Offset)
 {
-    TASK  *Task     = LBPWRRGetCurrentTask();
-    UINT64 Physical = 0;
-
+    TASK      *Task                                    = LBPWRRGetCurrentTask();
+    UINT64     Physical                                = 0;
+    INT64      Result                                  = -ENOMEM;
+    UINT64    *Expected                                = NULL;
+    OPEN_FILE *File __attribute__((cleanup(FileDrop))) = NULL;
+    VFS_NODE   Node                                    = {0};
     if (Task == NULL || Task->Process->AddressSpace == NULL)
     {
         return -ESRCH;
     }
-
     if (Length == 0 || Length > UINT64_MAX - 4095 || (Offset & 4095) != 0 || (Protection & ~7ULL) != 0 || ((Flags & 3) != MAP_PRIVATE && (Flags & 3) != MAP_SHARED))
     {
         return -EINVAL;
     }
-
-    if ((Flags & ~(MAP_PRIVATE | MAP_SHARED | MAP_ANONYMOUS)) != 0)
+    if ((Flags & ~(MAP_PRIVATE | MAP_SHARED | MAP_ANONYMOUS | MAP_FIXED | MAP_FIXED_NOREPLACE | MAP_DENYWRITE)) != 0)
     {
         return -EOPNOTSUPP;
     }
-
+    if (Offset > INT64_MAX - ((Length + 4095) & ~4095ULL))
+    {
+        return -EOVERFLOW;
+    }
     if (Length > MMAP_MAX_LENGTH)
     {
         return -ENOMEM;
     }
-
-    BOOLEAN Owned = (Flags & MAP_ANONYMOUS) != 0;
-
+    BOOLEAN Fixed   = (Flags & (MAP_FIXED | MAP_FIXED_NOREPLACE)) != 0;
+    BOOLEAN Replace = (Flags & MAP_FIXED) != 0 && (Flags & MAP_FIXED_NOREPLACE) == 0;
+    BOOLEAN Owned   = (Flags & MAP_ANONYMOUS) != 0;
     if (Owned && ((Flags & 3) != MAP_PRIVATE || Offset != 0))
     {
         return -EOPNOTSUPP;
     }
-
     if (!Owned)
     {
-        INT64 Error = SyscallMapDevice(FD, Length, Protection, Flags, Offset, &Physical);
-
-        if (Error < 0)
+        File = FileAcquire(Task, (UINT32) FD);
+        if (File == NULL)
         {
-            return Error;
+            return -EBADF;
+        }
+        if (File->Device != NULL)
+        {
+            if (Fixed)
+            {
+                return -EOPNOTSUPP;
+            }
+            Result = SyscallMapDevice(FD, Length, Protection, Flags, Offset, &Physical);
+            if (Result < 0)
+            {
+                return Result;
+            }
+        }
+        else
+        {
+            if (File->Directory)
+            {
+                return -ENODEV;
+            }
+            if ((File->Access & FILE_READ) == 0)
+            {
+                return -EACCES;
+            }
+            if (Task->Process->SecureExecution && !VFSIsTrustedPath(Task->Process->FileContext, File->Path))
+            {
+                return -EACCES;
+            }
+            if ((Flags & 3) != MAP_PRIVATE)
+            {
+                return -EOPNOTSUPP;
+            }
+            Result = SyscallVFSError(VFSLookup(Task->Process->FileContext, File->Path, &Node));
+            if (Result < 0)
+            {
+                return Result;
+            }
+            if (Node.Number != File->Number || Node.Partition != File->Partition || Node.Generation != File->Generation)
+            {
+                return -ESTALE;
+            }
+            if ((Node.Mode & VFS_MODE_TYPE) != 0x8000U)
+            {
+                return -ENODEV;
+            }
+            Owned = TRUE;
         }
     }
-
     UINT32 Count = (UINT32) ((Length + 4095) / 4096);
-    UINT64 Used  = 0;
-
-    for (MMAP_REGION *Current = Task->Process->Mappings; Current != NULL; Current = Current->Next)
+    if (Fixed && ((Address & 4095) != 0 || Address < VMM_MMAP_START || Address >= VMM_MMAP_END || Count > (VMM_MMAP_END - Address) / 4096))
     {
-        Used += Current->Count;
+        return (Address & 4095) != 0 ? -EINVAL : -ENOMEM;
     }
-
-    if (Count > MMAP_MAX_PAGES - Used)
-    {
-        return -ENOMEM;
-    }
-
     if (Address < VMM_MMAP_START || Address >= VMM_MMAP_END || Count > (VMM_MMAP_END - Address) / 4096)
     {
         Address = VMM_MMAP_START;
     }
-
     Address &= ~4095ULL;
-
-    for (;;)
+    while (!Fixed)
     {
         BOOLEAN Found = TRUE;
-
         for (UINT32 Index = 0; Index < Count; Index++)
         {
             UINT64 Existing;
-
             if (VMMTranslateAddressSpace(Task->Process->AddressSpace, Address + (UINT64) Index * 4096, &Existing))
             {
                 Address += ((UINT64) Index + 1) * 4096;
@@ -189,53 +227,142 @@ STATIC INT64 MemoryMap(UINT64 Address, UINT64 Length, UINT64 Protection, UINT64 
                 break;
             }
         }
-
         if (Address >= VMM_MMAP_END || Count > (VMM_MMAP_END - Address) / 4096)
         {
             return -ENOMEM;
         }
-
         if (Found)
         {
             break;
         }
     }
-
-    MMAP_REGION *Region = KAlloc(sizeof(*Region) + (UINT64) Count * sizeof(UINT64));
-
-    if (Region == NULL)
+    UINT64 Used     = 0;
+    UINT32 Replaced = 0;
+    if (Fixed)
     {
+        Expected = KAlloc((UINT64) Count * sizeof(UINT64));
+        if (Expected == NULL)
+        {
+            return -ENOMEM;
+        }
+        KMemSet(Expected, 0, (UINT64) Count * sizeof(UINT64));
+    }
+    for (MMAP_REGION *Current = Task->Process->Mappings; Current != NULL; Current = Current->Next)
+    {
+        for (UINT32 Index = 0; Index < Current->Count; Index++)
+        {
+            if (Current->Pages[Index] == 0)
+            {
+                continue;
+            }
+            Used++;
+            UINT64 PageAddress = Current->Address + (UINT64) Index * 4096;
+            if (Fixed && PageAddress >= Address && PageAddress - Address < (UINT64) Count * 4096)
+            {
+                if (!Replace || Current->Heap || !Current->Owned)
+                {
+                    KFree(Expected);
+                    return !Replace ? -EEXIST : -EOPNOTSUPP;
+                }
+                Expected[(PageAddress - Address) / 4096] = Current->Pages[Index];
+                Replaced++;
+            }
+        }
+    }
+    if (Fixed)
+    {
+        for (UINT32 Index = 0; Index < Count; Index++)
+        {
+            UINT64 Existing;
+            if (VMMTranslateAddressSpace(Task->Process->AddressSpace, Address + (UINT64) Index * 4096, &Existing) && Existing != Expected[Index])
+            {
+                KFree(Expected);
+                return Replace ? -EOPNOTSUPP : -EEXIST;
+            }
+        }
+    }
+    if (Used > MMAP_MAX_PAGES || Count > MMAP_MAX_PAGES - Used + Replaced)
+    {
+        KFree(Expected);
         return -ENOMEM;
     }
-
+    MMAP_REGION *Region = KAlloc(sizeof(*Region) + (UINT64) Count * sizeof(UINT64));
+    if (Region == NULL)
+    {
+        KFree(Expected);
+        return -ENOMEM;
+    }
     KMemSet(Region, 0, sizeof(*Region) + (UINT64) Count * sizeof(UINT64));
     Region->Address = Address;
     Region->Count   = Count;
     Region->Owned   = Owned;
-
+    Result          = -ENOMEM;
     for (UINT32 Index = 0; Index < Count; Index++)
     {
         Region->Pages[Index] = Owned ? (UINT64) KAllocPages(1) : Physical + (UINT64) Index * 4096;
-
         if (Region->Pages[Index] == 0)
         {
             goto Failed;
         }
-
         if (Owned)
         {
             KMemSet((VOID *) Region->Pages[Index], 0, 4096);
         }
+        if (File != NULL && File->Device == NULL)
+        {
+            UINT64 Position   = Offset + (UINT64) Index * 4096;
+            UINT32 ReadLength = 0;
+            UINT32 Size       = Position >= Node.Size ? 0 : Node.Size - Position > 4096 ? 4096 : (UINT32) (Node.Size - Position);
+            while (ReadLength < Size)
+            {
+                UINT32 Bytes = 0;
+                Result       = SyscallVFSError(VFSReadChecked(Task->Process->FileContext, File->Path, &Node, Position + ReadLength, (UINT8 *) Region->Pages[Index] + ReadLength, Size - ReadLength, &Bytes));
+                if (Result < 0 || Bytes == 0 || Bytes > Size - ReadLength)
+                {
+                    Result = Result < 0 ? Result : -EIO;
+                    goto Failed;
+                }
+                ReadLength += Bytes;
+            }
+            Result = -ENOMEM;
+        }
     }
-
-    if (!VMMMapUserPages(Task->Process->AddressSpace, Address, Region->Pages, Count, ((Protection & PROT_WRITE) != 0 ? VMM_FLAG_WRITABLE : 0) | ((Protection & PROT_EXEC) == 0 ? VMM_FLAG_NO_EXECUTE : 0) | (Protection == PROT_NONE ? VMM_FLAG_NO_ACCESS : 0)))
+    UINT64 PageFlags = ((Protection & PROT_WRITE) != 0 ? VMM_FLAG_WRITABLE : 0) | ((Protection & PROT_EXEC) == 0 ? VMM_FLAG_NO_EXECUTE : 0) | (Protection == PROT_NONE ? VMM_FLAG_NO_ACCESS : 0);
+    if (!(Replace ? VMMReplaceUserPages(Task->Process->AddressSpace, Address, Region->Pages, Expected, Count, PageFlags) : VMMMapUserPages(Task->Process->AddressSpace, Address, Region->Pages, Count, PageFlags)))
     {
         goto Failed;
     }
-
+    if (Replace)
+    {
+        MMAP_REGION **Link = &Task->Process->Mappings;
+        while (*Link != NULL)
+        {
+            MMAP_REGION *Current = *Link;
+            BOOLEAN      Empty   = TRUE;
+            for (UINT32 Index = 0; Index < Current->Count; Index++)
+            {
+                UINT64 PageAddress = Current->Address + (UINT64) Index * 4096;
+                if (Current->Pages[Index] != 0 && PageAddress >= Address && PageAddress - Address < (UINT64) Count * 4096)
+                {
+                    MemoryFreePage(Task, Current->Pages[Index]);
+                    Current->Pages[Index] = 0;
+                }
+                Empty = Empty && Current->Pages[Index] == 0;
+            }
+            if (Empty && !Current->Heap)
+            {
+                *Link = Current->Next;
+                KFree(Current);
+            }
+            else
+            {
+                Link = &Current->Next;
+            }
+        }
+    }
+    KFree(Expected);
     Region->Next            = Task->Process->Mappings;
     Task->Process->Mappings = Region;
-
     return (INT64) Address;
 Failed:
     for (UINT32 Index = 0; Owned && Index < Count; Index++)
@@ -245,10 +372,9 @@ Failed:
             KMemFreePages((VOID *) Region->Pages[Index], 1);
         }
     }
-
+    KFree(Expected);
     KFree(Region);
-
-    return -ENOMEM;
+    return Result;
 }
 
 STATIC INT64 MemoryUnmap(UINT64 Address, UINT64 Length)
@@ -366,4 +492,107 @@ INT64 SyscallMprotect(UINT64 Address, UINT64 Length, UINT64 Protection)
     UINT64 Flags = ((Protection & PROT_WRITE) != 0 ? VMM_FLAG_WRITABLE : 0) | ((Protection & PROT_EXEC) == 0 ? VMM_FLAG_NO_EXECUTE : 0) | (Protection == PROT_NONE ? VMM_FLAG_NO_ACCESS : 0);
 
     return ProcessEnd(VMMProtectUserPages(Task->Process->AddressSpace, Address, (UINT32) Count, Flags) ? 0 : -EBUSY);
+}
+
+INT64 SyscallBrk(UINT64 Address)
+{
+    TASK *Task = LBPWRRGetCurrentTask();
+    if (Task == NULL || Task->Process->AddressSpace == NULL)
+    {
+        return 0;
+    }
+    PROCESS *Process = Task->Process;
+    if (!ProcessBegin())
+    {
+        return (INT64) Process->Break;
+    }
+    UINT64 Previous = Process->Break;
+    if (Address < Process->BreakBase || Address - Process->BreakBase > MMAP_MAX_LENGTH || Process->BreakBase == 0 || Address >= (1ULL << 47) - 4095)
+    {
+        return ProcessEnd((INT64) Previous);
+    }
+    UINT64        Start = (Previous + 4095) & ~4095ULL;
+    UINT64        End   = (Address + 4095) & ~4095ULL;
+    MMAP_REGION **Link  = &Process->Mappings;
+    while (*Link != NULL && !(*Link)->Heap)
+    {
+        Link = &(*Link)->Next;
+    }
+    MMAP_REGION *Region = *Link;
+    if (End > Start)
+    {
+        UINT32 Count    = (UINT32) ((End - Process->BreakBase) / 4096);
+        UINT32 OldCount = Region == NULL ? 0 : Region->Count;
+        UINT64 Used     = 0;
+        for (MMAP_REGION *Current = Process->Mappings; Current != NULL; Current = Current->Next)
+        {
+            for (UINT32 Index = 0; Index < Current->Count; Index++)
+            {
+                Used += Current->Pages[Index] != 0;
+            }
+        }
+        if (Used > MMAP_MAX_PAGES || Count - OldCount > MMAP_MAX_PAGES - Used)
+        {
+            return ProcessEnd((INT64) Previous);
+        }
+        MMAP_REGION *New = KAlloc(sizeof(*New) + (UINT64) Count * sizeof(UINT64));
+        if (New == NULL)
+        {
+            return ProcessEnd((INT64) Previous);
+        }
+        KMemSet(New, 0, sizeof(*New) + (UINT64) Count * sizeof(UINT64));
+        New->Address = Process->BreakBase;
+        New->Count   = Count;
+        New->Owned   = TRUE;
+        New->Heap    = TRUE;
+        New->Next    = Region == NULL ? NULL : Region->Next;
+        if (Region != NULL)
+        {
+            KMemCpy(New->Pages, Region->Pages, (UINT64) OldCount * sizeof(UINT64));
+        }
+        UINT32 Index;
+        for (Index = OldCount; Index < Count; Index++)
+        {
+            UINT64 Existing;
+            if (VMMTranslateAddressSpace(Process->AddressSpace, New->Address + (UINT64) Index * 4096, &Existing))
+            {
+                break;
+            }
+            New->Pages[Index] = (UINT64) KAllocPages(1);
+            if (New->Pages[Index] == 0)
+            {
+                break;
+            }
+            KMemSet((VOID *) New->Pages[Index], 0, 4096);
+        }
+        if (Index != Count || !VMMMapUserPages(Process->AddressSpace, Start, New->Pages + OldCount, Count - OldCount, VMM_FLAG_WRITABLE | VMM_FLAG_NO_EXECUTE))
+        {
+            for (UINT32 Page = OldCount; Page < Count; Page++)
+            {
+                if (New->Pages[Page] != 0)
+                {
+                    KMemFreePages((VOID *) New->Pages[Page], 1);
+                }
+            }
+            KFree(New);
+            return ProcessEnd((INT64) Previous);
+        }
+        *Link = New;
+        KFree(Region);
+    }
+    else if (End < Start)
+    {
+        UINT32 Count = (UINT32) ((End - Process->BreakBase) / 4096);
+        if (Region == NULL || !VMMUnmapUserPages(Process->AddressSpace, End, Region->Pages + Count, Region->Count - Count))
+        {
+            return ProcessEnd((INT64) Previous);
+        }
+        for (UINT32 Index = Count; Index < Region->Count; Index++)
+        {
+            MemoryFreePage(Task, Region->Pages[Index]);
+        }
+        Region->Count = Count;
+    }
+    Process->Break = Address;
+    return ProcessEnd((INT64) Address);
 }

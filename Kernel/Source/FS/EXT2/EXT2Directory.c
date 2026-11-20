@@ -665,7 +665,9 @@ BOOLEAN EXT2RemoveEntry(EXT2_VOLUME *Volume, UINT32 Parent, CONST CHAR8 *Name, U
             return FALSE;
         }
 
+        UINT32 Generation = EXT2Load32(Inode.Raw + 100);
         KMemSet(&Inode, 0, sizeof(Inode));
+        EXT2Store32(Inode.Raw + 100, Generation);
 
         if (!EXT2WriteInode(Volume, Number, &Inode, FALSE) || !EXT2FreeInode(Volume, Number, Directory))
         {

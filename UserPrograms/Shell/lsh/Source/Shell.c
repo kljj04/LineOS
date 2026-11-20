@@ -13,6 +13,11 @@
 
 INT32 main(INT32 Argc, char **Argv, char **Envp)
 {
+    if (setvbuf(stdout, NULL, _IONBF, 0) != 0)
+    {
+        return 1;
+    }
+
     char  Line[SHELL_INPUT_CAPACITY];
     INT32 LastStatus = 0;
 

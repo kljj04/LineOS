@@ -75,10 +75,46 @@ INT64 SyscallFstat(UINT64 FD, UINT64 Buffer)
         return Result;
     }
 
-    if (Node.Partition != File->Partition || Node.Number != File->Number || (File->Device == NULL && Node.NamespaceGeneration != File->NamespaceGeneration))
+    if (Node.Partition != File->Partition || Node.Number != File->Number || (File->Device == NULL && Node.Generation != File->Generation))
     {
         return -ESTALE;
     }
 
     return FileStat(Task, &Node, Buffer);
+}
+
+INT64 SyscallNewfstatat(INT32 FD, UINT64 Path, UINT64 Buffer, UINT64 Flags)
+{
+    TASK    *Task = LBPWRRGetCurrentTask();
+    CHAR8   *Name;
+    VFS_NODE Node;
+    if (Task == NULL || Task->Process->AddressSpace == NULL || Task->Process->FileContext == NULL)
+    {
+        return -ESRCH;
+    }
+    Flags = (UINT32) Flags;
+    if ((Flags & ~((UINT64) FILE_AT_SYMLINK_NOFOLLOW | FILE_AT_NO_AUTOMOUNT | FILE_AT_EMPTY_PATH)) != 0)
+    {
+        return -EINVAL;
+    }
+    if ((Flags & FILE_AT_EMPTY_PATH) != 0)
+    {
+        CHAR8 First = 0;
+        if (Path != 0 && !VMMCopyFromUser(Task->Process->AddressSpace, &First, Path, 1))
+        {
+            return -EFAULT;
+        }
+        if (First == 0 && FD != FILE_AT_FDCWD)
+        {
+            return SyscallFstat((UINT32) FD, Buffer);
+        }
+    }
+    INT64 Result = FileResolvePath(Task, FD, Path, (Flags & FILE_AT_EMPTY_PATH) != 0, &Name);
+    if (Result < 0)
+    {
+        return Result;
+    }
+    Result = SyscallVFSError((Flags & FILE_AT_SYMLINK_NOFOLLOW) != 0 ? VFSLookupNoFollow(Task->Process->FileContext, Name, &Node) : VFSLookup(Task->Process->FileContext, Name, &Node));
+    KFree(Name);
+    return Result < 0 ? Result : FileStat(Task, &Node, Buffer);
 }
