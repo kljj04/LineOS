@@ -55,12 +55,12 @@ STATIC BOOLEAN SMPAddCPU(UINT32 APICID, BOOLEAN Enabled)
 
     CPU = &CPUs[CPUCount];
 
-    CPU->CPUID = CPUCount;
-    CPU->APICID = APICID;
+    CPU->CPUID   = CPUCount;
+    CPU->APICID  = APICID;
     CPU->Enabled = TRUE;
-    CPU->BSP = FALSE;
-    CPU->Online = FALSE;
-    CPU->Stack = NULL;
+    CPU->BSP     = FALSE;
+    CPU->Online  = FALSE;
+    CPU->Stack   = NULL;
 
     CPUCount++;
 
@@ -80,7 +80,7 @@ STATIC BOOLEAN SMPDetectBSP(VOID)
             continue;
         }
 
-        CPUs[CPUID].BSP = TRUE;
+        CPUs[CPUID].BSP    = TRUE;
         CPUs[CPUID].Online = TRUE;
 
         return TRUE;
@@ -116,11 +116,11 @@ STATIC BOOLEAN SMPPrepareTrampoline(VOID)
 
     ASM("mov %%cr4, %0" : "=r"(CR4));
     ASM("mov %%cr0, %0" : "=r"(CR0));
-    *(VOLATILE UINT32 *) SMP_TRAMPOLINE_CR3_ADDRESS = (UINT32) CR3;
-    *(VOLATILE UINT32 *) SMP_TRAMPOLINE_CR4_ADDRESS = (UINT32) CR4;
+    *(VOLATILE UINT32 *) SMP_TRAMPOLINE_CR3_ADDRESS  = (UINT32) CR3;
+    *(VOLATILE UINT32 *) SMP_TRAMPOLINE_CR4_ADDRESS  = (UINT32) CR4;
     *(VOLATILE UINT64 *) SMP_TRAMPOLINE_EFER_ADDRESS = ReadMSR(0xC0000080) & (1ULL << 11);
-    *(VOLATILE UINT64 *) SMP_TRAMPOLINE_PAT_ADDRESS = ReadMSR(0x277);
-    *(VOLATILE UINT32 *) SMP_TRAMPOLINE_CR0_ADDRESS = (UINT32) CR0;
+    *(VOLATILE UINT64 *) SMP_TRAMPOLINE_PAT_ADDRESS  = ReadMSR(0x277);
+    *(VOLATILE UINT32 *) SMP_TRAMPOLINE_CR0_ADDRESS  = (UINT32) CR0;
 
     return TRUE;
 }
@@ -203,7 +203,7 @@ BOOLEAN SMPInit(LINEOS_BOOT_INFO *BootInfo)
     BOOLEAN    HasAP;
 
     ATOMIC_STORE(&SMPReady, FALSE, ATOMIC_RELEASE);
-    BootCR3 = SMPReadCR3();
+    BootCR3  = SMPReadCR3();
     CPUCount = 0;
 
     MADT = (ACPI_MADT *) ACPIFindTable(BootInfo, (CONST CHAR8 *) "APIC");
@@ -214,7 +214,7 @@ BOOLEAN SMPInit(LINEOS_BOOT_INFO *BootInfo)
     }
 
     EntryCursor = MADT->Entries;
-    End = (UINT8 *) MADT + MADT->Header.Length;
+    End         = (UINT8 *) MADT + MADT->Header.Length;
 
     while (EntryCursor + sizeof(ACPI_MADT_ENTRY) <= End)
     {

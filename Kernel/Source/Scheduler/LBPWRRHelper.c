@@ -28,7 +28,7 @@ BOOLEAN LBPWRRWakeSleepingTasks(LBPWRR_RUNQUEUE *RunQueue)
         return FALSE;
     }
 
-    Now = RDTSC();
+    Now      = RDTSC();
     WokeTask = FALSE;
 
     for (Index = 0; Index < RunQueue->RunnableCount; Index++)
@@ -51,9 +51,9 @@ BOOLEAN LBPWRRWakeSleepingTasks(LBPWRR_RUNQUEUE *RunQueue)
         }
 
         Task->WakeDeadlineTSC = 0;
-        Task->State = TASK_READY;
-        Task->Modified = FALSE;
-        WokeTask = TRUE;
+        Task->State           = TASK_READY;
+        Task->Modified        = FALSE;
+        WokeTask              = TRUE;
     }
 
     return WokeTask;

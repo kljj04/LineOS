@@ -31,8 +31,8 @@ INT64 LOSAssetRelease(LOS_ASSET *Asset)
 
     if (Result == 0)
     {
-        Asset->Data = NULL;
-        Asset->Size = 0;
+        Asset->Data   = NULL;
+        Asset->Size   = 0;
         Asset->Handle = 0;
     }
 

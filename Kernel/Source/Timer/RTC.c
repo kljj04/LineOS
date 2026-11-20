@@ -101,7 +101,7 @@ BOOLEAN RTCReadTime(RTC_TIME *Time)
     }
 
     Hour = Second.Hour;
-    PM = Hour & RTC_PM;
+    PM   = Hour & RTC_PM;
     Hour &= ~RTC_PM;
 
     if (!(SecondStatus & RTC_BINARY))

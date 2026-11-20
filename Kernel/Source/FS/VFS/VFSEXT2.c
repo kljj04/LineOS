@@ -56,12 +56,12 @@ STATIC VFS_ERROR VFSEXT2Error(EXT2_ERROR Error)
 
 STATIC VOID VFSEXT2Node(UINT32 Number, CONST EXT2_INODE *Inode, VFS_NODE *Node)
 {
-    Node->Number = Number;
-    Node->Partition = VFS_INVALID_PARTITION;
-    Node->Mode = EXT2Load16(Inode->Raw);
-    Node->Size = EXT2InodeSize(Inode);
-    Node->UID = EXT2InodeUID(Inode);
-    Node->GID = EXT2InodeGID(Inode);
+    Node->Number     = Number;
+    Node->Partition  = VFS_INVALID_PARTITION;
+    Node->Mode       = EXT2Load16(Inode->Raw);
+    Node->Size       = EXT2InodeSize(Inode);
+    Node->UID        = EXT2InodeUID(Inode);
+    Node->GID        = EXT2InodeGID(Inode);
     Node->AccessTime = EXT2Load32(Inode->Raw + 8);
     Node->ChangeTime = EXT2Load32(Inode->Raw + 12);
     Node->ModifyTime = EXT2Load32(Inode->Raw + 16);
@@ -263,7 +263,7 @@ STATIC VFS_ERROR VFSEXT2Mutate(VOID *Backend, CONST VFS_CREDENTIALS *Credentials
 
                 for (UINTN Index = 0; Index < 2; Index++)
                 {
-                    Times[Index].Seconds = Mutation->TimeSeconds[Index];
+                    Times[Index].Seconds     = Mutation->TimeSeconds[Index];
                     Times[Index].Nanoseconds = Mutation->TimeNanoseconds[Index];
                 }
 

@@ -10,8 +10,8 @@
 
 INT32 TestGUIWindowed(VOID)
 {
-    TEST_GUI  GUI = {0};
-    LOS_ASSET Font = {0};
+    TEST_GUI  GUI    = {0};
+    LOS_ASSET Font   = {0};
     INT32     Result = 1;
 
     if (LOSWindowOpen(&GUI.Client, 0, "TestGUI", 720, 380, 0) < 0)
@@ -19,17 +19,17 @@ INT32 TestGUIWindowed(VOID)
         return errno == ENOENT ? -2 : 1;
     }
 
-    GUI.Width = 720;
+    GUI.Width  = 720;
     GUI.Height = 380;
     GUI.Pixels = mmap(NULL, (UINTN) GUI.Width * GUI.Height * sizeof(UINT32), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    GUI.Work = mmap(NULL, TEST_GUI_ALLOCATOR_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    GUI.Work   = mmap(NULL, TEST_GUI_ALLOCATOR_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
     if (GUI.Pixels == MAP_FAILED || GUI.Work == MAP_FAILED || LOSAssetAcquire("Fonts/JetBrainsMono", &Font) < 0)
     {
         goto Cleanup;
     }
 
-    TRUE_TYPE_SURFACE Surface = {GUI.Pixels, GUI.Width, GUI.Height};
+    TRUE_TYPE_SURFACE Surface   = {GUI.Pixels, GUI.Width, GUI.Height};
     TTF_ALLOCATOR     Allocator = {TestGUIAllocate, TestGUIFree, &GUI};
 
     if (!TrueTypeInit(&Allocator, &Surface) || !TrueTypeRegisterFont(&GUI.Font, Font.Data))
@@ -40,7 +40,7 @@ INT32 TestGUIWindowed(VOID)
     GUI.Window = (TEST_GUI_RECT) {0, 0, GUI.Width, GUI.Height};
     GUI.Button = (TEST_GUI_RECT) {32, 265, 176, 58};
 
-    BOOLEAN Dirty = TRUE;
+    BOOLEAN Dirty           = TRUE;
     UINT32  PreviousButtons = 0;
 
     for (;;)
@@ -62,12 +62,12 @@ INT32 TestGUIWindowed(VOID)
         if (Received > 0 && Event.Type == LOS_WINDOW_POINTER)
         {
             POINTER_INFO Pointer = {Event.X, Event.Y, Event.Buttons, Event.Wheel};
-            BOOLEAN      Hover = TestGUIContains(&GUI.Button, &Pointer);
+            BOOLEAN      Hover   = TestGUIContains(&GUI.Button, &Pointer);
             BOOLEAN      Clicked = (Pointer.Buttons & 1) != 0 && (PreviousButtons & 1) == 0;
 
             PreviousButtons = Pointer.Buttons;
-            Dirty = Dirty || GUI.Hover != Hover;
-            GUI.Hover = Hover;
+            Dirty           = Dirty || GUI.Hover != Hover;
+            GUI.Hover       = Hover;
 
             if (Hover && Clicked)
             {

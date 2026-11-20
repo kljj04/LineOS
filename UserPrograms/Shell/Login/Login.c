@@ -15,7 +15,7 @@
 
 STATIC INT32 LoginReadLine(char *Buffer, UINTN Capacity, BOOLEAN Echo)
 {
-    UINTN   Length = 0;
+    UINTN   Length  = 0;
     BOOLEAN Invalid = FALSE;
     UINT8   Byte;
 
@@ -68,7 +68,7 @@ STATIC INT32 LoginReadLine(char *Buffer, UINTN Capacity, BOOLEAN Echo)
         }
 
         Buffer[Length++] = (char) Byte;
-        Buffer[Length] = 0;
+        Buffer[Length]   = 0;
 
         if (Echo)
         {
@@ -104,7 +104,7 @@ STATIC INT32 LoginRescue(VOID)
 
     if (Child == 0)
     {
-        char *Arguments[] = {"/sys/rescue/UserRescue.lix", NULL};
+        char *Arguments[]   = {"/sys/rescue/UserRescue.lix", NULL};
         char *Environment[] = {NULL};
 
         execve(Arguments[0], Arguments, Environment);
@@ -212,7 +212,7 @@ INT32 main(VOID)
         }
 
         USER_DB_RESULT Status = UserDBLookup(Username, &Account);
-        BOOLEAN        Found = Status == USER_DB_OK;
+        BOOLEAN        Found  = Status == USER_DB_OK;
 
         if (Status == USER_DB_NOT_FOUND)
         {

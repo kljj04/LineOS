@@ -16,8 +16,8 @@ VOID BtopLayout(BTOP *Monitor, UINT32 Columns, UINT32 Rows)
         Rows = 100;
     }
 
-    Monitor->Columns = Columns;
-    Monitor->Rows = Rows;
+    Monitor->Columns     = Columns;
+    Monitor->Rows        = Rows;
     Monitor->CoreColumns = Columns / 32;
 
     if (Monitor->CoreColumns == 0)

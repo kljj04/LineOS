@@ -21,7 +21,7 @@ static void *Worker(void *Arg)
     int *Result = (int *) Arg;
 
     ThreadValue = 200;
-    errno = ERANGE;
+    errno       = ERANGE;
 
     *Result = ThreadValue + 50;
 
@@ -87,7 +87,7 @@ int main(void)
     printf("[4] conversion: ");
 
     char *End;
-    long Value = strtol("123456", &End, 10);
+    long  Value = strtol("123456", &End, 10);
 
     if (Value != 123456 || *End != '\0')
     {
@@ -112,7 +112,7 @@ int main(void)
     printf("[6] pthread: ");
 
     pthread_t Thread;
-    int Result = 0;
+    int       Result = 0;
 
     errno = EDOM;
 

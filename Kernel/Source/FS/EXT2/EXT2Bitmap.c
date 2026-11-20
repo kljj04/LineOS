@@ -192,7 +192,7 @@ STATIC BOOLEAN EXT2FreeBitmap(EXT2_VOLUME *Volume, UINT32 Number, BOOLEAN Inode,
         }
 
         Group = (Number - 1) / Volume->InodesPerGroup;
-        Bit = (Number - 1) % Volume->InodesPerGroup;
+        Bit   = (Number - 1) % Volume->InodesPerGroup;
     }
     else
     {
@@ -202,7 +202,7 @@ STATIC BOOLEAN EXT2FreeBitmap(EXT2_VOLUME *Volume, UINT32 Number, BOOLEAN Inode,
         }
 
         Group = (Number - Volume->FirstDataBlock) / Volume->BlocksPerGroup;
-        Bit = (Number - Volume->FirstDataBlock) % Volume->BlocksPerGroup;
+        Bit   = (Number - Volume->FirstDataBlock) % Volume->BlocksPerGroup;
     }
 
     if (!EXT2ReadBlockGroup(Volume, Group, &Descriptor))
@@ -211,7 +211,7 @@ STATIC BOOLEAN EXT2FreeBitmap(EXT2_VOLUME *Volume, UINT32 Number, BOOLEAN Inode,
     }
 
     Bitmap = EXT2EditBlock(Volume, Inode ? Descriptor.InodeBitmap : Descriptor.BlockBitmap);
-    Super = EXT2EditBlock(Volume, 1024 / Volume->BlockSize);
+    Super  = EXT2EditBlock(Volume, 1024 / Volume->BlockSize);
 
     if (Bitmap == NULL || Super == NULL)
     {

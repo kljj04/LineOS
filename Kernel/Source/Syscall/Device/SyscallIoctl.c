@@ -10,7 +10,7 @@
 
 INT64 SyscallIoctl(UINT64 FD, UINT64 Request, UINT64 Argument)
 {
-    TASK      *Task = LBPWRRGetCurrentTask();
+    TASK      *Task                                    = LBPWRRGetCurrentTask();
     OPEN_FILE *File __attribute__((cleanup(FileDrop))) = FileAcquire(Task, (UINT64) FD);
 
     if (Task == NULL || File == NULL)

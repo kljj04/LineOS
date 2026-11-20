@@ -47,7 +47,7 @@ BOOLEAN EXT2WriteInode(EXT2_VOLUME *Volume, UINT32 Number, CONST EXT2_INODE *Ino
     }
 
     Offset = (UINT64) ((Number - 1) % Volume->InodesPerGroup) * Volume->InodeSize;
-    Data = EXT2EditBlock(Volume, Descriptor.InodeTable + (UINT32) (Offset / Volume->BlockSize));
+    Data   = EXT2EditBlock(Volume, Descriptor.InodeTable + (UINT32) (Offset / Volume->BlockSize));
 
     if (Data == NULL)
     {
@@ -100,7 +100,7 @@ STATIC BOOLEAN EXT2NewInodeBlock(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT32 
 BOOLEAN EXT2MapBlock(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT64 Logical, BOOLEAN Allocate, UINT32 *Physical)
 {
     UINT32 PerBlock = Volume->BlockSize / 4;
-    UINT64 Span = PerBlock;
+    UINT64 Span     = PerBlock;
     UINT32 Level;
     UINT32 Root;
     UINT32 Block;
@@ -114,7 +114,7 @@ BOOLEAN EXT2MapBlock(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT64 Logical, BOO
 
     if (Logical < 12)
     {
-        Root = (UINT32) Logical;
+        Root  = (UINT32) Logical;
         Level = 0;
     }
     else
@@ -234,7 +234,7 @@ VOID EXT2InodeOwner(EXT2_INODE *Inode, UINT32 UID, UINT32 GID)
 
 BOOLEAN EXT2Access(EXT2_VOLUME *Volume, CONST EXT2_INODE *Inode, UINT16 Mask)
 {
-    UINT16 Mode = EXT2Load16(Inode->Raw);
+    UINT16 Mode  = EXT2Load16(Inode->Raw);
     UINT16 Shift = Volume->UID == EXT2InodeUID(Inode) ? 6 : Volume->GID == EXT2InodeGID(Inode) ? 3 : 0;
 
     if (Volume->UID == 0 || (((Mode >> Shift) & Mask) == Mask))
@@ -248,7 +248,7 @@ BOOLEAN EXT2Access(EXT2_VOLUME *Volume, CONST EXT2_INODE *Inode, UINT16 Mask)
 STATIC BOOLEAN EXT2PruneTree(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT32 *Block, UINT32 Level, UINT64 Start, UINT64 Span, UINT64 Keep)
 {
     UINT8  *Buffer;
-    BOOLEAN Empty = TRUE;
+    BOOLEAN Empty    = TRUE;
     UINT32  Original = *Block;
     UINT32  Sectors;
 
@@ -308,10 +308,10 @@ STATIC BOOLEAN EXT2PruneTree(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT32 *Blo
 BOOLEAN EXT2ResizeInode(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT64 Size)
 {
     UINT64 OldSize = EXT2InodeSize(Inode);
-    UINT64 Keep = (Size + Volume->BlockSize - 1) / Volume->BlockSize;
-    UINT64 Start = 0;
-    UINT64 Span = 1;
-    UINT16 Type = EXT2Load16(Inode->Raw) & EXT2_MODE_TYPE;
+    UINT64 Keep    = (Size + Volume->BlockSize - 1) / Volume->BlockSize;
+    UINT64 Start   = 0;
+    UINT64 Span    = 1;
+    UINT16 Type    = EXT2Load16(Inode->Raw) & EXT2_MODE_TYPE;
 
     if (Size > EXT2MaximumFileSize(Volume) || OldSize > EXT2MaximumFileSize(Volume) || (Type != EXT2_MODE_FILE && Size > UINT32_MAX) || EXT2Load32(Inode->Raw + 32) != 0 || EXT2Load32(Inode->Raw + 104) != 0)
     {
@@ -554,7 +554,7 @@ BOOLEAN EXT2ValidateOwnership(EXT2_VOLUME *Volume)
         {
             EXT2_INODE Inode;
             UINT32     Number = Group * Volume->InodesPerGroup + Bit + 1;
-            UINT32     Count = 0;
+            UINT32     Count  = 0;
             UINT16     Type;
 
             if (Number > Volume->InodeCount || (Number < Volume->FirstInode && Number != 2) || (Bitmap[Bit / 8] & (1U << (Bit % 8))) == 0)
@@ -626,8 +626,8 @@ Done:
 
 UINT64 EXT2MaximumFileSize(EXT2_VOLUME *Volume)
 {
-    UINT64 Count = Volume->BlockSize / 4;
-    UINT64 Limit = (12 + Count + Count * Count + Count * Count * Count) * Volume->BlockSize;
+    UINT64 Count       = Volume->BlockSize / 4;
+    UINT64 Limit       = (12 + Count + Count * Count + Count * Count * Count) * Volume->BlockSize;
     UINT64 SectorLimit = (UINT64) UINT32_MAX * 512;
 
     return Limit < SectorLimit ? Limit : SectorLimit;

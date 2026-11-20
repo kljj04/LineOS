@@ -37,10 +37,11 @@
 struct clone_args;
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
-int clone(int (*Fn)(void *), void *Stack, int Flags, void *Arg, ...);
-int clone3(struct clone_args *Args, size_t Size);
+    int clone(int (*Fn)(void *), void *Stack, int Flags, void *Arg, ...);
+    int clone3(struct clone_args *Args, size_t Size);
 #ifdef __cplusplus
 }
 #endif

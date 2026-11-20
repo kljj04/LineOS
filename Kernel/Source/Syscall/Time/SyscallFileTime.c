@@ -12,10 +12,10 @@
 
 INT64 SyscallUtimensat(INT64 DirFD, UINT64 Path, UINT64 TimesAddress, UINT64 Flags)
 {
-    TASK     *Task = LBPWRRGetCurrentTask();
-    TIME_SPEC Times[2] = {{0, LOS_UTIME_NOW}, {0, LOS_UTIME_NOW}};
-    CHAR8    *Name = NULL;
-    VFS_NODE  Expected = {0};
+    TASK     *Task            = LBPWRRGetCurrentTask();
+    TIME_SPEC Times[2]        = {{0, LOS_UTIME_NOW}, {0, LOS_UTIME_NOW}};
+    CHAR8    *Name            = NULL;
+    VFS_NODE  Expected        = {0};
     VFS_NODE *ExpectedPointer = NULL;
 
     if (Task == NULL || Task->Process->FileContext == NULL || Task->Process->AddressSpace == NULL)
@@ -52,7 +52,7 @@ INT64 SyscallUtimensat(INT64 DirFD, UINT64 Path, UINT64 TimesAddress, UINT64 Fla
     }
 
     VFS_CONTEXT Context = *Task->Process->FileContext;
-    INT64       Result = 0;
+    INT64       Result  = 0;
 
     if (Path != 0)
     {
@@ -75,11 +75,11 @@ INT64 SyscallUtimensat(INT64 DirFD, UINT64 Path, UINT64 TimesAddress, UINT64 Fla
             return -EBADF;
         }
 
-        Context = File->OpenContext;
-        Context.Credentials = Task->Process->FileContext->Credentials;
+        Context                      = File->OpenContext;
+        Context.Credentials          = Task->Process->FileContext->Credentials;
         Expected.NamespaceGeneration = File->NamespaceGeneration;
-        Expected.Partition = File->Partition;
-        Expected.Number = File->Number;
+        Expected.Partition           = File->Partition;
+        Expected.Number              = File->Number;
 
         if (Path == 0)
         {

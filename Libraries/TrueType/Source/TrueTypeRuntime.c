@@ -93,8 +93,8 @@ STATIC FLOAT64 TTFCbrt(FLOAT64 Value)
 FLOAT64 TTFPow(FLOAT64 Base, FLOAT64 Exponent)
 {
     INT64   WholeExponent = (INT64) Exponent;
-    FLOAT64 Result = 1.0;
-    FLOAT64 Factor = Base;
+    FLOAT64 Result        = 1.0;
+    FLOAT64 Factor        = Base;
 
     if (Exponent > 0.333333333 && Exponent < 0.333333334)
     {
@@ -108,7 +108,7 @@ FLOAT64 TTFPow(FLOAT64 Base, FLOAT64 Exponent)
 
     if (WholeExponent < 0)
     {
-        Factor = 1.0 / Factor;
+        Factor        = 1.0 / Factor;
         WholeExponent = -WholeExponent;
     }
 
@@ -144,7 +144,7 @@ STATIC FLOAT64 TTFNormalizeRadians(FLOAT64 Value)
 
 FLOAT64 TTFCos(FLOAT64 Value)
 {
-    FLOAT64 X = TTFNormalizeRadians(Value);
+    FLOAT64 X  = TTFNormalizeRadians(Value);
     FLOAT64 X2 = X * X;
 
     return 1.0 - (X2 / 2.0) + ((X2 * X2) / 24.0) - ((X2 * X2 * X2) / 720.0) + ((X2 * X2 * X2 * X2) / 40320.0);
@@ -166,7 +166,7 @@ FLOAT64 TTFACos(FLOAT64 Value)
     }
 
     Negate = Value < 0.0 ? 1.0 : 0.0;
-    X = TTFFAbs(Value);
+    X      = TTFFAbs(Value);
     Result = -0.0187293;
     Result = Result * X + 0.0742610;
     Result = Result * X - 0.2121144;

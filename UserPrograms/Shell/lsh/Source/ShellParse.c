@@ -13,7 +13,7 @@ STATIC BOOLEAN ShellParseCharacter(SHELL_PARSE *Parse, char Character)
         return FALSE;
     }
 
-    Parse->Active = TRUE;
+    Parse->Active                 = TRUE;
     Parse->Storage[Parse->Used++] = Character;
 
     return TRUE;
@@ -31,11 +31,11 @@ STATIC BOOLEAN ShellParseFinish(SHELL_PARSE *Parse)
         return FALSE;
     }
 
-    Parse->Storage[Parse->Used++] = 0;
-    Parse->Tokens[Parse->Count].Type = SHELL_TOKEN_WORD;
+    Parse->Storage[Parse->Used++]      = 0;
+    Parse->Tokens[Parse->Count].Type   = SHELL_TOKEN_WORD;
     Parse->Tokens[Parse->Count++].Text = Parse->Storage + Parse->Start;
-    Parse->Start = Parse->Used;
-    Parse->Active = FALSE;
+    Parse->Start                       = Parse->Used;
+    Parse->Active                      = FALSE;
 
     return TRUE;
 }
@@ -106,7 +106,7 @@ STATIC BOOLEAN ShellParseVariable(CONST char **Position, char **Envp, INT32 Stat
         }
 
         Name[Length] = 0;
-        Value = ShellGetEnvironment(Envp, Name);
+        Value        = ShellGetEnvironment(Envp, Name);
 
         if (Value == NULL)
         {
@@ -186,7 +186,7 @@ STATIC BOOLEAN ShellParseMode(CONST char *Text, char **Envp, INT32 Status, SHELL
         if (Character == '\'' && Quote == 0)
         {
             Parse->Active = TRUE;
-            Quote = Character;
+            Quote         = Character;
             Text++;
             continue;
         }
@@ -194,7 +194,7 @@ STATIC BOOLEAN ShellParseMode(CONST char *Text, char **Envp, INT32 Status, SHELL
         if (Character == '"')
         {
             Parse->Active = TRUE;
-            Quote = Quote == '"' ? 0 : '"';
+            Quote         = Quote == '"' ? 0 : '"';
             Text++;
             continue;
         }
@@ -262,7 +262,7 @@ STATIC BOOLEAN ShellParseMode(CONST char *Text, char **Envp, INT32 Status, SHELL
                 Text++;
             }
 
-            Parse->Tokens[Parse->Count].Type = Type;
+            Parse->Tokens[Parse->Count].Type   = Type;
             Parse->Tokens[Parse->Count++].Text = NULL;
             continue;
         }

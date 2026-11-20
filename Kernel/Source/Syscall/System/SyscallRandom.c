@@ -47,7 +47,7 @@ INT64 SyscallGetRandom(UINT64 Buffer, UINT64 Count, UINT64 Flags)
 
     CPUID(1, 0, &EAX, &EBX, &ECX, &EDX);
     Random = (ECX & (1U << 30)) != 0;
-    Seed = FALSE;
+    Seed   = FALSE;
 
     if (MaxLeaf >= 7)
     {

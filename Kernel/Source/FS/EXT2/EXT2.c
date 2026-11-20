@@ -45,7 +45,7 @@ BOOLEAN EXT2Fail(EXT2_VOLUME *Volume, EXT2_ERROR Error)
 STATIC BOOLEAN EXT2DiskBlock(EXT2_VOLUME *Volume, UINT32 Block, VOID *Buffer, BOOLEAN Write)
 {
     UINT64 Sector = (UINT64) Block * (Volume->BlockSize / 512);
-    UINT32 Count = Volume->BlockSize / 512;
+    UINT32 Count  = Volume->BlockSize / 512;
 
     if (Block >= Volume->BlockCount || Sector >= Volume->Partition.SectorCount || Count > Volume->Partition.SectorCount - Sector)
     {
@@ -92,7 +92,7 @@ BOOLEAN EXT2ReadBlock(EXT2_VOLUME *Volume, UINT32 Block, VOID *Buffer)
 
 BOOLEAN EXT2ReadBlocks(EXT2_VOLUME *Volume, UINT32 Block, UINT32 Count, VOID *Buffer)
 {
-    UINT64 Sector = (UINT64) Block * (Volume->BlockSize / 512);
+    UINT64 Sector  = (UINT64) Block * (Volume->BlockSize / 512);
     UINT64 Sectors = (UINT64) Count * (Volume->BlockSize / 512);
 
     if (Count == 0 || Count > (UINT64) Volume->DMAPages * EXT2_MAX_BLOCK_SIZE / Volume->BlockSize || Block >= Volume->BlockCount || Count > Volume->BlockCount - Block || Sector >= Volume->Partition.SectorCount || Sectors > Volume->Partition.SectorCount - Sector)
@@ -162,10 +162,10 @@ BOOLEAN EXT2ReadMetadataBlock(EXT2_VOLUME *Volume, UINT32 Block, VOID *Buffer)
         return FALSE;
     }
 
-    Entry = &Volume->ReadCache[Volume->ReadCacheNext];
+    Entry        = &Volume->ReadCache[Volume->ReadCacheNext];
     Entry->Block = Block;
     KMemCpy(Entry->Data, Buffer, Volume->BlockSize);
-    Entry->Valid = TRUE;
+    Entry->Valid          = TRUE;
     Volume->ReadCacheNext = (Volume->ReadCacheNext + 1) % EXT2_READ_CACHE_BLOCKS;
 
     return TRUE;
@@ -213,10 +213,10 @@ UINT8 *EXT2EditBlock(EXT2_VOLUME *Volume, UINT32 Block)
         return NULL;
     }
 
-    Change->Block = Block;
-    Change->Next = Volume->Changes;
-    Volume->Changes = Change;
-    Change->HashNext = Volume->ChangeBuckets[Block % EXT2_CHANGE_BUCKETS];
+    Change->Block                                      = Block;
+    Change->Next                                       = Volume->Changes;
+    Volume->Changes                                    = Change;
+    Change->HashNext                                   = Volume->ChangeBuckets[Block % EXT2_CHANGE_BUCKETS];
     Volume->ChangeBuckets[Block % EXT2_CHANGE_BUCKETS] = Change;
     Volume->ChangeCount++;
 
@@ -269,9 +269,9 @@ VOID EXT2Abort(EXT2_VOLUME *Volume)
 BOOLEAN EXT2Commit(EXT2_VOLUME *Volume)
 {
     UINT8   Superblock[1024];
-    UINT32  SuperBlock = 1024 / Volume->BlockSize;
+    UINT32  SuperBlock  = 1024 / Volume->BlockSize;
     UINT32  SuperOffset = 1024 % Volume->BlockSize;
-    BOOLEAN Result = FALSE;
+    BOOLEAN Result      = FALSE;
 
     if (!Volume->Transaction)
     {
@@ -373,9 +373,9 @@ BOOLEAN EXT2Mount(EXT2_VOLUME *Volume, VIRTIO_BLOCK_DEVICE *Device, CONST GPT_PA
     }
 
     KMemSet(Volume, 0, sizeof(*Volume));
-    Volume->Device = Device;
+    Volume->Device    = Device;
     Volume->Partition = *Partition;
-    Volume->Writable = Writable;
+    Volume->Writable  = Writable;
 
     if (Partition->SectorCount < 4 || Partition->FirstLBA >= VirtIOBlockGetCapacity(Device) || Partition->SectorCount > VirtIOBlockGetCapacity(Device) - Partition->FirstLBA)
     {
@@ -387,12 +387,12 @@ BOOLEAN EXT2Mount(EXT2_VOLUME *Volume, VIRTIO_BLOCK_DEVICE *Device, CONST GPT_PA
         return EXT2Fail(Volume, EXT2_ERROR_READ_ONLY);
     }
 
-    Volume->DMAPages = EXT2_READ_DMA_PAGES;
+    Volume->DMAPages  = EXT2_READ_DMA_PAGES;
     Volume->DMABuffer = KAllocPagesBelow(Volume->DMAPages, 0x100000000ULL);
 
     if (Volume->DMABuffer == NULL)
     {
-        Volume->DMAPages = 1;
+        Volume->DMAPages  = 1;
         Volume->DMABuffer = KAllocPagesBelow(Volume->DMAPages, 0x100000000ULL);
     }
 
@@ -466,7 +466,7 @@ BOOLEAN EXT2Unmount(EXT2_VOLUME *Volume)
 
     KMemFreePages(Volume->DMABuffer, Volume->DMAPages);
     Volume->DMABuffer = NULL;
-    Volume->Mounted = FALSE;
+    Volume->Mounted   = FALSE;
 
     return EXT2Leave(Volume, TRUE);
 }
@@ -625,7 +625,7 @@ BOOLEAN EXT2WriteFile(EXT2_VOLUME *Volume, UINT32 Number, UINT64 Offset, CONST V
 
 BOOLEAN EXT2Create(EXT2_VOLUME *Volume, UINT32 Parent, CONST CHAR8 *Name, BOOLEAN Directory, UINT16 Permissions, UINT32 Time, UINT32 *Number)
 {
-    BOOLEAN Result = FALSE;
+    BOOLEAN Result    = FALSE;
     UINT32  NewNumber = 0;
 
     if (Number != NULL)
@@ -645,7 +645,7 @@ BOOLEAN EXT2Create(EXT2_VOLUME *Volume, UINT32 Parent, CONST CHAR8 *Name, BOOLEA
     else if (EXT2Begin(Volume) && EXT2CreateEntry(Volume, Parent, Name, Directory, Permissions, Time, &NewNumber) && EXT2Commit(Volume))
     {
         *Number = NewNumber;
-        Result = TRUE;
+        Result  = TRUE;
     }
 
     EXT2Abort(Volume);
@@ -758,7 +758,7 @@ BOOLEAN EXT2Symlink(EXT2_VOLUME *Volume, UINT32 Parent, CONST CHAR8 *Name, CONST
     else if (EXT2Begin(Volume) && EXT2SymlinkEntry(Volume, Parent, Name, Target, Time, &NewNumber) && EXT2Commit(Volume))
     {
         *Number = NewNumber;
-        Result = TRUE;
+        Result  = TRUE;
     }
 
     EXT2Abort(Volume);
@@ -977,14 +977,14 @@ BOOLEAN EXT2ReadDirectory(EXT2_VOLUME *Volume, UINT32 Number, UINT64 *Cursor, CH
 
             KMemCpy(Name, Buffer + Within + 8, Length);
             Name[Length] = 0;
-            *Child = Found;
-            Result = EXT2ReadInode(Volume, Found, Inode) && EXT2TouchAccess(Volume, Number, &Directory);
+            *Child       = Found;
+            Result       = EXT2ReadInode(Volume, Found, Inode) && EXT2TouchAccess(Volume, Number, &Directory);
 
             goto Done;
         }
     }
 
-    *End = TRUE;
+    *End   = TRUE;
     Result = TRUE;
 Done:
     return EXT2Leave(Volume, Result);

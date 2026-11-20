@@ -33,7 +33,7 @@ BOOLEAN TerminalWindowUpdate(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE
 
     if (TerminalWindowFailed)
     {
-        FailedServer = TerminalWindow.Server;
+        FailedServer         = TerminalWindow.Server;
         TerminalWindowFailed = FALSE;
     }
 
@@ -43,8 +43,8 @@ BOOLEAN TerminalWindowUpdate(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE
 
         if (SavedPhysical)
         {
-            *Info = Physical;
-            TerminalSurface.FrameBufferWidth = Info->Width;
+            *Info                             = Physical;
+            TerminalSurface.FrameBufferWidth  = Info->Width;
             TerminalSurface.FrameBufferHeight = Info->Height;
             TerminalScreenResize(Info, Baseline);
         }
@@ -54,19 +54,19 @@ BOOLEAN TerminalWindowUpdate(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE
     {
         if (!SavedPhysical)
         {
-            Physical = *Info;
+            Physical      = *Info;
             SavedPhysical = TRUE;
         }
 
-        UINT32 Width = Physical.Width;
+        UINT32 Width  = Physical.Width;
         UINT32 Height = Physical.Height - LOS_WINDOW_DOCK_HEIGHT;
 
         if (LOSWindowOpen(&TerminalWindow, Server, "Terminal", Width, Height, LOS_WINDOW_BACKGROUND) == 0)
         {
-            Info->Width = Width;
-            Info->Height = Height;
-            Info->Pitch = Width * sizeof(UINT32);
-            TerminalSurface.FrameBufferWidth = Width;
+            Info->Width                       = Width;
+            Info->Height                      = Height;
+            Info->Pitch                       = Width * sizeof(UINT32);
+            TerminalSurface.FrameBufferWidth  = Width;
             TerminalSurface.FrameBufferHeight = Height;
             TerminalScreenResize(Info, Baseline);
         }
@@ -79,13 +79,13 @@ BOOLEAN TerminalWindowUpdate(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE
     {
         struct winsize Size;
 
-        Size.ws_row = TerminalScreenRows();
-        Size.ws_col = (Info->Width - TERMINAL_MARGIN * 2 - TERMINAL_SCROLLBAR_WIDTH) / Glyphs[' '].Advance;
+        Size.ws_row    = TerminalScreenRows();
+        Size.ws_col    = (Info->Width - TERMINAL_MARGIN * 2 - TERMINAL_SCROLLBAR_WIDTH) / Glyphs[' '].Advance;
         Size.ws_xpixel = Info->Width;
         Size.ws_ypixel = Info->Height;
         ioctl(3, TIOCSWINSZ, &Size);
 
-        ReportedWidth = Info->Width;
+        ReportedWidth  = Info->Width;
         ReportedHeight = Info->Height;
     }
 

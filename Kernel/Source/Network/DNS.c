@@ -9,8 +9,8 @@
 STATIC BOOLEAN ReadName(CONST UINT8 *Packet, UINT32 Length, UINT32 *Offset, CHAR8 *Name)
 {
     UINT32  Position = *Offset;
-    UINT32  Output = 0;
-    BOOLEAN Jumped = FALSE;
+    UINT32  Output   = 0;
+    BOOLEAN Jumped   = FALSE;
 
     for (UINT32 Step = 0; Step < 128; Step++)
     {
@@ -42,7 +42,7 @@ STATIC BOOLEAN ReadName(CONST UINT8 *Packet, UINT32 Length, UINT32 *Offset, CHAR
             if (!Jumped)
             {
                 *Offset = Position;
-                Jumped = TRUE;
+                Jumped  = TRUE;
             }
 
             Position = Target;
@@ -111,15 +111,15 @@ BOOLEAN NetworkDNSResolveInternal(CONST CHAR8 *Name, UINT32 *Address, UINT32 Tim
     UINT8   Response[512];
     CHAR8   Canonical[255];
     CHAR8   Owner[255];
-    UINT32  QueryLength = 12;
-    UINT32  Input = 0;
+    UINT32  QueryLength    = 12;
+    UINT32  Input          = 0;
     UINT32  ResponseLength = 0;
     UINT32  Offset;
     UINT32  AnswersOffset;
     UINT16  ID = (UINT16) RDTSC();
     UINT16  Answers;
     BOOLEAN Received = FALSE;
-    UINT64  Start = NetworkNow();
+    UINT64  Start    = NetworkNow();
 
     if (Name == NULL || Address == NULL || TimeoutMls == 0)
     {
@@ -129,12 +129,12 @@ BOOLEAN NetworkDNSResolveInternal(CONST CHAR8 *Name, UINT32 *Address, UINT32 Tim
     *Address = 0;
     {
         UINT32  Position = 0;
-        UINT32  Literal = 0;
-        BOOLEAN Numeric = TRUE;
+        UINT32  Literal  = 0;
+        BOOLEAN Numeric  = TRUE;
 
         for (UINT32 Part = 0; Part < 4; Part++)
         {
-            UINT32 Value = 0;
+            UINT32 Value  = 0;
             UINT32 Digits = 0;
 
             while (Position < 16 && Name[Position] >= '0' && Name[Position] <= '9')
@@ -219,7 +219,7 @@ BOOLEAN NetworkDNSResolveInternal(CONST CHAR8 *Name, UINT32 *Address, UINT32 Tim
 
     for (UINT32 Attempt = 0; Attempt < 3; Attempt++)
     {
-        UINT32 Remaining = NetworkRemaining(Start, TimeoutMls);
+        UINT32 Remaining      = NetworkRemaining(Start, TimeoutMls);
         UINT32 AttemptTimeout = Remaining / (3 - Attempt);
 
         if (AttemptTimeout == 0)
@@ -252,7 +252,7 @@ BOOLEAN NetworkDNSResolveInternal(CONST CHAR8 *Name, UINT32 *Address, UINT32 Tim
     }
 
     AnswersOffset = Offset + 4;
-    Answers = NetworkRead16(Response + 6);
+    Answers       = NetworkRead16(Response + 6);
 
     for (UINT32 Depth = 0; Depth < 8; Depth++)
     {
@@ -272,8 +272,8 @@ BOOLEAN NetworkDNSResolveInternal(CONST CHAR8 *Name, UINT32 *Address, UINT32 Tim
                 return NetworkError(L"DNS answer malformed");
             }
 
-            Type = NetworkRead16(Response + Offset);
-            Class = NetworkRead16(Response + Offset + 2);
+            Type       = NetworkRead16(Response + Offset);
+            Class      = NetworkRead16(Response + Offset + 2);
             DataLength = NetworkRead16(Response + Offset + 8);
             Offset += 10;
 
@@ -289,7 +289,7 @@ BOOLEAN NetworkDNSResolveInternal(CONST CHAR8 *Name, UINT32 *Address, UINT32 Tim
                 if (Type == 1 && DataLength == 4)
                 {
                     UINT32 Result = NetworkRead32(Response + Offset);
-                    UINT8  First = Result >> 24;
+                    UINT8  First  = Result >> 24;
 
                     if (First == 0 || First == 127 || First >= 224)
                     {

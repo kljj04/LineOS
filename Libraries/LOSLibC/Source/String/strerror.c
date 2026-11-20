@@ -40,7 +40,7 @@ char *strerror(int Error)
     if (Number < 0)
     {
         Unknown[Length++] = '-';
-        Number = -Number;
+        Number            = -Number;
     }
 
     char  Digits[16];

@@ -46,7 +46,7 @@ BOOLEAN ShellTextReady(VOID)
         return FALSE;
     }
 
-    INT32 PrimaryOffset = GetFontOffsetForIndex(PrimaryAsset.Data, 0);
+    INT32 PrimaryOffset  = GetFontOffsetForIndex(PrimaryAsset.Data, 0);
     INT32 FallbackOffset = GetFontOffsetForIndex(FallbackAsset.Data, 0);
 
     Ready = PrimaryOffset >= 0 && FallbackOffset >= 0 && InitFont(&Primary, PrimaryAsset.Data, PrimaryOffset) && InitFont(&Fallback, FallbackAsset.Data, FallbackOffset);
@@ -62,7 +62,7 @@ BOOLEAN ShellTextReady(VOID)
 
 VOID ShellTextMeasure(CONST char *Text, UINT32 *Advance, UINT32 *Extent)
 {
-    UINT8  First = (UINT8) *Text++;
+    UINT8  First     = (UINT8) *Text++;
     UINT32 Codepoint = First;
     UINT32 Remaining = 0;
 
@@ -101,7 +101,7 @@ VOID ShellTextMeasure(CONST char *Text, UINT32 *Advance, UINT32 *Extent)
 
     if (!Metric->Valid || Metric->Codepoint != Codepoint)
     {
-        FONT_INFO *Font = Codepoint < 128 || FindGlyphIndex(&Primary, (INT32) Codepoint) != 0 ? &Primary : &Fallback;
+        FONT_INFO *Font  = Codepoint < 128 || FindGlyphIndex(&Primary, (INT32) Codepoint) != 0 ? &Primary : &Fallback;
         FLOAT32    Scale = ScaleForPixelHeight(Font, TERMINAL_FONT_HEIGHT);
         INT32      Width;
         INT32      Bearing;
@@ -116,11 +116,11 @@ VOID ShellTextMeasure(CONST char *Text, UINT32 *Advance, UINT32 *Extent)
         INT32 Pixels = TTFFloor(Width * Scale + 0.5f);
 
         Metric->Codepoint = Codepoint;
-        Metric->Advance = Pixels > 0 ? (UINT32) Pixels : 1U;
-        Metric->Extent = Right > (INT32) Metric->Advance ? (UINT32) Right : Metric->Advance;
-        Metric->Valid = TRUE;
+        Metric->Advance   = Pixels > 0 ? (UINT32) Pixels : 1U;
+        Metric->Extent    = Right > (INT32) Metric->Advance ? (UINT32) Right : Metric->Advance;
+        Metric->Valid     = TRUE;
     }
 
     *Advance = Metric->Advance;
-    *Extent = Metric->Extent;
+    *Extent  = Metric->Extent;
 }

@@ -95,7 +95,7 @@ STATIC VOID ShellEditorRender(CONST char *Line, UINTN Cursor, IME_STATE *IME, ch
 
     memcpy(Text, Line, Length + 1);
 
-    UINTN  Caret = Cursor;
+    UINTN  Caret   = Cursor;
     UINT32 Preedit = IMECodepoint(IME);
 
     if (Preedit != 0)
@@ -118,8 +118,8 @@ STATIC VOID ShellEditorRender(CONST char *Line, UINTN Cursor, IME_STATE *IME, ch
 
     ShellInputColors(Text, Style, Colors);
 
-    struct winsize Size = {0};
-    UINTN          Columns = 64;
+    struct winsize Size       = {0};
+    UINTN          Columns    = 64;
     UINTN          ScreenRows = 20;
 
     if (ioctl(0, TIOCGWINSZ, &Size) == 0)
@@ -147,14 +147,14 @@ STATIC VOID ShellEditorRender(CONST char *Line, UINTN Cursor, IME_STATE *IME, ch
     }
 
     UINTN RowCount = 1;
-    UINTN Width = EditorPixelLayout ? ShellEditorWidth("┗━> ", 0, strlen("┗━> ")) : 4;
+    UINTN Width    = EditorPixelLayout ? ShellEditorWidth("┗━> ", 0, strlen("┗━> ")) : 4;
     UINTN Position = 0;
 
     EditorRows[0] = 0;
 
     while (Position < Length)
     {
-        UINTN Next = ShellNextCharacter(Text, Position, Length);
+        UINTN Next    = ShellNextCharacter(Text, Position, Length);
         UINTN Advance = ShellEditorWidth(Text, Position, Next);
 
         UINTN Extent = Advance;
@@ -171,7 +171,7 @@ STATIC VOID ShellEditorRender(CONST char *Line, UINTN Cursor, IME_STATE *IME, ch
         if (Width + Extent > Columns)
         {
             EditorRows[RowCount++] = Position;
-            Width = 0;
+            Width                  = 0;
         }
 
         Width += Advance;
@@ -188,7 +188,7 @@ STATIC VOID ShellEditorRender(CONST char *Line, UINTN Cursor, IME_STATE *IME, ch
     }
 
     UINTN Maximum = ScreenRows - 1;
-    UINTN First = EditorViewFirst;
+    UINTN First   = EditorViewFirst;
 
     if (First > CaretRow)
     {
@@ -250,9 +250,9 @@ STATIC VOID ShellEditorRender(CONST char *Line, UINTN Cursor, IME_STATE *IME, ch
         }
     }
 
-    EditorViewFirst = First;
+    EditorViewFirst   = First;
     EditorVisibleRows = Visible;
-    EditorCaretRow = CaretRow - First;
+    EditorCaretRow    = CaretRow - First;
 
     if (Visible - 1 > EditorCaretRow)
     {
@@ -334,7 +334,7 @@ STATIC VOID ShellEditorSequence(CONST char *Sequence, char Line[SHELL_INPUT_CAPA
             }
 
             UINTN Position = 3;
-            UINTN Column = 0;
+            UINTN Column   = 0;
 
             while (Sequence[Position] >= '0' && Sequence[Position] <= '9')
             {
@@ -351,8 +351,8 @@ STATIC VOID ShellEditorSequence(CONST char *Sequence, char Line[SHELL_INPUT_CAPA
                 break;
             }
 
-            UINTN Row = EditorViewFirst + EditorCaretRow;
-            UINTN Prefix = Row == 0 ? 5 : 1;
+            UINTN Row        = EditorViewFirst + EditorCaretRow;
+            UINTN Prefix     = Row == 0 ? 5 : 1;
             UINTN Characters = Column > Prefix ? Column - Prefix : 0;
 
             *Cursor = EditorRows[Row] < *Length ? EditorRows[Row] : *Length;
@@ -371,21 +371,21 @@ STATIC VOID ShellEditorSequence(CONST char *Sequence, char Line[SHELL_INPUT_CAPA
 BOOLEAN ShellReadCommand(char Line[SHELL_INPUT_CAPACITY], char **Envp)
 {
     STATIC BOOLEAN Korean;
-    UINTN          Length = 0;
-    UINTN          Cursor = 0;
+    UINTN          Length         = 0;
+    UINTN          Cursor         = 0;
     UINTN          SequenceLength = 0;
-    UINT8          Escape = 0;
+    UINT8          Escape         = 0;
     char           Sequence[48];
     IME_STATE      IME;
 
     IMEReset(&IME);
-    Line[0] = 0;
-    EditorViewFirst = 0;
+    Line[0]           = 0;
+    EditorViewFirst   = 0;
     EditorVisibleRows = 1;
-    EditorCaretRow = 0;
-    EditorRows[0] = 0;
+    EditorCaretRow    = 0;
+    EditorRows[0]     = 0;
 
-    CONST char *Enable = "\033[?1000h";
+    CONST char *Enable  = "\033[?1000h";
     CONST char *Disable = "\033[?1000l\033[0m";
 
     write(1, Enable, strlen(Enable));
@@ -418,7 +418,7 @@ BOOLEAN ShellReadCommand(char Line[SHELL_INPUT_CAPACITY], char **Envp)
             write(1, Disable, strlen(Disable));
             write(1, "^C\n", 3);
             Line[0] = 0;
-            errno = EINTR;
+            errno   = EINTR;
 
             return FALSE;
         }
@@ -445,7 +445,7 @@ BOOLEAN ShellReadCommand(char Line[SHELL_INPUT_CAPACITY], char **Envp)
 
         if (Escape == 1)
         {
-            Escape = Byte == '[' ? 2 : 0;
+            Escape         = Byte == '[' ? 2 : 0;
             SequenceLength = 0;
             continue;
         }
@@ -463,7 +463,7 @@ BOOLEAN ShellReadCommand(char Line[SHELL_INPUT_CAPACITY], char **Envp)
             if (Byte >= 0x40 && Byte <= 0x7E)
             {
                 Sequence[SequenceLength] = 0;
-                Escape = 0;
+                Escape                   = 0;
                 ShellInsertCharacter(Line, &Length, &Cursor, IMECodepoint(&IME));
                 IMEReset(&IME);
                 ShellEditorSequence(Sequence, Line, &Length, &Cursor);

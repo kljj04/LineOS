@@ -29,16 +29,16 @@ STATIC UINT32 ANSIIndexedColor(UINT32 Index)
 
 STATIC VOID ANSIReset(TERMINAL_ANSI *ANSI)
 {
-    ANSI->Foreground = ANSI->DefaultForeground;
-    ANSI->Background = ANSI->DefaultBackground;
+    ANSI->Foreground      = ANSI->DefaultForeground;
+    ANSI->Background      = ANSI->DefaultBackground;
     ANSI->ForegroundIndex = 16;
-    ANSI->Bold = FALSE;
-    ANSI->Inverse = FALSE;
+    ANSI->Bold            = FALSE;
+    ANSI->Inverse         = FALSE;
 }
 
 VOID TerminalANSIInit(TERMINAL_ANSI *ANSI, UINT32 Foreground, UINT32 Background)
 {
-    *ANSI = (TERMINAL_ANSI) {0};
+    *ANSI                   = (TERMINAL_ANSI) {0};
     ANSI->DefaultForeground = Foreground;
     ANSI->DefaultBackground = Background;
     ANSIReset(ANSI);
@@ -64,7 +64,7 @@ STATIC VOID ANSIApply(TERMINAL_ANSI *ANSI)
         }
         else if (Parameter == 39)
         {
-            ANSI->Foreground = ANSI->DefaultForeground;
+            ANSI->Foreground      = ANSI->DefaultForeground;
             ANSI->ForegroundIndex = 16;
         }
         else if (Parameter == 49)
@@ -74,7 +74,7 @@ STATIC VOID ANSIApply(TERMINAL_ANSI *ANSI)
         else if ((Parameter >= 30 && Parameter <= 37) || (Parameter >= 90 && Parameter <= 97))
         {
             ANSI->ForegroundIndex = Parameter >= 90 ? Parameter - 90 + 8 : Parameter - 30;
-            ANSI->Foreground = ANSIPalette[ANSI->ForegroundIndex];
+            ANSI->Foreground      = ANSIPalette[ANSI->ForegroundIndex];
         }
         else if ((Parameter >= 40 && Parameter <= 47) || (Parameter >= 100 && Parameter <= 107))
         {
@@ -113,9 +113,9 @@ STATIC VOID ANSIApply(TERMINAL_ANSI *ANSI)
                     break;
                 }
 
-                UINT32 Red = ANSI->Parameters[++Index];
+                UINT32 Red   = ANSI->Parameters[++Index];
                 UINT32 Green = ANSI->Parameters[++Index];
-                UINT32 Blue = ANSI->Parameters[++Index];
+                UINT32 Blue  = ANSI->Parameters[++Index];
 
                 if (Red > 255 || Green > 255 || Blue > 255)
                 {
@@ -131,7 +131,7 @@ STATIC VOID ANSIApply(TERMINAL_ANSI *ANSI)
 
             if (Parameter == 38)
             {
-                ANSI->Foreground = Color;
+                ANSI->Foreground      = Color;
                 ANSI->ForegroundIndex = 16;
             }
             else
@@ -196,11 +196,11 @@ BOOLEAN TerminalANSIConsume(TERMINAL_ANSI *ANSI, UINT8 Byte)
 
     if (ANSI->State == TERMINAL_ANSI_ESCAPE)
     {
-        ANSI->State = Byte == '[' ? TERMINAL_ANSI_CSI : Byte == ']' ? TERMINAL_ANSI_OSC : TERMINAL_ANSI_TEXT;
-        ANSI->Count = 1;
+        ANSI->State         = Byte == '[' ? TERMINAL_ANSI_CSI : Byte == ']' ? TERMINAL_ANSI_OSC : TERMINAL_ANSI_TEXT;
+        ANSI->Count         = 1;
         ANSI->Parameters[0] = 0;
-        ANSI->Invalid = FALSE;
-        ANSI->Private = FALSE;
+        ANSI->Invalid       = FALSE;
+        ANSI->Private       = FALSE;
 
         return TRUE;
     }
@@ -258,8 +258,8 @@ BOOLEAN TerminalANSIConsume(TERMINAL_ANSI *ANSI, UINT8 Byte)
         }
         else if ((Byte == 'H' || Byte == 'f') && !ANSI->Invalid && ANSI->Count <= 2)
         {
-            ANSI->CursorRow = ANSI->Parameters[0] == 0 ? 1 : ANSI->Parameters[0];
-            ANSI->CursorColumn = ANSI->Count < 2 || ANSI->Parameters[1] == 0 ? 1 : ANSI->Parameters[1];
+            ANSI->CursorRow      = ANSI->Parameters[0] == 0 ? 1 : ANSI->Parameters[0];
+            ANSI->CursorColumn   = ANSI->Count < 2 || ANSI->Parameters[1] == 0 ? 1 : ANSI->Parameters[1];
             ANSI->CursorPosition = TRUE;
         }
 

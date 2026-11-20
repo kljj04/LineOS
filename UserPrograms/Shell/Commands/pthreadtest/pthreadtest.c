@@ -9,8 +9,8 @@
 #define THREAD_COUNT 4
 #define ITERATIONS   1000
 
-static pthread_mutex_t  Mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t   Ready = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t  Mutex    = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t   Ready    = PTHREAD_COND_INITIALIZER;
 static pthread_rwlock_t DataLock = PTHREAD_RWLOCK_INITIALIZER;
 static pthread_key_t    Key;
 static int              Started;
@@ -30,7 +30,7 @@ static void DestroyValue(void *Value)
 
 static void *Worker(void *Arg)
 {
-    errno = ERANGE;
+    errno      = ERANGE;
     int Result = pthread_setspecific(Key, Arg);
 
     pthread_mutex_lock(&Mutex);
@@ -80,7 +80,7 @@ static int VerifyTimeoutAndCancel(void)
     pthread_mutexattr_t   Attr;
     pthread_mutex_t       Lock;
     pthread_t             Thread;
-    void                 *Result = NULL;
+    void                 *Result   = NULL;
     const struct timespec Deadline = {0, 0};
 
     if (pthread_mutexattr_init(&Attr) != 0 || pthread_mutexattr_settype(&Attr, PTHREAD_MUTEX_RECURSIVE) != 0 || pthread_mutex_init(&Lock, &Attr) != 0 || pthread_mutex_lock(&Lock) != 0 || pthread_mutex_trylock(&Lock) != 0 || pthread_mutex_unlock(&Lock) != 0 || pthread_mutex_unlock(&Lock) != 0 || pthread_mutex_unlock(&Lock) != EPERM)
@@ -109,7 +109,7 @@ int main(void)
     pthread_t Threads[THREAD_COUNT];
     int       Args[THREAD_COUNT];
     int       Created = 0;
-    int       Failed = pthread_key_create(&Key, DestroyValue);
+    int       Failed  = pthread_key_create(&Key, DestroyValue);
 
     if (Failed != 0)
     {
@@ -122,7 +122,7 @@ int main(void)
     for (; Created < THREAD_COUNT; Created++)
     {
         Args[Created] = Created;
-        Failed = pthread_create(&Threads[Created], NULL, Worker, &Args[Created]);
+        Failed        = pthread_create(&Threads[Created], NULL, Worker, &Args[Created]);
 
         if (Failed != 0)
         {

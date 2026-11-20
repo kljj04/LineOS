@@ -91,10 +91,10 @@ BOOLEAN SyscallMemoryClone(TASK *Child, TASK *Parent)
         }
 
         KMemSet(Copy, 0, sizeof(*Copy) + (UINT64) Region->Count * sizeof(UINT64));
-        Copy->Address = Region->Address;
-        Copy->Count = Region->Count;
-        Copy->Owned = Region->Owned;
-        Copy->Next = Child->Process->Mappings;
+        Copy->Address            = Region->Address;
+        Copy->Count              = Region->Count;
+        Copy->Owned              = Region->Owned;
+        Copy->Next               = Child->Process->Mappings;
         Child->Process->Mappings = Copy;
 
         for (UINT32 Index = 0; Index < Copy->Count; Index++)
@@ -114,7 +114,7 @@ BOOLEAN SyscallMemoryClone(TASK *Child, TASK *Parent)
 
 STATIC INT64 MemoryMap(UINT64 Address, UINT64 Length, UINT64 Protection, UINT64 Flags, INT64 FD, UINT64 Offset)
 {
-    TASK  *Task = LBPWRRGetCurrentTask();
+    TASK  *Task     = LBPWRRGetCurrentTask();
     UINT64 Physical = 0;
 
     if (Task == NULL || Task->Process->AddressSpace == NULL)
@@ -155,7 +155,7 @@ STATIC INT64 MemoryMap(UINT64 Address, UINT64 Length, UINT64 Protection, UINT64 
     }
 
     UINT32 Count = (UINT32) ((Length + 4095) / 4096);
-    UINT64 Used = 0;
+    UINT64 Used  = 0;
 
     for (MMAP_REGION *Current = Task->Process->Mappings; Current != NULL; Current = Current->Next)
     {
@@ -210,8 +210,8 @@ STATIC INT64 MemoryMap(UINT64 Address, UINT64 Length, UINT64 Protection, UINT64 
 
     KMemSet(Region, 0, sizeof(*Region) + (UINT64) Count * sizeof(UINT64));
     Region->Address = Address;
-    Region->Count = Count;
-    Region->Owned = Owned;
+    Region->Count   = Count;
+    Region->Owned   = Owned;
 
     for (UINT32 Index = 0; Index < Count; Index++)
     {
@@ -233,7 +233,7 @@ STATIC INT64 MemoryMap(UINT64 Address, UINT64 Length, UINT64 Protection, UINT64 
         goto Failed;
     }
 
-    Region->Next = Task->Process->Mappings;
+    Region->Next            = Task->Process->Mappings;
     Task->Process->Mappings = Region;
 
     return (INT64) Address;
@@ -272,8 +272,8 @@ STATIC INT64 MemoryUnmap(UINT64 Address, UINT64 Length)
     while (*Link != NULL)
     {
         MMAP_REGION *Region = *Link;
-        UINT64       Start = Address > Region->Address ? Address : Region->Address;
-        UINT64       End = Address + Length < Region->Address + (UINT64) Region->Count * 4096 ? Address + Length : Region->Address + (UINT64) Region->Count * 4096;
+        UINT64       Start  = Address > Region->Address ? Address : Region->Address;
+        UINT64       End    = Address + Length < Region->Address + (UINT64) Region->Count * 4096 ? Address + Length : Region->Address + (UINT64) Region->Count * 4096;
 
         if (Start < End)
         {

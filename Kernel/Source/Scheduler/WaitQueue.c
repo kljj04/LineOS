@@ -23,12 +23,12 @@ STATIC VOID WaitQueueDetach(TASK *Task)
     }
 
     Previous = NULL;
-    Current = Queue->Head;
+    Current  = Queue->Head;
 
     while (Current != NULL && Current != Task)
     {
         Previous = Current;
-        Current = Current->WaitNext;
+        Current  = Current->WaitNext;
     }
 
     if (Current != NULL)
@@ -49,8 +49,8 @@ STATIC VOID WaitQueueDetach(TASK *Task)
     }
 
     Task->WaitDeadlineTSC = 0;
-    Task->WaitQueue = NULL;
-    Task->WaitNext = NULL;
+    Task->WaitQueue       = NULL;
+    Task->WaitNext        = NULL;
 }
 
 VOID WaitQueueInit(WAIT_QUEUE *Queue)
@@ -84,9 +84,9 @@ STATIC BOOLEAN WaitQueueSleepInternal(WAIT_QUEUE *Queue, SPIN_LOCK *ConditionLoc
     }
 
     Task->WaitDeadlineTSC = Deadline;
-    Task->WaitTimedOut = FALSE;
-    Task->WaitQueue = Queue;
-    Task->WaitNext = NULL;
+    Task->WaitTimedOut    = FALSE;
+    Task->WaitQueue       = Queue;
+    Task->WaitNext        = NULL;
 
     if (Queue->Tail == NULL)
     {
@@ -141,7 +141,7 @@ STATIC LBPWRR_RUNQUEUE *WaitQueueLockTask(TASK *Task)
 {
     while (Task->Scheduled)
     {
-        UINT32           CPUID = Task->CPUID;
+        UINT32           CPUID    = Task->CPUID;
         LBPWRR_RUNQUEUE *RunQueue = LBPWRRGetRunQueue(CPUID);
 
         SpinLockAcquire(&RunQueue->Lock);
@@ -227,11 +227,11 @@ VOID WaitQueueFinishTask(TASK *Task, TASK_STATE State)
     LBPWRR_RUNQUEUE *RunQueue;
     UINT64           Flags;
 
-    Flags = SpinLockAcquireIRQSave(&WaitLock);
+    Flags    = SpinLockAcquireIRQSave(&WaitLock);
     RunQueue = WaitQueueLockTask(Task);
 
     WaitQueueDetach(Task);
-    Task->State = State;
+    Task->State    = State;
     Task->Modified = TRUE;
 
     if (RunQueue != NULL)

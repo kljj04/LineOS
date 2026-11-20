@@ -23,15 +23,15 @@ BOOLEAN CreateBootInfo(VOID)
     if (EFI_ERROR(Status))
         return FALSE;
 
-    BootInfo->Magic = LINEOS_BOOT_MAGIC;
+    BootInfo->Magic   = LINEOS_BOOT_MAGIC;
     BootInfo->Version = 1;
-    BootInfo->Size = sizeof(LINEOS_BOOT_INFO);
+    BootInfo->Size    = sizeof(LINEOS_BOOT_INFO);
 
-    BootInfo->GOP = &GOP;
-    BootInfo->MemoryMap = &MemoryMap;
-    BootInfo->RSDP = RSDP;
-    BootInfo->Kernel.Base = Kernel.Base;
-    BootInfo->Kernel.Size = Kernel.Size;
+    BootInfo->GOP          = &GOP;
+    BootInfo->MemoryMap    = &MemoryMap;
+    BootInfo->RSDP         = RSDP;
+    BootInfo->Kernel.Base  = Kernel.Base;
+    BootInfo->Kernel.Size  = Kernel.Size;
     BootInfo->Kernel.Entry = Kernel.Entry;
 
     return TRUE;

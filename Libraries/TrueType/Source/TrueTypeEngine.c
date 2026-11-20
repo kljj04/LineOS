@@ -13,7 +13,7 @@ STATIC TTF_ALLOCATOR     *FontAllocator;
 
 STATIC FLOAT32 GetPixelScale(FONT_INFO *Font, UINT32 PixelHeight)
 {
-    INT32 Ascent = 0;
+    INT32 Ascent  = 0;
     INT32 Descent = 0;
     INT32 LineGap = 0;
     INT32 Units;
@@ -51,13 +51,13 @@ STATIC UINT32 GetColorRGB(UINT32 Color)
 
 STATIC UINT32 BlendColor(UINT32 Background, UINT32 Foreground, UINT8 Alpha)
 {
-    UINT32 RGB = GetColorRGB(Foreground);
-    UINT32 ColorAlpha = GetColorAlpha(Foreground);
+    UINT32 RGB            = GetColorRGB(Foreground);
+    UINT32 ColorAlpha     = GetColorAlpha(Foreground);
     UINT32 EffectiveAlpha = ((UINT32) Alpha * ColorAlpha) / 255;
-    UINT32 InverseAlpha = 255 - EffectiveAlpha;
-    UINT32 Red = ((((RGB >> 16) & 0xFF) * EffectiveAlpha) + (((Background >> 16) & 0xFF) * InverseAlpha)) / 255;
-    UINT32 Green = ((((RGB >> 8) & 0xFF) * EffectiveAlpha) + (((Background >> 8) & 0xFF) * InverseAlpha)) / 255;
-    UINT32 Blue = (((RGB & 0xFF) * EffectiveAlpha) + ((Background & 0xFF) * InverseAlpha)) / 255;
+    UINT32 InverseAlpha   = 255 - EffectiveAlpha;
+    UINT32 Red            = ((((RGB >> 16) & 0xFF) * EffectiveAlpha) + (((Background >> 16) & 0xFF) * InverseAlpha)) / 255;
+    UINT32 Green          = ((((RGB >> 8) & 0xFF) * EffectiveAlpha) + (((Background >> 8) & 0xFF) * InverseAlpha)) / 255;
+    UINT32 Blue           = (((RGB & 0xFF) * EffectiveAlpha) + ((Background & 0xFF) * InverseAlpha)) / 255;
 
     return 0xFF000000 | (Red << 16) | (Green << 8) | Blue;
 }
@@ -82,12 +82,12 @@ STATIC VOID BlendPixel(TRUE_TYPE_SURFACE *GPU, INT32 X, INT32 Y, UINT32 Color, U
     }
 
     Background = *Pixel;
-    *Pixel = BlendColor(Background, Color, Alpha);
+    *Pixel     = BlendColor(Background, Color, Alpha);
 }
 
 STATIC UINT32 CodepointAdvance(FONT_INFO *Font, UINT32 Codepoint, FLOAT32 Scale)
 {
-    INT32 AdvanceWidth = 0;
+    INT32 AdvanceWidth    = 0;
     INT32 LeftSideBearing = 0;
 
     GetCodepointHMetrics(Font, (INT32) Codepoint, &AdvanceWidth, &LeftSideBearing);
@@ -122,7 +122,7 @@ BOOLEAN TrueTypeInit(TTF_ALLOCATOR *Allocator, TRUE_TYPE_SURFACE *Surface)
     }
 
     FontAllocator = Allocator;
-    DrawSurface = Surface;
+    DrawSurface   = Surface;
 
     return TRUE;
 }
@@ -142,7 +142,7 @@ BOOLEAN TrueTypeRegisterFont(TRUE_TYPE_FONT *Font, CONST UINT8 *Data)
     }
 
     Font->Info.UserData = FontAllocator;
-    Font->Ready = TRUE;
+    Font->Ready         = TRUE;
 
     return TRUE;
 }
@@ -165,11 +165,11 @@ UINT32 DrawTrueTypeCodepoint(TRUE_TYPE_FONT *Font, UINT32 Codepoint, UINT32 X, U
         return X;
     }
 
-    Scale = GetPixelScale(DrawFont, PixelHeight);
-    Width = 0;
+    Scale  = GetPixelScale(DrawFont, PixelHeight);
+    Width  = 0;
     Height = 0;
-    XOff = 0;
-    YOff = 0;
+    XOff   = 0;
+    YOff   = 0;
     Bitmap = GetCodepointBitmap(DrawFont, Scale, Scale, (INT32) Codepoint, &Width, &Height, &XOff, &YOff);
 
     if (Bitmap == NULL)
@@ -239,7 +239,7 @@ UINT32 DrawTrueTypeText(TRUE_TYPE_FONT *Font, CONST CHAR16 *Text, UINT32 X, UINT
 
 BOOLEAN MeasureTrueTypeText(TRUE_TYPE_FONT *Font, CONST CHAR16 *Text, UINT32 PixelHeight, INT32 *Left, INT32 *Top, INT32 *Right, INT32 *Bottom)
 {
-    INT32   CursorX = 0;
+    INT32   CursorX   = 0;
     BOOLEAN HasBounds = FALSE;
 
     if (DrawSurface == NULL || Text == NULL || Left == NULL || Top == NULL || Right == NULL || Bottom == NULL)
@@ -250,7 +250,7 @@ BOOLEAN MeasureTrueTypeText(TRUE_TYPE_FONT *Font, CONST CHAR16 *Text, UINT32 Pix
     for (UINT32 Index = 0; Text[Index] != 0; Index++)
     {
         UINT32     Codepoint = DecodeSurrogate(Text, &Index);
-        FONT_INFO *FontInfo = Font != NULL && Font->Ready ? &Font->Info : NULL;
+        FONT_INFO *FontInfo  = Font != NULL && Font->Ready ? &Font->Info : NULL;
         FLOAT32    Scale;
         INT32      BoxX0;
         INT32      BoxY0;
@@ -269,10 +269,10 @@ BOOLEAN MeasureTrueTypeText(TRUE_TYPE_FONT *Font, CONST CHAR16 *Text, UINT32 Pix
 
         if (!HasBounds)
         {
-            *Left = BoxX0;
-            *Top = BoxY0;
-            *Right = BoxX1;
-            *Bottom = BoxY1;
+            *Left     = BoxX0;
+            *Top      = BoxY0;
+            *Right    = BoxX1;
+            *Bottom   = BoxY1;
             HasBounds = TRUE;
         }
         else

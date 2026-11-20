@@ -65,15 +65,15 @@ VOID DebugWriteHex(UINT64 Value)
     CHAR8 Buffer[19];
     UINTN Index;
 
-    Buffer[0] = '0';
-    Buffer[1] = 'x';
+    Buffer[0]  = '0';
+    Buffer[1]  = 'x';
     Buffer[18] = 0;
 
     for (Index = 0; Index < 16; Index++)
     {
         UINT8 Nibble;
 
-        Nibble = (UINT8) ((Value >> ((15 - Index) * 4)) & 0xF);
+        Nibble            = (UINT8) ((Value >> ((15 - Index) * 4)) & 0xF);
         Buffer[2 + Index] = (CHAR8) (Nibble < 10 ? '0' + Nibble : 'A' + (Nibble - 10));
     }
 

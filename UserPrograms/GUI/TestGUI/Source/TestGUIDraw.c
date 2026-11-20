@@ -55,7 +55,7 @@ STATIC VOID TestGUIText(TEST_GUI *GUI, CONST char *Text, UINT32 X, UINT32 Y, UIN
     while (*Text != 0)
     {
         GUI->Used = 0;
-        X = DrawTrueTypeCodepoint(&GUI->Font, (UINT8) *Text++, X, Y, Color, Size);
+        X         = DrawTrueTypeCodepoint(&GUI->Font, (UINT8) *Text++, X, Y, Color, Size);
     }
 }
 
@@ -66,8 +66,8 @@ VOID TestGUIDraw(TEST_GUI *GUI)
     TestGUIFill(GUI, Screen, 0x00121620);
     TestGUIFill(GUI, GUI->Window, 0x00252B38);
 
-    UINT32        X = GUI->Window.X;
-    UINT32        Y = GUI->Window.Y;
+    UINT32        X     = GUI->Window.X;
+    UINT32        Y     = GUI->Window.Y;
     TEST_GUI_RECT Title = {X, Y, GUI->Window.Width, 56};
 
     if (GUI->Client.Endpoint == 0)
@@ -95,7 +95,7 @@ VOID TestGUIDraw(TEST_GUI *GUI)
     char   Digits[11];
     char   Reversed[10];
     UINTN  Length = 0;
-    UINT32 Value = GUI->Clicks;
+    UINT32 Value  = GUI->Clicks;
 
     do
     {

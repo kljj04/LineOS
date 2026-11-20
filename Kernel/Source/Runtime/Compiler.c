@@ -11,7 +11,7 @@ UINT128 __udivti3(UINT128 Dividend, UINT128 Divisor)
     UINT128 Bit;
 
     Quotient = 0;
-    Bit = 1;
+    Bit      = 1;
 
     if (Divisor == 0)
     {

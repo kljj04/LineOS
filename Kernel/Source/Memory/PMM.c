@@ -21,8 +21,8 @@ STATIC UINT64       ManagedPages;
 STATIC UINT64       FreePages;
 STATIC SPIN_LOCK    BuddyLock;
 
-STATIC HEAP_BLOCK *HeapHead = NULL;
-STATIC HEAP_BLOCK *HeapTail = NULL;
+STATIC HEAP_BLOCK *HeapHead        = NULL;
+STATIC HEAP_BLOCK *HeapTail        = NULL;
 STATIC BOOLEAN     HeapInitialized = FALSE;
 STATIC SPIN_LOCK   HeapLock;
 
@@ -73,7 +73,7 @@ STATIC UINTN GetMemoryDescriptorCount(LINEOS_MEMORY_MAP *MemoryMap)
 STATIC UINT64 FindHighestConventionalMemoryAddress(LINEOS_MEMORY_MAP *MemoryMap)
 {
     UINT64 HighestAddress = 0;
-    UINTN  EntryCount = GetMemoryDescriptorCount(MemoryMap);
+    UINTN  EntryCount     = GetMemoryDescriptorCount(MemoryMap);
 
     for (UINTN Index = 0; Index < EntryCount; Index++)
     {
@@ -105,8 +105,8 @@ STATIC VOID BuddyPush(UINTN Order, UINT64 Address)
         return;
     }
 
-    Block = (BUDDY_BLOCK *) Address;
-    Block->Next = FreeLists[Order];
+    Block            = (BUDDY_BLOCK *) Address;
+    Block->Next      = FreeLists[Order];
     FreeLists[Order] = Block;
     FreePages += 1ULL << Order;
 }
@@ -166,7 +166,7 @@ STATIC BOOLEAN BuddyRemove(UINTN Order, UINT64 Address)
         }
 
         Previous = Block;
-        Block = Block->Next;
+        Block    = Block->Next;
     }
 
     return FALSE;
@@ -180,7 +180,7 @@ STATIC UINTN LargestOrderForRange(UINT64 Address, UINT64 PageCount)
     {
         UINTN  NextOrder = Order + 1;
         UINT64 NextPages = OToP(NextOrder);
-        UINT64 NextSize = OToS(NextOrder);
+        UINT64 NextSize  = OToS(NextOrder);
 
         if (NextPages > PageCount)
         {
@@ -224,7 +224,7 @@ STATIC VOID BuddyAddUsableRange(UINT64 Address, UINT64 PageCount)
     }
 
     Start = AlignUp(Address, PAGE_SIZE);
-    End = AlignDown(Address + (PageCount * PAGE_SIZE), PAGE_SIZE);
+    End   = AlignDown(Address + (PageCount * PAGE_SIZE), PAGE_SIZE);
 
     if (End <= Start)
     {
@@ -260,7 +260,7 @@ STATIC VOID BuddyAddUsableRangeExcept(UINT64 Address, UINT64 PageCount, UINT64 R
     }
 
     Start = AlignUp(Address, PAGE_SIZE);
-    End = AlignDown(Address + (PageCount * PAGE_SIZE), PAGE_SIZE);
+    End   = AlignDown(Address + (PageCount * PAGE_SIZE), PAGE_SIZE);
 
     if (End <= Start)
     {
@@ -343,7 +343,7 @@ STATIC VOID *BuddyAllocateBelow(UINTN Order, UINT64 Limit)
 
         while (Block != NULL)
         {
-            UINT64 Address = (UINT64) Block;
+            UINT64 Address       = (UINT64) Block;
             UINT64 RequestedSize = OToS(Order);
 
             if (Address <= Limit && RequestedSize <= Limit - Address)
@@ -382,7 +382,7 @@ STATIC VOID BuddyFree(UINT64 Address, UINTN Order)
 
     while (Order < BUDDY_MAX_ORDER)
     {
-        UINT64 Size = OToS(Order);
+        UINT64 Size         = OToS(Order);
         UINT64 BuddyAddress = Address ^ Size;
 
         if (!BuddyRemove(Order, BuddyAddress))
@@ -415,7 +415,7 @@ BOOLEAN KMemoryInit(LINEOS_BOOT_INFO *BootInfo)
     }
 
     ManagedPages = 0;
-    FreePages = 0;
+    FreePages    = 0;
     SpinLockInit(&BuddyLock);
     SpinLockInit(&HeapLock);
 
@@ -424,8 +424,8 @@ BOOLEAN KMemoryInit(LINEOS_BOOT_INFO *BootInfo)
         FreeLists[Order] = NULL;
     }
 
-    MemoryMap = BootInfo->MemoryMap;
-    EntryCount = GetMemoryDescriptorCount(MemoryMap);
+    MemoryMap      = BootInfo->MemoryMap;
+    EntryCount     = GetMemoryDescriptorCount(MemoryMap);
     HighestAddress = FindHighestConventionalMemoryAddress(MemoryMap);
 
     if (HighestAddress == 0)
@@ -433,9 +433,9 @@ BOOLEAN KMemoryInit(LINEOS_BOOT_INFO *BootInfo)
         return FALSE;
     }
 
-    TotalPages = AlignUp(HighestAddress, PAGE_SIZE) / PAGE_SIZE;
+    TotalPages  = AlignUp(HighestAddress, PAGE_SIZE) / PAGE_SIZE;
     KernelStart = AlignDown(BootInfo->Kernel.Base, PAGE_SIZE);
-    KernelEnd = AlignUp(BootInfo->Kernel.Base + BootInfo->Kernel.Size, PAGE_SIZE);
+    KernelEnd   = AlignUp(BootInfo->Kernel.Base + BootInfo->Kernel.Size, PAGE_SIZE);
 
     for (UINTN Index = 0; Index < EntryCount; Index++)
     {
@@ -490,7 +490,7 @@ VOID *KMemMove(VOID *Destination, CONST VOID *Source, UINTN Size)
 VOID *KMemCpy(VOID *Destination, CONST VOID *Source, UINTN Size)
 {
     VOID       *Target = Destination;
-    CONST VOID *Input = Source;
+    CONST VOID *Input  = Source;
 
     ASM("cld; rep movsb" : "+D"(Target), "+S"(Input), "+c"(Size) : : "memory");
 
@@ -527,7 +527,7 @@ VOID *KAllocPages(UINTN PageCount)
         return NULL;
     }
 
-    Flags = SpinLockAcquireIRQSave(&BuddyLock);
+    Flags   = SpinLockAcquireIRQSave(&BuddyLock);
     Address = BuddyAllocate(Order);
     SpinLockReleaseIRQRestore(&BuddyLock, Flags);
 
@@ -559,7 +559,7 @@ VOID *KAllocPagesBelow(UINTN PageCount, UINT64 Limit)
         return NULL;
     }
 
-    Flags = SpinLockAcquireIRQSave(&BuddyLock);
+    Flags   = SpinLockAcquireIRQSave(&BuddyLock);
     Address = BuddyAllocateBelow(Order, Limit);
     SpinLockReleaseIRQRestore(&BuddyLock, Flags);
 
@@ -605,9 +605,9 @@ VOID KMemFreePages(VOID *PageAddress, UINTN PageCount)
 
 STATIC VOID HeapInitializeBlock(HEAP_BLOCK *Block, UINTN Size, BOOLEAN Free)
 {
-    Block->Size = Size;
-    Block->Free = Free;
-    Block->Next = NULL;
+    Block->Size     = Size;
+    Block->Free     = Free;
+    Block->Next     = NULL;
     Block->Previous = NULL;
 }
 
@@ -648,7 +648,7 @@ STATIC VOID HeapSplitBlock(HEAP_BLOCK *Block, UINTN Size)
     NewBlock = (HEAP_BLOCK *) ((UINT8 *) (Block + 1) + Size);
 
     HeapInitializeBlock(NewBlock, RemainingSize - sizeof(HEAP_BLOCK), TRUE);
-    NewBlock->Next = Block->Next;
+    NewBlock->Next     = Block->Next;
     NewBlock->Previous = Block;
 
     if (Block->Next != NULL)
@@ -714,7 +714,7 @@ STATIC HEAP_BLOCK *HeapExpand(UINTN MinimumSize)
     HEAP_BLOCK *Block;
 
     RequiredSize = MinimumSize + sizeof(HEAP_BLOCK);
-    PageCount = (UINTN) (AlignUp(RequiredSize, PAGE_SIZE) / PAGE_SIZE);
+    PageCount    = (UINTN) (AlignUp(RequiredSize, PAGE_SIZE) / PAGE_SIZE);
 
     if (PageCount < HEAP_EXPAND_PAGES)
     {
@@ -729,7 +729,7 @@ STATIC HEAP_BLOCK *HeapExpand(UINTN MinimumSize)
     }
 
     AllocatedPages = (UINTN) OToP(Order);
-    AllocatedSize = AllocatedPages * PAGE_SIZE;
+    AllocatedSize  = AllocatedPages * PAGE_SIZE;
 
     Memory = KAllocPages(AllocatedPages);
 
@@ -750,8 +750,8 @@ STATIC HEAP_BLOCK *HeapExpand(UINTN MinimumSize)
     }
 
     Block->Previous = HeapTail;
-    HeapTail->Next = Block;
-    HeapTail = Block;
+    HeapTail->Next  = Block;
+    HeapTail        = Block;
 
     if (Block->Previous->Free && HeapBlocksAdjacent(Block->Previous, Block))
     {
@@ -830,7 +830,7 @@ VOID KFree(VOID *Address)
 
     Flags = SpinLockAcquireIRQSave(&HeapLock);
 
-    Block = ((HEAP_BLOCK *) Address) - 1;
+    Block       = ((HEAP_BLOCK *) Address) - 1;
     Block->Free = TRUE;
 
     HeapMergeWithNext(Block);
@@ -854,6 +854,6 @@ VOID KGetManagedMemory(UINT64 *Managed, UINT64 *Free)
     UINT64 Flags = SpinLockAcquireIRQSave(&BuddyLock);
 
     *Managed = ManagedPages * PAGE_SIZE;
-    *Free = FreePages * PAGE_SIZE;
+    *Free    = FreePages * PAGE_SIZE;
     SpinLockReleaseIRQRestore(&BuddyLock, Flags);
 }

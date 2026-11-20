@@ -13,7 +13,7 @@
 #define HPET_CONFIG_ENABLE     (1ULL << 0)
 #define HPET_FS_PER_SECOND     1000000000000000ULL
 
-STATIC VOLATILE UINT8 *HPETBase = NULL;
+STATIC VOLATILE UINT8 *HPETBase      = NULL;
 STATIC UINT64          HPETFrequency = 0;
 
 STATIC UINT64 HPETRead64(UINT32 Reg)
@@ -53,7 +53,7 @@ BOOLEAN HPETInit(LINEOS_BOOT_INFO *BootInfo)
     HPETBase = (VOLATILE UINT8 *) HPETTable->Address.Address;
 
     Capabilities = HPETRead64(HPET_REG_CAPABILITIES);
-    Period = Capabilities >> 32;
+    Period       = Capabilities >> 32;
 
     if (Period == 0)
     {

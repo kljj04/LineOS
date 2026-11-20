@@ -214,7 +214,7 @@ STATIC BOOLEAN SendFrame(CONST UINT8 *MAC, UINT16 Type, CONST UINT8 *Payload, UI
 
 STATIC BOOLEAN SendARP(UINT16 Operation, UINT32 Address, CONST UINT8 *MAC)
 {
-    UINT8              Packet[28] = {0};
+    UINT8              Packet[28]   = {0};
     STATIC CONST UINT8 Broadcast[6] = {255, 255, 255, 255, 255, 255};
 
     NetworkWrite16(Packet, 1);
@@ -249,7 +249,7 @@ STATIC VOID HandleARP(CONST UINT8 *SourceMAC, CONST UINT8 *Packet, UINT32 Length
     }
 
     Operation = NetworkRead16(Packet + 6);
-    Address = NetworkRead32(Packet + 14);
+    Address   = NetworkRead32(Packet + 14);
 
     if ((Operation != 1 && Operation != 2) || !IsUnicast(Address) || Address == NetworkState.Config.Address || (Address & NetworkState.Config.Netmask) != (NetworkState.Config.Address & NetworkState.Config.Netmask) || (Operation == 2 && !EqualMAC(Packet + 18, NetworkState.Device->MAC)))
     {
@@ -287,9 +287,9 @@ STATIC VOID HandleARP(CONST UINT8 *SourceMAC, CONST UINT8 *Packet, UINT32 Length
 BOOLEAN NetworkSendIPv4Locked(UINT32 Address, UINT8 Protocol, CONST UINT8 *Payload, UINT32 Length)
 {
     UINT8              Packet[NETWORK_MTU] = {0};
-    STATIC CONST UINT8 BroadcastMAC[6] = {255, 255, 255, 255, 255, 255};
-    BOOLEAN            Broadcast = Address == UINT32_MAX || (NetworkState.Configured && Address == (NetworkState.Config.Address | ~NetworkState.Config.Netmask));
-    NETWORK_ARP_ENTRY *Entry = Broadcast ? NULL : FindARP(NextHop(Address));
+    STATIC CONST UINT8 BroadcastMAC[6]     = {255, 255, 255, 255, 255, 255};
+    BOOLEAN            Broadcast           = Address == UINT32_MAX || (NetworkState.Configured && Address == (NetworkState.Config.Address | ~NetworkState.Config.Netmask));
+    NETWORK_ARP_ENTRY *Entry               = Broadcast ? NULL : FindARP(NextHop(Address));
 
     if ((!Broadcast && (!NetworkState.Configured || !IsValidDestination(Address) || Entry == NULL)) || (Broadcast && Protocol != 17) || Length > NETWORK_MTU - 20)
     {
@@ -360,12 +360,12 @@ STATIC VOID HandleIPv4(CONST UINT8 *Packet, UINT32 Length)
     }
 
     HeaderLength = (Packet[0] & 15) * 4;
-    TotalLength = NetworkRead16(Packet + 2);
-    Source = NetworkRead32(Packet + 12);
+    TotalLength  = NetworkRead16(Packet + 2);
+    Source       = NetworkRead32(Packet + 12);
 
     UINT32  Destination = NetworkRead32(Packet + 16);
-    BOOLEAN Broadcast = Destination == UINT32_MAX || (NetworkState.Configured && Destination == (NetworkState.Config.Address | ~NetworkState.Config.Netmask));
-    BOOLEAN DHCP = Packet[9] == 17 && TotalLength >= HeaderLength + 8 && TotalLength <= Length && HeaderLength <= Length && NetworkRead16(Packet + HeaderLength + 2) == 68;
+    BOOLEAN Broadcast   = Destination == UINT32_MAX || (NetworkState.Configured && Destination == (NetworkState.Config.Address | ~NetworkState.Config.Netmask));
+    BOOLEAN DHCP        = Packet[9] == 17 && TotalLength >= HeaderLength + 8 && TotalLength <= Length && HeaderLength <= Length && NetworkRead16(Packet + HeaderLength + 2) == 68;
 
     if ((Packet[0] >> 4) != 4 || HeaderLength < 20 || HeaderLength > Length || TotalLength < HeaderLength || TotalLength > Length || TotalLength > NETWORK_MTU || Packet[8] == 0 || (NetworkRead16(Packet + 6) & 0xBFFF) != 0 || NetworkChecksum(Packet, HeaderLength, 0) != 0 || (!Broadcast && ((!NetworkState.Configured && !DHCP) || (NetworkState.Configured && Destination != NetworkState.Config.Address))) || (Broadcast && Packet[9] != 17) || (!NetworkState.Configured && !DHCP) || !IsUnicast(Source))
     {
@@ -424,7 +424,7 @@ VOID NetworkPoll(VOID)
     for (UINT32 Index = 0; Index < NETWORK_ARP_COUNT; Index++)
     {
         NETWORK_ARP_ENTRY *Entry = &NetworkState.ARP[Index];
-        UINT64             Now = NetworkNow();
+        UINT64             Now   = NetworkNow();
 
         if (Entry->Address != 0 && Now - Entry->Updated >= 30000 && Now - Entry->Updated < 60000 && Now - Entry->Requested >= 1000)
         {
@@ -463,7 +463,7 @@ VOID NetworkTask(VOID)
 BOOLEAN NetworkResolve(UINT32 Address, UINT32 TimeoutMls)
 {
     UINT64 Start = NetworkNow();
-    UINT64 Last = Start - 1000;
+    UINT64 Last  = Start - 1000;
     UINT64 Flags;
     UINT32 Hop;
 
@@ -527,7 +527,7 @@ BOOLEAN NetworkSetConfigLocked(CONST NETWORK_CONFIG *Config)
         KMemSet(NetworkState.ARP, 0, sizeof(NetworkState.ARP));
     }
 
-    NetworkState.Config = *Config;
+    NetworkState.Config     = *Config;
     NetworkState.Configured = TRUE;
 
     return TRUE;
@@ -587,9 +587,9 @@ BOOLEAN NetworkInit(VOID)
     }
 
     SpinLockInit(&NetworkState.Lock);
-    NetworkState.Device = VirtIONetworkGetDevice();
+    NetworkState.Device   = VirtIONetworkGetDevice();
     NetworkState.NextPort = 49152 + (RDTSC() % 10000);
-    NetworkState.Ready = TRUE;
+    NetworkState.Ready    = TRUE;
     NetworkError(L"ok");
 
     return TRUE;
@@ -604,7 +604,7 @@ BOOLEAN NetworkGetConfig(NETWORK_CONFIG *Config)
         return FALSE;
     }
 
-    Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    Flags   = SpinLockAcquireIRQSave(&NetworkState.Lock);
     *Config = NetworkState.Config;
 
     BOOLEAN Result = NetworkState.Configured;
@@ -623,7 +623,7 @@ VOID NetworkGetStats(NETWORK_STATS *Stats)
         return;
     }
 
-    Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    Flags  = SpinLockAcquireIRQSave(&NetworkState.Lock);
     *Stats = NetworkState.Stats;
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
 }
@@ -654,14 +654,14 @@ BOOLEAN NetworkPing(UINT32 Address, UINT32 TimeoutMls, UINT32 *RoundTripMls)
     Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
     NetworkState.PingID++;
     NetworkState.PingAddress = Address;
-    NetworkState.PingReply = FALSE;
+    NetworkState.PingReply   = FALSE;
     NetworkState.PingPending = TRUE;
     NetworkWrite16(Packet + 4, NetworkState.PingID);
     NetworkWrite16(Packet + 6, 1);
 
     for (UINT32 Index = 0; Index < 16; Index++)
     {
-        Packet[8 + Index] = (UINT8) (RDTSC() >> (Index % 8));
+        Packet[8 + Index]            = (UINT8) (RDTSC() >> (Index % 8));
         NetworkState.PingData[Index] = Packet[8 + Index];
     }
 
@@ -675,7 +675,7 @@ BOOLEAN NetworkPing(UINT32 Address, UINT32 TimeoutMls, UINT32 *RoundTripMls)
         do
         {
             NetworkWait();
-            Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+            Flags  = SpinLockAcquireIRQSave(&NetworkState.Lock);
             Result = NetworkState.PingReply;
             SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
         } while (!Result && !NetworkExpired(DeadlineStart, TimeoutMls));
@@ -684,7 +684,7 @@ BOOLEAN NetworkPing(UINT32 Address, UINT32 TimeoutMls, UINT32 *RoundTripMls)
     }
 
     NetworkState.PingPending = FALSE;
-    *RoundTripMls = (UINT32) (NetworkNow() - Start);
+    *RoundTripMls            = (UINT32) (NetworkNow() - Start);
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
     NetworkEnd();
     NetworkError(Result ? L"ok" : L"ICMP echo timeout");

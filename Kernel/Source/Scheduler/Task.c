@@ -198,7 +198,7 @@ STATIC BOOLEAN TaskRegister(TASK *Task, TASK *Member)
     Process->ThreadHead = Task;
     ATOMIC_FETCH_ADD(&Process->ThreadCount, 1, ATOMIC_RELEASE);
 
-    TaskSlots[Index].Task = Task;
+    TaskSlots[Index].Task       = Task;
     TaskSlots[Index].Destroying = FALSE;
     TaskCount++;
     SpinLockReleaseIRQRestore(&TaskLock, Flags);
@@ -212,15 +212,15 @@ STATIC VOID InitTaskContext(TASK *Task, VOID (*Entry)(VOID))
 
     KMemSet(&Task->Context, 0, sizeof(TASK_CONTEXT));
 
-    ReturnAddress = (UINT64 *) Task->InitialRSP - 1;
-    *ReturnAddress = (UINT64) TaskExit;
+    ReturnAddress    = (UINT64 *) Task->InitialRSP - 1;
+    *ReturnAddress   = (UINT64) TaskExit;
     Task->InitialRSP = (UINT64) ReturnAddress;
 
-    Task->Context.RIP = (UINT64) Entry;
-    Task->Context.CS = GDT_KERNEL_CODE_SELECTOR;
+    Task->Context.RIP    = (UINT64) Entry;
+    Task->Context.CS     = GDT_KERNEL_CODE_SELECTOR;
     Task->Context.RFLAGS = 0x202;
-    Task->Context.RSP = Task->InitialRSP;
-    Task->Context.SS = GDT_KERNEL_DATA_SELECTOR;
+    Task->Context.RSP    = Task->InitialRSP;
+    Task->Context.SS     = GDT_KERNEL_DATA_SELECTOR;
 
     Task->RSP = Task->InitialRSP - sizeof(TASK_CONTEXT);
     KMemCpy((VOID *) Task->RSP, &Task->Context, sizeof(TASK_CONTEXT));
@@ -251,8 +251,8 @@ STATIC TASK *TaskCreateInternal(TASK *Member, VOID (*Entry)(VOID))
     }
 
     KMemSet(Task, 0, sizeof(*Task));
-    Task->FPState[0] = 0x7F;
-    Task->FPState[1] = 0x03;
+    Task->FPState[0]  = 0x7F;
+    Task->FPState[1]  = 0x03;
     Task->FPState[24] = 0x80;
     Task->FPState[25] = 0x1F;
 
@@ -274,7 +274,7 @@ STATIC TASK *TaskCreateInternal(TASK *Member, VOID (*Entry)(VOID))
     }
 
     Task->Priority = 3;
-    Task->Weight = PToW(Task->Priority);
+    Task->Weight   = PToW(Task->Priority);
 
     Task->StackBase = (UINT64) KAllocPagesBelow(TASK_STACK_PAGES, TASK_STACK_ADDRESS_LIMIT);
 
@@ -300,15 +300,15 @@ STATIC TASK *TaskCreateInternal(TASK *Member, VOID (*Entry)(VOID))
 
     Task->KernelStackSize = TASK_STACK_PAGES * PAGE_SIZE;
 
-    Task->StackSize = TASK_STACK_PAGES * PAGE_SIZE;
+    Task->StackSize  = TASK_STACK_PAGES * PAGE_SIZE;
     Task->InitialRSP = Task->StackBase + Task->StackSize;
 
     Task->State = TASK_READY;
 
     InitTaskContext(Task, Entry);
 
-    Task->Modified = FALSE;
-    Task->Idle = FALSE;
+    Task->Modified  = FALSE;
+    Task->Idle      = FALSE;
     Task->Scheduled = FALSE;
 
     if (!TaskRegister(Task, Member))
@@ -354,7 +354,7 @@ BOOLEAN TaskSetPriority(TASK *Task, UINT8 Priority)
     if (!Task->Scheduled)
     {
         Task->Priority = Priority;
-        Task->Weight = PToW(Priority);
+        Task->Weight   = PToW(Priority);
         Task->Modified = TRUE;
 
         return TRUE;
@@ -362,9 +362,9 @@ BOOLEAN TaskSetPriority(TASK *Task, UINT8 Priority)
 
     for (;;)
     {
-        CPUID = Task->CPUID;
+        CPUID    = Task->CPUID;
         RunQueue = LBPWRRGetRunQueue(CPUID);
-        Flags = SpinLockAcquireIRQSave(&RunQueue->Lock);
+        Flags    = SpinLockAcquireIRQSave(&RunQueue->Lock);
 
         if (Task->CPUID == CPUID)
         {
@@ -389,7 +389,7 @@ BOOLEAN TaskSetPriority(TASK *Task, UINT8 Priority)
     }
 
     Task->Priority = Priority;
-    Task->Weight = PToW(Priority);
+    Task->Weight   = PToW(Priority);
     Task->Modified = FALSE;
     SpinLockReleaseIRQRestore(&RunQueue->Lock, Flags);
 
@@ -428,8 +428,8 @@ VOID TaskSleepMls(UINT64 Milliseconds)
     Ticks = (UINT64) (((UINT128) Frequency * Milliseconds + 999ULL) / 1000ULL);
 
     Task->WakeDeadlineTSC = RDTSC() + Ticks;
-    Task->State = TASK_SLEEPING;
-    Task->Modified = TRUE;
+    Task->State           = TASK_SLEEPING;
+    Task->Modified        = TRUE;
 
     LBPWRRNotifyTaskChanged(Task);
     LBPWRRYield();
@@ -467,8 +467,8 @@ VOID TaskSleepMis(UINT64 Microseconds)
     Ticks = (UINT64) (((UINT128) Frequency * Microseconds + 999999ULL) / 1000000ULL);
 
     Task->WakeDeadlineTSC = RDTSC() + Ticks;
-    Task->State = TASK_SLEEPING;
-    Task->Modified = TRUE;
+    Task->State           = TASK_SLEEPING;
+    Task->Modified        = TRUE;
 
     LBPWRRNotifyTaskChanged(Task);
     LBPWRRYield();
@@ -506,8 +506,8 @@ VOID TaskSleepNs(UINT64 Nanoseconds)
     Ticks = (UINT64) (((UINT128) Frequency * Nanoseconds + 999999999ULL) / 1000000000ULL);
 
     Task->WakeDeadlineTSC = RDTSC() + Ticks;
-    Task->State = TASK_SLEEPING;
-    Task->Modified = TRUE;
+    Task->State           = TASK_SLEEPING;
+    Task->Modified        = TRUE;
 
     LBPWRRNotifyTaskChanged(Task);
     LBPWRRYield();
@@ -535,7 +535,7 @@ BOOLEAN TaskDestroy(TASK *Task)
         return FALSE;
     }
 
-    PROCESS         *Process = Task->Process;
+    PROCESS         *Process   = Task->Process;
     ELF64_EXECUTION *Execution = Process->Execution;
 
     if ((Execution != NULL && Execution->Task == Task && (Process->ThreadCount != 1 || Execution->AddressSpace != NULL)) || (Task->Scheduled && !LBPWRRRemoveTask(Task)))
@@ -596,7 +596,7 @@ BOOLEAN TaskDestroy(TASK *Task)
             KFree(Process->FileContext);
         }
 
-        Flags = SpinLockAcquireIRQSave(&TaskLock);
+        Flags                 = SpinLockAcquireIRQSave(&TaskLock);
         TaskSlots[Index].Task = NULL;
         TaskCount--;
         SpinLockReleaseIRQRestore(&TaskLock, Flags);
@@ -630,7 +630,7 @@ VOID TaskTerminate(TASK *Task)
 
 TASK *TaskGetByPID(UINT16 PID)
 {
-    UINT64 Flags = SpinLockAcquireIRQSave(&TaskLock);
+    UINT64 Flags  = SpinLockAcquireIRQSave(&TaskLock);
     TASK  *Result = NULL;
 
     for (UINT32 Index = 0; Index < TaskSlotCount; Index++)
@@ -682,9 +682,9 @@ VOID TaskSampleCPUUsage(UINT64 IntervalTSC)
             continue;
         }
 
-        Current = ATOMIC_LOAD(&Task->CPUTimeTSC, ATOMIC_RELAXED);
+        Current  = ATOMIC_LOAD(&Task->CPUTimeTSC, ATOMIC_RELAXED);
         Previous = Task->LastCPUTimeTSC;
-        Delta = Current - Previous;
+        Delta    = Current - Previous;
 
         Task->LastCPUTimeTSC = Current;
 
@@ -729,16 +729,16 @@ UINT32 TaskGetSnapshot(SYSTEM_TASK_INFO *Entries, UINT32 Capacity)
                 continue;
             }
 
-            UINT16           PID = Task->Process->PID;
+            UINT16           PID   = Task->Process->PID;
             SYSTEM_TASK_INFO Entry = {0};
 
-            Entry.PID = PID;
-            Entry.UID = Task->Process->RealUID;
-            Entry.CPU = Task->CPUID;
-            Entry.Usage = ATOMIC_LOAD(&Task->CPUUsage, ATOMIC_ACQUIRE);
-            Entry.State = State;
+            Entry.PID    = PID;
+            Entry.UID    = Task->Process->RealUID;
+            Entry.CPU    = Task->CPUID;
+            Entry.Usage  = ATOMIC_LOAD(&Task->CPUUsage, ATOMIC_ACQUIRE);
+            Entry.State  = State;
             Entry.Kernel = Task->Process->AddressSpace == NULL;
-            Entry.Idle = Task->Idle;
+            Entry.Idle   = Task->Idle;
             KMemCpy(Entry.Name, Task->Process->Name, sizeof(Entry.Name) - 1);
 
             State = ATOMIC_LOAD(&Task->State, ATOMIC_ACQUIRE);

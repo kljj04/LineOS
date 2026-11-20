@@ -41,9 +41,9 @@ INT64 DisplayPresentRect(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, CONST 
         return -1;
     }
 
-    Rect.X = X;
-    Rect.Y = Y;
-    Rect.Width = Width;
+    Rect.X      = X;
+    Rect.Y      = Y;
+    Rect.Width  = Width;
     Rect.Height = Height;
     Rect.Buffer = (UINT64) Buffer;
 

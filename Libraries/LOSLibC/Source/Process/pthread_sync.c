@@ -55,7 +55,7 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *Attr, int Type)
 
 int pthread_mutex_init(pthread_mutex_t *Mutex, const pthread_mutexattr_t *Attr)
 {
-    *Mutex = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+    *Mutex      = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
     Mutex->Type = Attr == NULL ? PTHREAD_MUTEX_DEFAULT : Attr->Type;
     return 0;
 }
@@ -175,7 +175,7 @@ int pthread_condattr_setclock(pthread_condattr_t *Attr, clockid_t Clock)
 
 int pthread_cond_init(pthread_cond_t *Cond, const pthread_condattr_t *Attr)
 {
-    *Cond = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
+    *Cond       = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
     Cond->Clock = Attr == NULL ? CLOCK_REALTIME : Attr->Clock;
     return 0;
 }
@@ -273,9 +273,9 @@ STATIC int CondWaitCancelable(pthread_cond_t *Cond, pthread_mutex_t *Mutex, cons
             Slice.tv_nsec -= 1000000000;
         }
 
-        BOOLEAN      Final = Deadline != NULL && (Deadline->tv_sec < Slice.tv_sec || (Deadline->tv_sec == Slice.tv_sec && Deadline->tv_nsec <= Slice.tv_nsec));
+        BOOLEAN      Final    = Deadline != NULL && (Deadline->tv_sec < Slice.tv_sec || (Deadline->tv_sec == Slice.tv_sec && Deadline->tv_nsec <= Slice.tv_nsec));
         unsigned int Sequence = ATOMIC_LOAD(&Cond->Sequence, ATOMIC_ACQUIRE);
-        int          Result = CondWait(Cond, Mutex, Final ? Deadline : &Slice);
+        int          Result   = CondWait(Cond, Mutex, Final ? Deadline : &Slice);
         pthread_testcancel();
 
         if (Final || Result != ETIMEDOUT)
@@ -343,7 +343,7 @@ int pthread_barrier_wait(pthread_barrier_t *Barrier)
     pthread_mutex_lock(&Barrier->Lock);
 
     unsigned int Generation = Barrier->Generation;
-    int          Result = 0;
+    int          Result     = 0;
 
     if (++Barrier->Arrived == Barrier->Count)
     {

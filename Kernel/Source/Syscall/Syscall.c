@@ -3,6 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <Interrupt/IDT.h>
+#include <Debug/Debug.h>
 #include <Syscall/File/SyscallDirectory.h>
 #include <Syscall/File/SyscallStat.h>
 #include <Syscall/File/SyscallPath.h>
@@ -357,6 +358,10 @@ UINT64 SyscallDispatch(INTERRUPT_FRAME *Frame)
 
         default:
         {
+            DebugWrite("Unhandled syscall: ");
+            DebugWriteDec(Frame->RAX);
+            DebugWrite("\n");
+
             return (UINT64) -ENOSYS;
         }
     }

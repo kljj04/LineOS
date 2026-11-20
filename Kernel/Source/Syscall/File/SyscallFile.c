@@ -43,8 +43,8 @@ OPEN_FILE *FileAcquire(TASK *Task, UINT64 FD)
     }
 
     PROCESS   *Process = Task->Process;
-    UINT64     Flags = SpinLockAcquireIRQSave(&Process->FileTableLock);
-    OPEN_FILE *File = Process->Files[FD];
+    UINT64     Flags   = SpinLockAcquireIRQSave(&Process->FileTableLock);
+    OPEN_FILE *File    = Process->Files[FD];
 
     if (File != NULL)
     {
@@ -67,7 +67,7 @@ VOID FileDrop(OPEN_FILE **File)
 STATIC OPEN_FILE *FileDetach(PROCESS *Process, UINT64 FD)
 {
     UINT64     Flags = SpinLockAcquireIRQSave(&Process->FileTableLock);
-    OPEN_FILE *File = Process->Files[FD];
+    OPEN_FILE *File  = Process->Files[FD];
 
     Process->Files[FD] = NULL;
     SpinLockReleaseIRQRestore(&Process->FileTableLock, Flags);
@@ -93,7 +93,7 @@ BOOLEAN SyscallFilesInherit(TASK *Child, TASK *Parent)
     }
 
     PROCESS *Process = Parent->Process;
-    UINT64   Flags = SpinLockAcquireIRQSave(&Process->FileTableLock);
+    UINT64   Flags   = SpinLockAcquireIRQSave(&Process->FileTableLock);
 
     for (UINTN Index = 0; Index < TASK_FILE_LIMIT; Index++)
     {
@@ -156,7 +156,7 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
         return -ENOMEM;
     }
 
-    PROCESS *Process = Task->Process;
+    PROCESS *Process  = Task->Process;
     UINT64   IRQFlags = SpinLockAcquireIRQSave(&Process->FileTableLock);
 
     for (Index = 0; Index < TASK_FILE_LIMIT && (Process->Files[Index] != NULL || (Process->ReservedFiles & (1U << Index)) != 0); Index++)
@@ -228,12 +228,12 @@ INT64 SyscallOpen(UINT64 Path, UINT64 Flags, UINT64 Mode)
         }
     }
 
-    File->References = 1;
-    File->Path = Name;
-    File->OpenContext = *Task->Process->FileContext;
+    File->References          = 1;
+    File->Path                = Name;
+    File->OpenContext         = *Task->Process->FileContext;
     File->NamespaceGeneration = Node.NamespaceGeneration;
-    File->Number = Node.Number;
-    File->Partition = Node.Partition;
+    File->Number              = Node.Number;
+    File->Partition           = Node.Partition;
     FilePublish(Process, Index, File);
 
     return (INT64) Index;
@@ -276,8 +276,8 @@ VOID FileEnd(OPEN_FILE *File)
 
 STATIC INT64 FileRead(TASK *Task, OPEN_FILE *File, UINT64 Buffer, UINT64 Count)
 {
-    VFS_NODE Node = {0};
-    UINT64   Total = 0;
+    VFS_NODE Node       = {0};
+    UINT64   Total      = 0;
     UINT32   BufferSize = Count > FILE_BUFFER_SIZE ? FILE_BUFFER_SIZE : (UINT32) Count;
 
     if (Count == 0)
@@ -293,14 +293,14 @@ STATIC INT64 FileRead(TASK *Task, OPEN_FILE *File, UINT64 Buffer, UINT64 Count)
     }
 
     Node.NamespaceGeneration = File->NamespaceGeneration;
-    Node.Number = File->Number;
-    Node.Partition = File->Partition;
+    Node.Number              = File->Number;
+    Node.Partition           = File->Partition;
 
     INT64 Error = 0;
 
     while (Total < Count)
     {
-        UINT32 Length = Count - Total > BufferSize ? BufferSize : (UINT32) (Count - Total);
+        UINT32 Length     = Count - Total > BufferSize ? BufferSize : (UINT32) (Count - Total);
         UINT32 ReadLength = 0;
 
         Error = SyscallVFSError(VFSReadChecked(Task->Process->FileContext, File->Path, &Node, File->Offset, Bytes, Length, &ReadLength));
@@ -410,10 +410,10 @@ STATIC INT64 FileWrite(TASK *Task, OPEN_FILE *File, UINT64 Buffer, UINT64 Count)
         return -EFAULT;
     }
 
-    Length = Copied;
+    Length                   = Copied;
     Node.NamespaceGeneration = File->NamespaceGeneration;
-    Node.Number = File->Number;
-    Node.Partition = File->Partition;
+    Node.Number              = File->Number;
+    Node.Partition           = File->Partition;
 
     UINT64 EndOffset = File->Offset + Length;
     INT64  Result;
@@ -446,7 +446,7 @@ STATIC INT64 FileWrite(TASK *Task, OPEN_FILE *File, UINT64 Buffer, UINT64 Count)
 
 STATIC INT64 FileData(UINT64 FD, UINT64 Buffer, UINT64 Count, BOOLEAN Write)
 {
-    TASK      *Task = LBPWRRGetCurrentTask();
+    TASK      *Task                                    = LBPWRRGetCurrentTask();
     OPEN_FILE *File __attribute__((cleanup(FileDrop))) = FileAcquire(Task, FD);
 
     if (Task == NULL || Task->Process->AddressSpace == NULL || File == NULL || (File->Access & (Write ? FILE_WRITE : FILE_READ)) == 0)
@@ -470,7 +470,7 @@ STATIC INT64 FileData(UINT64 FD, UINT64 Buffer, UINT64 Count, BOOLEAN Write)
     }
 
     BOOLEAN Serialized = File->Device == NULL || File->Device->Seekable;
-    INT64   Result = Serialized ? FileBegin(File) : 0;
+    INT64   Result     = Serialized ? FileBegin(File) : 0;
 
     if (Result < 0)
     {
@@ -514,11 +514,11 @@ INT64 SyscallFileWritev(UINT64 FD, UINT64 Vectors, UINT64 Count)
         UINT64 Length;
     } FILE_VECTOR;
 
-    TASK        *Task = LBPWRRGetCurrentTask();
+    TASK        *Task                                    = LBPWRRGetCurrentTask();
     OPEN_FILE   *File __attribute__((cleanup(FileDrop))) = FileAcquire(Task, FD);
     FILE_VECTOR *Items;
     UINT64       Length = 0;
-    INT64        Total = 0;
+    INT64        Total  = 0;
 
     if (Task == NULL || Task->Process->AddressSpace == NULL || File == NULL || (File->Access & FILE_WRITE) == 0)
     {
@@ -556,7 +556,7 @@ INT64 SyscallFileWritev(UINT64 FD, UINT64 Vectors, UINT64 Count)
         Length += Items[Index].Length;
     }
     BOOLEAN Serialized = File->Device == NULL || File->Device->Seekable;
-    INT64   Result = Serialized ? FileBegin(File) : 0;
+    INT64   Result     = Serialized ? FileBegin(File) : 0;
     if (Result < 0)
     {
         KFree(Items);

@@ -9,9 +9,9 @@
 
 LINEOS_MEMORY_MAP MemoryMap;
 
-STATIC EFI_MEMORY_DESCRIPTOR *Buffer = NULL;
-STATIC UINTN                  BufferSize = 0;
-STATIC UINTN                  MapKey = 0;
+STATIC EFI_MEMORY_DESCRIPTOR *Buffer            = NULL;
+STATIC UINTN                  BufferSize        = 0;
+STATIC UINTN                  MapKey            = 0;
 STATIC EFI_HANDLE             LineOSImageHandle = NULL;
 
 VOID MemorySetImageHandle(EFI_HANDLE Handle)
@@ -50,9 +50,9 @@ BOOLEAN MemoryInit(VOID)
         return FALSE;
     }
 
-    MemoryMap.MemoryMap = Buffer;
-    MemoryMap.MemoryMapSize = BufferSize;
-    MemoryMap.MemoryMapDescriptorSize = DescriptorSize;
+    MemoryMap.MemoryMap                  = Buffer;
+    MemoryMap.MemoryMapSize              = BufferSize;
+    MemoryMap.MemoryMapDescriptorSize    = DescriptorSize;
     MemoryMap.MemoryMapDescriptorVersion = DescriptorVersion;
 
     return TRUE;
@@ -102,9 +102,9 @@ BOOLEAN ExitBootServices(VOID)
             return FALSE;
         }
 
-        MemoryMap.MemoryMap = Buffer;
-        MemoryMap.MemoryMapSize = BufferSize;
-        MemoryMap.MemoryMapDescriptorSize = DescriptorSize;
+        MemoryMap.MemoryMap                  = Buffer;
+        MemoryMap.MemoryMapSize              = BufferSize;
+        MemoryMap.MemoryMapDescriptorSize    = DescriptorSize;
         MemoryMap.MemoryMapDescriptorVersion = DescriptorVersion;
 
         Status = UEFIBootServices->ExitBootServices(LineOSImageHandle, MapKey);

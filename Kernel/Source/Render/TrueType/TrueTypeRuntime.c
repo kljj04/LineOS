@@ -100,8 +100,8 @@ STATIC FLOAT64 KCbrt(FLOAT64 Value)
 FLOAT64 KPow(FLOAT64 Base, FLOAT64 Exponent)
 {
     INT64   WholeExponent = (INT64) Exponent;
-    FLOAT64 Result = 1.0;
-    FLOAT64 Factor = Base;
+    FLOAT64 Result        = 1.0;
+    FLOAT64 Factor        = Base;
 
     if (Exponent > 0.333333333 && Exponent < 0.333333334)
     {
@@ -115,7 +115,7 @@ FLOAT64 KPow(FLOAT64 Base, FLOAT64 Exponent)
 
     if (WholeExponent < 0)
     {
-        Factor = 1.0 / Factor;
+        Factor        = 1.0 / Factor;
         WholeExponent = -WholeExponent;
     }
 
@@ -151,7 +151,7 @@ STATIC FLOAT64 KNormalizeRadians(FLOAT64 Value)
 
 FLOAT64 KCos(FLOAT64 Value)
 {
-    FLOAT64 X = KNormalizeRadians(Value);
+    FLOAT64 X  = KNormalizeRadians(Value);
     FLOAT64 X2 = X * X;
 
     return 1.0 - (X2 / 2.0) + ((X2 * X2) / 24.0) - ((X2 * X2 * X2) / 720.0) + ((X2 * X2 * X2 * X2) / 40320.0);
@@ -173,7 +173,7 @@ FLOAT64 KACos(FLOAT64 Value)
     }
 
     Negate = Value < 0.0 ? 1.0 : 0.0;
-    X = KFAbs(Value);
+    X      = KFAbs(Value);
     Result = -0.0187293;
     Result = Result * X + 0.0742610;
     Result = Result * X - 0.2121144;
@@ -199,7 +199,7 @@ VOID *KTTFAlloc(UINTN Size, VOID *UserData)
 
     TotalSize = Size + sizeof(TTF_ALLOC_HEADER);
     PageCount = (TotalSize + PAGE_SIZE - 1) / PAGE_SIZE;
-    Header = (TTF_ALLOC_HEADER *) KAllocPages(PageCount);
+    Header    = (TTF_ALLOC_HEADER *) KAllocPages(PageCount);
 
     if (Header == NULL)
     {
@@ -207,7 +207,7 @@ VOID *KTTFAlloc(UINTN Size, VOID *UserData)
     }
 
     Header->PageCount = PageCount;
-    Header->Size = Size;
+    Header->Size      = Size;
 
     return (VOID *) (Header + 1);
 }

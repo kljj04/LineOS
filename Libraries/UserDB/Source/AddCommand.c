@@ -60,17 +60,17 @@ STATIC BOOLEAN AddUserReadPassword(char Password[USER_DB_PASSWORD_MAX + 1])
         }
 
         Password[Length++] = (char) Byte;
-        Password[Length] = 0;
+        Password[Length]   = 0;
     }
 }
 
 INT32 UserDBAddCommand(CONST char *Username)
 {
-    char  Password[USER_DB_PASSWORD_MAX + 1] = {0};
+    char  Password[USER_DB_PASSWORD_MAX + 1]     = {0};
     char  Confirmation[USER_DB_PASSWORD_MAX + 1] = {0};
-    char  Salt[USER_DB_SALT_TEXT_SIZE] = {0};
-    char  Hash[USER_DB_HASH_TEXT_SIZE] = {0};
-    INT32 Result = 1;
+    char  Salt[USER_DB_SALT_TEXT_SIZE]           = {0};
+    char  Hash[USER_DB_HASH_TEXT_SIZE]           = {0};
+    INT32 Result                                 = 1;
 
     if (!UserDBValidateName(Username))
     {

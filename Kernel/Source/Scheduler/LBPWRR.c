@@ -77,7 +77,7 @@ VOID LBPWRRStart(VOID)
     }
 
     RunQueue = LBPWRRGetRunQueue(CPUID);
-    Flags = SpinLockAcquireIRQSave(&RunQueue->Lock);
+    Flags    = SpinLockAcquireIRQSave(&RunQueue->Lock);
 
     Task = NULL;
 
@@ -92,7 +92,7 @@ VOID LBPWRRStart(VOID)
             continue;
         }
 
-        Task = Candidate;
+        Task                   = Candidate;
         RunQueue->CurrentIndex = Index;
         break;
     }
@@ -110,7 +110,7 @@ VOID LBPWRRStart(VOID)
                 continue;
             }
 
-            Task = Candidate;
+            Task                   = Candidate;
             RunQueue->CurrentIndex = Index;
             break;
         }
@@ -224,7 +224,7 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *Frame)
 
     if (CurrentTask != NULL)
     {
-        CurrentTask->RSP = (UINT64) Frame;
+        CurrentTask->RSP    = (UINT64) Frame;
         CurrentTask->FSBase = ReadMSR(IA32_FS_BASE);
         ASM("fxsave64 %0" : "=m"(CurrentTask->FPState)::"memory");
 
@@ -234,7 +234,7 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *Frame)
         }
     }
 
-    NextTask = NULL;
+    NextTask   = NULL;
     ChunkCount = RunQueue->Chunk.Count;
     StartIndex = RunQueue->CurrentIndex;
 
@@ -299,7 +299,7 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *Frame)
             CurrentTask->State = TASK_RUNNING;
 
             NextTask = CurrentTask;
-            NextRSP = (UINT64) Frame;
+            NextRSP  = (UINT64) Frame;
         }
         else
         {
@@ -317,7 +317,7 @@ UINT64 LBPWRRTick(INTERRUPT_FRAME *Frame)
 
         NextTask->State = TASK_RUNNING;
         NextTask->OnCPU = TRUE;
-        NextRSP = NextTask->RSP;
+        NextRSP         = NextTask->RSP;
     }
 
     if (CurrentTask != NULL && NextTask != CurrentTask)
@@ -378,7 +378,7 @@ VOID LBPWRRCompleteSwitch(VOID)
 
     RunQueue = LBPWRRGetRunQueue(CPUID);
     SpinLockAcquire(&RunQueue->Lock);
-    Task->OnCPU = FALSE;
+    Task->OnCPU           = FALSE;
     SwitchingTasks[CPUID] = NULL;
     SpinLockRelease(&RunQueue->Lock);
 }

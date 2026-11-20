@@ -32,7 +32,7 @@ VOID LwmDock(LWM *Manager)
     for (UINT32 Index = 0; Index < Manager->WindowCount; Index++)
     {
         LWM_WINDOW *Window = &Manager->Windows[Index];
-        UINT32      X = 248 + Index * Slot;
+        UINT32      X      = 248 + Index * Slot;
 
         LwmFill(Manager, (LWM_RECT) {(INT32) X, (INT32) Manager->Height - 54, Slot - 8, 44}, Window->Minimized ? 0x002D3340U : !Manager->ShellFocused && Index + 1 == Manager->WindowCount ? 0x003D5874U : 0x00303E50U);
         LwmText(Manager, Window->Endpoint != 0 ? Window->Title : "Demo", X + 6, Manager->Height - 24, 21, 0x00E0E8F4U, X + Slot - 10);
@@ -85,10 +85,10 @@ BOOLEAN LwmDockPointer(LWM *Manager, CONST POINTER_INFO *Pointer, BOOLEAN Clicke
             LWM_WINDOW Window = Manager->Windows[Index];
 
             Window.Minimized = FALSE;
-            Window.Dirty = TRUE;
+            Window.Dirty     = TRUE;
             memmove(Manager->Windows + Index, Manager->Windows + Index + 1, (Manager->WindowCount - Index - 1) * sizeof(Window));
             Manager->Windows[Manager->WindowCount - 1] = Window;
-            Manager->ShellFocused = FALSE;
+            Manager->ShellFocused                      = FALSE;
         }
     }
 

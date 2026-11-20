@@ -12,7 +12,7 @@
 
 INT64 SyscallMapDevice(INT64 FD, UINT64 Length, UINT64 Protection, UINT64 Flags, UINT64 Offset, UINT64 *Physical)
 {
-    TASK      *Task = LBPWRRGetCurrentTask();
+    TASK      *Task                                    = LBPWRRGetCurrentTask();
     OPEN_FILE *File __attribute__((cleanup(FileDrop))) = FileAcquire(Task, (UINT64) FD);
 
     if (Task == NULL || File == NULL)

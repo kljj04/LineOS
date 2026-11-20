@@ -31,7 +31,7 @@ STATIC PCI_DEVICE *FindNetworkDevice(VOID)
 
 STATIC BOOLEAN FailDevice(CONST CHAR16 *Error)
 {
-    LastError = Error;
+    LastError                     = Error;
     VirtIONetworkInfo.Initialized = FALSE;
 
     if (VirtIONetworkInfo.Device.CommonConfig != NULL)
@@ -47,7 +47,7 @@ STATIC BOOLEAN ReadMAC(VIRTIO_NETWORK_DEVICE *Device)
     for (UINT32 Attempt = 0; Attempt < 16; Attempt++)
     {
         UINT8 Generation = Device->Device.CommonConfig->ConfigGeneration;
-        UINT8 Combined = 0;
+        UINT8 Combined   = 0;
 
         ASM("" :: : "memory");
 
@@ -104,7 +104,7 @@ STATIC VOID DrainQueues(VIRTIO_NETWORK_DEVICE *Device)
 
             KMemCpy(Device->Received[Device->ReceiveTail], Buffer + sizeof(*Header), FrameLength);
             Device->ReceivedLength[Device->ReceiveTail] = FrameLength;
-            Device->ReceiveTail = (Device->ReceiveTail + 1) % VIRTIO_NETWORK_QUEUE_SIZE;
+            Device->ReceiveTail                         = (Device->ReceiveTail + 1) % VIRTIO_NETWORK_QUEUE_SIZE;
             Device->ReceiveCount++;
             Device->RXPackets++;
         }
@@ -157,7 +157,7 @@ BOOLEAN VirtIONetworkInit(VOID)
         return FailDevice(VirtQueueGetLastError());
     }
 
-    Pages = (VIRTIO_NETWORK_QUEUE_SIZE * VIRTIO_NETWORK_BUFFER_SIZE) / VIRTIO_NETWORK_PAGE_SIZE;
+    Pages             = (VIRTIO_NETWORK_QUEUE_SIZE * VIRTIO_NETWORK_BUFFER_SIZE) / VIRTIO_NETWORK_PAGE_SIZE;
     Device->RXBuffers = KAllocPagesBelow(Pages, VIRTIO_NETWORK_DMA_LIMIT);
     Device->TXBuffers = KAllocPagesBelow(Pages, VIRTIO_NETWORK_DMA_LIMIT);
 
@@ -179,8 +179,8 @@ BOOLEAN VirtIONetworkInit(VOID)
         }
 
         Device->RXQueue.Desc[Head].Address = (UINT64) (Device->RXBuffers + (UINTN) Head * VIRTIO_NETWORK_BUFFER_SIZE);
-        Device->RXQueue.Desc[Head].Length = VIRTIO_NETWORK_BUFFER_SIZE;
-        Device->RXQueue.Desc[Head].Flags = VIRTQ_DESC_F_WRITE;
+        Device->RXQueue.Desc[Head].Length  = VIRTIO_NETWORK_BUFFER_SIZE;
+        Device->RXQueue.Desc[Head].Flags   = VIRTQ_DESC_F_WRITE;
 
         if (!VirtQueueSubmit(&Device->Device, &Device->RXQueue, Head))
         {
@@ -234,7 +234,7 @@ BOOLEAN VirtIONetworkSend(VIRTIO_NETWORK_DEVICE *Device, CONST VOID *Frame, UINT
     KMemSet(Buffer, 0, sizeof(VIRTIO_NETWORK_HEADER) + 60);
     KMemCpy(Buffer + sizeof(VIRTIO_NETWORK_HEADER), Frame, Length);
     Device->TXQueue.Desc[Head].Address = (UINT64) Buffer;
-    Device->TXQueue.Desc[Head].Length = sizeof(VIRTIO_NETWORK_HEADER) + (Length < 60 ? 60 : Length);
+    Device->TXQueue.Desc[Head].Length  = sizeof(VIRTIO_NETWORK_HEADER) + (Length < 60 ? 60 : Length);
 
     if (!VirtQueueSubmit(&Device->Device, &Device->TXQueue, Head))
     {
@@ -281,7 +281,7 @@ BOOLEAN VirtIONetworkReceive(VIRTIO_NETWORK_DEVICE *Device, VOID *Frame, UINT32 
             Device->ReceiveHead = (Device->ReceiveHead + 1) % VIRTIO_NETWORK_QUEUE_SIZE;
             Device->ReceiveCount--;
             LastError = L"ok";
-            Result = TRUE;
+            Result    = TRUE;
         }
         else
         {
@@ -313,7 +313,7 @@ VOID VirtIONetworkHandleInterrupt(VIRTIO_NETWORK_DEVICE *Device)
 {
     if (Device != NULL && Device->Initialized)
     {
-        UINT64 Flags = SpinLockAcquireIRQSave(&Device->QueueLock);
+        UINT64 Flags  = SpinLockAcquireIRQSave(&Device->QueueLock);
         UINT8  Status = *Device->Device.ISRStatus;
 
         (VOID) Status;

@@ -53,12 +53,12 @@ BOOLEAN GOPInit(VOID)
 
     GOPSelectMode(GraphicsOutput, GOP_PREFERRED_WIDTH, GOP_PREFERRED_HEIGHT);
 
-    GOP.FrameBufferBase = GraphicsOutput->Mode->FrameBufferBase;
-    GOP.FrameBufferSize = GraphicsOutput->Mode->FrameBufferSize;
-    GOP.ScreenWidth = GraphicsOutput->Mode->Info->HorizontalResolution;
-    GOP.ScreenHeight = GraphicsOutput->Mode->Info->VerticalResolution;
+    GOP.FrameBufferBase   = GraphicsOutput->Mode->FrameBufferBase;
+    GOP.FrameBufferSize   = GraphicsOutput->Mode->FrameBufferSize;
+    GOP.ScreenWidth       = GraphicsOutput->Mode->Info->HorizontalResolution;
+    GOP.ScreenHeight      = GraphicsOutput->Mode->Info->VerticalResolution;
     GOP.PixelsPerScanLine = GraphicsOutput->Mode->Info->PixelsPerScanLine;
-    GOP.PixelFormat = GraphicsOutput->Mode->Info->PixelFormat;
+    GOP.PixelFormat       = GraphicsOutput->Mode->Info->PixelFormat;
 
     return TRUE;
 }

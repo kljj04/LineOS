@@ -82,8 +82,8 @@ INT32 ShellCD(CONST char *Path, char **Envp)
             return 1;
         }
 
-        CONST char *Suffix = *Path == 0 ? "" : Path + 1;
-        UINTN       HomeLength = strlen(Home);
+        CONST char *Suffix       = *Path == 0 ? "" : Path + 1;
+        UINTN       HomeLength   = strlen(Home);
         UINTN       SuffixLength = strlen(Suffix);
 
         if (HomeLength + SuffixLength >= sizeof(Expanded))
@@ -216,7 +216,7 @@ BOOLEAN ShellFindCommand(CONST char *Command, char **Envp, char Path[4096])
     }
 
     BOOLEAN HasSuffix = CommandLength >= 4 && strcmp(Command + CommandLength - 4, ".lix") == 0;
-    INT32   Error = ENOENT;
+    INT32   Error     = ENOENT;
 
     for (;;)
     {

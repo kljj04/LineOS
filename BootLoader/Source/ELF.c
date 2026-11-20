@@ -16,7 +16,7 @@
 LINEOS_KERNEL Kernel;
 
 STATIC VOID *ELFBuffer = NULL;
-STATIC UINTN ELFSize = 0;
+STATIC UINTN ELFSize   = 0;
 
 STATIC UINT64 AlignDown(UINT64 Value, UINT64 Alignment)
 {
@@ -40,7 +40,7 @@ STATIC BOOLEAN ReserveELFImage(UINT64 ImageBase, UINT64 ImageEnd)
     }
 
     Address = (EFI_PHYSICAL_ADDRESS) ImageBase;
-    Pages = (UINTN) ((ImageEnd - ImageBase) / ELF_PAGE_SIZE);
+    Pages   = (UINTN) ((ImageEnd - ImageBase) / ELF_PAGE_SIZE);
 
     Status = UEFIBootServices->AllocatePages(AllocateAddress, EfiLoaderData, Pages, &Address);
 
@@ -154,7 +154,7 @@ STATIC BOOLEAN LoadELFSegments(VOID)
             continue;
 
         SegmentBase = AlignDown(ProgramHeader->VirtualAddress, ELF_PAGE_SIZE);
-        SegmentEnd = AlignUp(ProgramHeader->VirtualAddress + ProgramHeader->MemorySize, ELF_PAGE_SIZE);
+        SegmentEnd  = AlignUp(ProgramHeader->VirtualAddress + ProgramHeader->MemorySize, ELF_PAGE_SIZE);
 
         if (SegmentBase < Base)
             Base = SegmentBase;
@@ -182,8 +182,8 @@ STATIC BOOLEAN LoadELFSegments(VOID)
         CopyMem((VOID *) ProgramHeader->VirtualAddress, (UINT8 *) ELFBuffer + ProgramHeader->Offset, ProgramHeader->FileSize);
     }
 
-    Kernel.Base = Base;
-    Kernel.Size = Size - Base;
+    Kernel.Base  = Base;
+    Kernel.Size  = Size - Base;
     Kernel.Entry = Header->Entry;
 
     return TRUE;

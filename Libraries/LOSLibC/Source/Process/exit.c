@@ -11,7 +11,7 @@ VOID (*LibCFinalizer)(VOID);
 VOID NORETURN exit(int ErrorCode)
 {
     VOID (*Finalizer)(VOID) = LibCFinalizer;
-    LibCFinalizer = NULL;
+    LibCFinalizer           = NULL;
 
     if (Finalizer != NULL)
     {

@@ -75,7 +75,7 @@ INT64 ProcessEnd(INT64 Result)
 VOID ProcessReapThreads(PROCESS *Process)
 {
     TASK *Representative = Process->Execution->Task;
-    TASK *Task = Process->ThreadHead;
+    TASK *Task           = Process->ThreadHead;
 
     while (Task != NULL)
     {
@@ -94,10 +94,10 @@ STATIC PROCESS_SLOT *ProcessReserve(VOID)
 {
     for (UINT32 Index = 0; Index < PROCESS_LIMIT; Index++)
     {
-        PROCESS_SLOT    *Slot = &ProcessSlots[Index];
+        PROCESS_SLOT    *Slot      = &ProcessSlots[Index];
         ELF64_EXECUTION *Execution = Slot->Execution;
-        TASK            *Parent = Slot->ParentPID != 0 ? TaskGetByPID(Slot->ParentPID) : NULL;
-        BOOLEAN          Retained = !Slot->Waited && Parent != NULL && !Parent->Process->Exited;
+        TASK            *Parent    = Slot->ParentPID != 0 ? TaskGetByPID(Slot->ParentPID) : NULL;
+        BOOLEAN          Retained  = !Slot->Waited && Parent != NULL && !Parent->Process->Exited;
 
         if (Execution != NULL && Execution->Task != NULL)
         {
@@ -190,7 +190,7 @@ STATIC VOID ForkUnusedEntry(VOID) {}
 INT64 SyscallFork(INTERRUPT_FRAME *Frame)
 {
     TASK  *Parent = LBPWRRGetCurrentTask();
-    UINT64 Count = 0;
+    UINT64 Count  = 0;
     INT64  Result = -ENOMEM;
 
     if (!ProcessBegin())
@@ -220,7 +220,7 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
         return ProcessEnd(-EAGAIN);
     }
 
-    VMM_USER_PAGE   *Pages = KAlloc(Count * sizeof(*Pages));
+    VMM_USER_PAGE   *Pages     = KAlloc(Count * sizeof(*Pages));
     ELF64_EXECUTION *Execution = KAllocPages(PROCESS_EXECUTION_PAGES);
 
     if (Pages == NULL || Execution == NULL)
@@ -247,7 +247,7 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
     }
 
     Child->Process->AddressSpace = Execution->AddressSpace;
-    Child->Process->Execution = Execution;
+    Child->Process->Execution    = Execution;
 
     for (UINT64 Index = 0; Index < Count; Index++)
     {
@@ -263,7 +263,7 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
             }
 
             KMemCpy(Copy, (CONST VOID *) Physical, 4096);
-            Physical = (UINT64) Copy;
+            Physical                                 = (UINT64) Copy;
             Execution->Pages[Execution->PageCount++] = Copy;
         }
 
@@ -281,12 +281,12 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
     }
 
     *Child->Process->FileContext = *Parent->Process->FileContext;
-    Child->Process->RealUID = Parent->Process->RealUID;
-    Child->Process->RealGID = Parent->Process->RealGID;
-    Child->Process->AuthSession = Parent->Process->AuthSession;
+    Child->Process->RealUID      = Parent->Process->RealUID;
+    Child->Process->RealGID      = Parent->Process->RealGID;
+    Child->Process->AuthSession  = Parent->Process->AuthSession;
     KMemCpy(Child->Process->Name, Parent->Process->Name, sizeof(Child->Process->Name));
     ASM("fxsave64 %0" : "=m"(Child->FPState)::"memory");
-    Child->FSBase = ReadMSR(IA32_FS_BASE);
+    Child->FSBase        = ReadMSR(IA32_FS_BASE);
     Child->UserStackBase = Parent->UserStackBase;
     Child->UserStackSize = Parent->UserStackSize;
     KMemCpy(Child->Process->Assets, Parent->Process->Assets, sizeof(Child->Process->Assets));
@@ -301,15 +301,15 @@ INT64 SyscallFork(INTERRUPT_FRAME *Frame)
 
     Slot->Execution = Execution;
     Slot->ParentPID = Parent->Process->PID;
-    Slot->Exited = FALSE;
-    Slot->Waited = FALSE;
-    Slot->Status = 0;
-    Result = Child->Process->PID;
+    Slot->Exited    = FALSE;
+    Slot->Waited    = FALSE;
+    Slot->Status    = 0;
+    Result          = Child->Process->PID;
 
     if (!LBPWRRAddTask(Child))
     {
         Slot->Execution = NULL;
-        Result = -EAGAIN;
+        Result          = -EAGAIN;
 
         goto Failed;
     }
@@ -364,7 +364,7 @@ INT64 SyscallExecVE(INTERRUPT_FRAME *Frame)
     }
 
     ELF64_ARGUMENTS *Arguments = KAlloc(sizeof(*Arguments) * 2);
-    ELF64_EXECUTION *New = KAllocPages(PROCESS_EXECUTION_PAGES);
+    ELF64_EXECUTION *New       = KAllocPages(PROCESS_EXECUTION_PAGES);
 
     if (Arguments == NULL || New == NULL)
     {
@@ -403,7 +403,7 @@ INT64 SyscallExecVE(INTERRUPT_FRAME *Frame)
 
     if (Result == 0)
     {
-        ELF64_EXECUTION   *Owner = Task->Process->Execution;
+        ELF64_EXECUTION   *Owner    = Task->Process->Execution;
         VMM_ADDRESS_SPACE *OldSpace = Task->Process->AddressSpace;
 
         if (!VMMSwitchAddressSpace(New->AddressSpace))
@@ -427,22 +427,22 @@ INT64 SyscallExecVE(INTERRUPT_FRAME *Frame)
             }
 
             Owner->AddressSpace = New->AddressSpace;
-            Owner->PageCount = New->PageCount;
+            Owner->PageCount    = New->PageCount;
             KMemCpy(Owner->Pages, New->Pages, New->PageCount * sizeof(VOID *));
             Task->Process->FileContext->Credentials = New->Task->Process->FileContext->Credentials;
-            Task->Process->AddressSpace = New->AddressSpace;
-            Task->UserStackBase = New->Task->UserStackBase;
-            Task->UserStackSize = New->Task->UserStackSize;
+            Task->Process->AddressSpace             = New->AddressSpace;
+            Task->UserStackBase                     = New->Task->UserStackBase;
+            Task->UserStackSize                     = New->Task->UserStackSize;
             KMemCpy(Task->Process->Name, New->Task->Process->Name, sizeof(Task->Process->Name));
             WriteMSR(IA32_FS_BASE, 0);
             ASM("fxrstor64 %0" ::"m"(New->Task->FPState) : "memory");
             Task->ClearTIDAddress = 0;
-            Task->RobustListHead = 0;
-            Task->Context = New->Task->Context;
+            Task->RobustListHead  = 0;
+            Task->Context         = New->Task->Context;
             KMemCpy(Frame, &Task->Context, sizeof(*Frame));
             KMemSet(Task->Process->Assets, 0, sizeof(Task->Process->Assets));
-            New->AddressSpace = NULL;
-            New->PageCount = 0;
+            New->AddressSpace                = NULL;
+            New->PageCount                   = 0;
             New->Task->Process->AddressSpace = NULL;
         }
     }
@@ -471,7 +471,7 @@ INT64 SyscallProcessExit(TASK *Task, UINT64 Code, BOOLEAN Group)
         return -ESRCH;
     }
 
-    PROCESS *Process = Task->Process;
+    PROCESS *Process   = Task->Process;
     BOOLEAN  OtherLive = FALSE;
 
     for (TASK *Thread = Process->ThreadHead; Thread != NULL; Thread = Thread->ThreadNext)
@@ -651,7 +651,7 @@ INT64 ProcessChangeParentDirectory(TASK *Task, CONST CHAR8 *Name)
         VFS_CONTEXT Context = *Parent->Process->FileContext;
 
         Context.Credentials = Task->Process->FileContext->Credentials;
-        Result = SyscallVFSError(VFSChangeDirectory(&Context, Name));
+        Result              = SyscallVFSError(VFSChangeDirectory(&Context, Name));
 
         if (Result == 0)
         {

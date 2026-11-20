@@ -70,9 +70,9 @@ STATIC BOOLEAN AssetNameEqual(CONST CHAR8 *Left, CONST CHAR8 *Right)
 
 INT64 SyscallAssetPublish(UINT64 Name, UINT64 Data, UINT64 Size)
 {
-    TASK        *Task = LBPWRRGetCurrentTask();
+    TASK        *Task                         = LBPWRRGetCurrentTask();
     CHAR8        Buffer[LOS_ASSET_NAME_LIMIT] = {0};
-    ASSET_ENTRY *Entry = NULL;
+    ASSET_ENTRY *Entry                        = NULL;
     UINT64       Flags;
     UINT32       Pages = 0;
     UINT32       Count;
@@ -132,7 +132,7 @@ INT64 SyscallAssetPublish(UINT64 Name, UINT64 Data, UINT64 Size)
 
     while (Pages < Count)
     {
-        VOID  *Page = KAllocPages(1);
+        VOID  *Page   = KAllocPages(1);
         UINT64 Offset = (UINT64) Pages * ASSET_PAGE_SIZE;
         UINT64 Length = Size - Offset > ASSET_PAGE_SIZE ? ASSET_PAGE_SIZE : Size - Offset;
 
@@ -152,7 +152,7 @@ INT64 SyscallAssetPublish(UINT64 Name, UINT64 Data, UINT64 Size)
     }
 
     KMemCpy(Entry->Name, Buffer, sizeof(Buffer));
-    Entry->Size = Size;
+    Entry->Size      = Size;
     Entry->PageCount = Count;
     AssetPages += Count;
     Result = 0;
@@ -176,12 +176,12 @@ INT64 SyscallAssetAcquire(UINT64 Name, UINT64 UserAsset)
 {
     TASK        *Task = LBPWRRGetCurrentTask();
     CHAR8        Buffer[LOS_ASSET_NAME_LIMIT];
-    ASSET_ENTRY *Entry = NULL;
+    ASSET_ENTRY *Entry   = NULL;
     TASK_ASSET  *Mapping = NULL;
-    UINT32       Index = 0;
-    UINT32       Slot = 0;
+    UINT32       Index   = 0;
+    UINT32       Slot    = 0;
     UINT64       Flags;
-    LOS_ASSET    Asset = {0};
+    LOS_ASSET    Asset  = {0};
     INT64        Result = -ENOENT;
 
     if (Task == NULL || Task->Process->AddressSpace == NULL || UserAsset == 0 || !AssetReadName(Task, Name, Buffer))
@@ -210,14 +210,14 @@ INT64 SyscallAssetAcquire(UINT64 Name, UINT64 UserAsset)
         if (Task->Process->Assets[Current].Handle != 0 && Task->Process->Assets[Current].Index == Index)
         {
             Mapping = &Task->Process->Assets[Current];
-            Slot = Current;
+            Slot    = Current;
             break;
         }
 
         if (Mapping == NULL && Task->Process->Assets[Current].Handle == 0)
         {
             Mapping = &Task->Process->Assets[Current];
-            Slot = Current;
+            Slot    = Current;
         }
     }
 
@@ -248,7 +248,7 @@ INT64 SyscallAssetAcquire(UINT64 Name, UINT64 UserAsset)
         }
 
         Mapping->Handle = ++AssetHandle;
-        Mapping->Index = Index;
+        Mapping->Index  = Index;
     }
 
     Asset.Handle = Mapping->Handle;

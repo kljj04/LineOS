@@ -81,7 +81,7 @@ BOOLEAN NetworkUDPOpen(UINT16 Port, UINT32 *Socket)
     }
 
     *Socket = UINT32_MAX;
-    Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    Flags   = SpinLockAcquireIRQSave(&NetworkState.Lock);
 
     if (Port == 0)
     {
@@ -105,9 +105,9 @@ BOOLEAN NetworkUDPOpen(UINT16 Port, UINT32 *Socket)
 
             KMemSet(Entry, 0, sizeof(*Entry));
             Entry->Generation = Generation == 0 ? 1 : Generation;
-            Entry->Open = TRUE;
-            Entry->Port = Port;
-            *Socket = (Entry->Generation << 8) | Index;
+            Entry->Open       = TRUE;
+            Entry->Port       = Port;
+            *Socket           = (Entry->Generation << 8) | Index;
             SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
 
             return TRUE;
@@ -131,8 +131,8 @@ BOOLEAN NetworkUDPClose(UINT32 Socket)
         return NetworkError(L"UDP handle invalid");
     }
 
-    Entry->Open = FALSE;
-    Entry->Count = 0;
+    Entry->Open    = FALSE;
+    Entry->Count   = 0;
     Entry->Reading = FALSE;
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
 
@@ -201,8 +201,8 @@ VOID NetworkUDPInputLocked(UINT32 Address, UINT32 Destination, CONST UINT8 *Pack
         NETWORK_UDP_DATAGRAM *Datagram = &Entry->Queue[(Entry->Head + Entry->Count) % NETWORK_UDP_QUEUE_SIZE];
 
         Datagram->Address = Address;
-        Datagram->Port = NetworkRead16(Packet);
-        Datagram->Length = Length - 8;
+        Datagram->Port    = NetworkRead16(Packet);
+        Datagram->Length  = Length - 8;
         KMemCpy(Datagram->Data, Packet + 8, Length - 8);
         Entry->Count++;
 
@@ -228,7 +228,7 @@ STATIC BOOLEAN SendTo(UINT32 Socket, UINT32 Address, UINT16 Port, CONST VOID *Bu
 
     Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
 
-    NETWORK_UDP_SOCKET *Entry = FindSocket(Socket);
+    NETWORK_UDP_SOCKET *Entry  = FindSocket(Socket);
     BOOLEAN             Result = Entry != NULL && !NetworkExpired(Start, TimeoutMls) && NetworkUDPSendLocked(Entry->Port, Address, Port, Buffer, Length);
 
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
@@ -298,10 +298,10 @@ BOOLEAN NetworkUDPReceiveFrom(UINT32 Socket, VOID *Buffer, UINT32 Capacity, UINT
         {
             NETWORK_UDP_DATAGRAM *Datagram = &Entry->Queue[Entry->Head];
 
-            *Length = Datagram->Length;
+            *Length  = Datagram->Length;
             *Address = Datagram->Address;
-            *Port = Datagram->Port;
-            Result = Capacity >= *Length;
+            *Port    = Datagram->Port;
+            Result   = Capacity >= *Length;
 
             if (Result)
             {
@@ -345,7 +345,7 @@ BOOLEAN NetworkUDPReceiveFrom(UINT32 Socket, VOID *Buffer, UINT32 Capacity, UINT
 BOOLEAN NetworkUDPExchangeInternal(UINT32 Address, UINT16 Port, CONST VOID *Request, UINT32 RequestLength, VOID *Response, UINT32 Capacity, UINT32 *Length, UINT32 TimeoutMls)
 {
     UINT32  Socket;
-    UINT64  Start = NetworkNow();
+    UINT64  Start  = NetworkNow();
     BOOLEAN Result = FALSE;
     UINT8   Packet[NETWORK_UDP_MAX_PAYLOAD];
 
@@ -377,7 +377,7 @@ BOOLEAN NetworkUDPExchangeInternal(UINT32 Address, UINT16 Port, CONST VOID *Requ
                 }
 
                 *Length = Size;
-                Result = Capacity >= Size;
+                Result  = Capacity >= Size;
 
                 if (Result)
                 {

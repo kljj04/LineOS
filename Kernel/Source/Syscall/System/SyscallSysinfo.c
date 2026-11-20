@@ -31,8 +31,8 @@ INT64 SyscallSysInfo(UINT64 UserInfo)
 
     KGetManagedMemory(&Managed, &Free);
     Info.TotalRAM = Managed;
-    Info.FreeRAM = Free;
-    Info.MemUnit = 1;
+    Info.FreeRAM  = Free;
+    Info.MemUnit  = 1;
 
     UINTN Count = TaskGetCount();
 

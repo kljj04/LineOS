@@ -7,13 +7,13 @@
 #include <string.h>
 #include <stdint.h>
 
-STATIC CONST char *Weekdays[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-STATIC CONST char *FullWeekdays[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-STATIC CONST char *KoreanWeekdays[] = {"일", "월", "화", "수", "목", "금", "토"};
+STATIC CONST char *Weekdays[]           = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+STATIC CONST char *FullWeekdays[]       = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+STATIC CONST char *KoreanWeekdays[]     = {"일", "월", "화", "수", "목", "금", "토"};
 STATIC CONST char *KoreanFullWeekdays[] = {"일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"};
-STATIC CONST char *Months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-STATIC CONST char *FullMonths[] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
-STATIC CONST char *KoreanMonths[] = {"1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"};
+STATIC CONST char *Months[]             = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+STATIC CONST char *FullMonths[]         = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+STATIC CONST char *KoreanMonths[]       = {"1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"};
 
 STATIC BOOLEAN TimeAppend(char *Buffer, size_t Capacity, size_t *Length, CONST char *Text)
 {
@@ -34,7 +34,7 @@ STATIC BOOLEAN TimeAppend(char *Buffer, size_t Capacity, size_t *Length, CONST c
 STATIC VOID TimeNumber(char Buffer[64], INT64 Value, UINT32 Width, char Padding)
 {
     char    Digits[32];
-    UINT32  Count = 0;
+    UINT32  Count    = 0;
     BOOLEAN Negative = Value < 0;
     UINT64  Absolute = Negative ? (UINT64) (-(Value + 1)) + 1 : (UINT64) Value;
 
@@ -95,13 +95,13 @@ size_t strftime(char *Buffer, size_t Capacity, const char *Format, const struct 
         {
             Index++;
 
-            char    Padding = '0';
+            char    Padding  = '0';
             BOOLEAN Unpadded = FALSE;
 
             if (Format[Index] == '-' || Format[Index] == '_' || Format[Index] == '0')
             {
                 Unpadded = Format[Index] == '-';
-                Padding = Format[Index] == '_' ? ' ' : '0';
+                Padding  = Format[Index] == '_' ? ' ' : '0';
                 Index++;
             }
 
@@ -122,10 +122,10 @@ size_t strftime(char *Buffer, size_t Capacity, const char *Format, const struct 
                 Index++;
             }
 
-            INT64       Number = 0;
+            INT64       Number       = 0;
             UINT32      DefaultWidth = 2;
-            BOOLEAN     Numeric = TRUE;
-            CONST char *Nested = NULL;
+            BOOLEAN     Numeric      = TRUE;
+            CONST char *Nested       = NULL;
 
             switch (Format[Index])
             {
@@ -137,7 +137,7 @@ size_t strftime(char *Buffer, size_t Capacity, const char *Format, const struct 
                         return 0;
                     }
 
-                    Value = Korean ? (Format[Index] == 'a' ? KoreanWeekdays[Time->tm_wday] : KoreanFullWeekdays[Time->tm_wday]) : (Format[Index] == 'a' ? Weekdays[Time->tm_wday] : FullWeekdays[Time->tm_wday]);
+                    Value   = Korean ? (Format[Index] == 'a' ? KoreanWeekdays[Time->tm_wday] : KoreanFullWeekdays[Time->tm_wday]) : (Format[Index] == 'a' ? Weekdays[Time->tm_wday] : FullWeekdays[Time->tm_wday]);
                     Numeric = FALSE;
                     break;
                 }
@@ -151,13 +151,13 @@ size_t strftime(char *Buffer, size_t Capacity, const char *Format, const struct 
                         return 0;
                     }
 
-                    Value = Korean ? KoreanMonths[Time->tm_mon] : (Format[Index] == 'B' ? FullMonths[Time->tm_mon] : Months[Time->tm_mon]);
+                    Value   = Korean ? KoreanMonths[Time->tm_mon] : (Format[Index] == 'B' ? FullMonths[Time->tm_mon] : Months[Time->tm_mon]);
                     Numeric = FALSE;
                     break;
                 }
 
                 case 'Y':
-                    Number = (INT64) Time->tm_year + 1900;
+                    Number       = (INT64) Time->tm_year + 1900;
                     DefaultWidth = 4;
                     break;
 
@@ -178,7 +178,7 @@ size_t strftime(char *Buffer, size_t Capacity, const char *Format, const struct 
                     break;
 
                 case 'e':
-                    Number = Time->tm_mday;
+                    Number  = Time->tm_mday;
                     Padding = ' ';
                     break;
 
@@ -205,33 +205,33 @@ size_t strftime(char *Buffer, size_t Capacity, const char *Format, const struct 
                     break;
 
                 case 'j':
-                    Number = Time->tm_yday + 1;
+                    Number       = Time->tm_yday + 1;
                     DefaultWidth = 3;
                     break;
 
                 case 'w':
-                    Number = Time->tm_wday;
+                    Number       = Time->tm_wday;
                     DefaultWidth = 1;
                     break;
 
                 case 'u':
-                    Number = Time->tm_wday == 0 ? 7 : Time->tm_wday;
+                    Number       = Time->tm_wday == 0 ? 7 : Time->tm_wday;
                     DefaultWidth = 1;
                     break;
 
                 case 'p':
-                    Value = Korean ? (Time->tm_hour < 12 ? "오전" : "오후") : (Time->tm_hour < 12 ? "AM" : "PM");
+                    Value   = Korean ? (Time->tm_hour < 12 ? "오전" : "오후") : (Time->tm_hour < 12 ? "AM" : "PM");
                     Numeric = FALSE;
                     break;
 
                 case 'Z':
-                    Value = Time->tm_zone == NULL ? "" : Time->tm_zone;
+                    Value   = Time->tm_zone == NULL ? "" : Time->tm_zone;
                     Numeric = FALSE;
                     break;
 
                 case 'z':
                 {
-                    INT64  Offset = Time->tm_gmtoff;
+                    INT64  Offset   = Time->tm_gmtoff;
                     UINT64 Absolute = Offset < 0 ? (UINT64) (-(Offset + 1)) + 1 : (UINT64) Offset;
 
                     if (Absolute / 3600 > 99)
@@ -276,17 +276,17 @@ size_t strftime(char *Buffer, size_t Capacity, const char *Format, const struct 
                     break;
 
                 case '%':
-                    Value = "%";
+                    Value   = "%";
                     Numeric = FALSE;
                     break;
 
                 case 'n':
-                    Value = "\n";
+                    Value   = "\n";
                     Numeric = FALSE;
                     break;
 
                 case 't':
-                    Value = "\t";
+                    Value   = "\t";
                     Numeric = FALSE;
                     break;
 

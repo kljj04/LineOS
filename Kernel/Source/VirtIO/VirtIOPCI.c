@@ -61,11 +61,11 @@ STATIC VOID ResetDeviceInfo(VIRTIO_PCI_DEVICE *VirtIODevice)
     KMemSet(VirtIODevice, 0, sizeof(VIRTIO_PCI_DEVICE));
 
     VirtIODevice->CommonConfigBAR = 0xFF;
-    VirtIODevice->NotifyBAR = 0xFF;
-    VirtIODevice->ISRStatusBAR = 0xFF;
+    VirtIODevice->NotifyBAR       = 0xFF;
+    VirtIODevice->ISRStatusBAR    = 0xFF;
     VirtIODevice->DeviceConfigBAR = 0xFF;
-    VirtIODevice->MSIXCapOffset = 0;
-    VirtIODevice->MSIXTableBAR = 0xFF;
+    VirtIODevice->MSIXCapOffset   = 0;
+    VirtIODevice->MSIXTableBAR    = 0xFF;
 }
 
 STATIC VOID *GetBARAddress(VIRTIO_PCI_DEVICE *VirtIODevice, UINT8 BARIndex, UINT32 Offset)
@@ -105,13 +105,13 @@ STATIC VOID ReadVirtIOCapability(VIRTIO_PCI_DEVICE *VirtIODevice, UINT8 Capabili
 
     Device = VirtIODevice->PCIDevice;
 
-    Capability.CapVendor = PCIConfigRead8(Device, CapabilityOffset);
-    Capability.CapNext = PCIConfigRead8(Device, (UINT8) (CapabilityOffset + 1));
-    Capability.CapLength = PCIConfigRead8(Device, (UINT8) (CapabilityOffset + 2));
+    Capability.CapVendor  = PCIConfigRead8(Device, CapabilityOffset);
+    Capability.CapNext    = PCIConfigRead8(Device, (UINT8) (CapabilityOffset + 1));
+    Capability.CapLength  = PCIConfigRead8(Device, (UINT8) (CapabilityOffset + 2));
     Capability.ConfigType = PCIConfigRead8(Device, (UINT8) (CapabilityOffset + 3));
-    Capability.BAR = PCIConfigRead8(Device, (UINT8) (CapabilityOffset + 4));
-    Capability.Offset = ReadCapability32(Device, CapabilityOffset, 8);
-    Capability.Length = ReadCapability32(Device, CapabilityOffset, 12);
+    Capability.BAR        = PCIConfigRead8(Device, (UINT8) (CapabilityOffset + 4));
+    Capability.Offset     = ReadCapability32(Device, CapabilityOffset, 8);
+    Capability.Length     = ReadCapability32(Device, CapabilityOffset, 12);
 
     if (Capability.BAR >= 6)
     {
@@ -121,12 +121,12 @@ STATIC VOID ReadVirtIOCapability(VIRTIO_PCI_DEVICE *VirtIODevice, UINT8 Capabili
     switch (Capability.ConfigType)
     {
         case VIRTIO_PCI_CAP_COMMON_CFG:
-            VirtIODevice->CommonConfigBAR = Capability.BAR;
+            VirtIODevice->CommonConfigBAR    = Capability.BAR;
             VirtIODevice->CommonConfigOffset = Capability.Offset;
             break;
 
         case VIRTIO_PCI_CAP_NOTIFY_CFG:
-            VirtIODevice->NotifyBAR = Capability.BAR;
+            VirtIODevice->NotifyBAR    = Capability.BAR;
             VirtIODevice->NotifyOffset = Capability.Offset;
 
             if (Capability.CapLength >= 20)
@@ -137,12 +137,12 @@ STATIC VOID ReadVirtIOCapability(VIRTIO_PCI_DEVICE *VirtIODevice, UINT8 Capabili
             break;
 
         case VIRTIO_PCI_CAP_ISR_CFG:
-            VirtIODevice->ISRStatusBAR = Capability.BAR;
+            VirtIODevice->ISRStatusBAR    = Capability.BAR;
             VirtIODevice->ISRStatusOffset = Capability.Offset;
             break;
 
         case VIRTIO_PCI_CAP_DEVICE_CFG:
-            VirtIODevice->DeviceConfigBAR = Capability.BAR;
+            VirtIODevice->DeviceConfigBAR    = Capability.BAR;
             VirtIODevice->DeviceConfigOffset = Capability.Offset;
             break;
 
@@ -157,12 +157,12 @@ STATIC VOID ReadMSIXCapability(VIRTIO_PCI_DEVICE *VirtIODevice, UINT8 Capability
     UINT32 TableInfo;
 
     MessageControl = PCIConfigRead16(VirtIODevice->PCIDevice, (UINT8) (CapabilityOffset + PCI_MSIX_MESSAGE_CONTROL));
-    TableInfo = PCIConfigRead32(VirtIODevice->PCIDevice, (UINT8) (CapabilityOffset + PCI_MSIX_TABLE_OFFSET));
+    TableInfo      = PCIConfigRead32(VirtIODevice->PCIDevice, (UINT8) (CapabilityOffset + PCI_MSIX_TABLE_OFFSET));
 
-    VirtIODevice->MSIXCapOffset = CapabilityOffset;
-    VirtIODevice->MSIXTableBAR = TableInfo & PCI_MSIX_TABLE_BIR_MASK;
+    VirtIODevice->MSIXCapOffset   = CapabilityOffset;
+    VirtIODevice->MSIXTableBAR    = TableInfo & PCI_MSIX_TABLE_BIR_MASK;
     VirtIODevice->MSIXTableOffset = TableInfo & PCI_MSIX_TABLE_OFFSET_MASK;
-    VirtIODevice->MSIXTableSize = (MessageControl & PCI_MSIX_TABLE_SIZE_MASK) + 1;
+    VirtIODevice->MSIXTableSize   = (MessageControl & PCI_MSIX_TABLE_SIZE_MASK) + 1;
 }
 
 STATIC BOOLEAN ScanCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
@@ -213,10 +213,10 @@ STATIC BOOLEAN ScanCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
 STATIC BOOLEAN MapCapabilities(VIRTIO_PCI_DEVICE *VirtIODevice)
 {
     VirtIODevice->CommonConfig = (VIRTIO_PCI_COMMON_CONFIG *) GetBARAddress(VirtIODevice, VirtIODevice->CommonConfigBAR, VirtIODevice->CommonConfigOffset);
-    VirtIODevice->NotifyBase = (VOLATILE UINT16 *) GetBARAddress(VirtIODevice, VirtIODevice->NotifyBAR, VirtIODevice->NotifyOffset);
-    VirtIODevice->ISRStatus = (VOLATILE UINT8 *) GetBARAddress(VirtIODevice, VirtIODevice->ISRStatusBAR, VirtIODevice->ISRStatusOffset);
+    VirtIODevice->NotifyBase   = (VOLATILE UINT16 *) GetBARAddress(VirtIODevice, VirtIODevice->NotifyBAR, VirtIODevice->NotifyOffset);
+    VirtIODevice->ISRStatus    = (VOLATILE UINT8 *) GetBARAddress(VirtIODevice, VirtIODevice->ISRStatusBAR, VirtIODevice->ISRStatusOffset);
     VirtIODevice->DeviceConfig = (VOLATILE UINT8 *) GetBARAddress(VirtIODevice, VirtIODevice->DeviceConfigBAR, VirtIODevice->DeviceConfigOffset);
-    VirtIODevice->MSIXTable = GetBARAddress(VirtIODevice, VirtIODevice->MSIXTableBAR, VirtIODevice->MSIXTableOffset);
+    VirtIODevice->MSIXTable    = GetBARAddress(VirtIODevice, VirtIODevice->MSIXTableBAR, VirtIODevice->MSIXTableOffset);
 
     if (VirtIODevice->CommonConfig == NULL || VirtIODevice->NotifyBase == NULL || VirtIODevice->ISRStatus == NULL || VirtIODevice->DeviceConfig == NULL)
     {
@@ -233,14 +233,14 @@ STATIC VOID WriteMSIXTableEntry(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 TableInd
     VIRTIO_PCI_MSIX_TABLE_ENTRY *Entry;
     UINT64                       MessageAddress;
 
-    Entry = (VIRTIO_PCI_MSIX_TABLE_ENTRY *) VirtIODevice->MSIXTable + TableIndex;
+    Entry          = (VIRTIO_PCI_MSIX_TABLE_ENTRY *) VirtIODevice->MSIXTable + TableIndex;
     MessageAddress = MSI_ADDRESS_BASE | ((UINT64) LAPICGetID() << 12);
 
-    Entry->VectorControl = 1;
-    Entry->MessageAddress = (UINT32) MessageAddress;
+    Entry->VectorControl       = 1;
+    Entry->MessageAddress      = (UINT32) MessageAddress;
     Entry->MessageUpperAddress = (UINT32) (MessageAddress >> 32);
-    Entry->MessageData = MSI_DELIVERY_FIXED | Vector;
-    Entry->VectorControl = 0;
+    Entry->MessageData         = MSI_DELIVERY_FIXED | Vector;
+    Entry->VectorControl       = 0;
 }
 
 STATIC VOID EnableMSIXCapability(VIRTIO_PCI_DEVICE *VirtIODevice)
@@ -315,16 +315,16 @@ BOOLEAN VirtIOPCIStartDeviceWithFeatures(VIRTIO_PCI_DEVICE *VirtIODevice, UINT32
         return FALSE;
     }
 
-    CommonConfig = VirtIODevice->CommonConfig;
+    CommonConfig               = VirtIODevice->CommonConfig;
     CommonConfig->DeviceStatus = 0;
     CommonConfig->DeviceStatus = VIRTIO_STATUS_ACKNOWLEDGE;
     CommonConfig->DeviceStatus |= VIRTIO_STATUS_DRIVER;
 
     CommonConfig->DeviceFeatureSelect = 0;
-    OfferedFeaturesLow = CommonConfig->DeviceFeature;
+    OfferedFeaturesLow                = CommonConfig->DeviceFeature;
 
     CommonConfig->DeviceFeatureSelect = 1;
-    OfferedFeaturesHigh = CommonConfig->DeviceFeature;
+    OfferedFeaturesHigh               = CommonConfig->DeviceFeature;
 
     if ((OfferedFeaturesHigh & (1U << 0)) == 0)
     {
@@ -334,14 +334,14 @@ BOOLEAN VirtIOPCIStartDeviceWithFeatures(VIRTIO_PCI_DEVICE *VirtIODevice, UINT32
         return FALSE;
     }
 
-    AcceptedFeaturesLow = FeaturesLow & OfferedFeaturesLow;
+    AcceptedFeaturesLow  = FeaturesLow & OfferedFeaturesLow;
     AcceptedFeaturesHigh = (FeaturesHigh & OfferedFeaturesHigh) | (1U << 0);
 
     CommonConfig->DriverFeatureSelect = 0;
-    CommonConfig->DriverFeature = AcceptedFeaturesLow;
+    CommonConfig->DriverFeature       = AcceptedFeaturesLow;
 
     CommonConfig->DriverFeatureSelect = 1;
-    CommonConfig->DriverFeature = AcceptedFeaturesHigh;
+    CommonConfig->DriverFeature       = AcceptedFeaturesHigh;
 
     ASM("" :: : "memory");
 
@@ -355,7 +355,7 @@ BOOLEAN VirtIOPCIStartDeviceWithFeatures(VIRTIO_PCI_DEVICE *VirtIODevice, UINT32
         return FALSE;
     }
 
-    VirtIODevice->NegotiatedFeaturesLow = AcceptedFeaturesLow;
+    VirtIODevice->NegotiatedFeaturesLow  = AcceptedFeaturesLow;
     VirtIODevice->NegotiatedFeaturesHigh = AcceptedFeaturesHigh;
 
     LastError = L"ok";
@@ -407,7 +407,7 @@ BOOLEAN VirtIOPCIEnableQueueMSIX(VIRTIO_PCI_DEVICE *VirtIODevice, UINT16 QueueIn
         return FALSE;
     }
 
-    CommonConfig = VirtIODevice->CommonConfig;
+    CommonConfig              = VirtIODevice->CommonConfig;
     CommonConfig->QueueSelect = QueueIndex;
 
     if (CommonConfig->QueueSize == 0)

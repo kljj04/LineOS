@@ -16,16 +16,16 @@ STATIC INT64 FileStat(TASK *Task, CONST VFS_NODE *Node, UINT64 Buffer)
 {
     STAT_INFO Info = {0};
 
-    Info.Device = Node->Partition + 1;
-    Info.Inode = Node->Number;
-    Info.Links = 1;
-    Info.Mode = Node->Mode;
-    Info.UID = Node->UID;
-    Info.GID = Node->GID;
-    Info.RDevice = (Node->Mode & VFS_MODE_TYPE) == 0x2000U ? Node->Number : 0;
-    Info.Size = Node->Size;
-    Info.BlockSize = 4096;
-    Info.Blocks = (Node->Size + 511) / 512;
+    Info.Device     = Node->Partition + 1;
+    Info.Inode      = Node->Number;
+    Info.Links      = 1;
+    Info.Mode       = Node->Mode;
+    Info.UID        = Node->UID;
+    Info.GID        = Node->GID;
+    Info.RDevice    = (Node->Mode & VFS_MODE_TYPE) == 0x2000U ? Node->Number : 0;
+    Info.Size       = Node->Size;
+    Info.BlockSize  = 4096;
+    Info.Blocks     = (Node->Size + 511) / 512;
     Info.AccessTime = Node->AccessTime;
     Info.ModifyTime = Node->ModifyTime;
     Info.ChangeTime = Node->ChangeTime;
@@ -59,7 +59,7 @@ INT64 SyscallStat(UINT64 Path, UINT64 Buffer, BOOLEAN Follow)
 
 INT64 SyscallFstat(UINT64 FD, UINT64 Buffer)
 {
-    TASK      *Task = LBPWRRGetCurrentTask();
+    TASK      *Task                                    = LBPWRRGetCurrentTask();
     OPEN_FILE *File __attribute__((cleanup(FileDrop))) = FileAcquire(Task, (UINT64) FD);
     VFS_NODE   Node;
 

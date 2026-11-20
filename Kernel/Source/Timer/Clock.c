@@ -88,10 +88,10 @@ BOOLEAN ClockInit(VOID)
     UINT64   Frequency;
 
     SpinLockInit(&ClockLock);
-    ClockBootCounter = HPETReadCounter();
-    ClockBootFrequency = HPETGetFrequency();
+    ClockBootCounter     = HPETReadCounter();
+    ClockBootFrequency   = HPETGetFrequency();
     ClockBaseNanoseconds = 0;
-    ClockReady = FALSE;
+    ClockReady           = FALSE;
 
     Frequency = TSCGetFrequency();
 
@@ -114,10 +114,10 @@ BOOLEAN ClockInit(VOID)
         return FALSE;
     }
 
-    ClockBaseUnix = UnixTime;
-    ClockBaseTSC = Before + (After - Before) / 2;
+    ClockBaseUnix  = UnixTime;
+    ClockBaseTSC   = Before + (After - Before) / 2;
     ClockFrequency = Frequency;
-    ClockReady = TRUE;
+    ClockReady     = TRUE;
 
     return TRUE;
 }
@@ -138,7 +138,7 @@ STATIC BOOLEAN ClockReadTimeLocked(CLOCK_TIME *Time, UINT64 *Counter)
 
     UINT64 Nanoseconds = (UINT64) ((UINT128) (Now - ClockBaseTSC) * CLOCK_NS_PER_SECOND / ClockFrequency) + ClockBaseNanoseconds;
 
-    Time->Seconds = ClockBaseUnix + (UINT64) (Nanoseconds / CLOCK_NS_PER_SECOND);
+    Time->Seconds     = ClockBaseUnix + (UINT64) (Nanoseconds / CLOCK_NS_PER_SECOND);
     Time->Nanoseconds = (UINT32) (Nanoseconds % CLOCK_NS_PER_SECOND);
 
     if (Counter != NULL)
@@ -156,7 +156,7 @@ BOOLEAN ClockGetTime(CLOCK_TIME *Time)
         return FALSE;
     }
 
-    UINT64  Flags = SpinLockAcquireIRQSave(&ClockLock);
+    UINT64  Flags  = SpinLockAcquireIRQSave(&ClockLock);
     BOOLEAN Result = ClockReadTimeLocked(Time, NULL);
 
     SpinLockReleaseIRQRestore(&ClockLock, Flags);
@@ -207,7 +207,7 @@ BOOLEAN ClockGetDateTime(CLOCK_DATE_TIME *DateTime, INT32 UTCOffsetMinutes)
     INT64      Seconds;
     INT64      Days;
     INT64      Remaining;
-    UINT32     Year = 1970;
+    UINT32     Year  = 1970;
     UINT32     Month = 1;
     UINT32     DaysInYear;
     UINT32     DaysInMonth;
@@ -229,7 +229,7 @@ BOOLEAN ClockGetDateTime(CLOCK_DATE_TIME *DateTime, INT32 UTCOffsetMinutes)
         return FALSE;
     }
 
-    Days = Seconds / 86400;
+    Days      = Seconds / 86400;
     Remaining = Seconds % 86400;
 
     while (TRUE)
@@ -263,10 +263,10 @@ BOOLEAN ClockGetDateTime(CLOCK_DATE_TIME *DateTime, INT32 UTCOffsetMinutes)
         Month++;
     }
 
-    DateTime->Year = (UINT16) Year;
-    DateTime->Month = (UINT8) Month;
-    DateTime->Day = (UINT8) (Days + 1);
-    DateTime->Hour = (UINT8) (Remaining / 3600);
+    DateTime->Year   = (UINT16) Year;
+    DateTime->Month  = (UINT8) Month;
+    DateTime->Day    = (UINT8) (Days + 1);
+    DateTime->Hour   = (UINT8) (Remaining / 3600);
     DateTime->Minute = (UINT8) ((Remaining % 3600) / 60);
     DateTime->Second = (UINT8) (Remaining % 60);
 
@@ -304,7 +304,7 @@ STATIC UINT32 ClockNTPRemaining(UINT64 Start, UINT32 TimeoutMls)
 STATIC BOOLEAN ClockNTPDecode(UINT64 Timestamp, UINT64 Hint, INT128 *Nanoseconds)
 {
     UINT64 Reference = Hint + CLOCK_NTP_EPOCH;
-    UINT64 Seconds = (Reference & ~(CLOCK_NTP_ERA - 1)) | (Timestamp >> 32);
+    UINT64 Seconds   = (Reference & ~(CLOCK_NTP_ERA - 1)) | (Timestamp >> 32);
 
     if (Seconds + CLOCK_NTP_ERA / 2 < Reference)
     {
@@ -334,7 +334,7 @@ STATIC BOOLEAN ClockNTPApply(CONST UINT8 *Packet, CONST CLOCK_TIME *Sent, CONST 
 {
     INT128 ServerReceive;
     INT128 ServerTransmit;
-    INT128 LocalSend = (INT128) Sent->Seconds * CLOCK_NS_PER_SECOND + Sent->Nanoseconds;
+    INT128 LocalSend    = (INT128) Sent->Seconds * CLOCK_NS_PER_SECOND + Sent->Nanoseconds;
     INT128 LocalReceive = (INT128) Received->Seconds * CLOCK_NS_PER_SECOND + Received->Nanoseconds;
 
     if (ClockNTPRead64(Packet + 32) == 0 || ClockNTPRead64(Packet + 40) == 0 || ((ClockNTPRead64(Packet + 40) - ClockNTPRead64(Packet + 32)) >> 63) != 0 || !ClockNTPDecode(ClockNTPRead64(Packet + 32), Sent->Seconds, &ServerReceive) || !ClockNTPDecode(ClockNTPRead64(Packet + 40), Sent->Seconds, &ServerTransmit))
@@ -343,11 +343,11 @@ STATIC BOOLEAN ClockNTPApply(CONST UINT8 *Packet, CONST CLOCK_TIME *Sent, CONST 
     }
 
     INT128 Processing = ServerTransmit - ServerReceive;
-    INT128 Elapsed = LocalReceive - LocalSend;
-    INT128 RoundTrip = Elapsed - Processing;
-    INT128 Sum = (ServerReceive - LocalSend) + (ServerTransmit - LocalReceive);
-    INT64  Offset = Sum < INT64_MIN || Sum > INT64_MAX ? 0 : (INT64) Sum / 2;
-    INT128 Corrected = LocalReceive + Offset;
+    INT128 Elapsed    = LocalReceive - LocalSend;
+    INT128 RoundTrip  = Elapsed - Processing;
+    INT128 Sum        = (ServerReceive - LocalSend) + (ServerTransmit - LocalReceive);
+    INT64  Offset     = Sum < INT64_MIN || Sum > INT64_MAX ? 0 : (INT64) Sum / 2;
+    INT128 Corrected  = LocalReceive + Offset;
 
     if (Processing < 0 || Elapsed < 0 || Elapsed > (INT128) TimeoutMls * 1000000 || RoundTrip < -1000000 || Corrected < 0 || Sum < INT64_MIN || Sum > INT64_MAX)
     {
@@ -355,7 +355,7 @@ STATIC BOOLEAN ClockNTPApply(CONST UINT8 *Packet, CONST CLOCK_TIME *Sent, CONST 
     }
 
     UINT64 Flags = SpinLockAcquireIRQSave(&ClockLock);
-    UINT64 Now = RDTSC();
+    UINT64 Now   = RDTSC();
 
     if (!ClockReady || ClockFrequency == 0 || Now < ReceivedCounter)
     {
@@ -365,13 +365,13 @@ STATIC BOOLEAN ClockNTPApply(CONST UINT8 *Packet, CONST CLOCK_TIME *Sent, CONST 
     }
 
     Corrected += (UINT128) (Now - ReceivedCounter) * CLOCK_NS_PER_SECOND / ClockFrequency;
-    ClockBaseUnix = (UINT64) ((UINT128) Corrected / CLOCK_NS_PER_SECOND);
-    ClockBaseNanoseconds = (UINT64) ((UINT128) Corrected - (UINT128) ClockBaseUnix * CLOCK_NS_PER_SECOND);
-    ClockBaseTSC = Now;
-    ClockNTPStatus.Synchronized = TRUE;
+    ClockBaseUnix                    = (UINT64) ((UINT128) Corrected / CLOCK_NS_PER_SECOND);
+    ClockBaseNanoseconds             = (UINT64) ((UINT128) Corrected - (UINT128) ClockBaseUnix * CLOCK_NS_PER_SECOND);
+    ClockBaseTSC                     = Now;
+    ClockNTPStatus.Synchronized      = TRUE;
     ClockNTPStatus.LastSyncUptimeMls = ClockGetUptimeMls();
     ClockNTPStatus.OffsetNanoseconds = (INT64) Offset;
-    ClockNTPStatus.RoundTripMls = RoundTrip < 0 ? 0 : (UINT32) ((UINT64) RoundTrip / 1000000);
+    ClockNTPStatus.RoundTripMls      = RoundTrip < 0 ? 0 : (UINT32) ((UINT64) RoundTrip / 1000000);
     SpinLockReleaseIRQRestore(&ClockLock, Flags);
 
     return TRUE;
@@ -424,7 +424,7 @@ STATIC BOOLEAN ClockNTPExchange(CONST CHAR8 *Server, UINT32 TimeoutMls, UINT64 *
             }
 
             UINT64  Flags = SpinLockAcquireIRQSave(&ClockLock);
-            BOOLEAN Read = ClockReadTimeLocked(&Received, &ReceivedCounter);
+            BOOLEAN Read  = ClockReadTimeLocked(&Received, &ReceivedCounter);
 
             SpinLockReleaseIRQRestore(&ClockLock, Flags);
 
@@ -435,7 +435,7 @@ STATIC BOOLEAN ClockNTPExchange(CONST CHAR8 *Server, UINT32 TimeoutMls, UINT64 *
 
             if (Reply[1] == 0)
             {
-                INT8   Poll = (INT8) Reply[2];
+                INT8   Poll  = (INT8) Reply[2];
                 UINT64 Delay = Poll >= 4 && Poll <= 17 ? (1ULL << Poll) * 1000 : CLOCK_NTP_INTERVAL_MLS;
 
                 *RetryDelay = Delay > CLOCK_NTP_INTERVAL_MLS ? Delay : CLOCK_NTP_INTERVAL_MLS;
@@ -455,7 +455,7 @@ STATIC BOOLEAN ClockNTPExchange(CONST CHAR8 *Server, UINT32 TimeoutMls, UINT64 *
 
             if (ClockNTPApply(Reply, &Sent, &Received, ReceivedCounter, TimeoutMls))
             {
-                Flags = SpinLockAcquireIRQSave(&ClockLock);
+                Flags                        = SpinLockAcquireIRQSave(&ClockLock);
                 ClockNTPStatus.ServerAddress = Address;
                 SpinLockReleaseIRQRestore(&ClockLock, Flags);
                 Result = TRUE;
@@ -492,15 +492,15 @@ BOOLEAN ClockSyncNTP(CONST CHAR8 *Server, UINT32 TimeoutMls)
     SpinLockReleaseIRQRestore(&ClockLock, Flags);
 
     UINT64  RetryDelay = 0;
-    BOOLEAN Result = ClockNTPExchange(Server, TimeoutMls, &RetryDelay);
+    BOOLEAN Result     = ClockNTPExchange(Server, TimeoutMls, &RetryDelay);
 
-    Flags = SpinLockAcquireIRQSave(&ClockLock);
+    Flags               = SpinLockAcquireIRQSave(&ClockLock);
     ClockNTPStatus.Busy = FALSE;
 
     if (Result)
     {
         ClockNTPStatus.Failures = 0;
-        RetryDelay = CLOCK_NTP_INTERVAL_MLS;
+        RetryDelay              = CLOCK_NTP_INTERVAL_MLS;
     }
     else
     {
@@ -508,7 +508,7 @@ BOOLEAN ClockSyncNTP(CONST CHAR8 *Server, UINT32 TimeoutMls)
 
         UINT64 Backoff = 64000ULL << (ClockNTPStatus.Failures < 5 ? ClockNTPStatus.Failures - 1 : 4);
 
-        Backoff = Backoff > CLOCK_NTP_INTERVAL_MLS ? CLOCK_NTP_INTERVAL_MLS : Backoff;
+        Backoff    = Backoff > CLOCK_NTP_INTERVAL_MLS ? CLOCK_NTP_INTERVAL_MLS : Backoff;
         RetryDelay = RetryDelay > Backoff ? RetryDelay : Backoff;
     }
 
@@ -555,7 +555,7 @@ BOOLEAN ClockGetMonotonicTime(CLOCK_TIME *Time)
 
     UINT128 Nanoseconds = (UINT128) (Now - ClockBootCounter) * CLOCK_NS_PER_SECOND / ClockBootFrequency;
 
-    Time->Seconds = (UINT64) (Nanoseconds / CLOCK_NS_PER_SECOND);
+    Time->Seconds     = (UINT64) (Nanoseconds / CLOCK_NS_PER_SECOND);
     Time->Nanoseconds = (UINT32) (Nanoseconds % CLOCK_NS_PER_SECOND);
 
     return TRUE;

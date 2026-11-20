@@ -13,8 +13,8 @@
 
 EFI_STATUS EFIAPI EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {
-    UEFIImageHandle = ImageHandle;
-    UEFISystemTable = SystemTable;
+    UEFIImageHandle  = ImageHandle;
+    UEFISystemTable  = SystemTable;
     UEFIBootServices = SystemTable->BootServices;
 
     if (!LineOSDisableWatchdog())

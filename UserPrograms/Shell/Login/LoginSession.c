@@ -44,10 +44,10 @@ STATIC VOID LoginAutostartDefault(VOID)
         return;
     }
 
-    CONST char *Default = "/sys/lwm/lwm.lix\n";
-    UINTN       Length = strlen(Default);
+    CONST char *Default  = "/sys/lwm/lwm.lix\n";
+    UINTN       Length   = strlen(Default);
     UINTN       Position = 0;
-    INT32       Error = 0;
+    INT32       Error    = 0;
 
     while (Position < Length)
     {
@@ -170,9 +170,9 @@ STATIC UINT32 LoginAutostartRead(char **Environment)
     char    Line[LOGIN_AUTOSTART_LINE_SIZE];
     char    Buffer[1024];
     UINTN   Position = 0;
-    UINT32  Live = 0;
-    UINT32  Entries = 0;
-    BOOLEAN Invalid = FALSE;
+    UINT32  Live     = 0;
+    UINT32  Entries  = 0;
+    BOOLEAN Invalid  = FALSE;
 
     for (;;)
     {
@@ -227,7 +227,7 @@ STATIC UINT32 LoginAutostartRead(char **Environment)
                 }
 
                 Position = 0;
-                Invalid = FALSE;
+                Invalid  = FALSE;
             }
             else if (Byte == 0 || (Byte < 32 && Byte != '\t' && Byte != '\r') || Position + 1 >= sizeof(Line))
             {
@@ -250,8 +250,8 @@ STATIC UINT32 LoginAutostartRead(char **Environment)
 
 INT32 LoginSessionRun(char **Environment)
 {
-    UINT32 Live = LoginAutostartRead(Environment);
-    pid_t  Shell = fork();
+    UINT32 Live        = LoginAutostartRead(Environment);
+    pid_t  Shell       = fork();
     INT32  ShellStatus = 1;
 
     if (Shell == 0)

@@ -68,7 +68,7 @@ VOID InitKernel(LINEOS_BOOT_INFO *BootInfo)
         HLT();
     }
 
-    DisplayWidth = GPU->DisplayInfo.Displays[0].Rect.Width;
+    DisplayWidth  = GPU->DisplayInfo.Displays[0].Rect.Width;
     DisplayHeight = GPU->DisplayInfo.Displays[0].Rect.Height;
 
     VirtIOGPUCreateFrameBuffer(DisplayWidth, DisplayHeight);

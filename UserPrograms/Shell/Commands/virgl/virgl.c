@@ -13,7 +13,7 @@ STATIC BOOLEAN VirGLTestBuffer(int FD)
 {
     CONST UINT8             Data[] = {0x11, 0x22, 0x33, 0x44, 0x55};
     LOS_VIRGL_BUFFER_CREATE Buffer = {0};
-    LOS_VIRGL_BUFFER_WRITE  Write = {0};
+    LOS_VIRGL_BUFFER_WRITE  Write  = {0};
 
     Buffer.Size = 64;
 
@@ -24,10 +24,10 @@ STATIC BOOLEAN VirGLTestBuffer(int FD)
         return FALSE;
     }
 
-    Write.Handle = Buffer.Handle;
-    Write.Offset = 4;
-    Write.Size = sizeof(Data);
-    Write.Address = (UINTN) Data;
+    Write.Handle    = Buffer.Handle;
+    Write.Offset    = 4;
+    Write.Size      = sizeof(Data);
+    Write.Address   = (UINTN) Data;
     BOOLEAN Success = VirGLWriteDeviceBuffer(FD, &Write) == 0;
 
     if (!Success)
@@ -52,9 +52,9 @@ STATIC BOOLEAN VirGLTestBuffer(int FD)
 
 int main(VOID)
 {
-    int     FD = VirGLOpenDevice();
+    int     FD     = VirGLOpenDevice();
     int     Status = 0;
-    BOOLEAN Found = FALSE;
+    BOOLEAN Found  = FALSE;
 
     if (FD < 0)
     {
@@ -66,7 +66,7 @@ int main(VOID)
     for (UINT32 Id = 1; Id <= 2; Id++)
     {
         LOS_VIRGL_CAPSET_INFO Info = {0};
-        Info.Id = Id;
+        Info.Id                    = Id;
 
         if (VirGLQueryCapset(FD, &Info) < 0)
         {
@@ -80,10 +80,10 @@ int main(VOID)
         }
 
         LOS_VIRGL_CAPSET_READ Request = {0};
-        Request.Id = Id;
-        Request.Version = Info.MaxVersion;
-        Request.Capacity = sizeof(CapsetData);
-        Request.Address = (UINTN) CapsetData;
+        Request.Id                    = Id;
+        Request.Version               = Info.MaxVersion;
+        Request.Capacity              = sizeof(CapsetData);
+        Request.Address               = (UINTN) CapsetData;
 
         if (VirGLFetchCapset(FD, &Request) < 0)
         {

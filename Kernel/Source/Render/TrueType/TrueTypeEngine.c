@@ -15,7 +15,7 @@ STATIC FONT_INFO JetBrainsMonoFont;
 
 STATIC FLOAT32 GetPixelScale(FONT_INFO *Font, UINT32 PixelHeight)
 {
-    INT32 Ascent = 0;
+    INT32 Ascent  = 0;
     INT32 Descent = 0;
     INT32 LineGap = 0;
     INT32 Units;
@@ -53,13 +53,13 @@ STATIC UINT32 GetColorRGB(UINT32 Color)
 
 STATIC UINT32 BlendColor(UINT32 Background, UINT32 Foreground, UINT8 Alpha)
 {
-    UINT32 RGB = GetColorRGB(Foreground);
-    UINT32 ColorAlpha = GetColorAlpha(Foreground);
+    UINT32 RGB            = GetColorRGB(Foreground);
+    UINT32 ColorAlpha     = GetColorAlpha(Foreground);
     UINT32 EffectiveAlpha = ((UINT32) Alpha * ColorAlpha) / 255;
-    UINT32 InverseAlpha = 255 - EffectiveAlpha;
-    UINT32 Red = ((((RGB >> 16) & 0xFF) * EffectiveAlpha) + (((Background >> 16) & 0xFF) * InverseAlpha)) / 255;
-    UINT32 Green = ((((RGB >> 8) & 0xFF) * EffectiveAlpha) + (((Background >> 8) & 0xFF) * InverseAlpha)) / 255;
-    UINT32 Blue = (((RGB & 0xFF) * EffectiveAlpha) + ((Background & 0xFF) * InverseAlpha)) / 255;
+    UINT32 InverseAlpha   = 255 - EffectiveAlpha;
+    UINT32 Red            = ((((RGB >> 16) & 0xFF) * EffectiveAlpha) + (((Background >> 16) & 0xFF) * InverseAlpha)) / 255;
+    UINT32 Green          = ((((RGB >> 8) & 0xFF) * EffectiveAlpha) + (((Background >> 8) & 0xFF) * InverseAlpha)) / 255;
+    UINT32 Blue           = (((RGB & 0xFF) * EffectiveAlpha) + ((Background & 0xFF) * InverseAlpha)) / 255;
 
     return 0xFF000000 | (Red << 16) | (Green << 8) | Blue;
 }
@@ -84,12 +84,12 @@ STATIC VOID BlendPixel(VIRTIO_GPU_INFO *GPU, INT32 X, INT32 Y, UINT32 Color, UIN
     }
 
     Background = *Pixel;
-    *Pixel = BlendColor(Background, Color, Alpha);
+    *Pixel     = BlendColor(Background, Color, Alpha);
 }
 
 STATIC UINT32 CodepointAdvance(FONT_INFO *Font, UINT32 Codepoint, FLOAT32 Scale)
 {
-    INT32 AdvanceWidth = 0;
+    INT32 AdvanceWidth    = 0;
     INT32 LeftSideBearing = 0;
 
     GetCodepointHMetrics(Font, (INT32) Codepoint, &AdvanceWidth, &LeftSideBearing);
@@ -141,7 +141,7 @@ STATIC FONT_INFO *GetFont(TRUE_TYPE_FONT Font, UINT32 Codepoint)
 
 BOOLEAN TrueTypeInit(VOID)
 {
-    BOOLEAN PretendardOK = InitFont(&PretendardFont, LineOSPretendardFontStart, 0) != 0;
+    BOOLEAN PretendardOK    = InitFont(&PretendardFont, LineOSPretendardFontStart, 0) != 0;
     BOOLEAN JetBrainsMonoOK = InitFont(&JetBrainsMonoFont, LineOSJetBrainsMonoFontStart, 0) != 0;
 
     return PretendardOK || JetBrainsMonoOK;
@@ -166,11 +166,11 @@ UINT32 DrawTrueTypeCodepoint(TRUE_TYPE_FONT Font, UINT32 Codepoint, UINT32 X, UI
         return X;
     }
 
-    Scale = GetPixelScale(DrawFont, PixelHeight);
-    Width = 0;
+    Scale  = GetPixelScale(DrawFont, PixelHeight);
+    Width  = 0;
     Height = 0;
-    XOff = 0;
-    YOff = 0;
+    XOff   = 0;
+    YOff   = 0;
     Bitmap = GetCodepointBitmap(DrawFont, Scale, Scale, (INT32) Codepoint, &Width, &Height, &XOff, &YOff);
 
     if (Bitmap == NULL)
@@ -249,7 +249,7 @@ UINT32 DrawTrueTypeText(TRUE_TYPE_FONT Font, CONST CHAR16 *Text, UINT32 X, UINT3
 
 BOOLEAN MeasureTrueTypeText(TRUE_TYPE_FONT Font, CONST CHAR16 *Text, UINT32 PixelHeight, INT32 *Left, INT32 *Top, INT32 *Right, INT32 *Bottom)
 {
-    INT32   CursorX = 0;
+    INT32   CursorX   = 0;
     BOOLEAN HasBounds = FALSE;
 
     if (Text == NULL || Left == NULL || Top == NULL || Right == NULL || Bottom == NULL)
@@ -260,7 +260,7 @@ BOOLEAN MeasureTrueTypeText(TRUE_TYPE_FONT Font, CONST CHAR16 *Text, UINT32 Pixe
     for (UINT32 Index = 0; Text[Index] != 0; Index++)
     {
         UINT32     Codepoint = DecodeSurrogate(Text, &Index);
-        FONT_INFO *FontInfo = GetFont(Font, Codepoint);
+        FONT_INFO *FontInfo  = GetFont(Font, Codepoint);
         FLOAT32    Scale;
         INT32      BoxX0;
         INT32      BoxY0;
@@ -279,10 +279,10 @@ BOOLEAN MeasureTrueTypeText(TRUE_TYPE_FONT Font, CONST CHAR16 *Text, UINT32 Pixe
 
         if (!HasBounds)
         {
-            *Left = BoxX0;
-            *Top = BoxY0;
-            *Right = BoxX1;
-            *Bottom = BoxY1;
+            *Left     = BoxX0;
+            *Top      = BoxY0;
+            *Right    = BoxX1;
+            *Bottom   = BoxY1;
             HasBounds = TRUE;
         }
         else

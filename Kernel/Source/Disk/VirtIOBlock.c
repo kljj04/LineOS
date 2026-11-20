@@ -121,7 +121,7 @@ STATIC BOOLEAN AllocateRequestPool(VIRTIO_BLOCK_DEVICE *Device)
         return FALSE;
     }
 
-    Device->Requests = (VIRTIO_BLOCK_REQUEST *) KAllocPagesBelow(1, VIRTIO_BLOCK_DMA_LIMIT);
+    Device->Requests      = (VIRTIO_BLOCK_REQUEST *) KAllocPagesBelow(1, VIRTIO_BLOCK_DMA_LIMIT);
     Device->RequestByHead = (VIRTIO_BLOCK_REQUEST **) KAlloc(sizeof(VIRTIO_BLOCK_REQUEST *) * Device->QueueSize);
 
     if (Device->Requests == NULL || Device->RequestByHead == NULL)
@@ -147,7 +147,7 @@ STATIC VIRTIO_BLOCK_REQUEST *AllocateRequest(VIRTIO_BLOCK_DEVICE *Device)
 
             KMemSet(Request, 0, sizeof(VIRTIO_BLOCK_REQUEST));
             Request->Status = 0xFF;
-            Request->State = VIRTIO_BLOCK_REQUEST_PENDING;
+            Request->State  = VIRTIO_BLOCK_REQUEST_PENDING;
 
             return Request;
         }
@@ -227,16 +227,16 @@ STATIC BOOLEAN SubmitRequest(VIRTIO_BLOCK_DEVICE *Device, UINT32 Type, UINT64 Se
         return FALSE;
     }
 
-    Request->Header.Type = Type;
+    Request->Header.Type     = Type;
     Request->Header.Reserved = 0;
-    Request->Header.Sector = Sector;
-    Request->Buffer = Buffer;
-    Request->Sector = Sector;
-    Request->SectorCount = SectorCount;
+    Request->Header.Sector   = Sector;
+    Request->Buffer          = Buffer;
+    Request->Sector          = Sector;
+    Request->SectorCount     = SectorCount;
 
     Buffers[0].Buffer = &Request->Header;
     Buffers[0].Length = sizeof(VIRTIO_BLOCK_REQUEST_HEADER);
-    Buffers[0].Flags = 0;
+    Buffers[0].Flags  = 0;
 
     BufferCount = 1;
 
@@ -244,33 +244,33 @@ STATIC BOOLEAN SubmitRequest(VIRTIO_BLOCK_DEVICE *Device, UINT32 Type, UINT64 Se
     {
         Buffers[1].Buffer = (VOID *) Buffer;
         Buffers[1].Length = (UINT32) DataLength;
-        Buffers[1].Flags = Type == VIRTIO_BLOCK_T_IN ? VIRTQ_DESC_F_WRITE : 0;
+        Buffers[1].Flags  = Type == VIRTIO_BLOCK_T_IN ? VIRTQ_DESC_F_WRITE : 0;
 
         BufferCount = 2;
     }
 
     Buffers[BufferCount].Buffer = &Request->Status;
     Buffers[BufferCount].Length = sizeof(Request->Status);
-    Buffers[BufferCount].Flags = VIRTQ_DESC_F_WRITE;
+    Buffers[BufferCount].Flags  = VIRTQ_DESC_F_WRITE;
     BufferCount++;
 
     if (!VirtQueueBuildChain(&Device->Queue, Buffers, BufferCount, &Head))
     {
-        LastError = VirtQueueGetLastError();
+        LastError      = VirtQueueGetLastError();
         Request->State = VIRTIO_BLOCK_REQUEST_FREE;
         SpinLockReleaseIRQRestore(&Device->QueueLock, Flags);
 
         return FALSE;
     }
 
-    Request->DescriptorHead = Head;
+    Request->DescriptorHead     = Head;
     Device->RequestByHead[Head] = Request;
 
     MemoryBarrier();
 
     if (!VirtQueueSubmit(&Device->Device, &Device->Queue, Head))
     {
-        LastError = VirtQueueGetLastError();
+        LastError                   = VirtQueueGetLastError();
         Device->RequestByHead[Head] = NULL;
         VirtQueueFreeChain(&Device->Queue, Head);
         Request->State = VIRTIO_BLOCK_REQUEST_FREE;
@@ -280,7 +280,7 @@ STATIC BOOLEAN SubmitRequest(VIRTIO_BLOCK_DEVICE *Device, UINT32 Type, UINT64 Se
     }
 
     *OutRequest = Request;
-    LastError = L"ok";
+    LastError   = L"ok";
 
     SpinLockReleaseIRQRestore(&Device->QueueLock, Flags);
 
@@ -354,7 +354,7 @@ BOOLEAN VirtIOBlockInit(VOID)
         return FALSE;
     }
 
-    FeaturesLow = VIRTIO_BLOCK_F_FLUSH;
+    FeaturesLow  = VIRTIO_BLOCK_F_FLUSH;
     FeaturesHigh = 0;
 
     if (!VirtIOPCIStartDeviceWithFeatures(&VirtIOBlockInfo.Device, FeaturesLow, FeaturesHigh))
@@ -395,7 +395,7 @@ BOOLEAN VirtIOBlockInit(VOID)
     VirtIOPCIReadyDevice(&VirtIOBlockInfo.Device);
 
     VirtIOBlockInfo.Initialized = TRUE;
-    LastError = L"ok";
+    LastError                   = L"ok";
 
     return TRUE;
 }
@@ -470,7 +470,7 @@ VOID VirtIOBlockHandleInterrupt(VIRTIO_BLOCK_DEVICE *Device)
             continue;
         }
 
-        Request->UsedLength = UsedLength;
+        Request->UsedLength         = UsedLength;
         Device->RequestByHead[Head] = NULL;
 
         if (Request->Status == VIRTIO_BLOCK_S_OK)
@@ -480,7 +480,7 @@ VOID VirtIOBlockHandleInterrupt(VIRTIO_BLOCK_DEVICE *Device)
         else
         {
             Request->State = VIRTIO_BLOCK_REQUEST_FAILED;
-            LastError = Request->Status == VIRTIO_BLOCK_S_UNSUPP ? L"block request unsupported" : L"block I/O error";
+            LastError      = Request->Status == VIRTIO_BLOCK_S_UNSUPP ? L"block request unsupported" : L"block I/O error";
         }
 
         MemoryBarrier();
@@ -555,7 +555,7 @@ BOOLEAN VirtIOBlockReleaseRequest(VIRTIO_BLOCK_DEVICE *Device, VIRTIO_BLOCK_REQU
     }
 
     Request->Buffer = NULL;
-    Request->State = VIRTIO_BLOCK_REQUEST_FREE;
+    Request->State  = VIRTIO_BLOCK_REQUEST_FREE;
 
     SpinLockReleaseIRQRestore(&Device->QueueLock, Flags);
 

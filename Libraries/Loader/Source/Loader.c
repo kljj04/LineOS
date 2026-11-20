@@ -56,8 +56,8 @@ EXTERN VOID LoaderEnter(UINT64 Entry, UINT64 Stack, VOID (*Finalizer)(VOID)) NOR
 STATIC INT64 LoaderCall(UINT64 Number, UINT64 A, UINT64 B, UINT64 C, UINT64 D, UINT64 E, UINT64 F)
 {
     register UINT64 R10 __asm__("r10") = D;
-    register UINT64 R8 __asm__("r8") = E;
-    register UINT64 R9 __asm__("r9") = F;
+    register UINT64 R8 __asm__("r8")   = E;
+    register UINT64 R9 __asm__("r9")   = F;
     INT64           Result;
 
     ASM("syscall" : "=a"(Result) : "a"(Number), "D"(A), "S"(B), "d"(C), "r"(R10), "r"(R8), "r"(R9) : "rcx", "r11", "memory");
@@ -172,7 +172,7 @@ STATIC VOID LoaderParse(LOADER_OBJECT *Object)
 
         for (UINT64 Entry = 0; Entry < Header->MemSize / sizeof(*Dynamic); Entry++)
         {
-            INT64  Tag = Dynamic[Entry].Tag;
+            INT64  Tag   = Dynamic[Entry].Tag;
             UINT64 Value = Dynamic[Entry].Data.Value;
 
             if (Tag == ELF64_DT_TEXTREL || Tag == ELF64_DT_REL || Tag == ELF64_DT_RELSZ)
@@ -225,12 +225,12 @@ STATIC VOID LoaderParse(LOADER_OBJECT *Object)
     }
 
     Object->StringSize = Object->Tags[ELF64_DT_STRSZ];
-    Object->Strings = (VOID *) LoaderPointer(Object, Object->Tags[ELF64_DT_STRTAB], Object->StringSize);
-    Object->SysVHash = Object->Tags[ELF64_DT_HASH];
+    Object->Strings    = (VOID *) LoaderPointer(Object, Object->Tags[ELF64_DT_STRTAB], Object->StringSize);
+    Object->SysVHash   = Object->Tags[ELF64_DT_HASH];
 
     if (Object->SysVHash != 0)
     {
-        UINT32 *Hash = (VOID *) LoaderPointer(Object, Object->SysVHash, 8);
+        UINT32 *Hash        = (VOID *) LoaderPointer(Object, Object->SysVHash, 8);
         Object->SymbolCount = Hash[1];
         LoaderPointer(Object, Object->SysVHash, 8 + ((UINT64) Hash[0] + Hash[1]) * 4);
     }
@@ -245,9 +245,9 @@ STATIC VOID LoaderParse(LOADER_OBJECT *Object)
         }
 
         UINT64  BucketOffset = Object->GNUHash + 16 + (UINT64) Hash[2] * 8;
-        UINT32 *Buckets = (VOID *) LoaderPointer(Object, BucketOffset, (UINT64) Hash[0] * 4);
-        UINT64  ChainOffset = BucketOffset + (UINT64) Hash[0] * 4;
-        UINT64  Maximum = Hash[1];
+        UINT32 *Buckets      = (VOID *) LoaderPointer(Object, BucketOffset, (UINT64) Hash[0] * 4);
+        UINT64  ChainOffset  = BucketOffset + (UINT64) Hash[0] * 4;
+        UINT64  Maximum      = Hash[1];
 
         for (UINT32 Bucket = 0; Bucket < Hash[0]; Bucket++)
         {
@@ -322,9 +322,9 @@ STATIC BOOLEAN LoaderOpenObject(CONST CHAR8 *Path, LOADER_OBJECT *Object)
     }
 
     Object->Device = Stat.Device;
-    Object->Inode = Stat.Inode;
-    UINT8 *Data = LoaderAllocate(Stat.Size);
-    UINT64 Read = 0;
+    Object->Inode  = Stat.Inode;
+    UINT8 *Data    = LoaderAllocate(Stat.Size);
+    UINT64 Read    = 0;
 
     while (Read < (UINT64) Stat.Size)
     {
@@ -370,7 +370,7 @@ STATIC BOOLEAN LoaderOpenObject(CONST CHAR8 *Path, LOADER_OBJECT *Object)
         }
 
         UINT64 Start = Segment->VAddr & ~4095ULL;
-        UINT64 Top = (Segment->VAddr + Segment->MemSize + 4095) & ~4095ULL;
+        UINT64 Top   = (Segment->VAddr + Segment->MemSize + 4095) & ~4095ULL;
 
         for (UINT32 Previous = 0; Previous < Index; Previous++)
         {
@@ -394,9 +394,9 @@ STATIC BOOLEAN LoaderOpenObject(CONST CHAR8 *Path, LOADER_OBJECT *Object)
     }
 
     Object->Mapping = (UINT64) LoaderAllocate(End);
-    Object->Size = End;
-    Object->Bias = Object->Mapping;
-    Object->Entry = Object->Bias + Header->Entry;
+    Object->Size    = End;
+    Object->Bias    = Object->Mapping;
+    Object->Entry   = Object->Bias + Header->Entry;
 
     for (UINT64 Index = 0; Index < End; Index++)
     {
@@ -429,7 +429,7 @@ STATIC BOOLEAN LoaderSearchPath(LOADER_OBJECT *Object, LOADER_OBJECT *Requester,
         while (*List != 0 && *List != ':')
         {
             CONST CHAR8 Origin[] = "$ORIGIN";
-            BOOLEAN     Match = TRUE;
+            BOOLEAN     Match    = TRUE;
 
             for (UINT32 Index = 0; Index < sizeof(Origin) - 1; Index++)
             {
@@ -545,7 +545,7 @@ STATIC UINT32 LoaderDependency(LOADER_OBJECT *Requester, CONST CHAR8 *Name)
         LoaderFail((CONST CHAR8 *) "too many shared libraries");
     }
 
-    UINT32         Index = ObjectCount++;
+    UINT32         Index  = ObjectCount++;
     LOADER_OBJECT *Object = &Objects[Index];
 
     if (Name[0] == '/')
@@ -657,8 +657,8 @@ STATIC CONST CHAR8 *LoaderVersion(LOADER_OBJECT *Object, UINT64 Symbol, BOOLEAN 
     }
 
     UINT16 *Versions = (VOID *) LoaderPointer(Object, Object->VersionSymbols, Object->SymbolCount * 2);
-    UINT16  Version = Versions[Symbol];
-    *Hidden = (Version & 0x8000U) != 0;
+    UINT16  Version  = Versions[Symbol];
+    *Hidden          = (Version & 0x8000U) != 0;
     Version &= 0x7FFFU;
 
     if (Version <= 1)
@@ -748,8 +748,8 @@ STATIC ELF64_SYMBOL *LoaderResolve(LOADER_OBJECT *Request, UINT32 Symbol, LOADER
 
         for (UINT64 Entry = 1; Entry < Object->SymbolCount; Entry++)
         {
-            ELF64_SYMBOL *Candidate = &Object->Symbols[Entry];
-            UINT8         Bind = ELF64_ST_BIND(Candidate->Info);
+            ELF64_SYMBOL *Candidate  = &Object->Symbols[Entry];
+            UINT8         Bind       = ELF64_ST_BIND(Candidate->Info);
             UINT8         Visibility = ELF64_ST_VISIBILITY(Candidate->Other);
 
             if (Candidate->SHNdx != ELF64_SHN_UNDEF && (Bind == ELF64_STB_GLOBAL || Bind == ELF64_STB_WEAK) && Visibility != ELF64_STV_HIDDEN && Visibility != ELF64_STV_INTERNAL && LoaderEqual(Name, LoaderString(Object, Candidate->Name)))
@@ -779,25 +779,25 @@ STATIC ELF64_SYMBOL *LoaderResolve(LOADER_OBJECT *Request, UINT32 Symbol, LOADER
 
 VOID *LoaderTLSCreate(VOID)
 {
-    UINT64  Total = TLSSize + TLSAlignment + 128 + (ObjectCount + 1) * 16;
+    UINT64  Total      = TLSSize + TLSAlignment + 128 + (ObjectCount + 1) * 16;
     UINT8  *Allocation = LoaderAllocate(Total);
-    UINT64  Base = ((UINT64) Allocation + TLSSize + TLSAlignment - 1) & ~(TLSAlignment - 1);
-    UINT64 *TCB = (VOID *) Base;
+    UINT64  Base       = ((UINT64) Allocation + TLSSize + TLSAlignment - 1) & ~(TLSAlignment - 1);
+    UINT64 *TCB        = (VOID *) Base;
 
     for (UINT64 Index = 0; Index < Total; Index++)
     {
         Allocation[Index] = 0;
     }
 
-    TCB[0] = Base;
-    TCB[1] = Base + 128;
-    TCB[2] = Base;
-    TCB[3] = (UINT64) Allocation;
-    TCB[4] = Total;
-    TCB[5] = TLSRandom[0] & ~0xFFULL;
-    TCB[6] = TLSRandom[1];
+    TCB[0]      = Base;
+    TCB[1]      = Base + 128;
+    TCB[2]      = Base;
+    TCB[3]      = (UINT64) Allocation;
+    TCB[4]      = Total;
+    TCB[5]      = TLSRandom[0] & ~0xFFULL;
+    TCB[6]      = TLSRandom[1];
     UINT64 *DTV = (VOID *) TCB[1];
-    DTV[0] = 1;
+    DTV[0]      = 1;
 
     for (UINT32 Index = 0; Index < ObjectCount; Index++)
     {
@@ -859,12 +859,12 @@ STATIC VOID LoaderTLSLayout(VOID)
                 LoaderFail((CONST CHAR8 *) "unsupported TLS layout");
             }
 
-            UINT64 Skew = Header->VAddr & (Align - 1);
-            TLSSize = ((TLSSize + Header->MemSize + Skew + Align - 1) & ~(Align - 1)) - Skew;
-            Object->TLSOffset = TLSSize;
-            Object->TLSSize = Header->MemSize;
+            UINT64 Skew         = Header->VAddr & (Align - 1);
+            TLSSize             = ((TLSSize + Header->MemSize + Skew + Align - 1) & ~(Align - 1)) - Skew;
+            Object->TLSOffset   = TLSSize;
+            Object->TLSSize     = Header->MemSize;
             Object->TLSFileSize = Header->FileSize;
-            Object->TLSImage = LoaderPointer(Object, Header->VAddr, Header->FileSize);
+            Object->TLSImage    = LoaderPointer(Object, Header->VAddr, Header->FileSize);
 
             if (Align > TLSAlignment)
             {
@@ -890,8 +890,8 @@ STATIC VOID LoaderRelocations(LOADER_OBJECT *Object, UINT64 Offset, UINT64 Size,
 
     for (UINT64 Index = 0; Index < Size / sizeof(*Relocations); Index++)
     {
-        ELF64_RELA Relocation = Relocations[Index];
-        UINT32     Type = ELF64_R_TYPE(Relocation.Info);
+        ELF64_RELA Relocation  = Relocations[Index];
+        UINT32     Type        = ELF64_R_TYPE(Relocation.Info);
         UINT32     SymbolIndex = ELF64_R_SYM(Relocation.Info);
 
         if (Type == ELF64_R_X86_64_NONE || (Type == ELF64_R_X86_64_IRELATIVE && !Resolvers) || (Resolvers && Type != ELF64_R_X86_64_IRELATIVE && Type != ELF64_R_X86_64_64 && Type != ELF64_R_X86_64_GLOB_DAT && Type != ELF64_R_X86_64_JUMP_SLOT))
@@ -934,7 +934,7 @@ STATIC VOID LoaderRelocations(LOADER_OBJECT *Object, UINT64 Offset, UINT64 Size,
                 LoaderFail((CONST CHAR8 *) "invalid symbol index");
             }
 
-            CONST CHAR8 *Name = LoaderString(Object, Object->Symbols[SymbolIndex].Name);
+            CONST CHAR8 *Name    = LoaderString(Object, Object->Symbols[SymbolIndex].Name);
             UINT64       Builtin = LoaderEqual(Name, (CONST CHAR8 *) "__tls_get_addr") ? (UINT64) LoaderTLSAddress : LoaderEqual(Name, (CONST CHAR8 *) "LineOSTLSCreate") ? (UINT64) LoaderTLSCreate : LoaderEqual(Name, (CONST CHAR8 *) "LineOSTLSFree") ? (UINT64) LoaderTLSFree : 0;
 
             if (Builtin != 0 && Type != ELF64_R_X86_64_COPY)
@@ -999,7 +999,7 @@ STATIC VOID LoaderRelocations(LOADER_OBJECT *Object, UINT64 Offset, UINT64 Size,
         }
         else if (Type == ELF64_R_X86_64_DTPMOD64 || Type == ELF64_R_X86_64_DTPOFF64 || Type == ELF64_R_X86_64_TPOFF64)
         {
-            LOADER_OBJECT *Owner = Object;
+            LOADER_OBJECT *Owner  = Object;
             ELF64_SYMBOL  *Symbol = SymbolIndex == 0 ? NULL : LoaderResolve(Object, SymbolIndex, &Owner, FALSE);
 
             if (Owner == NULL || Owner->TLSSize == 0 || (Symbol != NULL && (ELF64_ST_TYPE(Symbol->Info) != ELF64_STT_TLS || !LoaderRange(Symbol->Value, Symbol->Size, Owner->TLSSize))))
@@ -1034,8 +1034,8 @@ STATIC VOID LoaderProtect(LOADER_OBJECT *Object)
             continue;
         }
 
-        UINT64 Start = (Object->Bias + Header->VAddr) & ~4095ULL;
-        UINT64 End = (Object->Bias + Header->VAddr + Header->MemSize + 4095) & ~4095ULL;
+        UINT64 Start      = (Object->Bias + Header->VAddr) & ~4095ULL;
+        UINT64 End        = (Object->Bias + Header->VAddr + Header->MemSize + 4095) & ~4095ULL;
         UINT32 Protection = ((Header->Flags & ELF64_PF_R) != 0 ? 1 : 0) | ((Header->Flags & ELF64_PF_W) != 0 ? 2 : 0) | ((Header->Flags & ELF64_PF_X) != 0 ? 4 : 0);
 
         if (LoaderCall(10, Start, End - Start, Protection, 0, 0, 0) != 0)
@@ -1119,7 +1119,7 @@ STATIC VOID LoaderInitialize(UINT32 Index)
     }
 
     LoaderArray(Object, ELF64_DT_INIT_ARRAY, ELF64_DT_INIT_ARRAYSZ, FALSE);
-    Object->InitState = 2;
+    Object->InitState      = 2;
     InitOrder[InitCount++] = Index;
 }
 
@@ -1140,7 +1140,7 @@ STATIC VOID LoaderFinalize(VOID)
 VOID NORETURN LoaderStart(UINT64 *Stack)
 {
     InitialStack = Stack;
-    UINT64 *Aux = Stack + Stack[0] + 2;
+    UINT64 *Aux  = Stack + Stack[0] + 2;
 
     while (*Aux != 0)
     {
@@ -1148,9 +1148,9 @@ VOID NORETURN LoaderStart(UINT64 *Stack)
     }
 
     Aux++;
-    UINT64 Headers = 0;
+    UINT64 Headers     = 0;
     UINT64 HeaderCount = 0;
-    UINT64 Entry = 0;
+    UINT64 Entry       = 0;
 
     for (UINT32 Index = 0; Index < 64 && Aux[0] != 0; Index++, Aux += 2)
     {
@@ -1193,7 +1193,7 @@ VOID NORETURN LoaderStart(UINT64 *Stack)
     }
 
     LOADER_OBJECT *Main = &Objects[0];
-    Main->HeaderCount = HeaderCount;
+    Main->HeaderCount   = HeaderCount;
     LoaderCopy(Main->Headers, (VOID *) Headers, HeaderCount * sizeof(ELF64_PROGRAM_HEADER));
     BOOLEAN FoundBias = FALSE;
 
@@ -1204,7 +1204,7 @@ VOID NORETURN LoaderStart(UINT64 *Stack)
         if (Header->Type == ELF64_PT_PHDR && Headers >= Header->VAddr)
         {
             Main->Bias = Headers - Header->VAddr;
-            FoundBias = TRUE;
+            FoundBias  = TRUE;
         }
     }
 
@@ -1268,7 +1268,7 @@ VOID NORETURN LoaderStart(UINT64 *Stack)
             if (Header->Type == ELF64_PT_GNU_RELRO)
             {
                 UINT64 Start = (Object->Bias + Header->VAddr) & ~4095ULL;
-                UINT64 End = (Object->Bias + Header->VAddr + Header->MemSize) & ~4095ULL;
+                UINT64 End   = (Object->Bias + Header->VAddr + Header->MemSize) & ~4095ULL;
 
                 if (End > Start && LoaderCall(10, Start, End - Start, 1, 0, 0, 0) != 0)
                 {

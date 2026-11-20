@@ -38,9 +38,9 @@ STATIC BOOLEAN BtopSample(VOID)
         return FALSE;
     }
 
-    Monitor.Info.UptimeMls = (UINT64) System.Uptime * 1000;
+    Monitor.Info.UptimeMls    = (UINT64) System.Uptime * 1000;
     Monitor.Info.ManagedBytes = System.TotalRAM * System.MemUnit;
-    Monitor.Info.FreeBytes = System.FreeRAM * System.MemUnit;
+    Monitor.Info.FreeBytes    = System.FreeRAM * System.MemUnit;
 
     UINT64 AllBusy = 0;
     UINT64 AllTime = 0;
@@ -56,7 +56,7 @@ STATIC BOOLEAN BtopSample(VOID)
         {
             UINT64 BusyDelta = Busy - Monitor.PreviousBusy[CPU];
             UINT64 IdleDelta = Idle - Monitor.PreviousIdle[CPU];
-            UINT64 Total = BusyDelta + IdleDelta;
+            UINT64 Total     = BusyDelta + IdleDelta;
 
             if (Total != 0)
             {
@@ -84,7 +84,7 @@ STATIC BOOLEAN BtopSample(VOID)
     }
 
     Monitor.Info.TasksReturned = Count;
-    Monitor.HaveCounters = TRUE;
+    Monitor.HaveCounters       = TRUE;
 
     return TRUE;
 }
@@ -137,8 +137,8 @@ INT32 main(INT32 Argc, char **Argv)
     write(1, ClearScreen, strlen(ClearScreen));
 
     UINT64  NextUpdate = 0;
-    BOOLEAN Redraw = TRUE;
-    INT32   Result = 0;
+    BOOLEAN Redraw     = TRUE;
+    INT32   Result     = 0;
 
     for (;;)
     {
@@ -153,7 +153,7 @@ INT32 main(INT32 Argc, char **Argv)
             }
 
             Monitor.History[Monitor.HistoryPosition] = Monitor.Info.CPUUsage;
-            Monitor.HistoryPosition = (Monitor.HistoryPosition + 1) % BTOP_HISTORY_SIZE;
+            Monitor.HistoryPosition                  = (Monitor.HistoryPosition + 1) % BTOP_HISTORY_SIZE;
             BtopLayout(&Monitor, Size.ws_col, Size.ws_row);
             BtopSort(&Monitor);
 
@@ -163,7 +163,7 @@ INT32 main(INT32 Argc, char **Argv)
             }
 
             NextUpdate = Now + 250;
-            Redraw = TRUE;
+            Redraw     = TRUE;
         }
 
         if (Redraw)
@@ -206,13 +206,13 @@ INT32 main(INT32 Argc, char **Argv)
                 case ' ':
                 {
                     Monitor.Paused = !Monitor.Paused;
-                    NextUpdate = 0;
+                    NextUpdate     = 0;
                     break;
                 }
 
                 case 's':
                 {
-                    Monitor.SortPID = !Monitor.SortPID;
+                    Monitor.SortPID  = !Monitor.SortPID;
                     Monitor.TaskPage = 0;
                     BtopSort(&Monitor);
                     break;

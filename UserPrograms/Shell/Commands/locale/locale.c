@@ -17,7 +17,7 @@ STATIC BOOLEAN LocaleWrite(CONST char *Name)
     char   Path[64] = "/etc/.locale.";
     char   Digits[24];
     UINT32 Count = 0;
-    UINT64 PID = (UINT64) getpid();
+    UINT64 PID   = (UINT64) getpid();
 
     do
     {
@@ -46,9 +46,9 @@ STATIC BOOLEAN LocaleWrite(CONST char *Name)
     strcpy(Text, Name);
     strcat(Text, "\n");
 
-    UINTN Length = strlen(Text);
+    UINTN Length  = strlen(Text);
     UINTN Written = 0;
-    int   Error = 0;
+    int   Error   = 0;
 
     while (Written < Length)
     {

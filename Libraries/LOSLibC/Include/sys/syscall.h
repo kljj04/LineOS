@@ -4,5 +4,5 @@
 
 #pragma once
 #include <syscall.h>
-#define SYS_clone SYSCALL_CLONE
+#define SYS_clone  SYSCALL_CLONE
 #define SYS_clone3 SYSCALL_CLONE3

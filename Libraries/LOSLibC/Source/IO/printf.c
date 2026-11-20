@@ -143,10 +143,10 @@ static void OutputUnsigned(STDIO_OUTPUT *Output, uint64_t Value, unsigned int Ba
         } while (Value != 0);
     }
 
-    Zeroes = Precision >= 0 && (size_t) Precision > Count ? (size_t) Precision - Count : 0;
-    PrefixLength = Prefix != NULL ? (Sign != 0 ? 1 : 0) + strlen(Prefix) : (Sign != 0 ? 1 : 0);
+    Zeroes        = Precision >= 0 && (size_t) Precision > Count ? (size_t) Precision - Count : 0;
+    PrefixLength  = Prefix != NULL ? (Sign != 0 ? 1 : 0) + strlen(Prefix) : (Sign != 0 ? 1 : 0);
     ContentLength = PrefixLength + Zeroes + Count;
-    Padding = Width > ContentLength ? Width - ContentLength : 0;
+    Padding       = Width > ContentLength ? Width - ContentLength : 0;
 
     if ((Flags & PRINTF_FLAG_ZERO) && !(Flags & PRINTF_FLAG_LEFT) && Precision < 0)
     {
@@ -190,12 +190,12 @@ static void OutputSigned(STDIO_OUTPUT *Output, int64_t Value, unsigned int Flags
 
     if (Value < 0)
     {
-        Sign = '-';
+        Sign      = '-';
         Magnitude = (uint64_t) (-(Value + 1)) + 1;
     }
     else
     {
-        Sign = (Flags & PRINTF_FLAG_PLUS) ? '+' : ((Flags & PRINTF_FLAG_SPACE) ? ' ' : 0);
+        Sign      = (Flags & PRINTF_FLAG_PLUS) ? '+' : ((Flags & PRINTF_FLAG_SPACE) ? ' ' : 0);
         Magnitude = (uint64_t) Value;
     }
 
@@ -307,7 +307,7 @@ int printf(const char *Format, ...)
         }
 
     ParseWidth:
-        Width = ParseNumber(&Format);
+        Width     = ParseNumber(&Format);
         Precision = -1;
 
         if (*Format == '.')
@@ -360,7 +360,7 @@ int printf(const char *Format, ...)
             case 'c':
             {
                 char         Character = (char) va_arg(Arguments, int);
-                unsigned int Padding = Width > 1 ? Width - 1 : 0;
+                unsigned int Padding   = Width > 1 ? Width - 1 : 0;
 
                 if (!(Flags & PRINTF_FLAG_LEFT))
                 {

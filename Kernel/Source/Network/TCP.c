@@ -70,10 +70,10 @@ STATIC NETWORK_TCP_CONNECTION *FindConnection(UINT32 Socket)
 
 STATIC VOID ResetConnection(NETWORK_TCP_CONNECTION *Connection)
 {
-    Connection->Active = FALSE;
+    Connection->Active    = FALSE;
     Connection->Connected = FALSE;
-    Connection->Reset = TRUE;
-    Connection->Count = 0;
+    Connection->Reset     = TRUE;
+    Connection->Count     = 0;
 }
 
 VOID NetworkTCPResetLocked(VOID)
@@ -115,12 +115,12 @@ STATIC BOOLEAN FinishClose(NETWORK_TCP_CONNECTION *Connection)
 
         if (NetworkNow() >= Entry->Expires)
         {
-            Entry->Address = Connection->Address;
-            Entry->Port = Connection->Port;
-            Entry->LocalPort = Connection->LocalPort;
-            Entry->SendNext = Connection->SendNext;
+            Entry->Address     = Connection->Address;
+            Entry->Port        = Connection->Port;
+            Entry->LocalPort   = Connection->LocalPort;
+            Entry->SendNext    = Connection->SendNext;
             Entry->ReceiveNext = Connection->ReceiveNext;
-            Entry->Expires = NetworkNow() + 120000;
+            Entry->Expires     = NetworkNow() + 120000;
             ResetConnection(Connection);
 
             return TRUE;
@@ -165,7 +165,7 @@ STATIC BOOLEAN SequenceBefore(UINT32 A, UINT32 B)
 STATIC BOOLEAN SendSegment(NETWORK_TCP_CONNECTION *Connection, UINT32 Sequence, UINT8 Flags, CONST UINT8 *Data, UINT32 Length)
 {
     UINT8  Packet[NETWORK_MTU - 20] = {0};
-    UINT32 HeaderLength = (Flags & NETWORK_TCP_SYN) != 0 ? 24 : 20;
+    UINT32 HeaderLength             = (Flags & NETWORK_TCP_SYN) != 0 ? 24 : 20;
 
     NetworkWrite16(Packet, Connection->LocalPort);
     NetworkWrite16(Packet + 2, Connection->Port);
@@ -249,10 +249,10 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
     }
 
     NetworkState.Stats.TCPReceived++;
-    Sequence = NetworkRead32(Packet + 4);
+    Sequence       = NetworkRead32(Packet + 4);
     Acknowledgment = NetworkRead32(Packet + 8);
-    Flags = Packet[13];
-    DataLength = Length - HeaderLength;
+    Flags          = Packet[13];
+    DataLength     = Length - HeaderLength;
 
     if (!Connection->Connected)
     {
@@ -314,12 +314,12 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
             Offset += OptionLength;
         }
 
-        Connection->ReceiveNext = Sequence + 1;
+        Connection->ReceiveNext        = Sequence + 1;
         Connection->SendUnacknowledged = Acknowledgment;
-        Connection->PeerWindow = NetworkRead16(Packet + 14);
-        Connection->WindowSequence = Sequence;
-        Connection->WindowACK = Acknowledgment;
-        Connection->Connected = TRUE;
+        Connection->PeerWindow         = NetworkRead16(Packet + 14);
+        Connection->WindowSequence     = Sequence;
+        Connection->WindowACK          = Acknowledgment;
+        Connection->Connected          = TRUE;
         SendSegment(Connection, Connection->SendNext, NETWORK_TCP_ACK, NULL, 0);
 
         return;
@@ -364,9 +364,9 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
 
         if (SequenceBefore(Connection->WindowSequence, Sequence) || (Connection->WindowSequence == Sequence && !SequenceBefore(Acknowledgment, Connection->WindowACK)))
         {
-            Connection->PeerWindow = NetworkRead16(Packet + 14);
+            Connection->PeerWindow     = NetworkRead16(Packet + 14);
             Connection->WindowSequence = Sequence;
-            Connection->WindowACK = Acknowledgment;
+            Connection->WindowACK      = Acknowledgment;
         }
     }
 
@@ -411,8 +411,8 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
 
 STATIC BOOLEAN SendReliable(NETWORK_TCP_CONNECTION *Connection, UINT8 SegmentFlags, CONST UINT8 *Data, UINT32 Length, UINT32 TimeoutMls)
 {
-    UINT64 Start = NetworkNow();
-    UINT64 Sent = Start;
+    UINT64 Start    = NetworkNow();
+    UINT64 Sent     = Start;
     UINT32 RetryMls = 1000;
     UINT32 Sequence;
     UINT32 End;
@@ -432,8 +432,8 @@ STATIC BOOLEAN SendReliable(NETWORK_TCP_CONNECTION *Connection, UINT8 SegmentFla
         return NetworkError(L"TCP connection reset");
     }
 
-    Sequence = Connection->SendNext;
-    End = Sequence + Length + ((SegmentFlags & (NETWORK_TCP_SYN | NETWORK_TCP_FIN)) != 0);
+    Sequence             = Connection->SendNext;
+    End                  = Sequence + Length + ((SegmentFlags & (NETWORK_TCP_SYN | NETWORK_TCP_FIN)) != 0);
     Connection->SendNext = End;
 
     if (!SendSegment(Connection, Sequence, SegmentFlags, Data, Length))
@@ -484,7 +484,7 @@ STATIC BOOLEAN SendReliable(NETWORK_TCP_CONNECTION *Connection, UINT8 SegmentFla
 
             SendSegment(Connection, Sequence + Skip, SegmentFlags, Data == NULL ? NULL : Data + Skip, RetryLength);
             NetworkState.Stats.Retransmitted++;
-            Sent = NetworkNow();
+            Sent     = NetworkNow();
             RetryMls = RetryMls < 8000 ? RetryMls * 2 : 8000;
         }
 
@@ -530,11 +530,11 @@ STATIC BOOLEAN Connect(NETWORK_TCP_CONNECTION *Connection, UINT32 TimeoutMls)
 
 STATIC BOOLEAN Send(NETWORK_TCP_CONNECTION *Connection, CONST VOID *Buffer, UINT32 Length, UINT32 TimeoutMls)
 {
-    CONST UINT8 *Data = Buffer;
-    UINT32       Offset = 0;
-    UINT64       ProbeAt = 0;
+    CONST UINT8 *Data     = Buffer;
+    UINT32       Offset   = 0;
+    UINT64       ProbeAt  = 0;
     UINT32       ProbeMls = 1000;
-    UINT64       Start = NetworkNow();
+    UINT64       Start    = NetworkNow();
 
     if ((Length != 0 && Buffer == NULL) || TimeoutMls == 0)
     {
@@ -542,7 +542,7 @@ STATIC BOOLEAN Send(NETWORK_TCP_CONNECTION *Connection, CONST VOID *Buffer, UINT
     }
 
     {
-        UINT64  Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+        UINT64  Flags    = SpinLockAcquireIRQSave(&NetworkState.Lock);
         BOOLEAN Writable = Connection->Active && Connection->Connected && !Connection->Reset && !Connection->FINSent;
 
         SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
@@ -607,7 +607,7 @@ STATIC BOOLEAN Send(NETWORK_TCP_CONNECTION *Connection, CONST VOID *Buffer, UINT
                 NetworkState.Stats.Retransmitted++;
                 SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
                 ProbeMls = ProbeMls < 8000 ? ProbeMls * 2 : 8000;
-                ProbeAt = NetworkNow() + ProbeMls;
+                ProbeAt  = NetworkNow() + ProbeMls;
             }
 
             NetworkWait();
@@ -623,10 +623,10 @@ STATIC BOOLEAN Send(NETWORK_TCP_CONNECTION *Connection, CONST VOID *Buffer, UINT
             return FALSE;
         }
 
-        Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+        Flags                = SpinLockAcquireIRQSave(&NetworkState.Lock);
         Connection->LastByte = Data[Offset + Count - 1];
         SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
-        ProbeAt = 0;
+        ProbeAt  = 0;
         ProbeMls = 1000;
         Offset += Count;
     }
@@ -842,7 +842,7 @@ BOOLEAN NetworkTCPConnect(UINT32 Address, UINT16 Port, UINT32 *Socket, UINT32 Ti
 
             KMemSet(Entry, 0, sizeof(*Entry));
             Entry->Generation = Generation == 0 ? 1 : Generation;
-            Connection = Entry;
+            Connection        = Entry;
             break;
         }
     }
@@ -854,12 +854,12 @@ BOOLEAN NetworkTCPConnect(UINT32 Address, UINT16 Port, UINT32 *Socket, UINT32 Ti
         return NetworkError(L"TCP socket table full");
     }
 
-    Connection->Active = TRUE;
-    Connection->Writing = TRUE;
-    Connection->Address = Address;
-    Connection->Port = Port;
-    Connection->LocalPort = NetworkAllocatePortLocked();
-    Connection->SendNext = (UINT32) RDTSC();
+    Connection->Active             = TRUE;
+    Connection->Writing            = TRUE;
+    Connection->Address            = Address;
+    Connection->Port               = Port;
+    Connection->LocalPort          = NetworkAllocatePortLocked();
+    Connection->SendNext           = (UINT32) RDTSC();
     Connection->SendUnacknowledged = Connection->SendNext;
 
     if (Connection->LocalPort == 0)
@@ -877,8 +877,8 @@ BOOLEAN NetworkTCPConnect(UINT32 Address, UINT16 Port, UINT32 *Socket, UINT32 Ti
 
     BOOLEAN Result = Connect(Connection, TimeoutMls);
 
-    Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
-    Result = Result && Connection->Active && !Connection->Reset;
+    Flags               = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    Result              = Result && Connection->Active && !Connection->Reset;
     Connection->Writing = FALSE;
 
     if (Result)
@@ -893,7 +893,7 @@ BOOLEAN NetworkTCPConnect(UINT32 Address, UINT16 Port, UINT32 *Socket, UINT32 Ti
 
 BOOLEAN NetworkTCPSend(UINT32 Socket, CONST VOID *Buffer, UINT32 Length, UINT32 TimeoutMls)
 {
-    UINT64                  Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    UINT64                  Flags      = SpinLockAcquireIRQSave(&NetworkState.Lock);
     NETWORK_TCP_CONNECTION *Connection = FindConnection(Socket);
 
     if (Connection == NULL || Connection->Writing || Connection->Closing)
@@ -908,7 +908,7 @@ BOOLEAN NetworkTCPSend(UINT32 Socket, CONST VOID *Buffer, UINT32 Length, UINT32 
 
     BOOLEAN Result = Send(Connection, Buffer, Length, TimeoutMls);
 
-    Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    Flags               = SpinLockAcquireIRQSave(&NetworkState.Lock);
     Connection->Writing = FALSE;
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
 
@@ -922,7 +922,7 @@ BOOLEAN NetworkTCPReceive(UINT32 Socket, VOID *Buffer, UINT32 Capacity, UINT32 *
         *Length = 0;
     }
 
-    UINT64                  Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    UINT64                  Flags      = SpinLockAcquireIRQSave(&NetworkState.Lock);
     NETWORK_TCP_CONNECTION *Connection = FindConnection(Socket);
 
     if (Connection == NULL || Connection->Reading || Connection->Closing || !Connection->Connected)
@@ -937,7 +937,7 @@ BOOLEAN NetworkTCPReceive(UINT32 Socket, VOID *Buffer, UINT32 Capacity, UINT32 *
 
     BOOLEAN Result = Receive(Connection, Buffer, Capacity, Length, TimeoutMls);
 
-    Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    Flags               = SpinLockAcquireIRQSave(&NetworkState.Lock);
     Connection->Reading = FALSE;
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
 
@@ -946,7 +946,7 @@ BOOLEAN NetworkTCPReceive(UINT32 Socket, VOID *Buffer, UINT32 Capacity, UINT32 *
 
 BOOLEAN NetworkTCPClose(UINT32 Socket, UINT32 TimeoutMls)
 {
-    UINT64                  Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    UINT64                  Flags      = SpinLockAcquireIRQSave(&NetworkState.Lock);
     NETWORK_TCP_CONNECTION *Connection = FindConnection(Socket);
 
     if (Connection == NULL || Connection->Closing || Connection->Writing || Connection->Reading)
@@ -961,7 +961,7 @@ BOOLEAN NetworkTCPClose(UINT32 Socket, UINT32 TimeoutMls)
 
     BOOLEAN Result = Close(Connection, TimeoutMls);
 
-    Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    Flags               = SpinLockAcquireIRQSave(&NetworkState.Lock);
     Connection->Closing = FALSE;
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
 
@@ -970,7 +970,7 @@ BOOLEAN NetworkTCPClose(UINT32 Socket, UINT32 TimeoutMls)
 
 BOOLEAN NetworkTCPAbort(UINT32 Socket)
 {
-    UINT64                  Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    UINT64                  Flags      = SpinLockAcquireIRQSave(&NetworkState.Lock);
     NETWORK_TCP_CONNECTION *Connection = FindConnection(Socket);
 
     if (Connection == NULL)

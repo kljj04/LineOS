@@ -16,7 +16,7 @@
 
 STATIC VOID TouchError(CONST char *Path)
 {
-    INT32 Error = errno;
+    INT32 Error        = errno;
     char  Prefix[4104] = "touch: ";
 
     if (strlen(Path) < 4096)
@@ -81,7 +81,7 @@ INT32 main(INT32 Argc, char **Argv)
     }
 
     BOOLEAN NoCreate = FALSE;
-    INT32   First = 1;
+    INT32   First    = 1;
 
     for (; First < Argc; First++)
     {

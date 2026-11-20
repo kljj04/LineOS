@@ -43,7 +43,7 @@ STATIC UINT8 ReadConfigBitmap(VIRTIO_INPUT_DEVICE_INFO *InputDevice, UINT8 Event
 
     Config = (VOLATILE VIRTIO_INPUT_CONFIG *) InputDevice->Device.DeviceConfig;
 
-    Config->Select = VIRTIO_INPUT_CFG_EV_BITS;
+    Config->Select    = VIRTIO_INPUT_CFG_EV_BITS;
     Config->SubSelect = EventType;
 
     Size = Config->Size;
@@ -69,7 +69,7 @@ STATIC BOOLEAN ReadABSInfo(VIRTIO_INPUT_DEVICE_INFO *InputDevice, UINT8 Axis, VI
 
     Config = (VOLATILE VIRTIO_INPUT_CONFIG *) InputDevice->Device.DeviceConfig;
 
-    Config->Select = VIRTIO_INPUT_CFG_ABS_INFO;
+    Config->Select    = VIRTIO_INPUT_CFG_ABS_INFO;
     Config->SubSelect = Axis;
 
     if (Config->Size < sizeof(VIRTIO_INPUT_ABS_INFO))
@@ -77,10 +77,10 @@ STATIC BOOLEAN ReadABSInfo(VIRTIO_INPUT_DEVICE_INFO *InputDevice, UINT8 Axis, VI
         return FALSE;
     }
 
-    Info->Min = Config->Abs.Min;
-    Info->Max = Config->Abs.Max;
-    Info->Fuzz = Config->Abs.Fuzz;
-    Info->Flat = Config->Abs.Flat;
+    Info->Min        = Config->Abs.Min;
+    Info->Max        = Config->Abs.Max;
+    Info->Fuzz       = Config->Abs.Fuzz;
+    Info->Flat       = Config->Abs.Flat;
     Info->Resolution = Config->Abs.Resolution;
 
     return TRUE;
@@ -243,7 +243,7 @@ STATIC VOID PushKeyEvent(UINT16 Code, BOOLEAN Pressed)
     UINT32 NextIndex;
     UINT64 Flags;
 
-    Flags = SpinLockAcquireIRQSave(&KeyEventLock);
+    Flags     = SpinLockAcquireIRQSave(&KeyEventLock);
     NextIndex = (KeyWriteIndex + 1) % VIRTIO_INPUT_KEY_QUEUE_SIZE;
 
     if (NextIndex == KeyReadIndex)
@@ -253,7 +253,7 @@ STATIC VOID PushKeyEvent(UINT16 Code, BOOLEAN Pressed)
         return;
     }
 
-    KeyEvents[KeyWriteIndex].Code = Code;
+    KeyEvents[KeyWriteIndex].Code    = Code;
     KeyEvents[KeyWriteIndex].Pressed = Pressed;
 
     KeyWriteIndex = NextIndex;
@@ -266,7 +266,7 @@ STATIC VOID PushPointerEvent(VIRTIO_INPUT_DEVICE_INFO *InputDevice)
     UINT32 NextIndex;
     UINT64 Flags;
 
-    Flags = SpinLockAcquireIRQSave(&PointerEventLock);
+    Flags     = SpinLockAcquireIRQSave(&PointerEventLock);
     NextIndex = (PointerWriteIndex + 1) % VIRTIO_INPUT_POINTER_QUEUE_SIZE;
 
     if (NextIndex == PointerReadIndex)
@@ -276,14 +276,14 @@ STATIC VOID PushPointerEvent(VIRTIO_INPUT_DEVICE_INFO *InputDevice)
         return;
     }
 
-    PointerEvents[PointerWriteIndex].X = InputDevice->AbsX;
-    PointerEvents[PointerWriteIndex].Y = InputDevice->AbsY;
-    PointerEvents[PointerWriteIndex].LeftButton = InputDevice->LeftButton;
-    PointerEvents[PointerWriteIndex].RightButton = InputDevice->RightButton;
-    PointerEvents[PointerWriteIndex].WheelButton = InputDevice->WheelButton;
-    PointerEvents[PointerWriteIndex].BackButton = InputDevice->BackButton;
+    PointerEvents[PointerWriteIndex].X             = InputDevice->AbsX;
+    PointerEvents[PointerWriteIndex].Y             = InputDevice->AbsY;
+    PointerEvents[PointerWriteIndex].LeftButton    = InputDevice->LeftButton;
+    PointerEvents[PointerWriteIndex].RightButton   = InputDevice->RightButton;
+    PointerEvents[PointerWriteIndex].WheelButton   = InputDevice->WheelButton;
+    PointerEvents[PointerWriteIndex].BackButton    = InputDevice->BackButton;
     PointerEvents[PointerWriteIndex].ForwardButton = InputDevice->ForwardButton;
-    PointerEvents[PointerWriteIndex].Wheel = InputDevice->Wheel;
+    PointerEvents[PointerWriteIndex].Wheel         = InputDevice->Wheel;
 
     PointerWriteIndex = NextIndex;
     WaitQueueWakeAll(&PointerWaitQueue);
@@ -325,7 +325,7 @@ STATIC VOID ProcessTabletEvent(VIRTIO_INPUT_DEVICE_INFO *InputDevice, VIRTIO_INP
     {
         if (Event->Code == VIRTIO_INPUT_REL_WHEEL)
         {
-            INT32 Diff = (INT32) Event->Value;
+            INT32 Diff      = (INT32) Event->Value;
             INT8  Direction = 0;
 
             if (Diff > 0)
@@ -341,7 +341,7 @@ STATIC VOID ProcessTabletEvent(VIRTIO_INPUT_DEVICE_INFO *InputDevice, VIRTIO_INP
             {
                 if (InputDevice->WheelDirection != Direction)
                 {
-                    InputDevice->Wheel = 0;
+                    InputDevice->Wheel          = 0;
                     InputDevice->WheelDirection = Direction;
                 }
 
@@ -498,9 +498,9 @@ BOOLEAN VirtIOInputInit(VOID)
     WaitQueueInit(&KeyWaitQueue);
     WaitQueueInit(&PointerWaitQueue);
 
-    KeyReadIndex = 0;
-    KeyWriteIndex = 0;
-    PointerReadIndex = 0;
+    KeyReadIndex      = 0;
+    KeyWriteIndex     = 0;
+    PointerReadIndex  = 0;
     PointerWriteIndex = 0;
 
     for (Index = 0; Index < PCIGetDeviceCount(); Index++)
@@ -572,7 +572,7 @@ BOOLEAN VirtIOInputHasPendingEvent(VOID)
     BOOLEAN Pending;
     UINT64  Flags;
 
-    Flags = SpinLockAcquireIRQSave(&KeyEventLock);
+    Flags   = SpinLockAcquireIRQSave(&KeyEventLock);
     Pending = KeyReadIndex != KeyWriteIndex;
     SpinLockReleaseIRQRestore(&KeyEventLock, Flags);
 
@@ -581,7 +581,7 @@ BOOLEAN VirtIOInputHasPendingEvent(VOID)
         return TRUE;
     }
 
-    Flags = SpinLockAcquireIRQSave(&PointerEventLock);
+    Flags   = SpinLockAcquireIRQSave(&PointerEventLock);
     Pending = PointerReadIndex != PointerWriteIndex;
     SpinLockReleaseIRQRestore(&PointerEventLock, Flags);
 
@@ -606,7 +606,7 @@ BOOLEAN VirtIOInputGetKeyEvent(VIRTIO_KEY_EVENT *Event)
         return FALSE;
     }
 
-    *Event = KeyEvents[KeyReadIndex];
+    *Event       = KeyEvents[KeyReadIndex];
     KeyReadIndex = (KeyReadIndex + 1) % VIRTIO_INPUT_KEY_QUEUE_SIZE;
 
     SpinLockReleaseIRQRestore(&KeyEventLock, Flags);
@@ -632,7 +632,7 @@ BOOLEAN VirtIOInputGetPointerEvent(VIRTIO_POINTER_EVENT *Event)
         return FALSE;
     }
 
-    *Event = PointerEvents[PointerReadIndex];
+    *Event           = PointerEvents[PointerReadIndex];
     PointerReadIndex = (PointerReadIndex + 1) % VIRTIO_INPUT_POINTER_QUEUE_SIZE;
 
     SpinLockReleaseIRQRestore(&PointerEventLock, Flags);

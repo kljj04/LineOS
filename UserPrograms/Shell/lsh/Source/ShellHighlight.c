@@ -26,7 +26,7 @@ STATIC UINTN ShellKeywordLength(CONST char *Line)
 SHELL_INPUT_STYLE ShellInputStyle(CONST char *Line, IME_STATE *IME, char **Envp)
 {
     HighlightEnvironment = Envp;
-    HighlightHome = ShellGetEnvironment(Envp, "HOME");
+    HighlightHome        = ShellGetEnvironment(Envp, "HOME");
 
     char  Command[SHELL_RENDER_CAPACITY];
     UINTN Length = ShellKeywordLength(Line);
@@ -213,7 +213,7 @@ STATIC VOID ShellPathColors(CONST char *Line, SHELL_INPUT_STYLE Style, UINT8 Col
         Path[Prefix + Length - Offset] = 0;
 
         UINTN   Component = 0;
-        BOOLEAN Missing = FALSE;
+        BOOLEAN Missing   = FALSE;
 
         for (UINTN End = 0; End < Length; End++)
         {
@@ -247,7 +247,7 @@ STATIC VOID ShellPathColors(CONST char *Line, SHELL_INPUT_STYLE Style, UINT8 Col
             }
 
             Path[PathEnd] = Saved;
-            Component = End + 1;
+            Component     = End + 1;
         }
     }
 }
@@ -325,7 +325,7 @@ VOID ShellInputColors(CONST char *Line, SHELL_INPUT_STYLE Style, UINT8 Colors[SH
         Colors[Index] = 5;
 
         UINTN   Position = Index + 1;
-        BOOLEAN Braces = Line[Position] == '{';
+        BOOLEAN Braces   = Line[Position] == '{';
 
         if (Braces)
         {
@@ -353,7 +353,7 @@ VOID ShellInputColors(CONST char *Line, SHELL_INPUT_STYLE Style, UINT8 Colors[SH
 
             memcpy(Name, Line + Start, Length);
             Name[Length] = 0;
-            Color = ShellGetVariable(Name) != NULL ? 6 : ShellGetEnvironment(HighlightEnvironment, Name) != NULL ? 7 : 8;
+            Color        = ShellGetVariable(Name) != NULL ? 6 : ShellGetEnvironment(HighlightEnvironment, Name) != NULL ? 7 : 8;
         }
 
         memset(Colors + Start, Color, Position - Start);

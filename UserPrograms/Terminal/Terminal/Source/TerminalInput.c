@@ -10,18 +10,18 @@
 
 INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fallback)
 {
-    UINT32        X = TERMINAL_MARGIN;
-    UINT32        Baseline = TERMINAL_MARGIN + TERMINAL_FONT_HEIGHT;
-    CHAR8        *Buffer = NULL;
+    UINT32        X              = TERMINAL_MARGIN;
+    UINT32        Baseline       = TERMINAL_MARGIN + TERMINAL_FONT_HEIGHT;
+    CHAR8        *Buffer         = NULL;
     UINTN         BufferCapacity = 0;
-    UINT32        Cursor = 0;
-    UINT32        LineLength = 0;
-    TERMINAL_UTF8 Decoder = {0};
-    BOOLEAN       CursorVisible = TRUE;
+    UINT32        Cursor         = 0;
+    UINT32        LineLength     = 0;
+    TERMINAL_UTF8 Decoder        = {0};
+    BOOLEAN       CursorVisible  = TRUE;
     BOOLEAN       GraphicsActive = FALSE;
-    UINT64        LastBlink = 0;
-    UINT64        LastPresent = 0;
-    BOOLEAN       Dirty = FALSE;
+    UINT64        LastBlink      = 0;
+    UINT64        LastPresent    = 0;
+    BOOLEAN       Dirty          = FALSE;
     TERMINAL_ANSI ANSI;
 
     TerminalANSIInit(&ANSI, TERMINAL_FOREGROUND, TERMINAL_BACKGROUND);
@@ -49,8 +49,8 @@ INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fall
             }
 
             Decoder.Remaining = 0;
-            Dirty = TRUE;
-            GraphicsActive = !Windowed;
+            Dirty             = TRUE;
+            GraphicsActive    = !Windowed;
         }
 
         if (Ready == 2 && !Windowed)
@@ -68,7 +68,7 @@ INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fall
             INT32 Pending = 0;
 
             ioctl(3, FIONREAD, &Pending);
-            Ready = Pending > 0 ? 1 : 0;
+            Ready          = Pending > 0 ? 1 : 0;
             GraphicsActive = FALSE;
 
             if (Ready == 0)
@@ -90,7 +90,7 @@ INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fall
         if (GraphicsActive)
         {
             GraphicsActive = FALSE;
-            CursorVisible = TRUE;
+            CursorVisible  = TRUE;
 
             if (TerminalPresent(Info, X, Baseline, !ANSI.CursorHidden) < 0)
             {
@@ -113,13 +113,13 @@ INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fall
                     return 1;
                 }
 
-                Dirty = FALSE;
+                Dirty       = FALSE;
                 LastPresent = Now;
             }
 
             if (!ANSI.Synchronized && !ANSI.CursorHidden && Now - LastBlink >= 500)
             {
-                LastBlink = Now;
+                LastBlink     = Now;
                 CursorVisible = !CursorVisible;
 
                 if (TerminalPresent(Info, X, Baseline, CursorVisible && !ANSI.CursorHidden) < 0)
@@ -131,7 +131,7 @@ INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fall
             continue;
         }
 
-        LastBlink = Now;
+        LastBlink     = Now;
         CursorVisible = TRUE;
 
         INT32 Pending = 0;
@@ -155,7 +155,7 @@ INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fall
 
         if (Wanted > BufferCapacity)
         {
-            UINTN  Capacity = (Wanted + 4095U) & ~(UINTN) 4095U;
+            UINTN  Capacity    = (Wanted + 4095U) & ~(UINTN) 4095U;
             CHAR8 *Replacement = mmap(NULL, Capacity, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
             if (Replacement == MAP_FAILED)
@@ -168,7 +168,7 @@ INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fall
                 munmap(Buffer, BufferCapacity);
             }
 
-            Buffer = Replacement;
+            Buffer         = Replacement;
             BufferCapacity = Capacity;
         }
 
@@ -197,23 +197,23 @@ INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fall
                 if (ANSI.EraseScreen)
                 {
                     TerminalScreenClear(TerminalANSIBackground(&ANSI));
-                    Cursor = 0;
-                    LineLength = 0;
+                    Cursor           = 0;
+                    LineLength       = 0;
                     ANSI.EraseScreen = FALSE;
                 }
 
                 if (ANSI.CursorHome)
                 {
-                    X = TERMINAL_MARGIN;
+                    X        = TERMINAL_MARGIN;
                     Baseline = TERMINAL_MARGIN + TERMINAL_FONT_HEIGHT;
-                    Cursor = 0;
+                    Cursor   = 0;
                     TerminalScreenLoad(Baseline, &LineLength);
                     ANSI.CursorHome = FALSE;
                 }
 
                 if (ANSI.CursorPosition)
                 {
-                    UINT32 Row = ANSI.CursorRow - 1;
+                    UINT32 Row     = ANSI.CursorRow - 1;
                     UINT32 Maximum = TerminalScreenRows() - 1;
 
                     if (Row > Maximum)
@@ -255,7 +255,7 @@ INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fall
                         Cursor = LineLength;
                     }
 
-                    X = Cursor < LineLength ? LineCells[Cursor].X : Cursor != 0 ? LineCells[Cursor - 1].X + LineCells[Cursor - 1].Glyph.Advance : TERMINAL_MARGIN;
+                    X                = Cursor < LineLength ? LineCells[Cursor].X : Cursor != 0 ? LineCells[Cursor - 1].X + LineCells[Cursor - 1].Glyph.Advance : TERMINAL_MARGIN;
                     ANSI.CursorDelta = 0;
                 }
 
@@ -287,7 +287,7 @@ INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fall
                 if (ANSI.EraseLine)
                 {
                     TerminalScreenErase(Baseline, TerminalANSIBackground(&ANSI));
-                    LineLength = 0;
+                    LineLength     = 0;
                     ANSI.EraseLine = FALSE;
                 }
 
@@ -315,7 +315,7 @@ INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fall
             }
             else if (Character == '\r')
             {
-                X = TERMINAL_MARGIN;
+                X      = TERMINAL_MARGIN;
                 Cursor = 0;
             }
             else if (Character == '\b')
@@ -331,7 +331,7 @@ INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fall
 
                 TerminalMeasure(Font, Fallback, Character, &Measured);
 
-                TERMINAL_GLYPH *Glyph = &Measured;
+                TERMINAL_GLYPH *Glyph  = &Measured;
                 UINT32          Extent = Glyph->Right > (INT32) Glyph->Advance ? (UINT32) Glyph->Right : Glyph->Advance;
 
                 if ((X + Extent > Info->Width - TERMINAL_MARGIN - TERMINAL_SCROLLBAR_WIDTH && X != TERMINAL_MARGIN) || Cursor == TERMINAL_MAX_WIDTH)
@@ -342,7 +342,7 @@ INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fall
                 }
 
                 TerminalScreenPut(Baseline, Cursor, Character, X, Measured.Advance, TerminalANSIForeground(&ANSI), TerminalANSIBackground(&ANSI));
-                LineCells[Cursor].X = X;
+                LineCells[Cursor].X     = X;
                 LineCells[Cursor].Glyph = Measured;
                 Cursor++;
 
@@ -375,7 +375,7 @@ INT32 TerminalRun(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fall
             }
 
             LastPresent = Now;
-            Dirty = FALSE;
+            Dirty       = FALSE;
         }
     }
 }

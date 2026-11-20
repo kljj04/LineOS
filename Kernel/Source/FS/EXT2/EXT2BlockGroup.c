@@ -46,12 +46,12 @@ BOOLEAN EXT2ReadBlockGroup(EXT2_VOLUME *Volume, UINT32 Group, EXT2_BLOCK_GROUP *
         return FALSE;
     }
 
-    Data = Buffer + (Group % (Volume->BlockSize / 32)) * 32;
-    Descriptor->BlockBitmap = EXT2Load32(Data);
-    Descriptor->InodeBitmap = EXT2Load32(Data + 4);
-    Descriptor->InodeTable = EXT2Load32(Data + 8);
-    Descriptor->FreeBlocks = EXT2Load16(Data + 12);
-    Descriptor->FreeInodes = EXT2Load16(Data + 14);
+    Data                        = Buffer + (Group % (Volume->BlockSize / 32)) * 32;
+    Descriptor->BlockBitmap     = EXT2Load32(Data);
+    Descriptor->InodeBitmap     = EXT2Load32(Data + 4);
+    Descriptor->InodeTable      = EXT2Load32(Data + 8);
+    Descriptor->FreeBlocks      = EXT2Load16(Data + 12);
+    Descriptor->FreeInodes      = EXT2Load16(Data + 14);
     Descriptor->UsedDirectories = EXT2Load16(Data + 16);
 
     return TRUE;
@@ -95,8 +95,8 @@ BOOLEAN EXT2DataBlockValid(EXT2_VOLUME *Volume, UINT32 Block)
         return EXT2Fail(Volume, EXT2_ERROR_CORRUPT);
     }
 
-    Group = (Block - Volume->FirstDataBlock) / Volume->BlocksPerGroup;
-    Start = Volume->FirstDataBlock + Group * Volume->BlocksPerGroup;
+    Group    = (Block - Volume->FirstDataBlock) / Volume->BlocksPerGroup;
+    Start    = Volume->FirstDataBlock + Group * Volume->BlocksPerGroup;
     Reserved = EXT2GroupHasSuperblock(Volume, Group) ? 1 + Volume->DescriptorBlocks + ((EXT2Load32(Volume->Superblock + 92) & 0x10) ? EXT2Load16(Volume->Superblock + 206) : 0) : 0;
 
     if (!EXT2ReadBlockGroup(Volume, Group, &Descriptor))

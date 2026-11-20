@@ -33,7 +33,7 @@ STATIC BOOLEAN TimezoneRead(CONST TIMEZONE_ENTRY **Entry)
 {
     char   Name[TIMEZONE_NAME_CAPACITY];
     size_t Length = 0;
-    int    FD = open(TIMEZONE_PATH, O_RDONLY);
+    int    FD     = open(TIMEZONE_PATH, O_RDONLY);
 
     if (FD < 0)
     {
@@ -93,7 +93,7 @@ STATIC BOOLEAN TimezoneRead(CONST TIMEZONE_ENTRY **Entry)
 
 STATIC VOID TimezonePrint(CONST TIMEZONE_ENTRY *Entry)
 {
-    INT32  Offset = Entry->Offset;
+    INT32  Offset   = Entry->Offset;
     UINT32 Absolute = Offset < 0 ? (UINT32) -Offset : (UINT32) Offset;
 
     printf(gettext("Timezone: %s\n"), Entry->Name);
@@ -111,7 +111,7 @@ STATIC BOOLEAN TimezoneSet(CONST TIMEZONE_ENTRY *Entry)
         return FALSE;
     }
 
-    size_t Length = strlen(Entry->Name);
+    size_t Length   = strlen(Entry->Name);
     size_t Position = 0;
 
     while (Position < Length)

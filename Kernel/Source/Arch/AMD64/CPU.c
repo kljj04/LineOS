@@ -118,18 +118,18 @@ VOID GDTInitCurrentCPU(UINT32 CPUID)
     GDT[CPUIndex][4] = 0x00AFFA000000FFFFULL;
     GDT[CPUIndex][5] = 0;
 
-    TSS[CPUIndex].IST1 = (UINT64) &GDTISTStacks[CPUIndex][GDT_IST_STACK_SIZE];
-    TSS[CPUIndex].IST2 = (UINT64) &GDTNMIStacks[CPUIndex][GDT_IST_STACK_SIZE];
+    TSS[CPUIndex].IST1       = (UINT64) &GDTISTStacks[CPUIndex][GDT_IST_STACK_SIZE];
+    TSS[CPUIndex].IST2       = (UINT64) &GDTNMIStacks[CPUIndex][GDT_IST_STACK_SIZE];
     TSS[CPUIndex].IOPBOffset = sizeof(TSS_64);
 
-    TSSBase = (UINT64) &TSS[CPUIndex];
+    TSSBase  = (UINT64) &TSS[CPUIndex];
     TSSLimit = sizeof(TSS_64) - 1;
 
     GDT[CPUIndex][6] = (TSSLimit & 0xFFFFULL) | ((TSSBase & 0xFFFFFFULL) << 16) | (0x89ULL << 40) | ((TSSLimit & 0xF0000ULL) << 32) | ((TSSBase & 0xFF000000ULL) << 32);
     GDT[CPUIndex][7] = TSSBase >> 32;
 
     GDTR[CPUIndex].Limit = sizeof(GDT[CPUIndex]) - 1;
-    GDTR[CPUIndex].Base = (UINT64) GDT[CPUIndex];
+    GDTR[CPUIndex].Base  = (UINT64) GDT[CPUIndex];
 
     GDTInitialized[CPUIndex] = TRUE;
 
@@ -246,7 +246,7 @@ UINT64 ReadMSR(UINT32 MSR)
 
 VOID WriteMSR(UINT32 MSR, UINT64 Value)
 {
-    UINT32 Low = (UINT32) Value;
+    UINT32 Low  = (UINT32) Value;
     UINT32 High = (UINT32) (Value >> 32);
 
     ASM("wrmsr" : : "c"(MSR), "a"(Low), "d"(High));

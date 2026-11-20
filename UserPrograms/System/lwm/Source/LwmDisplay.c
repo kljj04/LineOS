@@ -18,11 +18,11 @@ STATIC VOID *LwmMap(UINT64 Bytes)
 
 BOOLEAN LwmOpen(LWM *Manager)
 {
-    Manager->TTY = -1;
-    Manager->FB = -1;
+    Manager->TTY  = -1;
+    Manager->FB   = -1;
     Manager->Grab = -1;
-    Manager->TTY = open("/dev/lsh1", O_RDWR);
-    Manager->FB = open("/dev/fb0", O_RDWR);
+    Manager->TTY  = open("/dev/lsh1", O_RDWR);
+    Manager->FB   = open("/dev/fb0", O_RDWR);
 
     if (Manager->TTY < 0 || Manager->FB < 0)
     {
@@ -44,9 +44,9 @@ BOOLEAN LwmOpen(LWM *Manager)
         return FALSE;
     }
 
-    Manager->Width = Variable.XRes;
+    Manager->Width  = Variable.XRes;
     Manager->Height = Variable.YRes;
-    Manager->Bytes = Fixed.SmemLen;
+    Manager->Bytes  = Fixed.SmemLen;
     Manager->Mapped = mmap(NULL, Manager->Bytes, PROT_READ | PROT_WRITE, MAP_SHARED, Manager->FB, 0);
 
     if (Manager->Mapped == MAP_FAILED)
@@ -56,10 +56,10 @@ BOOLEAN LwmOpen(LWM *Manager)
         return FALSE;
     }
 
-    Manager->Frame = LwmMap(Manager->Bytes);
-    Manager->Desktop = LwmMap(Manager->Bytes);
+    Manager->Frame         = LwmMap(Manager->Bytes);
+    Manager->Desktop       = LwmMap(Manager->Bytes);
     Manager->PresentBuffer = LwmMap(Manager->Bytes);
-    Manager->FontWork = LwmMap(LWM_FONT_WORK_SIZE);
+    Manager->FontWork      = LwmMap(LWM_FONT_WORK_SIZE);
 
     if (Manager->Frame == NULL || Manager->Desktop == NULL || Manager->PresentBuffer == NULL || Manager->FontWork == NULL)
     {
@@ -98,7 +98,7 @@ BOOLEAN LwmOpen(LWM *Manager)
         return FALSE;
     }
 
-    Manager->Endpoint = (UINT64) Endpoint;
+    Manager->Endpoint      = (UINT64) Endpoint;
     Manager->MessageBuffer = LwmMap(LOS_IPC_MESSAGE_SIZE);
 
     if (Manager->MessageBuffer == NULL || ioctl(Manager->TTY, LOS_TIO_SET_COMPOSITOR, &Manager->Endpoint) < 0)

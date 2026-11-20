@@ -33,7 +33,7 @@ VOID UsageInit(UINT32 CPUCount)
 
     ActiveCPUCount = CPUCount;
 
-    Frequency = TSCGetFrequency();
+    Frequency         = TSCGetFrequency();
     SampleIntervalTSC = Frequency / 10;
 
     if (SampleIntervalTSC == 0)
@@ -47,7 +47,7 @@ VOID UsageInit(UINT32 CPUCount)
     }
 
     LastTaskSampleTSC = RDTSC();
-    TaskSampleLock = 0;
+    TaskSampleLock    = 0;
 }
 
 VOID UsageStart(UINT32 CPUID)
@@ -72,7 +72,7 @@ UINT64 UsageAccount(UINT32 CPUID, BOOLEAN Idle)
     }
 
     Usage = &CPUUsages[CPUID];
-    Now = RDTSC();
+    Now   = RDTSC();
 
     if (Usage->LastTSC == 0)
     {
@@ -81,7 +81,7 @@ UINT64 UsageAccount(UINT32 CPUID, BOOLEAN Idle)
         return 0;
     }
 
-    Delta = Now - Usage->LastTSC;
+    Delta          = Now - Usage->LastTSC;
     Usage->LastTSC = Now;
 
     if (Idle)
@@ -116,8 +116,8 @@ VOID UsageSample(UINT32 CPUID)
         return;
     }
 
-    Busy = Usage->BusyTSC - Usage->LastSampleBusyTSC;
-    Idle = Usage->IdleTSC - Usage->LastSampleIdleTSC;
+    Busy  = Usage->BusyTSC - Usage->LastSampleBusyTSC;
+    Idle  = Usage->IdleTSC - Usage->LastSampleIdleTSC;
     Total = Busy + Idle;
 
     if (Total < SampleIntervalTSC)
@@ -148,7 +148,7 @@ VOID UsageSampleTasks(VOID)
         return;
     }
 
-    Now = RDTSC();
+    Now      = RDTSC();
     Interval = Now - LastTaskSampleTSC;
 
     if (Interval >= SampleIntervalTSC)

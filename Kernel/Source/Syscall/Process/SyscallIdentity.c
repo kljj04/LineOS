@@ -30,8 +30,8 @@ INT64 SyscallSetUID(UINT64 UID)
         Task->Process->AuthSession = ATOMIC_FETCH_ADD(&NextAuthSession, 1, ATOMIC_RELAXED) + 1;
     }
 
-    Task->Process->RealUID = (UINT32) UID;
-    Context->Credentials.UID = (UINT32) UID;
+    Task->Process->RealUID             = (UINT32) UID;
+    Context->Credentials.UID           = (UINT32) UID;
     Context->Credentials.Administrator = UID == 0;
 
     return 0;
@@ -54,7 +54,7 @@ INT64 SyscallSetGID(UINT64 GID)
     }
 
     Task->Process->RealGID = (UINT32) GID;
-    Credentials->GID = (UINT32) GID;
+    Credentials->GID       = (UINT32) GID;
 
     return 0;
 }

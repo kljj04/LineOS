@@ -48,9 +48,9 @@ STATIC BOOLEAN ConsumeCompleted(VIRTQUEUE *Queue, UINT16 Head, UINT32 *Length)
         *Length = Queue->CompletedLength[Head];
     }
 
-    Queue->Completed[Head] = 0;
+    Queue->Completed[Head]       = 0;
     Queue->CompletedLength[Head] = 0;
-    LastError = L"ok";
+    LastError                    = L"ok";
 
     return TRUE;
 }
@@ -73,9 +73,9 @@ BOOLEAN VirtQueueInit(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, UINT16 QueueI
         return FALSE;
     }
 
-    CommonConfig = Device->CommonConfig;
+    CommonConfig              = Device->CommonConfig;
     CommonConfig->QueueSelect = QueueIndex;
-    QueueSize = CommonConfig->QueueSize;
+    QueueSize                 = CommonConfig->QueueSize;
 
     if (QueueSize == 0)
     {
@@ -89,25 +89,25 @@ BOOLEAN VirtQueueInit(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, UINT16 QueueI
         QueueSize = WantedSize;
     }
 
-    DescBytes = sizeof(VIRTQ_DESC) * QueueSize;
-    AvailBytes = sizeof(UINT16) * (3 + QueueSize);
-    UsedBytes = sizeof(UINT16) * 2 + sizeof(VIRTQ_USED_ELEMENT) * QueueSize;
-    DescInUseBytes = sizeof(UINT8) * QueueSize;
-    CompletedBytes = sizeof(UINT8) * QueueSize;
+    DescBytes            = sizeof(VIRTQ_DESC) * QueueSize;
+    AvailBytes           = sizeof(UINT16) * (3 + QueueSize);
+    UsedBytes            = sizeof(UINT16) * 2 + sizeof(VIRTQ_USED_ELEMENT) * QueueSize;
+    DescInUseBytes       = sizeof(UINT8) * QueueSize;
+    CompletedBytes       = sizeof(UINT8) * QueueSize;
     CompletedLengthBytes = sizeof(UINT32) * QueueSize;
 
     KMemSet(Queue, 0, sizeof(VIRTQUEUE));
-    Queue->Index = QueueIndex;
-    Queue->Size = QueueSize;
-    Queue->AvailIndex = 0;
-    Queue->UsedIndex = 0;
-    Queue->FreeHead = 0;
-    Queue->FreeCount = QueueSize;
-    Queue->Desc = (VIRTQ_DESC *) AllocQueueMemory(DescBytes);
-    Queue->Avail = (VIRTQ_AVAIL *) AllocQueueMemory(AvailBytes);
-    Queue->Used = (VIRTQ_USED *) AllocQueueMemory(UsedBytes);
-    Queue->DescInUse = (UINT8 *) AllocQueueMemory(DescInUseBytes);
-    Queue->Completed = (UINT8 *) AllocQueueMemory(CompletedBytes);
+    Queue->Index           = QueueIndex;
+    Queue->Size            = QueueSize;
+    Queue->AvailIndex      = 0;
+    Queue->UsedIndex       = 0;
+    Queue->FreeHead        = 0;
+    Queue->FreeCount       = QueueSize;
+    Queue->Desc            = (VIRTQ_DESC *) AllocQueueMemory(DescBytes);
+    Queue->Avail           = (VIRTQ_AVAIL *) AllocQueueMemory(AvailBytes);
+    Queue->Used            = (VIRTQ_USED *) AllocQueueMemory(UsedBytes);
+    Queue->DescInUse       = (UINT8 *) AllocQueueMemory(DescInUseBytes);
+    Queue->Completed       = (UINT8 *) AllocQueueMemory(CompletedBytes);
     Queue->CompletedLength = (UINT32 *) AllocQueueMemory(CompletedLengthBytes);
 
     if (Queue->Desc == NULL || Queue->Avail == NULL || Queue->Used == NULL || Queue->DescInUse == NULL || Queue->Completed == NULL || Queue->CompletedLength == NULL)
@@ -131,8 +131,8 @@ BOOLEAN VirtQueueInit(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, UINT16 QueueI
 
     Queue->Desc[QueueSize - 1].Next = 0xFFFF;
 
-    CommonConfig->QueueSize = QueueSize;
-    CommonConfig->QueueDesc = (UINT64) Queue->Desc;
+    CommonConfig->QueueSize   = QueueSize;
+    CommonConfig->QueueDesc   = (UINT64) Queue->Desc;
     CommonConfig->QueueDriver = (UINT64) Queue->Avail;
     CommonConfig->QueueDevice = (UINT64) Queue->Used;
     CommonConfig->QueueEnable = 1;
@@ -171,13 +171,13 @@ BOOLEAN VirtQueueAllocDesc(VIRTQUEUE *Queue, UINT16 *DescIndex)
 
     Queue->FreeHead = Queue->Desc[Index].Next;
     Queue->FreeCount--;
-    Queue->DescInUse[Index] = 1;
-    Queue->Completed[Index] = 0;
+    Queue->DescInUse[Index]       = 1;
+    Queue->Completed[Index]       = 0;
     Queue->CompletedLength[Index] = 0;
     KMemSet(&Queue->Desc[Index], 0, sizeof(VIRTQ_DESC));
 
     *DescIndex = Index;
-    LastError = L"ok";
+    LastError  = L"ok";
 
     return TRUE;
 }
@@ -192,11 +192,11 @@ VOID VirtQueueFreeDesc(VIRTQUEUE *Queue, UINT16 DescIndex)
     }
 
     KMemSet(&Queue->Desc[DescIndex], 0, sizeof(VIRTQ_DESC));
-    Queue->Desc[DescIndex].Next = Queue->FreeHead;
-    Queue->DescInUse[DescIndex] = 0;
-    Queue->Completed[DescIndex] = 0;
+    Queue->Desc[DescIndex].Next       = Queue->FreeHead;
+    Queue->DescInUse[DescIndex]       = 0;
+    Queue->Completed[DescIndex]       = 0;
     Queue->CompletedLength[DescIndex] = 0;
-    Queue->FreeHead = DescIndex;
+    Queue->FreeHead                   = DescIndex;
     Queue->FreeCount++;
     LastError = L"ok";
 }
@@ -217,7 +217,7 @@ VOID VirtQueueFreeChain(VIRTQUEUE *Queue, UINT16 Head)
     while (DescIndexValid(Queue, Index) && Queue->DescInUse[Index] != 0)
     {
         UINT16 Flags = Queue->Desc[Index].Flags;
-        UINT16 Next = Queue->Desc[Index].Next;
+        UINT16 Next  = Queue->Desc[Index].Next;
 
         VirtQueueFreeDesc(Queue, Index);
 
@@ -234,7 +234,7 @@ VOID VirtQueueFreeChain(VIRTQUEUE *Queue, UINT16 Head)
 
 BOOLEAN VirtQueueBuildChain(VIRTQUEUE *Queue, VIRTQUEUE_BUFFER *Buffers, UINT16 BufferCount, UINT16 *Head)
 {
-    UINT16 First = 0xFFFF;
+    UINT16 First    = 0xFFFF;
     UINT16 Previous = 0xFFFF;
 
     if (Queue == NULL || Buffers == NULL || BufferCount == 0 || Head == NULL)
@@ -271,9 +271,9 @@ BOOLEAN VirtQueueBuildChain(VIRTQUEUE *Queue, VIRTQUEUE_BUFFER *Buffers, UINT16 
         }
 
         Queue->Desc[DescIndex].Address = (UINT64) Buffers[Index].Buffer;
-        Queue->Desc[DescIndex].Length = Buffers[Index].Length;
-        Queue->Desc[DescIndex].Flags = Buffers[Index].Flags & VIRTQ_DESC_F_WRITE;
-        Queue->Desc[DescIndex].Next = 0;
+        Queue->Desc[DescIndex].Length  = Buffers[Index].Length;
+        Queue->Desc[DescIndex].Flags   = Buffers[Index].Flags & VIRTQ_DESC_F_WRITE;
+        Queue->Desc[DescIndex].Next    = 0;
 
         if (Previous != 0xFFFF)
         {
@@ -288,7 +288,7 @@ BOOLEAN VirtQueueBuildChain(VIRTQUEUE *Queue, VIRTQUEUE_BUFFER *Buffers, UINT16 
         Previous = DescIndex;
     }
 
-    *Head = First;
+    *Head     = First;
     LastError = L"ok";
 
     return TRUE;
@@ -324,7 +324,7 @@ BOOLEAN VirtQueuePostBuffer(VIRTIO_PCI_DEVICE *Device, VIRTQUEUE *Queue, VOID *B
 
     QueueBuffer.Buffer = Buffer;
     QueueBuffer.Length = Length;
-    QueueBuffer.Flags = Flags;
+    QueueBuffer.Flags  = Flags;
 
     if (!VirtQueueBuildChain(Queue, &QueueBuffer, 1, &DescHead))
     {
@@ -425,7 +425,7 @@ BOOLEAN VirtQueueTryWaitUsed(VIRTQUEUE *Queue, UINT16 Head, UINT32 *Length)
             return TRUE;
         }
 
-        Queue->Completed[UsedHead] = 1;
+        Queue->Completed[UsedHead]       = 1;
         Queue->CompletedLength[UsedHead] = UsedLength;
     }
 

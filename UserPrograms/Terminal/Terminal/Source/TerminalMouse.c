@@ -65,7 +65,7 @@ VOID TerminalMouseEvent(DISPLAY_INFO *Info, UINT32 Baseline, UINT32 LineLength, 
     }
 
     char   Report[32] = "\033[<0;";
-    UINTN  Length = strlen(Report);
+    UINTN  Length     = strlen(Report);
     char   Digits[10];
     UINTN  Count = 0;
     UINT32 Value = Column + 1;

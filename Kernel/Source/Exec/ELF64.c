@@ -61,10 +61,10 @@ BOOLEAN ELF64Validate(CONST VOID *FileData, UINT64 FileSize)
     UINT64               ProgramHeaderOffset;
     UINT64               ProgramHeaderSize;
     UINT64               SegmentEnd;
-    UINT32               LoadCount = 0;
+    UINT32               LoadCount        = 0;
     UINT32               InterpreterCount = 0;
-    UINT32               DynamicCount = 0;
-    BOOLEAN              EntryExecutable = FALSE;
+    UINT32               DynamicCount     = 0;
+    BOOLEAN              EntryExecutable  = FALSE;
 
     if (FileData == NULL || FileSize < sizeof(ELF64_HEADER))
     {
@@ -256,7 +256,7 @@ STATIC BOOLEAN ELF64MapImage(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUT
     ELF64_HEADER         Header;
     ELF64_PROGRAM_HEADER Segment;
     ELF64_PROGRAM_HEADER Other;
-    CONST UINT8         *Data = FileData;
+    CONST UINT8         *Data      = FileData;
     UINT64               PageCount = Execution->PageCount + ELF64_EXEC_STACK_PAGES;
 
     if (!ELF64Validate(FileData, FileSize))
@@ -286,8 +286,6 @@ STATIC BOOLEAN ELF64MapImage(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUT
             return FALSE;
         }
 
-
-
         if (Segment.Type != ELF64_PT_LOAD)
         {
             continue;
@@ -309,7 +307,7 @@ STATIC BOOLEAN ELF64MapImage(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUT
         }
 
         UINT64 Start = Segment.VAddr & ~4095ULL;
-        UINT64 End = (Segment.VAddr + Segment.MemSize + 4095) & ~4095ULL;
+        UINT64 End   = (Segment.VAddr + Segment.MemSize + 4095) & ~4095ULL;
 
         PageCount += (End - Start) / ELF64_EXEC_PAGE_SIZE;
 
@@ -345,7 +343,6 @@ STATIC BOOLEAN ELF64MapImage(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUT
             return FALSE;
         }
 
-
         if (Segment.Type != ELF64_PT_LOAD)
         {
             continue;
@@ -362,7 +359,7 @@ STATIC BOOLEAN ELF64MapImage(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUT
                 return FALSE;
             }
 
-            UINT64 Start = Address < Segment.VAddr ? Segment.VAddr : Address;
+            UINT64 Start   = Address < Segment.VAddr ? Segment.VAddr : Address;
             UINT64 CopyEnd = Address + ELF64_EXEC_PAGE_SIZE;
 
             if (CopyEnd > Segment.VAddr + Segment.FileSize)
@@ -398,7 +395,7 @@ BOOLEAN ELF64Load(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUTION *Execut
     }
 
     KMemCpy(&Header, FileData, sizeof(Header));
-    Execution->LinuxStack = Header.Type == ELF64_ET_DYN;
+    Execution->LinuxStack         = Header.Type == ELF64_ET_DYN;
     Execution->ProgramHeaderCount = Header.PHNum;
 
     if (!ELF64MapImage(FileData, FileSize, Execution, 0x400000000000ULL, &Execution->Entry, &Execution->ProgramHeaders))
@@ -424,13 +421,13 @@ BOOLEAN ELF64Load(CONST VOID *FileData, UINT64 FileSize, ELF64_EXECUTION *Execut
     TASK *Task = Execution->Task;
 
     Task->Process->AddressSpace = Execution->AddressSpace;
-    Task->Process->Execution = Execution;
-    Task->UserStackBase = ELF64_EXEC_STACK;
-    Task->UserStackSize = ELF64_EXEC_STACK_PAGES * ELF64_EXEC_PAGE_SIZE;
+    Task->Process->Execution    = Execution;
+    Task->UserStackBase         = ELF64_EXEC_STACK;
+    Task->UserStackSize         = ELF64_EXEC_STACK_PAGES * ELF64_EXEC_PAGE_SIZE;
     KMemSet(&Task->Context, 0, sizeof(Task->Context));
-    Task->Context.RIP = Execution->Entry;
-    Task->Context.CS = GDT_USER_CODE_SELECTOR | 3;
-    Task->Context.SS = GDT_USER_DATA_SELECTOR | 3;
+    Task->Context.RIP    = Execution->Entry;
+    Task->Context.CS     = GDT_USER_CODE_SELECTOR | 3;
+    Task->Context.SS     = GDT_USER_DATA_SELECTOR | 3;
     Task->Context.RFLAGS = 0x202;
 
     if (!ELF64SetArguments(Execution, NULL))
@@ -457,12 +454,12 @@ Failure:
 
 STATIC BOOLEAN ELF64SetLinuxStack(ELF64_EXECUTION *Execution)
 {
-    TASK *Task = Execution->Task;
+    TASK  *Task = Execution->Task;
     UINT64 Vector[2 * ELF64_ARG_MAX_COUNT + 64];
-    UINT64 Count = 0;
+    UINT64 Count    = 0;
     UINT64 ArgCount = Task->Context.RDI;
     UINT64 Random[2];
-    UINT64 Top = Task->Context.RSP;
+    UINT64 Top      = Task->Context.RSP;
     UINT64 EnvCount = 0;
 
     if (!Execution->LinuxStack)
@@ -550,7 +547,7 @@ STATIC BOOLEAN ELF64SetLinuxStack(ELF64_EXECUTION *Execution)
         }
     }
 
-    Vector[Count++] = 0;
+    Vector[Count++]    = 0;
     CONST UINT64 Aux[] = {3, Execution->ProgramHeaders, 4, sizeof(ELF64_PROGRAM_HEADER), 5, Execution->ProgramHeaderCount, 6, 4096, 7, Execution->InterpreterBase, 9, Execution->Entry, 11, Task->Process->RealUID, 12, Task->Process->RealUID, 13, Task->Process->RealGID, 14, Task->Process->RealGID, 23, 0, 25, RandomAddress, 31, ExecName, 0, 0};
     KMemCpy(Vector + Count, Aux, sizeof(Aux));
     Count += sizeof(Aux) / sizeof(Aux[0]);
@@ -569,11 +566,11 @@ STATIC BOOLEAN ELF64SetLinuxStack(ELF64_EXECUTION *Execution)
 
 STATIC BOOLEAN ELF64SetArguments(ELF64_EXECUTION *Execution, CONST ELF64_ARGUMENTS *Arguments)
 {
-    TASK  *Task = Execution->Task;
+    TASK  *Task                              = Execution->Task;
     UINT64 Pointers[ELF64_ARG_MAX_COUNT + 1] = {0};
-    UINT32 Count = Arguments == NULL ? 0 : Arguments->Count;
-    UINT32 Bytes = Arguments == NULL ? 0 : Arguments->Bytes;
-    UINT32 Position = 0;
+    UINT32 Count                             = Arguments == NULL ? 0 : Arguments->Count;
+    UINT32 Bytes                             = Arguments == NULL ? 0 : Arguments->Bytes;
+    UINT32 Position                          = 0;
     UINT64 Strings;
     UINT64 Vector;
 
@@ -583,7 +580,7 @@ STATIC BOOLEAN ELF64SetArguments(ELF64_EXECUTION *Execution, CONST ELF64_ARGUMEN
     }
 
     Strings = ELF64_EXEC_STACK + Task->UserStackSize - 56 - Bytes;
-    Vector = (Strings - (Count + 1) * sizeof(UINT64)) & ~7ULL;
+    Vector  = (Strings - (Count + 1) * sizeof(UINT64)) & ~7ULL;
 
     for (UINT32 Index = 0; Index < Count; Index++)
     {
@@ -652,7 +649,7 @@ STATIC BOOLEAN ELF64LoadInterpreter(VFS_CONTEXT *Context, CONST VOID *Data, UINT
         }
 
         VFS_NODE Node;
-        UINT32 ReadLength;
+        UINT32   ReadLength;
 
         Execution->Error = SyscallVFSError(VFSLookup(Context, Path, &Node));
 
@@ -675,8 +672,8 @@ STATIC BOOLEAN ELF64LoadInterpreter(VFS_CONTEXT *Context, CONST VOID *Data, UINT
             return FALSE;
         }
 
-        Execution->Error = SyscallVFSError(VFSRead(Context, Path, 0, Image, (UINT32) Node.Size, &ReadLength));
-        BOOLEAN Loaded = Execution->Error == 0 && ReadLength == Node.Size && ELF64Validate(Image, Node.Size);
+        Execution->Error    = SyscallVFSError(VFSRead(Context, Path, 0, Image, (UINT32) Node.Size, &ReadLength));
+        BOOLEAN      Loaded = Execution->Error == 0 && ReadLength == Node.Size && ELF64Validate(Image, Node.Size);
         ELF64_HEADER Interpreter;
 
         if (Loaded)
@@ -692,10 +689,10 @@ STATIC BOOLEAN ELF64LoadInterpreter(VFS_CONTEXT *Context, CONST VOID *Data, UINT
             }
         }
 
-        UINT64 Entry = 0;
-        UINT64 ProgramHeaders = 0;
+        UINT64 Entry               = 0;
+        UINT64 ProgramHeaders      = 0;
         Execution->InterpreterBase = 0x400100000000ULL;
-        Loaded = Loaded && ELF64MapImage(Image, Node.Size, Execution, Execution->InterpreterBase, &Entry, &ProgramHeaders);
+        Loaded                     = Loaded && ELF64MapImage(Image, Node.Size, Execution, Execution->InterpreterBase, &Entry, &ProgramHeaders);
         KFree(Image);
 
         if (!Loaded)
@@ -704,7 +701,7 @@ STATIC BOOLEAN ELF64LoadInterpreter(VFS_CONTEXT *Context, CONST VOID *Data, UINT
             return FALSE;
         }
 
-        Execution->LinuxStack = TRUE;
+        Execution->LinuxStack        = TRUE;
         Execution->Task->Context.RIP = Entry;
         return TRUE;
     }
@@ -765,7 +762,7 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONS
     }
 
     Execution->Error = SyscallVFSError(VFSRead(Context, Path, 0, Data, (UINT32) Node.Size, &ReadLength));
-    Loaded = Execution->Error == 0 && ReadLength == Node.Size;
+    Loaded           = Execution->Error == 0 && ReadLength == Node.Size;
 
     if (Loaded)
     {
@@ -837,8 +834,8 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONS
     }
 
     Execution->Task->Process->Name[NameLength] = 0;
-    Execution->Task->Process->RealUID = Context->Credentials.UID;
-    Execution->Task->Process->RealGID = Context->Credentials.GID;
+    Execution->Task->Process->RealUID          = Context->Credentials.UID;
+    Execution->Task->Process->RealGID          = Context->Credentials.GID;
 
     if (Execution->LinuxStack && (Node.Mode & 06000U) != 0)
     {
@@ -850,7 +847,7 @@ STATIC BOOLEAN ELF64ExecuteProgram(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONS
 
     if ((Node.Mode & 04000U) != 0)
     {
-        Execution->Task->Process->FileContext->Credentials.UID = Node.UID;
+        Execution->Task->Process->FileContext->Credentials.UID           = Node.UID;
         Execution->Task->Process->FileContext->Credentials.Administrator = Node.UID == 0;
     }
 
@@ -913,10 +910,10 @@ BOOLEAN ELF64PrepareArguments(VFS_CONTEXT *Context, CONST CHAR8 *Path, CONST ELF
 
 BOOLEAN ELF64SetEnvironment(ELF64_EXECUTION *Execution, CONST ELF64_ARGUMENTS *Environment)
 {
-    TASK  *Task = Execution->Task;
+    TASK  *Task                              = Execution->Task;
     UINT64 Pointers[ELF64_ARG_MAX_COUNT + 1] = {0};
-    UINT32 Count = Environment->Count;
-    UINT32 Bytes = Environment->Bytes;
+    UINT32 Count                             = Environment->Count;
+    UINT32 Bytes                             = Environment->Bytes;
 
     if (Count > ELF64_ARG_MAX_COUNT || Bytes > ELF64_ARG_MAX_BYTES)
     {
@@ -924,7 +921,7 @@ BOOLEAN ELF64SetEnvironment(ELF64_EXECUTION *Execution, CONST ELF64_ARGUMENTS *E
     }
 
     UINT64 Strings = Task->Context.RSP - Bytes;
-    UINT64 Vector = (Strings - (Count + 1) * sizeof(UINT64)) & ~7ULL;
+    UINT64 Vector  = (Strings - (Count + 1) * sizeof(UINT64)) & ~7ULL;
 
     for (UINT32 Index = 0; Index < Count; Index++)
     {

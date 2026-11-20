@@ -65,10 +65,10 @@ INT32 ShellEchoCommand(CONST char *Text, char **Envp, INT32 Status)
     }
 
     char    Output[SHELL_PARSE_BYTES * 2];
-    UINTN   Length = 0;
+    UINTN   Length  = 0;
     BOOLEAN Newline = TRUE;
-    BOOLEAN First = TRUE;
-    INT32   FD = 1;
+    BOOLEAN First   = TRUE;
+    INT32   FD      = 1;
 
     for (UINTN Index = 0; Index < Parse.Count; Index++)
     {
@@ -142,7 +142,7 @@ INT32 ShellEchoCommand(CONST char *Text, char **Envp, INT32 Status)
     }
 
     BOOLEAN Written = ShellEchoWrite(FD, Output, Length);
-    INT32   Error = Written ? 0 : errno;
+    INT32   Error   = Written ? 0 : errno;
 
     if (FD != 1 && close(FD) < 0)
     {

@@ -119,7 +119,7 @@ STATIC INT32 Neq0(UINT64 Diff)
 {
 
     UINT64 Half = (Diff >> 32) | ((UINT32) Diff);
-    UINT64 Eq0 = 1 & ((Half - 1) >> 32);
+    UINT64 Eq0  = 1 & ((Half - 1) >> 32);
 
     return (INT32) Eq0 - 1;
 }
@@ -176,21 +176,21 @@ STATIC VOID Blake2bCompress(CRYPTO_BLAKE2B_CONTEXT *Ctx, INT32 IsLastBlock)
         X[1]++;
     }
 
-    UINT64 V0 = Ctx->Hash[0];
-    UINT64 V8 = Iv[0];
-    UINT64 V1 = Ctx->Hash[1];
-    UINT64 V9 = Iv[1];
-    UINT64 V2 = Ctx->Hash[2];
+    UINT64 V0  = Ctx->Hash[0];
+    UINT64 V8  = Iv[0];
+    UINT64 V1  = Ctx->Hash[1];
+    UINT64 V9  = Iv[1];
+    UINT64 V2  = Ctx->Hash[2];
     UINT64 V10 = Iv[2];
-    UINT64 V3 = Ctx->Hash[3];
+    UINT64 V3  = Ctx->Hash[3];
     UINT64 V11 = Iv[3];
-    UINT64 V4 = Ctx->Hash[4];
+    UINT64 V4  = Ctx->Hash[4];
     UINT64 V12 = Iv[4] ^ Ctx->InputOffset[0];
-    UINT64 V5 = Ctx->Hash[5];
+    UINT64 V5  = Ctx->Hash[5];
     UINT64 V13 = Iv[5] ^ Ctx->InputOffset[1];
-    UINT64 V6 = Ctx->Hash[6];
+    UINT64 V6  = Ctx->Hash[6];
     UINT64 V14 = Iv[6] ^ (UINT64) ~(IsLastBlock - 1);
-    UINT64 V7 = Ctx->Hash[7];
+    UINT64 V7  = Ctx->Hash[7];
     UINT64 V15 = Iv[7];
 
     UINT64 *Input = Ctx->Input;
@@ -253,8 +253,8 @@ VOID CryptoBlake2bKeyedInit(CRYPTO_BLAKE2B_CONTEXT *Ctx, UINTN HashSize, CONST U
 
     Ctx->InputOffset[0] = 0;
     Ctx->InputOffset[1] = 0;
-    Ctx->HashSize = HashSize;
-    Ctx->InputIdx = 0;
+    Ctx->HashSize       = HashSize;
+    Ctx->InputIdx       = 0;
     ZERO(Ctx->Input, 16);
 
     if (KeySize > 0)
@@ -285,8 +285,8 @@ VOID CryptoBlake2bUpdate(CRYPTO_BLAKE2B_CONTEXT *Ctx, CONST UINT8 *Message, UINT
     if ((Ctx->InputIdx & 7) != 0)
     {
         UINTN NbBytes = MIN(Gap(Ctx->InputIdx, 8), MessageSize);
-        UINTN Word = Ctx->InputIdx >> 3;
-        UINTN Byte = Ctx->InputIdx & 7;
+        UINTN Word    = Ctx->InputIdx >> 3;
+        UINTN Byte    = Ctx->InputIdx & 7;
 
         FOR(I, 0, NbBytes)
         {
@@ -361,7 +361,7 @@ VOID CryptoBlake2bFinal(CRYPTO_BLAKE2B_CONTEXT *Ctx, UINT8 *Hash)
     Blake2bCompress(Ctx, 1);
 
     UINTN HashSize = MIN(Ctx->HashSize, 64);
-    UINTN NbWords = HashSize >> 3;
+    UINTN NbWords  = HashSize >> 3;
 
     Store64LeBuf(Hash, Ctx->Hash, NbWords);
     FOR(I, NbWords << 3, HashSize)
@@ -427,9 +427,9 @@ STATIC VOID ExtendedHash(UINT8 *Digest, UINT32 DigestSize, CONST UINT8 *Input, U
     if (DigestSize > 64)
     {
 
-        UINT32 R = (UINT32) (((UINT64) DigestSize + 31) >> 5) - 2;
-        UINT32 I = 1;
-        UINT32 In = 0;
+        UINT32 R   = (UINT32) (((UINT64) DigestSize + 31) >> 5) - 2;
+        UINT32 I   = 1;
+        UINT32 In  = 0;
         UINT32 Out = 32;
 
         while (I < R)
@@ -488,8 +488,8 @@ CONST CRYPTO_ARGON2_EXTRAS CryptoArgon2NoExtras = {0, 0, 0, 0};
 VOID CryptoArgon2(UINT8 *Hash, UINT32 HashSize, VOID *WorkArea, CRYPTO_ARGON2_CONFIG Config, CRYPTO_ARGON2_INPUTS Inputs, CRYPTO_ARGON2_EXTRAS Extras)
 {
     CONST UINT32 SegmentSize = Config.NbBlocks / Config.NbLanes / 4;
-    CONST UINT32 LaneSize = SegmentSize * 4;
-    CONST UINT32 NbBlocks = LaneSize * Config.NbLanes;
+    CONST UINT32 LaneSize    = SegmentSize * 4;
+    CONST UINT32 NbBlocks    = LaneSize * Config.NbLanes;
 
     CRYPTO_ARGON2_BLOCK *Blocks = (CRYPTO_ARGON2_BLOCK *) WorkArea;
     {
@@ -535,7 +535,7 @@ VOID CryptoArgon2(UINT8 *Hash, UINT32 HashSize, VOID *WorkArea, CRYPTO_ARGON2_CO
         FOR_T(UINT32, Slice, 0, 4)
         {
 
-            UINT32 PassOffset = Pass == 0 && Slice == 0 ? 2 : 0;
+            UINT32 PassOffset  = Pass == 0 && Slice == 0 ? 2 : 0;
             UINT32 SliceOffset = Slice * SegmentSize;
 
             if (Slice == 2 && Config.Algorithm == CRYPTO_ARGON2_ID)
@@ -551,10 +551,10 @@ VOID CryptoArgon2(UINT8 *Hash, UINT32 HashSize, VOID *WorkArea, CRYPTO_ARGON2_CO
                 FOR_T(UINT32, Block, PassOffset, SegmentSize)
                 {
 
-                    UINT32               LaneOffset = Segment * LaneSize;
+                    UINT32               LaneOffset   = Segment * LaneSize;
                     CRYPTO_ARGON2_BLOCK *SegmentStart = Blocks + LaneOffset + SliceOffset;
-                    CRYPTO_ARGON2_BLOCK *Current = SegmentStart + Block;
-                    CRYPTO_ARGON2_BLOCK *Previous = Block == 0 && SliceOffset == 0 ? SegmentStart + LaneSize - 1 : SegmentStart + Block - 1;
+                    CRYPTO_ARGON2_BLOCK *Current      = SegmentStart + Block;
+                    CRYPTO_ARGON2_BLOCK *Previous     = Block == 0 && SliceOffset == 0 ? SegmentStart + LaneSize - 1 : SegmentStart + Block - 1;
 
                     UINT64 IndexSeed;
 
@@ -588,18 +588,18 @@ VOID CryptoArgon2(UINT8 *Hash, UINT32 HashSize, VOID *WorkArea, CRYPTO_ARGON2_CO
                         IndexSeed = Previous->A[0];
                     }
 
-                    UINT32 NextSlice = ((Slice + 1) % 4) * SegmentSize;
+                    UINT32 NextSlice   = ((Slice + 1) % 4) * SegmentSize;
                     UINT32 WindowStart = Pass == 0 ? 0 : NextSlice;
-                    UINT32 NbSegments = Pass == 0 ? Slice : 3;
-                    UINT32 Lane = Pass == 0 && Slice == 0 ? Segment : (UINT32) (IndexSeed >> 32) % Config.NbLanes;
-                    UINT32 WindowSize = NbSegments * SegmentSize + (Lane == Segment ? Block - 1 : Block == 0 ? (UINT32) -1 : 0);
+                    UINT32 NbSegments  = Pass == 0 ? Slice : 3;
+                    UINT32 Lane        = Pass == 0 && Slice == 0 ? Segment : (UINT32) (IndexSeed >> 32) % Config.NbLanes;
+                    UINT32 WindowSize  = NbSegments * SegmentSize + (Lane == Segment ? Block - 1 : Block == 0 ? (UINT32) -1 : 0);
 
-                    UINT64               J1 = IndexSeed & 0xffffffff;
-                    UINT64               X = (J1 * J1) >> 32;
-                    UINT64               Y = (WindowSize * X) >> 32;
-                    UINT64               Z = (WindowSize - 1) - Y;
-                    UINT32               Ref = (UINT32) ((WindowStart + Z) % LaneSize);
-                    UINT32               Index = Lane * LaneSize + Ref;
+                    UINT64               J1        = IndexSeed & 0xffffffff;
+                    UINT64               X         = (J1 * J1) >> 32;
+                    UINT64               Y         = (WindowSize * X) >> 32;
+                    UINT64               Z         = (WindowSize - 1) - Y;
+                    UINT32               Ref       = (UINT32) ((WindowStart + Z) % LaneSize);
+                    UINT32               Index     = Lane * LaneSize + Ref;
                     CRYPTO_ARGON2_BLOCK *Reference = Blocks + Index;
 
                     CopyBlock(&Tmp, Previous);

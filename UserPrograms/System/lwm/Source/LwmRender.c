@@ -30,11 +30,11 @@ STATIC UINT32 LwmGlyph(LWM *Manager, TRUE_TYPE_FONT *Font, UINT32 Codepoint, UIN
 
     if (Glyph->Font != Font || Glyph->Codepoint != Codepoint || Glyph->Size != Size)
     {
-        FLOAT32 Scale = ScaleForPixelHeight(&Font->Info, Size);
-        INT32   Width = 0;
+        FLOAT32 Scale  = ScaleForPixelHeight(&Font->Info, Size);
+        INT32   Width  = 0;
         INT32   Height = 0;
-        INT32   Left = 0;
-        INT32   Top = 0;
+        INT32   Left   = 0;
+        INT32   Top    = 0;
 
         Manager->FontUsed = 0;
 
@@ -47,13 +47,13 @@ STATIC UINT32 LwmGlyph(LWM *Manager, TRUE_TYPE_FONT *Font, UINT32 Codepoint, UIN
             return DrawTrueTypeCodepoint(Font, Codepoint, X, Baseline, Color, Size);
         }
 
-        Glyph->Font = Font;
+        Glyph->Font      = Font;
         Glyph->Codepoint = Codepoint;
-        Glyph->Size = Size;
-        Glyph->Width = Width;
-        Glyph->Height = Height;
-        Glyph->Left = Left;
-        Glyph->Top = Top;
+        Glyph->Size      = Size;
+        Glyph->Width     = Width;
+        Glyph->Height    = Height;
+        Glyph->Left      = Left;
+        Glyph->Top       = Top;
 
         if (Bitmap != NULL)
         {
@@ -73,19 +73,19 @@ STATIC UINT32 LwmGlyph(LWM *Manager, TRUE_TYPE_FONT *Font, UINT32 Codepoint, UIN
         for (INT32 Column = 0; Column < Glyph->Width; Column++)
         {
             INT64  PixelX = (INT64) X + Glyph->Left + Column;
-            UINT32 Alpha = Glyph->Bitmap[(UINTN) Row * Glyph->Width + Column];
+            UINT32 Alpha  = Glyph->Bitmap[(UINTN) Row * Glyph->Width + Column];
 
             if (Alpha == 0 || PixelX < 0 || PixelX >= Right || PixelX >= Manager->Surface.FrameBufferWidth)
             {
                 continue;
             }
 
-            UINT32 *Pixel = Manager->Surface.FrameBuffer + (UINTN) Y * Manager->Surface.FrameBufferWidth + PixelX;
+            UINT32 *Pixel      = Manager->Surface.FrameBuffer + (UINTN) Y * Manager->Surface.FrameBufferWidth + PixelX;
             UINT32  Background = *Pixel;
-            UINT32  Inverse = 255 - Alpha;
-            UINT32  Red = (((Color >> 16) & 255) * Alpha + ((Background >> 16) & 255) * Inverse) / 255;
-            UINT32  Green = (((Color >> 8) & 255) * Alpha + ((Background >> 8) & 255) * Inverse) / 255;
-            UINT32  Blue = ((Color & 255) * Alpha + (Background & 255) * Inverse) / 255;
+            UINT32  Inverse    = 255 - Alpha;
+            UINT32  Red        = (((Color >> 16) & 255) * Alpha + ((Background >> 16) & 255) * Inverse) / 255;
+            UINT32  Green      = (((Color >> 8) & 255) * Alpha + ((Background >> 8) & 255) * Inverse) / 255;
+            UINT32  Blue       = ((Color & 255) * Alpha + (Background & 255) * Inverse) / 255;
 
             *Pixel = 0xFF000000U | (Red << 16) | (Green << 8) | Blue;
         }
@@ -125,9 +125,9 @@ VOID LwmFree(VOID *Pointer, VOID *Context)
 
 VOID LwmFill(LWM *Manager, LWM_RECT Rect, UINT32 Color)
 {
-    INT64 Left = Rect.X < 0 ? 0 : Rect.X;
-    INT64 Top = Rect.Y < 0 ? 0 : Rect.Y;
-    INT64 Right = (INT64) Rect.X + Rect.Width;
+    INT64 Left   = Rect.X < 0 ? 0 : Rect.X;
+    INT64 Top    = Rect.Y < 0 ? 0 : Rect.Y;
+    INT64 Right  = (INT64) Rect.X + Rect.Width;
     INT64 Bottom = (INT64) Rect.Y + Rect.Height;
 
     if (Right > Manager->Surface.FrameBufferWidth)
@@ -195,8 +195,8 @@ VOID LwmText(LWM *Manager, CONST char *Text, UINT32 X, UINT32 Baseline, UINT32 S
     while (*Text != 0)
     {
         UINT32          Codepoint = LwmCodepoint(&Text);
-        TRUE_TYPE_FONT *Font = FindGlyphIndex(&Manager->Font.Info, (INT32) Codepoint) != 0 ? &Manager->Font : &Manager->Fallback;
-        FLOAT32         Scale = ScaleForPixelHeight(&Font->Info, Size);
+        TRUE_TYPE_FONT *Font      = FindGlyphIndex(&Manager->Font.Info, (INT32) Codepoint) != 0 ? &Manager->Font : &Manager->Fallback;
+        FLOAT32         Scale     = ScaleForPixelHeight(&Font->Info, Size);
         INT32           Advance;
         INT32           Bearing;
 
@@ -210,7 +210,7 @@ VOID LwmText(LWM *Manager, CONST char *Text, UINT32 X, UINT32 Baseline, UINT32 S
         }
 
         Manager->FontUsed = 0;
-        X = LwmGlyph(Manager, Font, Codepoint, X, Baseline, Size, Color, Pixels, Right);
+        X                 = LwmGlyph(Manager, Font, Codepoint, X, Baseline, Size, Color, Pixels, Right);
     }
 }
 
@@ -224,10 +224,10 @@ VOID LwmDesktop(LWM *Manager)
 
 VOID LwmDamage(LWM *Manager, LWM_RECT Rect)
 {
-    INT64 Top = Rect.Y < 0 ? 0 : Rect.Y;
+    INT64 Top    = Rect.Y < 0 ? 0 : Rect.Y;
     INT64 Bottom = (INT64) Rect.Y + Rect.Height;
-    INT64 Left = Rect.X < 0 ? 0 : Rect.X;
-    INT64 Right = (INT64) Rect.X + Rect.Width;
+    INT64 Left   = Rect.X < 0 ? 0 : Rect.X;
+    INT64 Right  = (INT64) Rect.X + Rect.Width;
 
     if (Bottom > Manager->Height)
     {
@@ -276,7 +276,7 @@ UINT32 LwmRoundInset(UINT32 Row, UINT32 Height, UINT32 Radius)
         return 0;
     }
 
-    INT32  Y = (INT32) (Radius * 2 - Edge * 2 - 1);
+    INT32  Y     = (INT32) (Radius * 2 - Edge * 2 - 1);
     UINT32 Inset = 0;
 
     while (Inset < Radius)
@@ -303,7 +303,7 @@ STATIC UINT32 LwmRoundCoverage(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, 
 
     INT32  CenterX = (INT32) (X < Radius ? Radius : Width - Radius) * 8;
     INT32  CenterY = (INT32) (Y < Radius ? Radius : Height - Radius) * 8;
-    INT32  Limit = (INT32) (Radius * Radius * 64);
+    INT32  Limit   = (INT32) (Radius * Radius * 64);
     UINT32 Samples = 0;
 
     for (UINT32 Row = 0; Row < 4; Row++)
@@ -324,9 +324,9 @@ STATIC UINT32 LwmRoundCoverage(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, 
 STATIC UINT32 LwmBlend(UINT32 Background, UINT32 Foreground, UINT32 Alpha)
 {
     UINT32 Inverse = 255 - Alpha;
-    UINT32 Red = (((Foreground >> 16) & 255) * Alpha + ((Background >> 16) & 255) * Inverse) / 255;
-    UINT32 Green = (((Foreground >> 8) & 255) * Alpha + ((Background >> 8) & 255) * Inverse) / 255;
-    UINT32 Blue = ((Foreground & 255) * Alpha + (Background & 255) * Inverse) / 255;
+    UINT32 Red     = (((Foreground >> 16) & 255) * Alpha + ((Background >> 16) & 255) * Inverse) / 255;
+    UINT32 Green   = (((Foreground >> 8) & 255) * Alpha + ((Background >> 8) & 255) * Inverse) / 255;
+    UINT32 Blue    = ((Foreground & 255) * Alpha + (Background & 255) * Inverse) / 255;
 
     return 0xFF000000U | (Red << 16) | (Green << 8) | Blue;
 }
@@ -340,9 +340,9 @@ STATIC VOID LwmShadowPixel(LWM *Manager, INT32 X, INT32 Y, UINT32 Alpha)
 
     UINT32 *Pixel = Manager->Frame + (UINTN) Y * Manager->Width + X;
     UINT32  Color = *Pixel;
-    UINT32  Red = ((Color >> 16) & 255) * (255 - Alpha) / 255;
+    UINT32  Red   = ((Color >> 16) & 255) * (255 - Alpha) / 255;
     UINT32  Green = ((Color >> 8) & 255) * (255 - Alpha) / 255;
-    UINT32  Blue = (Color & 255) * (255 - Alpha) / 255;
+    UINT32  Blue  = (Color & 255) * (255 - Alpha) / 255;
 
     *Pixel = 0xFF000000U | (Red << 16) | (Green << 8) | Blue;
 }
@@ -353,11 +353,11 @@ STATIC VOID LwmShadow(LWM *Manager, CONST LWM_WINDOW *Window)
 
     for (INT32 Ring = 12; Ring > 0; Ring--)
     {
-        INT32  Left = Rect->X - Ring;
-        INT32  Right = Rect->X + (INT32) Rect->Width + Ring;
-        INT32  Top = Rect->Y - Ring + 4;
+        INT32  Left   = Rect->X - Ring;
+        INT32  Right  = Rect->X + (INT32) Rect->Width + Ring;
+        INT32  Top    = Rect->Y - Ring + 4;
         INT32  Bottom = Rect->Y + (INT32) Rect->Height + Ring + 4;
-        UINT32 Alpha = (UINT32) (13 - Ring) * 2;
+        UINT32 Alpha  = (UINT32) (13 - Ring) * 2;
 
         for (INT32 Y = Top; Y < Bottom; Y++)
         {
@@ -367,9 +367,9 @@ STATIC VOID LwmShadow(LWM *Manager, CONST LWM_WINDOW *Window)
             }
 
             UINT32 Radius = Window->Maximized ? 0 : 12U + (UINT32) Ring;
-            UINT32 Inset = LwmRoundInset((UINT32) (Y - Top), (UINT32) (Bottom - Top), Radius);
-            INT32  Begin = Left + (INT32) Inset;
-            INT32  End = Right - (INT32) Inset;
+            UINT32 Inset  = LwmRoundInset((UINT32) (Y - Top), (UINT32) (Bottom - Top), Radius);
+            INT32  Begin  = Left + (INT32) Inset;
+            INT32  End    = Right - (INT32) Inset;
 
             if (Y == Top || Y == Bottom - 1)
             {
@@ -404,7 +404,7 @@ INT32 LwmCompose(LWM *Manager)
         LwmDamage(Manager, (LWM_RECT) {0, 0, Manager->Width, Manager->Height});
     }
 
-    INT32  Focused = -1;
+    INT32  Focused   = -1;
     UINT64 DockState = Manager->WindowCount * 257U + Manager->ShellFocused;
 
     for (UINT32 Index = 0; Index < Manager->WindowCount; Index++)
@@ -426,9 +426,9 @@ INT32 LwmCompose(LWM *Manager)
 
     for (UINT32 Index = 0; Index < Manager->WindowCount; Index++)
     {
-        LWM_WINDOW *Window = &Manager->Windows[Index];
+        LWM_WINDOW *Window  = &Manager->Windows[Index];
         BOOLEAN     Visible = !Window->Minimized && (Window->Endpoint == 0 || Window->HasFrame);
-        BOOLEAN     Moved = !Window->PaintTracked || memcmp(&Window->Rect, &Window->PaintedRect, sizeof(Window->Rect)) != 0;
+        BOOLEAN     Moved   = !Window->PaintTracked || memcmp(&Window->Rect, &Window->PaintedRect, sizeof(Window->Rect)) != 0;
 
         if (Window->PaintedVisible && (Moved || !Visible))
         {
@@ -445,12 +445,12 @@ INT32 LwmCompose(LWM *Manager)
             LwmPaintWindow(Manager, Window, (INT32) Index == Focused);
         }
 
-        Window->PaintedRect = Window->Rect;
+        Window->PaintedRect    = Window->Rect;
         Window->PaintedVisible = Visible;
-        Window->PaintTracked = TRUE;
+        Window->PaintTracked   = TRUE;
     }
 
-    LWM_WINDOW *Shell = &Manager->Shell;
+    LWM_WINDOW *Shell    = &Manager->Shell;
     UINTN       RowBytes = (UINTN) Manager->Width * sizeof(UINT32);
 
     for (UINT32 Row = 0; Row < Manager->Height; Row++)
@@ -491,14 +491,14 @@ INT32 LwmCompose(LWM *Manager)
             }
 
             UINT32 Radius = Window->Maximized ? 0 : 12;
-            UINT32 Inset = LwmRoundInset(Row, Window->Rect.Height, Radius);
+            UINT32 Inset  = LwmRoundInset(Row, Window->Rect.Height, Radius);
 
             if (Inset != 0)
             {
                 Inset--;
             }
 
-            INT64 Left = Window->Rect.X + Inset;
+            INT64 Left  = Window->Rect.X + Inset;
             INT64 Right = (INT64) Window->Rect.X + Window->Rect.Width - Inset;
 
             if (Left < 0)
@@ -516,7 +516,7 @@ INT32 LwmCompose(LWM *Manager)
                 UINT32 *Source = Window->Pixels + (UINTN) Row * Window->Stride + (Left - Window->Rect.X);
 
                 UINT32 *Destination = Manager->Frame + (UINTN) Y * Manager->Width + Left;
-                BOOLEAN Corner = Radius != 0 && (Row < Radius || Row >= Window->Rect.Height - Radius);
+                BOOLEAN Corner      = Radius != 0 && (Row < Radius || Row >= Window->Rect.Height - Radius);
                 UINT32  Background[4];
 
                 if (Corner)
@@ -535,9 +535,9 @@ INT32 LwmCompose(LWM *Manager)
 
                     for (UINT32 Index = 0; Index < 4; Index++)
                     {
-                        UINTN  Pixel = Positions[Index];
+                        UINTN  Pixel  = Positions[Index];
                         UINT32 LocalX = (UINT32) (Left - Window->Rect.X) + (UINT32) Pixel;
-                        UINT32 Alpha = LwmRoundCoverage(LocalX, Row, Window->Rect.Width, Window->Rect.Height, Radius);
+                        UINT32 Alpha  = LwmRoundCoverage(LocalX, Row, Window->Rect.Width, Window->Rect.Height, Radius);
 
                         Destination[Pixel] = LwmBlend(Background[Index], Source[Pixel], Alpha);
                     }
@@ -559,7 +559,7 @@ INT32 LwmCompose(LWM *Manager)
     }
 
     UINT32 First = Manager->Height;
-    UINT32 Last = 0;
+    UINT32 Last  = 0;
 
     for (UINT32 Row = 0; Row < Manager->Height; Row++)
     {
@@ -592,11 +592,11 @@ INT32 LwmCompose(LWM *Manager)
     }
 
     memset(Manager->DamageRows, 0, sizeof(Manager->DamageRows));
-    Manager->DamageLeft = 0;
+    Manager->DamageLeft  = 0;
     Manager->DamageRight = 0;
-    Manager->DockState = DockState;
-    Manager->FrameReady = TRUE;
-    Manager->Dirty = FALSE;
+    Manager->DockState   = DockState;
+    Manager->FrameReady  = TRUE;
+    Manager->Dirty       = FALSE;
 
     return 0;
 }

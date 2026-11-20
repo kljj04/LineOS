@@ -27,7 +27,7 @@ BOOLEAN EXT2ReadData(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT64 Offset, VOID
     {
         UINT32 Physical;
         UINT32 Within = (UINT32) (Offset % Volume->BlockSize);
-        UINT32 Count = Volume->BlockSize - Within;
+        UINT32 Count  = Volume->BlockSize - Within;
 
         if (Count > Length - *ReadLength)
         {
@@ -45,9 +45,9 @@ BOOLEAN EXT2ReadData(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT64 Offset, VOID
         }
         else if (Within == 0 && Count == Volume->BlockSize && !Volume->Transaction)
         {
-            UINT32  Blocks = 1;
-            UINT32  Limit = (Length - *ReadLength) / Volume->BlockSize;
-            UINT32  Capacity = Volume->DMAPages * EXT2_MAX_BLOCK_SIZE / Volume->BlockSize;
+            UINT32  Blocks        = 1;
+            UINT32  Limit         = (Length - *ReadLength) / Volume->BlockSize;
+            UINT32  Capacity      = Volume->DMAPages * EXT2_MAX_BLOCK_SIZE / Volume->BlockSize;
             BOOLEAN MappingFailed = FALSE;
 
             if (Limit > Capacity)
@@ -143,7 +143,7 @@ BOOLEAN EXT2WriteData(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT64 Offset, CON
     {
         UINT32 Physical;
         UINT32 Within = (UINT32) (Offset % Volume->BlockSize);
-        UINT32 Count = Volume->BlockSize - Within;
+        UINT32 Count  = Volume->BlockSize - Within;
         UINT8 *Data;
 
         if (Count > Length - Done)

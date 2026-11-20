@@ -135,8 +135,8 @@ STATIC VOID DrawPanicHeader(UINT32 X, UINT32 Y, UINT32 UIScale, CONST CHAR16 *Ti
 
 STATIC UINT32 DrawWrappedText(CONST CHAR16 *Text, UINT32 X, UINT32 Baseline, UINT32 MaxWidth, UINT32 PixelHeight, UINT32 LineHeight, UINT32 Color, TRUE_TYPE_FONT Font)
 {
-    UINT32 StartX = X;
-    UINT32 CurrentWidth = 0;
+    UINT32 StartX          = X;
+    UINT32 CurrentWidth    = 0;
     UINT32 ApproxCharWidth = PixelHeight / 2;
 
     if (Text == NULL)
@@ -155,7 +155,7 @@ STATIC UINT32 DrawWrappedText(CONST CHAR16 *Text, UINT32 X, UINT32 Baseline, UIN
 
         if (Char == '\n')
         {
-            X = StartX;
+            X            = StartX;
             CurrentWidth = 0;
             Baseline += LineHeight;
             continue;
@@ -163,7 +163,7 @@ STATIC UINT32 DrawWrappedText(CONST CHAR16 *Text, UINT32 X, UINT32 Baseline, UIN
 
         if (CurrentWidth + ApproxCharWidth > MaxWidth)
         {
-            X = StartX;
+            X            = StartX;
             CurrentWidth = 0;
             Baseline += LineHeight;
         }
@@ -204,9 +204,9 @@ STATIC VOID DrawThickLine(INT32 X1, INT32 Y1, INT32 X2, INT32 Y2, UINT32 Thickne
 {
     INT32  DeltaX = X2 > X1 ? X2 - X1 : X1 - X2;
     INT32  DeltaY = Y2 > Y1 ? Y2 - Y1 : Y1 - Y2;
-    INT32  StepX = X1 < X2 ? 1 : -1;
-    INT32  StepY = Y1 < Y2 ? 1 : -1;
-    INT32  Error = DeltaX - DeltaY;
+    INT32  StepX  = X1 < X2 ? 1 : -1;
+    INT32  StepY  = Y1 < Y2 ? 1 : -1;
+    INT32  Error  = DeltaX - DeltaY;
     UINT32 Radius = Thickness / 2;
 
     if (Radius == 0)
@@ -250,8 +250,8 @@ STATIC VOID DrawThickRect(UINT32 X, UINT32 Y, UINT32 Width, UINT32 Height, UINT3
 STATIC VOID DrawThickCircle(INT32 CenterX, INT32 CenterY, UINT32 Radius, UINT32 Thickness, UINT32 Color)
 {
     UINT32 HalfThickness = Thickness / 2;
-    UINT32 InnerRadius = Radius > HalfThickness ? Radius - HalfThickness : 1;
-    UINT32 OuterRadius = Radius + HalfThickness;
+    UINT32 InnerRadius   = Radius > HalfThickness ? Radius - HalfThickness : 1;
+    UINT32 OuterRadius   = Radius + HalfThickness;
 
     for (UINT32 CurrentRadius = InnerRadius; CurrentRadius <= OuterRadius; CurrentRadius++)
     {
@@ -273,7 +273,7 @@ STATIC VOID DrawCenteredIconText(CONST CHAR16 *Text, UINT32 CenterX, UINT32 Cent
         return;
     }
 
-    X = (INT32) CenterX - ((Left + Right) / 2);
+    X        = (INT32) CenterX - ((Left + Right) / 2);
     Baseline = (INT32) CenterY - ((Top + Bottom) / 2);
     KPrint(Text, (UINT32) X, (UINT32) Baseline, Color, PixelHeight, JETBRAINS_MONO);
 }
@@ -287,8 +287,8 @@ STATIC VOID DrawWarningIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale, UINT
 
 STATIC VOID DrawPageFaultIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    UINT32 X = CenterX - Scale(14, UIScale);
-    UINT32 Y = CenterY - Scale(14, UIScale);
+    UINT32 X         = CenterX - Scale(14, UIScale);
+    UINT32 Y         = CenterY - Scale(14, UIScale);
     UINT32 Thickness = Scale(2, UIScale);
 
     DrawIconFrame(CenterX, CenterY, UIScale, PANIC_ACCENT);
@@ -303,8 +303,8 @@ STATIC VOID DrawPageFaultIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 
 STATIC VOID DrawProtectionIcon(UINT32 CenterX, UINT32 CenterY, UINT32 UIScale)
 {
-    UINT32 Top = CenterY - Scale(15, UIScale);
-    UINT32 Bottom = CenterY + Scale(16, UIScale);
+    UINT32 Top       = CenterY - Scale(15, UIScale);
+    UINT32 Bottom    = CenterY + Scale(16, UIScale);
     UINT32 FillColor = 0x94A3B8FF;
     UINT32 EdgeColor = 0xE5E7EBFF;
 
@@ -698,8 +698,8 @@ STATIC UINT32 GetRegisterColor(CONST CHAR16 *Name, UINT64 Value)
         UINT64 Expected;
 
         ASM("mov %%cr4, %0" : "=r"(CR4));
-        Bits = (CR4 & (1ULL << 12)) != 0 ? 57 : 48;
-        Upper = Value >> Bits;
+        Bits     = (CR4 & (1ULL << 12)) != 0 ? 57 : 48;
+        Upper    = Value >> Bits;
         Expected = (Value & (1ULL << (Bits - 1))) != 0 ? UINT64_MAX >> Bits : 0;
 
         if (Upper != Expected)
@@ -994,7 +994,7 @@ BOOLEAN PanicHandleNMI(VOID)
 
 STATIC BOOLEAN PreparePanicStop(VOID)
 {
-    UINT32 APICID = PanicGetAPICID();
+    UINT32 APICID   = PanicGetAPICID();
     UINT32 Expected = UINT32_MAX;
     UINT32 CPUCount;
     UINT64 Start;
@@ -1091,7 +1091,7 @@ VOID Panic(CONST CHAR16 *Msg)
 
     CLI();
     CanRender = PreparePanicStop();
-    GPU = VirtIOGPUGetInfo();
+    GPU       = VirtIOGPUGetInfo();
 
     DebugWrite("PANIC: ");
     DebugWriteWide(Msg);
@@ -1108,17 +1108,17 @@ VOID Panic(CONST CHAR16 *Msg)
         HaltAfterPanic();
     }
 
-    UINT32 Width = GPU->DisplayInfo.Displays[0].Rect.Width;
-    UINT32 Height = GPU->DisplayInfo.Displays[0].Rect.Height;
-    UINT32 UIScale = GetScale(Width, Height);
-    UINT32 PanelX = Scale(64, UIScale);
-    UINT32 PanelY = Scale(184, UIScale);
+    UINT32 Width      = GPU->DisplayInfo.Displays[0].Rect.Width;
+    UINT32 Height     = GPU->DisplayInfo.Displays[0].Rect.Height;
+    UINT32 UIScale    = GetScale(Width, Height);
+    UINT32 PanelX     = Scale(64, UIScale);
+    UINT32 PanelY     = Scale(184, UIScale);
     UINT32 PanelWidth = Width - Scale(128, UIScale);
-    UINT32 ColumnGap = Scale(24, UIScale);
-    UINT32 LeftWidth = (PanelWidth * 2) / 5;
+    UINT32 ColumnGap  = Scale(24, UIScale);
+    UINT32 LeftWidth  = (PanelWidth * 2) / 5;
     UINT32 RightWidth = PanelWidth - LeftWidth - ColumnGap;
-    UINT32 RightX = PanelX + LeftWidth + ColumnGap;
-    UINT32 BottomY = PanelY + Scale(244, UIScale);
+    UINT32 RightX     = PanelX + LeftWidth + ColumnGap;
+    UINT32 BottomY    = PanelY + Scale(244, UIScale);
 
     CaptureRegisters(&Registers);
     DrawPanicBackground(Width, UIScale);
@@ -1138,7 +1138,7 @@ VOID ExceptionPanic(INTERRUPT_FRAME *Frame)
 
     CLI();
     CanRender = PreparePanicStop();
-    GPU = VirtIOGPUGetInfo();
+    GPU       = VirtIOGPUGetInfo();
 
     DebugWrite("EXCEPTION: vector=");
     DebugWriteHex(Frame == NULL ? 0 : Frame->Vector);
@@ -1159,17 +1159,17 @@ VOID ExceptionPanic(INTERRUPT_FRAME *Frame)
         HaltAfterPanic();
     }
 
-    UINT32 Width = GPU->DisplayInfo.Displays[0].Rect.Width;
-    UINT32 Height = GPU->DisplayInfo.Displays[0].Rect.Height;
-    UINT32 UIScale = GetScale(Width, Height);
-    UINT32 PanelX = Scale(64, UIScale);
-    UINT32 PanelY = Scale(184, UIScale);
+    UINT32 Width      = GPU->DisplayInfo.Displays[0].Rect.Width;
+    UINT32 Height     = GPU->DisplayInfo.Displays[0].Rect.Height;
+    UINT32 UIScale    = GetScale(Width, Height);
+    UINT32 PanelX     = Scale(64, UIScale);
+    UINT32 PanelY     = Scale(184, UIScale);
     UINT32 PanelWidth = Width - Scale(128, UIScale);
-    UINT32 ColumnGap = Scale(24, UIScale);
-    UINT32 LeftWidth = (PanelWidth * 2) / 5;
+    UINT32 ColumnGap  = Scale(24, UIScale);
+    UINT32 LeftWidth  = (PanelWidth * 2) / 5;
     UINT32 RightWidth = PanelWidth - LeftWidth - ColumnGap;
-    UINT32 RightX = PanelX + LeftWidth + ColumnGap;
-    UINT32 BottomY = PanelY + Scale(244, UIScale);
+    UINT32 RightX     = PanelX + LeftWidth + ColumnGap;
+    UINT32 BottomY    = PanelY + Scale(244, UIScale);
 
     DrawPanicBackground(Width, UIScale);
     DrawPanicHeader(PanelX, Scale(104, UIScale), UIScale, L"CPU Exception");

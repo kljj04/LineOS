@@ -73,7 +73,7 @@ VOID IDTInit(VOID)
     KMemSet(IDT, 0, sizeof(IDT));
 
     IDTR.Limit = sizeof(IDT) - 1;
-    IDTR.Base = (UINT64) IDT;
+    IDTR.Base  = (UINT64) IDT;
 
     ASM("mov %%cs, %0" : "=r"(Selector));
 
@@ -101,13 +101,13 @@ VOID IDTInit(VOID)
 
 VOID IDTSetGate(UINT8 Vector, UINT64 Handler, UINT16 Selector, UINT8 IST, UINT8 TypeAttributes)
 {
-    IDT[Vector].OffsetLow = Handler & 0xFFFF;
-    IDT[Vector].Selector = Selector;
-    IDT[Vector].IST = IST & 0x07;
+    IDT[Vector].OffsetLow      = Handler & 0xFFFF;
+    IDT[Vector].Selector       = Selector;
+    IDT[Vector].IST            = IST & 0x07;
     IDT[Vector].TypeAttributes = TypeAttributes;
-    IDT[Vector].OffsetMiddle = (Handler >> 16) & 0xFFFF;
-    IDT[Vector].OffsetHigh = (Handler >> 32) & 0xFFFFFFFF;
-    IDT[Vector].Reserved = 0;
+    IDT[Vector].OffsetMiddle   = (Handler >> 16) & 0xFFFF;
+    IDT[Vector].OffsetHigh     = (Handler >> 32) & 0xFFFFFFFF;
+    IDT[Vector].Reserved       = 0;
 }
 
 VOID IDTLoad(VOID)

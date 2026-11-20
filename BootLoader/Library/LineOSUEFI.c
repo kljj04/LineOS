@@ -5,9 +5,9 @@
 #include <Uefi.h>
 #include <LineOSUEFI.h>
 
-EFI_SYSTEM_TABLE  *UEFISystemTable = NULL;
-EFI_BOOT_SERVICES *UEFIBootServices = NULL;
-EFI_HANDLE         UEFIImageHandle = NULL;
+EFI_SYSTEM_TABLE  *UEFISystemTable          = NULL;
+EFI_BOOT_SERVICES *UEFIBootServices         = NULL;
+EFI_HANDLE         UEFIImageHandle          = NULL;
 EFI_STATUS         LineOSLastWatchdogStatus = EFI_SUCCESS;
 
 STATIC CHAR16 HexDigit(UINTN Value)
@@ -41,7 +41,7 @@ BOOLEAN LineOSDisableWatchdog(VOID)
         return FALSE;
     }
 
-    Status = UEFIBootServices->SetWatchdogTimer(0, 0, 0, NULL);
+    Status                   = UEFIBootServices->SetWatchdogTimer(0, 0, 0, NULL);
     LineOSLastWatchdogStatus = Status;
 
     return !EFI_ERROR(Status) || Status == EFI_UNSUPPORTED;

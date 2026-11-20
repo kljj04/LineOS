@@ -34,14 +34,14 @@ VOID TerminalScreenInit(DISPLAY_INFO *Info, TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT
 {
     UINT32 Top = TERMINAL_MARGIN + TERMINAL_FONT_HEIGHT - CellAscent;
 
-    RowCount = (Info->Height - TERMINAL_MARGIN - Top) / TERMINAL_LINE_HEIGHT;
-    Primary = Font;
+    RowCount  = (Info->Height - TERMINAL_MARGIN - Top) / TERMINAL_LINE_HEIGHT;
+    Primary   = Font;
     Secondary = Fallback;
 
     for (UINT32 Index = 0; Index < RowCount; Index++)
     {
         Lines[Index].Cells = Cells[Index];
-        Rows[Index] = &Lines[Index];
+        Rows[Index]        = &Lines[Index];
     }
 
     TerminalScreenClear(TERMINAL_BACKGROUND);
@@ -53,7 +53,7 @@ VOID TerminalScreenClear(UINT32 Background)
 
     for (UINT32 Index = 0; Index < RowCount; Index++)
     {
-        Rows[Index]->Length = 0;
+        Rows[Index]->Length     = 0;
         Rows[Index]->Background = Background;
         Rows[Index]->Revision++;
         Rendered[Index] = NULL;
@@ -73,15 +73,15 @@ VOID TerminalScreenNewLine(UINT32 Background)
 
     memmove(Rows, Rows + 1, (RowCount - 1) * sizeof(Rows[0]));
     Rows[RowCount - 1] = Line;
-    Line->Length = 0;
-    Line->Background = Background;
+    Line->Length       = 0;
+    Line->Background   = Background;
     Line->Revision++;
 }
 
 STATIC TERMINAL_TEXT_LINE *TerminalScreenAt(UINT32 Baseline)
 {
     UINT32 First = TERMINAL_MARGIN + TERMINAL_FONT_HEIGHT;
-    UINT32 Row = Baseline >= First ? (Baseline - First) / TERMINAL_LINE_HEIGHT : 0;
+    UINT32 Row   = Baseline >= First ? (Baseline - First) / TERMINAL_LINE_HEIGHT : 0;
 
     return Rows[Row < RowCount ? Row : RowCount - 1];
 }
@@ -94,7 +94,7 @@ VOID TerminalScreenLoad(UINT32 Baseline, UINT32 *Length)
 
     for (UINT32 Index = 0; Index < Line->Length; Index++)
     {
-        LineCells[Index].X = Line->Cells[Index].X;
+        LineCells[Index].X             = Line->Cells[Index].X;
         LineCells[Index].Glyph.Advance = Line->Cells[Index].Advance;
     }
 }
@@ -103,7 +103,7 @@ VOID TerminalScreenErase(UINT32 Baseline, UINT32 Background)
 {
     TERMINAL_TEXT_LINE *Line = TerminalScreenAt(Baseline);
 
-    Line->Length = 0;
+    Line->Length     = 0;
     Line->Background = Background;
     Line->Revision++;
 }
@@ -143,9 +143,9 @@ VOID TerminalScreenRender(DISPLAY_INFO *Info)
             continue;
         }
 
-        UINT32 Baseline = TERMINAL_MARGIN + TERMINAL_FONT_HEIGHT + Row * TERMINAL_LINE_HEIGHT;
-        INT32  Top = (INT32) Baseline - (INT32) CellAscent;
-        UINT32 First = Row == 0 || Top < 0 ? 0 : (UINT32) Top;
+        UINT32 Baseline   = TERMINAL_MARGIN + TERMINAL_FONT_HEIGHT + Row * TERMINAL_LINE_HEIGHT;
+        INT32  Top        = (INT32) Baseline - (INT32) CellAscent;
+        UINT32 First      = Row == 0 || Top < 0 ? 0 : (UINT32) Top;
         UINT32 CellBottom = (UINT32) (Top + TERMINAL_LINE_HEIGHT);
 
         if (CellBottom > Info->Height)
@@ -173,7 +173,7 @@ VOID TerminalScreenRender(DISPLAY_INFO *Info)
         for (UINT32 Index = 0; Index < Line->Length; Index++)
         {
             TERMINAL_TEXT_CELL *Cell = &Line->Cells[Index];
-            UINT32              End = Cell->X + Cell->Advance;
+            UINT32              End  = Cell->X + Cell->Advance;
 
             if (End > Info->Width - TERMINAL_SCROLLBAR_WIDTH)
             {
@@ -203,7 +203,7 @@ VOID TerminalScreenRender(DISPLAY_INFO *Info)
             TerminalDrawGlyph(Info, Font, Cell->Codepoint, Cell->X, Baseline, Cell->Foreground, Cell->Advance);
         }
 
-        Rendered[Row] = Line;
+        Rendered[Row]  = Line;
         Revisions[Row] = Line->Revision;
     }
 }
@@ -238,7 +238,7 @@ VOID TerminalScreenResize(DISPLAY_INFO *Info, UINT32 *Baseline)
     {
         for (UINT32 Row = RowCount; Row < Count; Row++)
         {
-            Rows[Row]->Length = 0;
+            Rows[Row]->Length     = 0;
             Rows[Row]->Background = TERMINAL_BACKGROUND;
             Rows[Row]->Revision++;
         }

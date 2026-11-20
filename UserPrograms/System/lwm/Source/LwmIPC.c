@@ -28,7 +28,7 @@ VOID LwmRemoveWindow(LWM *Manager, UINT32 Index)
     munmap(Window->Pixels, Window->Bytes);
     memmove(Window, Window + 1, (Manager->WindowCount - Index - 1) * sizeof(*Window));
     Manager->WindowCount--;
-    Manager->Grab = -1;
+    Manager->Grab  = -1;
     Manager->Dirty = TRUE;
 
     for (UINT32 Other = 0; Other < Manager->WindowCount; Other++)
@@ -44,10 +44,10 @@ BOOLEAN LwmClientEvent(LWM *Manager, LWM_WINDOW *Window, UINT32 Type, CONST POIN
     if (Pointer != NULL)
     {
         BOOLEAN Background = Window == &Manager->Shell;
-        INT64   X = (INT64) Pointer->X - Window->Rect.X - (Background ? 0 : 1);
-        INT64   Y = (INT64) Pointer->Y - Window->Rect.Y - (Background ? 0 : LWM_TITLE_HEIGHT);
-        UINT32  Width = Window->Rect.Width - (Background ? 0 : 2);
-        UINT32  Height = Window->Rect.Height - (Background ? 0 : LWM_TITLE_HEIGHT + 1);
+        INT64   X          = (INT64) Pointer->X - Window->Rect.X - (Background ? 0 : 1);
+        INT64   Y          = (INT64) Pointer->Y - Window->Rect.Y - (Background ? 0 : LWM_TITLE_HEIGHT);
+        UINT32  Width      = Window->Rect.Width - (Background ? 0 : 2);
+        UINT32  Height     = Window->Rect.Height - (Background ? 0 : LWM_TITLE_HEIGHT + 1);
 
         if (X < 0 || Y < 0 || X >= Width || Y >= Height)
         {
@@ -60,7 +60,7 @@ BOOLEAN LwmClientEvent(LWM *Manager, LWM_WINDOW *Window, UINT32 Type, CONST POIN
             Event.Y = (UINT32) Y * Window->ClientHeight / Height;
         }
         Event.Buttons = Pointer->Buttons;
-        Event.Wheel = Pointer->Wheel;
+        Event.Wheel   = Pointer->Wheel;
     }
 
     return LOSIPCSend(Manager->Endpoint, Window->Endpoint, &Event, sizeof(Event)) == 0;
@@ -79,12 +79,12 @@ VOID LwmRemoveShell(LWM *Manager)
     memset(Shell, 0, sizeof(*Shell));
     Manager->InitialShell = FALSE;
     Manager->ShellFocused = TRUE;
-    Manager->Dirty = TRUE;
+    Manager->Dirty        = TRUE;
 }
 
 STATIC VOID LwmClientCreate(LWM *Manager, UINT64 Endpoint, UINT32 UID, CONST LOS_WINDOW_MESSAGE *Message)
 {
-    LOS_WINDOW_MESSAGE Reply = {.Version = LOS_WINDOW_VERSION, .Type = LOS_WINDOW_CLOSE};
+    LOS_WINDOW_MESSAGE Reply      = {.Version = LOS_WINDOW_VERSION, .Type = LOS_WINDOW_CLOSE};
     BOOLEAN            Background = (Message->Flags & LOS_WINDOW_BACKGROUND) != 0;
 
     if (Message->Width == 0 || Message->Height == 0 || Message->Width > 2560 || Message->Height > 1440 || Message->Title[63] != 0 || (Message->Flags & ~(LOS_WINDOW_PERSISTENT | LOS_WINDOW_BACKGROUND)) != 0 || (Background && (UID != 0 || Manager->Shell.Endpoint != 0)))
@@ -110,8 +110,8 @@ STATIC VOID LwmClientCreate(LWM *Manager, UINT64 Endpoint, UINT32 UID, CONST LOS
         Window = &Manager->Windows[Manager->WindowCount - 1];
     }
 
-    Window->ClientBytes = (UINT64) Message->Width * Message->Height * sizeof(UINT32);
-    Window->ClientPixels = mmap(NULL, Window->ClientBytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    Window->ClientBytes   = (UINT64) Message->Width * Message->Height * sizeof(UINT32);
+    Window->ClientPixels  = mmap(NULL, Window->ClientBytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     Window->PendingPixels = mmap(NULL, Window->ClientBytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
     if (Window->ClientPixels == MAP_FAILED || Window->PendingPixels == MAP_FAILED)
@@ -126,7 +126,7 @@ STATIC VOID LwmClientCreate(LWM *Manager, UINT64 Endpoint, UINT32 UID, CONST LOS
             munmap(Window->PendingPixels, Window->ClientBytes);
         }
 
-        Window->ClientPixels = NULL;
+        Window->ClientPixels  = NULL;
         Window->PendingPixels = NULL;
 
         if (Background)
@@ -142,21 +142,21 @@ STATIC VOID LwmClientCreate(LWM *Manager, UINT64 Endpoint, UINT32 UID, CONST LOS
         return;
     }
 
-    Window->Endpoint = Endpoint;
-    Window->ClientWidth = Message->Width;
+    Window->Endpoint     = Endpoint;
+    Window->ClientWidth  = Message->Width;
     Window->ClientHeight = Message->Height;
     Window->PendingFirst = Message->Height;
-    Window->ClientFlags = Message->Flags;
+    Window->ClientFlags  = Message->Flags;
     strcpy(Window->Title, Message->Title);
 
     if (Background)
     {
-        Window->Rect = (LWM_RECT) {0, 0, Manager->Width, Manager->Height - LWM_DOCK_HEIGHT};
+        Window->Rect          = (LWM_RECT) {0, 0, Manager->Width, Manager->Height - LWM_DOCK_HEIGHT};
         Manager->ShellFocused = TRUE;
     }
     else
     {
-        UINT32 Width = Message->Width + 2;
+        UINT32 Width  = Message->Width + 2;
         UINT32 Height = Message->Height + LWM_TITLE_HEIGHT + 1;
 
         if (Width < LWM_MIN_WIDTH)
@@ -169,10 +169,10 @@ STATIC VOID LwmClientCreate(LWM *Manager, UINT64 Endpoint, UINT32 UID, CONST LOS
             Height = LWM_MIN_HEIGHT;
         }
 
-        Window->Rect.Width = Width < Window->Stride ? Width : Window->Stride;
-        Window->Rect.Height = Height < Window->CapacityHeight ? Height : Window->CapacityHeight;
-        Window->Rect.X = (Manager->Width - Window->Rect.Width) / 2;
-        Window->Rect.Y = (Manager->Height - LWM_DOCK_HEIGHT - Window->Rect.Height) / 2;
+        Window->Rect.Width    = Width < Window->Stride ? Width : Window->Stride;
+        Window->Rect.Height   = Height < Window->CapacityHeight ? Height : Window->CapacityHeight;
+        Window->Rect.X        = (Manager->Width - Window->Rect.Width) / 2;
+        Window->Rect.Y        = (Manager->Height - LWM_DOCK_HEIGHT - Window->Rect.Height) / 2;
         Manager->ShellFocused = FALSE;
     }
 
@@ -211,7 +211,7 @@ INT32 LwmIPC(LWM *Manager)
     if (!Visible && !Manager->ShellFocused)
     {
         Manager->ShellFocused = TRUE;
-        Manager->Dirty = TRUE;
+        Manager->Dirty        = TRUE;
     }
 
     for (UINT32 Batch = 0; Batch < 32; Batch++)
@@ -237,7 +237,7 @@ INT32 LwmIPC(LWM *Manager)
         }
 
         LWM_WINDOW *Window = Manager->Shell.Endpoint == Sender.Peer ? &Manager->Shell : NULL;
-        UINT32      Index = 0;
+        UINT32      Index  = 0;
 
         for (; Index < Manager->WindowCount; Index++)
         {
@@ -299,7 +299,7 @@ INT32 LwmIPC(LWM *Manager)
             if (Window->PendingFirst < Window->PendingLast)
             {
                 UINTN Offset = (UINTN) Window->PendingFirst * Window->ClientWidth;
-                UINTN Bytes = (UINTN) (Window->PendingLast - Window->PendingFirst) * Window->ClientWidth * sizeof(UINT32);
+                UINTN Bytes  = (UINTN) (Window->PendingLast - Window->PendingFirst) * Window->ClientWidth * sizeof(UINT32);
 
                 memcpy(Window->ClientPixels + Offset, Window->PendingPixels + Offset, Bytes);
 
@@ -310,10 +310,10 @@ INT32 LwmIPC(LWM *Manager)
             }
 
             Window->PendingFirst = Window->ClientHeight;
-            Window->PendingLast = 0;
-            Window->HasFrame = TRUE;
-            Window->Dirty = TRUE;
-            Manager->Dirty = TRUE;
+            Window->PendingLast  = 0;
+            Window->HasFrame     = TRUE;
+            Window->Dirty        = TRUE;
+            Manager->Dirty       = TRUE;
 
             if ((Window->ClientFlags & LOS_WINDOW_BACKGROUND) != 0)
             {

@@ -14,7 +14,7 @@ VOID NORETURN LibCStart(INT32 Argc, char **Argv, char **Envp, VOID (*Finalizer)(
 {
     INT32 Status;
 
-    environ = Envp;
+    environ       = Envp;
     LibCFinalizer = Finalizer;
 
     Status = main(Argc, Argv, Envp);

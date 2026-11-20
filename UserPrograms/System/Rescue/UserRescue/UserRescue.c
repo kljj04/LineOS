@@ -58,7 +58,7 @@ STATIC BOOLEAN UserRescueReadLine(char *Line, UINTN Capacity)
         if (Byte >= 32 && Byte < 127 && Length + 1 < Capacity)
         {
             Line[Length++] = (char) Byte;
-            Line[Length] = 0;
+            Line[Length]   = 0;
             write(1, &Byte, 1);
         }
     }
@@ -148,7 +148,7 @@ INT32 main(VOID)
 
             if (Child == 0)
             {
-                char *Arguments[] = {"/sbin/Login.lix", NULL};
+                char *Arguments[]   = {"/sbin/Login.lix", NULL};
                 char *Environment[] = {NULL};
 
                 execve(Arguments[0], Arguments, Environment);

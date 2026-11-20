@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <limits.h>
 
-STATIC CONST char *Names[] = {"C", "C.UTF-8", "en_US.UTF-8", "ko_KR.UTF-8"};
+STATIC CONST char *Names[]      = {"C", "C.UTF-8", "en_US.UTF-8", "ko_KR.UTF-8"};
 STATIC CONST char *Categories[] = {"LC_CTYPE", "LC_NUMERIC", "LC_TIME", "LC_COLLATE", "LC_MONETARY", "LC_MESSAGES"};
 STATIC UINT32      Current[LC_ALL];
 STATIC char        Query[256];
@@ -46,7 +46,7 @@ STATIC VOID LocaleDefault(char *Name)
 
     char    Buffer[64];
     size_t  Length = 0;
-    BOOLEAN Valid = TRUE;
+    BOOLEAN Valid  = TRUE;
 
     while (Length < sizeof(Buffer) - 1)
     {

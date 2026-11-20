@@ -32,7 +32,7 @@ INT64 TerminalPresent(DISPLAY_INFO *Info, UINT32 X, UINT32 Baseline, BOOLEAN Cur
     STATIC UINT32 PreviousBottom;
 
     TerminalDirtyFirst = Info->Height;
-    TerminalDirtyLast = 0;
+    TerminalDirtyLast  = 0;
     TerminalScreenRender(Info);
 
     if (PreviousTop < PreviousBottom)
@@ -42,10 +42,10 @@ INT64 TerminalPresent(DISPLAY_INFO *Info, UINT32 X, UINT32 Baseline, BOOLEAN Cur
     CursorVisible = CursorVisible && !TerminalScrollActive();
 
     UINT32 Saved[TERMINAL_CURSOR_WIDTH * TERMINAL_CURSOR_HEIGHT];
-    UINT32 Top = Baseline - TERMINAL_CURSOR_HEIGHT + 8U;
+    UINT32 Top   = Baseline - TERMINAL_CURSOR_HEIGHT + 8U;
     UINTN  Count = 0;
 
-    PreviousTop = CursorVisible ? Top : 0;
+    PreviousTop    = CursorVisible ? Top : 0;
     PreviousBottom = CursorVisible ? Top + TERMINAL_CURSOR_HEIGHT : 0;
 
     if (CursorVisible)
@@ -59,12 +59,12 @@ INT64 TerminalPresent(DISPLAY_INFO *Info, UINT32 X, UINT32 Baseline, BOOLEAN Cur
         {
             UINTN Pixel = (UINTN) Row * Info->Width + Column;
 
-            Saved[Count++] = FrameBuffer[Pixel];
+            Saved[Count++]     = FrameBuffer[Pixel];
             FrameBuffer[Pixel] = TERMINAL_FOREGROUND;
         }
     }
 
-    UINT32 *View = TerminalScrollView(Info);
+    UINT32 *View   = TerminalScrollView(Info);
     INT64   Result = 0;
 
     if (TerminalWindow.Endpoint != 0)
@@ -74,13 +74,13 @@ INT64 TerminalPresent(DISPLAY_INFO *Info, UINT32 X, UINT32 Baseline, BOOLEAN Cur
         if (Result < 0)
         {
             TerminalWindowFailed = TRUE;
-            Result = 0;
+            Result               = 0;
         }
     }
     else
     {
-        UINT32 First = Info->Height;
-        UINT32 Last = 0;
+        UINT32 First    = Info->Height;
+        UINT32 Last     = 0;
         UINTN  RowBytes = (UINTN) Info->Width * sizeof(UINT32);
 
         for (UINT32 Row = TerminalDirtyFirst; Row < TerminalDirtyLast; Row++)

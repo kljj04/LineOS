@@ -177,7 +177,7 @@ VOID ShellHistoryInit(char **Envp)
     char    Buffer[1024];
     char    Line[SHELL_HISTORY_LINE_SIZE];
     UINTN   Position = 0;
-    BOOLEAN Invalid = FALSE;
+    BOOLEAN Invalid  = FALSE;
 
     for (;;)
     {
@@ -207,7 +207,7 @@ VOID ShellHistoryInit(char **Envp)
                 }
 
                 Position = 0;
-                Invalid = FALSE;
+                Invalid  = FALSE;
             }
             else if (Byte < 32 || Byte == 127 || Position + 1 >= sizeof(Line))
             {

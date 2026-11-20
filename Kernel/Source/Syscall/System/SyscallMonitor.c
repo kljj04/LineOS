@@ -35,7 +35,7 @@ INT64 SyscallSystemMonitor(UINT64 UserInfo, UINT64 Size)
     }
 
     KMemSet(Info, 0, sizeof(*Info));
-    Info->Version = SYSTEM_MONITOR_VERSION;
+    Info->Version  = SYSTEM_MONITOR_VERSION;
     Info->CPUCount = SMPGetCPUCount();
 
     if (Info->CPUCount > SYSTEM_MONITOR_CPUS)
@@ -43,16 +43,16 @@ INT64 SyscallSystemMonitor(UINT64 UserInfo, UINT64 Size)
         Info->CPUCount = SYSTEM_MONITOR_CPUS;
     }
 
-    Info->CPUUsage = UsageGetTotal();
+    Info->CPUUsage  = UsageGetTotal();
     Info->UptimeMls = ClockGetUptimeMls();
 
     UINT64 Managed;
     UINT64 Free;
 
     KGetManagedMemory(&Managed, &Free);
-    Info->ManagedBytes = Managed;
-    Info->FreeBytes = Free;
-    Info->TaskCount = TaskGetLiveCount();
+    Info->ManagedBytes  = Managed;
+    Info->FreeBytes     = Free;
+    Info->TaskCount     = TaskGetLiveCount();
     Info->IdleTaskCount = TaskGetIdleCount();
     Info->TasksReturned = TaskGetSnapshot(Info->Tasks, SYSTEM_MONITOR_TASKS);
 

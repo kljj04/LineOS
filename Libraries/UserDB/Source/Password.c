@@ -30,7 +30,7 @@ STATIC VOID PasswordEncode(CONST UINT8 *Bytes, UINTN Count, char *Text)
 {
     for (UINTN Index = 0; Index < Count; Index++)
     {
-        Text[Index * 2] = HexDigits[Bytes[Index] >> 4];
+        Text[Index * 2]     = HexDigits[Bytes[Index] >> 4];
         Text[Index * 2 + 1] = HexDigits[Bytes[Index] & 15];
     }
 
@@ -47,7 +47,7 @@ STATIC BOOLEAN PasswordDecode(CONST char *Text, UINT8 *Bytes, UINTN Count)
     for (UINTN Index = 0; Index < Count; Index++)
     {
         INT32 High = PasswordHexValue(Text[Index * 2]);
-        INT32 Low = PasswordHexValue(Text[Index * 2 + 1]);
+        INT32 Low  = PasswordHexValue(Text[Index * 2 + 1]);
 
         if (High < 0 || Low < 0)
         {
@@ -89,7 +89,7 @@ BOOLEAN UserDBHashPassword(CONST char *Password, char Salt[USER_DB_SALT_TEXT_SIZ
 {
     UINT8   SaltBytes[16] = {0};
     UINT8   HashBytes[32] = {0};
-    BOOLEAN Result = FALSE;
+    BOOLEAN Result        = FALSE;
 
     if (Salt == NULL || Hash == NULL)
     {
@@ -118,7 +118,7 @@ BOOLEAN UserDBVerifyPassword(CONST char *Password, CONST char *Salt, CONST char 
     UINT8   SaltBytes[16];
     UINT8   Expected[32];
     UINT8   Actual[32] = {0};
-    BOOLEAN Result = FALSE;
+    BOOLEAN Result     = FALSE;
 
     if (UserDBValidatePasswordFields(Salt, Hash) && PasswordDecode(Salt, SaltBytes, 16) && PasswordDecode(Hash + sizeof(USER_DB_HASH_PREFIX) - 1, Expected, 32) && PasswordDerive(Password, SaltBytes, Actual))
     {

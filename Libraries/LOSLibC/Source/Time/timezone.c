@@ -32,8 +32,8 @@ STATIC BOOLEAN TimezoneIsSpace(char Character)
 STATIC BOOLEAN TimezoneReadName(char Name[TIMEZONE_NAME_CAPACITY])
 {
     size_t  Length = 0;
-    BOOLEAN Valid = TRUE;
-    int     FD = open(TIMEZONE_PATH, O_RDONLY);
+    BOOLEAN Valid  = TRUE;
+    int     FD     = open(TIMEZONE_PATH, O_RDONLY);
 
     if (FD < 0)
     {
@@ -43,7 +43,7 @@ STATIC BOOLEAN TimezoneReadName(char Name[TIMEZONE_NAME_CAPACITY])
     while (Length + 1 < TIMEZONE_NAME_CAPACITY)
     {
         size_t  Available = TIMEZONE_NAME_CAPACITY - Length - 1;
-        ssize_t Count = read(FD, Name + Length, Available);
+        ssize_t Count     = read(FD, Name + Length, Available);
 
         if (Count < 0)
         {
@@ -128,7 +128,7 @@ STATIC CONST TIMEZONE_ENTRY *TimezoneGet(VOID)
 {
     char                  Name[TIMEZONE_NAME_CAPACITY];
     int                   SavedError = errno;
-    CONST TIMEZONE_ENTRY *Entry = &TimezoneEntries[TIMEZONE_UTC];
+    CONST TIMEZONE_ENTRY *Entry      = &TimezoneEntries[TIMEZONE_UTC];
 
     if (TimezoneReadName(Name))
     {
@@ -149,8 +149,8 @@ struct tm *localtime_r(const time_t *Timer, struct tm *Result)
         return NULL;
     }
 
-    CONST TIMEZONE_ENTRY *Timezone = TimezoneGet();
-    INT64                 Offset = Timezone->Offset;
+    CONST TIMEZONE_ENTRY *Timezone  = TimezoneGet();
+    INT64                 Offset    = Timezone->Offset;
     INT64                 Timestamp = (INT64) *Timer;
 
     if ((Offset > 0 && Timestamp > INT64_MAX - Offset) || (Offset < 0 && Timestamp < INT64_MIN - Offset))
@@ -168,7 +168,7 @@ struct tm *localtime_r(const time_t *Timer, struct tm *Result)
     }
 
     Result->tm_gmtoff = (long) Offset;
-    Result->tm_zone = (char *) Timezone->Abbreviation;
+    Result->tm_zone   = (char *) Timezone->Abbreviation;
 
     return Result;
 }

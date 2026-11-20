@@ -30,12 +30,12 @@ char *gettext(const char *Message)
     }
 
     UINTN First = 0;
-    UINTN Last = sizeof(Messages) / sizeof(Messages[0]);
+    UINTN Last  = sizeof(Messages) / sizeof(Messages[0]);
 
     while (First < Last)
     {
         UINTN Middle = First + (Last - First) / 2;
-        int   Order = strcmp(Message, Messages[Middle].English);
+        int   Order  = strcmp(Message, Messages[Middle].English);
 
         if (Order == 0)
         {

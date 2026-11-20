@@ -49,7 +49,7 @@ STATIC pthread_mutex_t  KeyLock = PTHREAD_MUTEX_INITIALIZER;
 STATIC PTHREAD_KEY_SLOT Keys[PTHREAD_KEYS_MAX];
 
 EXTERN VOID *LineOSTLSCreate(VOID) __attribute__((weak));
-EXTERN VOID LineOSTLSFree(VOID *TLS) __attribute__((weak));
+EXTERN VOID  LineOSTLSFree(VOID *TLS) __attribute__((weak));
 
 STATIC_ASSERT(sizeof(struct PTHREAD) <= PTHREAD_PAGE_SIZE, "pthread descriptor fits in one page");
 
@@ -142,7 +142,7 @@ int pthread_create(pthread_t *Thread, const pthread_attr_t *Attr, void *(*Start)
         return EINVAL;
     }
 
-    size_t Size = ((Config.StackSize + PTHREAD_PAGE_SIZE - 1) & ~(size_t) (PTHREAD_PAGE_SIZE - 1)) + PTHREAD_PAGE_SIZE;
+    size_t Size    = ((Config.StackSize + PTHREAD_PAGE_SIZE - 1) & ~(size_t) (PTHREAD_PAGE_SIZE - 1)) + PTHREAD_PAGE_SIZE;
     UINT64 Mapping = LineOSSyscall6(SYSCALL_MMAP, 0, Size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, (UINT64) -1, 0);
 
     if (Mapping >= (UINT64) -4095)
@@ -157,14 +157,14 @@ int pthread_create(pthread_t *Thread, const pthread_attr_t *Attr, void *(*Start)
         return ENOSYS;
     }
 
-    New->TLS = LineOSTLSCreate();
+    New->TLS   = LineOSTLSCreate();
     New->Start = Start;
-    New->Arg = Arg;
-    New->Size = Size;
+    New->Arg   = Arg;
+    New->Size  = Size;
     New->State = Config.DetachState;
 
     pthread_t *Stack = (pthread_t *) ((char *) New + Size) - 1;
-    *Stack = New;
+    *Stack           = New;
 
     pthread_self();
     pthread_mutex_lock(&ThreadLock);
@@ -174,18 +174,18 @@ int pthread_create(pthread_t *Thread, const pthread_attr_t *Attr, void *(*Start)
     if (ID < 0)
     {
         New->State = PTHREAD_CREATE_DETACHED;
-        New->TID = 0;
-        New->Next = Threads;
-        Threads = New;
+        New->TID   = 0;
+        New->Next  = Threads;
+        Threads    = New;
         ThreadReap();
         pthread_mutex_unlock(&ThreadLock);
         return (int) -ID;
     }
 
-    New->ID = (UINT32) ID;
+    New->ID   = (UINT32) ID;
     New->Next = Threads;
-    Threads = New;
-    *Thread = New;
+    Threads   = New;
+    *Thread   = New;
     pthread_mutex_unlock(&ThreadLock);
     return 0;
 }
@@ -206,11 +206,11 @@ pthread_t pthread_self(void)
 
     if (MainThread.ID == 0)
     {
-        MainThread.ID = TID;
+        MainThread.ID  = TID;
         MainThread.TID = TID;
         LineOSSyscall1(SYSCALL_SET_TID_ADDRESS, (UINT64) &MainThread.TID);
         MainThread.Next = Threads;
-        Threads = &MainThread;
+        Threads         = &MainThread;
     }
 
     pthread_mutex_unlock(&ThreadLock);
@@ -362,10 +362,10 @@ int pthread_key_create(pthread_key_t *Key, void (*Destructor)(void *))
 
         if (!Slot->Used)
         {
-            Slot->Key = (Slot->Key & ~(PTHREAD_KEYS_MAX - 1U)) + PTHREAD_KEYS_MAX + Index;
+            Slot->Key        = (Slot->Key & ~(PTHREAD_KEYS_MAX - 1U)) + PTHREAD_KEYS_MAX + Index;
             Slot->Destructor = Destructor;
-            Slot->Used = TRUE;
-            *Key = Slot->Key;
+            Slot->Used       = TRUE;
+            *Key             = Slot->Key;
             pthread_mutex_unlock(&KeyLock);
             return 0;
         }
@@ -392,7 +392,7 @@ int pthread_key_delete(pthread_key_t Key)
 
 void *pthread_getspecific(pthread_key_t Key)
 {
-    UINT32    Index = Key % PTHREAD_KEYS_MAX;
+    UINT32    Index  = Key % PTHREAD_KEYS_MAX;
     pthread_t Thread = pthread_self();
     pthread_mutex_lock(&KeyLock);
     void *Value = Keys[Index].Used && Keys[Index].Key == Key && Thread->Values[Index].Key == Key ? Thread->Values[Index].Value : NULL;
@@ -402,7 +402,7 @@ void *pthread_getspecific(pthread_key_t Key)
 
 int pthread_setspecific(pthread_key_t Key, const void *Value)
 {
-    UINT32    Index = Key % PTHREAD_KEYS_MAX;
+    UINT32    Index  = Key % PTHREAD_KEYS_MAX;
     pthread_t Thread = pthread_self();
     pthread_mutex_lock(&KeyLock);
     BOOLEAN Valid = Keys[Index].Used && Keys[Index].Key == Key;
@@ -427,8 +427,8 @@ STATIC VOID ThreadDestroyValues(pthread_t Thread)
             PTHREAD_KEY_VALUE *Value = &Thread->Values[Index];
             pthread_mutex_lock(&KeyLock);
             void  (*Destructor)(void *) = Keys[Index].Used && Keys[Index].Key == Value->Key ? Keys[Index].Destructor : NULL;
-            void *Arg = Value->Value;
-            Value->Value = NULL;
+            void *Arg                   = Value->Value;
+            Value->Value                = NULL;
             pthread_mutex_unlock(&KeyLock);
 
             if (Destructor != NULL && Arg != NULL)
@@ -449,7 +449,7 @@ void PthreadCleanupPush(PTHREAD_CLEANUP *Handler, void (*Routine)(void *), void 
 {
     pthread_t Thread = pthread_self();
 
-    *Handler = (PTHREAD_CLEANUP) {Thread->Cleanup, Routine, Arg};
+    *Handler        = (PTHREAD_CLEANUP) {Thread->Cleanup, Routine, Arg};
     Thread->Cleanup = Handler;
 }
 

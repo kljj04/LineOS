@@ -83,7 +83,7 @@ STATIC BOOLEAN UserDBNumber(CONST char *Text, UINT32 *Number)
 
 STATIC BOOLEAN UserDBParse(VOID)
 {
-    UINTN   Position = 0;
+    UINTN   Position  = 0;
     BOOLEAN RootFound = FALSE;
 
     RecordCount = 0;
@@ -93,8 +93,8 @@ STATIC BOOLEAN UserDBParse(VOID)
         char   Line[USER_DB_LINE_SIZE];
         char  *Fields[5];
         UINT32 FieldCount = 1;
-        UINTN  Start = Position;
-        UINTN  Length = 0;
+        UINTN  Start      = Position;
+        UINTN  Length     = 0;
 
         if (RecordCount == USER_DB_MAX_USERS)
         {
@@ -124,7 +124,7 @@ STATIC BOOLEAN UserDBParse(VOID)
         }
 
         Line[Length] = 0;
-        Fields[0] = Line;
+        Fields[0]    = Line;
 
         for (UINTN Index = 0; Index < Length; Index++)
         {
@@ -135,7 +135,7 @@ STATIC BOOLEAN UserDBParse(VOID)
                     return FALSE;
                 }
 
-                Line[Index] = 0;
+                Line[Index]          = 0;
                 Fields[FieldCount++] = Line + Index + 1;
             }
         }
@@ -166,7 +166,7 @@ STATIC BOOLEAN UserDBParse(VOID)
 
         strcpy(Record->Name, Fields[0]);
         Record->Start = Start;
-        Record->End = Position;
+        Record->End   = Position;
         RecordCount++;
     }
 
@@ -178,7 +178,7 @@ STATIC USER_DB_RESULT UserDBLoad(VOID)
     INT32 FD = open(USER_DB_PATH, O_RDONLY);
 
     DatabaseLength = 0;
-    RecordCount = 0;
+    RecordCount    = 0;
 
     if (FD < 0)
     {
@@ -252,7 +252,7 @@ STATIC BOOLEAN UserDBPublishNames(CONST char *Text, UINTN Length)
         return FALSE;
     }
 
-    BOOLEAN Result = TRUE;
+    BOOLEAN Result   = TRUE;
     UINTN   Position = 0;
 
     while (Position < Length && Result)
@@ -303,7 +303,7 @@ STATIC BOOLEAN UserDBPublishNames(CONST char *Text, UINTN Length)
 STATIC USER_DB_RESULT UserDBSave(UINTN Length, BOOLEAN Initial)
 {
     CONST char *Path = Initial ? USER_DB_PATH : USER_DB_TEMP;
-    INT32       FD = open(Path, O_WRONLY | O_CREAT | O_EXCL, 0600U);
+    INT32       FD   = open(Path, O_WRONLY | O_CREAT | O_EXCL, 0600U);
 
     if (FD < 0)
     {
@@ -311,7 +311,7 @@ STATIC USER_DB_RESULT UserDBSave(UINTN Length, BOOLEAN Initial)
     }
 
     BOOLEAN Written = UserDBWriteAll(FD, Replacement, Length);
-    INT32   Closed = close(FD);
+    INT32   Closed  = close(FD);
 
     if (!Written || Closed != 0)
     {
@@ -352,7 +352,7 @@ STATIC UINTN UserDBDecimal(char *Text, UINT32 Value)
 
 STATIC USER_DB_RESULT UserDBUnlock(INT32 LockFD, USER_DB_RESULT Result)
 {
-    INT32 Closed = close(LockFD);
+    INT32 Closed  = close(LockFD);
     INT32 Removed = remove(USER_DB_LOCK);
 
     if (Closed != 0 || Removed != 0)
@@ -387,7 +387,7 @@ USER_DB_RESULT UserDBAdd(CONST char *Username, CONST char *Salt, CONST char *Has
         return USER_DB_LOCKED;
     }
 
-    USER_DB_RESULT Result = UserDBLoad();
+    USER_DB_RESULT Result  = UserDBLoad();
     BOOLEAN        Initial = Result == USER_DB_UNAVAILABLE;
 
     if (Initial && strcmp(Username, "root") != 0)
@@ -467,7 +467,7 @@ USER_DB_RESULT UserDBAdd(CONST char *Username, CONST char *Salt, CONST char *Has
     strcpy(Replacement + Length, Hash);
     Length += strlen(Hash);
     Replacement[Length++] = '\n';
-    Result = UserDBSave(Length, Initial);
+    Result                = UserDBSave(Length, Initial);
 
     return UserDBUnlock(LockFD, Result);
 }
@@ -503,7 +503,7 @@ USER_DB_RESULT UserDBDelete(CONST char *Username)
         if (strcmp(Records[Index].Name, Username) == 0)
         {
             UINTN Start = Records[Index].Start;
-            UINTN End = Records[Index].End;
+            UINTN End   = Records[Index].End;
 
             memcpy(Replacement, Database, Start);
             memcpy(Replacement + Start, Database + End, DatabaseLength - End);
@@ -577,7 +577,7 @@ STATIC VOID UserDBClearSnapshot(VOID)
     }
 
     DatabaseLength = 0;
-    RecordCount = 0;
+    RecordCount    = 0;
 }
 
 USER_DB_RESULT UserDBCheck(VOID)
@@ -596,7 +596,7 @@ USER_DB_RESULT UserDBCheck(VOID)
 
 STATIC VOID UserDBCopyAccount(CONST USER_DB_RECORD *Record, USER_DB_ACCOUNT *Account)
 {
-    UINTN  Position = Record->Start;
+    UINTN  Position   = Record->Start;
     UINT32 Separators = 0;
 
     while (Position < Record->End && Separators < 3)
@@ -620,8 +620,8 @@ STATIC VOID UserDBCopyAccount(CONST USER_DB_RECORD *Record, USER_DB_ACCOUNT *Acc
 
     memcpy(Account->Hash, Database + Position, Length);
     Account->Hash[Length] = 0;
-    Account->UID = Record->UID;
-    Account->GID = Record->GID;
+    Account->UID          = Record->UID;
+    Account->GID          = Record->GID;
 }
 
 USER_DB_RESULT UserDBLookup(CONST char *Username, USER_DB_ACCOUNT *Account)

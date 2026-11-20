@@ -79,11 +79,11 @@ BOOLEAN GPTReadPartition(VIRTIO_BLOCK_DEVICE *Device, UINT32 Index, GPT_PARTITIO
         goto Done;
     }
 
-    First = GPTRead64(Buffer + 40);
-    Last = GPTRead64(Buffer + 48);
-    EntryLBA = GPTRead64(Buffer + 72);
-    Count = GPTRead32(Buffer + 80);
-    Size = GPTRead32(Buffer + 84);
+    First       = GPTRead64(Buffer + 40);
+    Last        = GPTRead64(Buffer + 48);
+    EntryLBA    = GPTRead64(Buffer + 72);
+    Count       = GPTRead32(Buffer + 80);
+    Size        = GPTRead32(Buffer + 84);
     ExpectedCRC = GPTRead32(Buffer + 88);
 
     if (Index > Count || Size < 128 || Size > 4096 || (Size & (Size - 1)) != 0 || Count > 16384)
@@ -91,7 +91,7 @@ BOOLEAN GPTReadPartition(VIRTIO_BLOCK_DEVICE *Device, UINT32 Index, GPT_PARTITIO
         goto Done;
     }
 
-    Bytes = (UINT64) Count * Size;
+    Bytes   = (UINT64) Count * Size;
     Sectors = (Bytes + 511) / 512;
 
     if (EntryLBA < 2 || EntryLBA >= Capacity || Sectors > Capacity - EntryLBA || First < EntryLBA + Sectors || First > Last || Last >= Capacity - 1 || Sectors > Capacity - 1 - Last)
@@ -111,7 +111,7 @@ BOOLEAN GPTReadPartition(VIRTIO_BLOCK_DEVICE *Device, UINT32 Index, GPT_PARTITIO
             goto Done;
         }
 
-        CRC = GPTCRC32(CRC, Buffer, Length);
+        CRC    = GPTCRC32(CRC, Buffer, Length);
         Offset = (UINT64) (Index - 1) * Size;
 
         if (Offset / 512 == Sector)
@@ -140,7 +140,7 @@ BOOLEAN GPTReadPartition(VIRTIO_BLOCK_DEVICE *Device, UINT32 Index, GPT_PARTITIO
     }
 
     Partition->FirstLBA = GPTRead64(Entry + 32);
-    Offset = GPTRead64(Entry + 40);
+    Offset              = GPTRead64(Entry + 40);
 
     if (Partition->FirstLBA < First || Offset < Partition->FirstLBA || Offset > Last)
     {
@@ -148,7 +148,7 @@ BOOLEAN GPTReadPartition(VIRTIO_BLOCK_DEVICE *Device, UINT32 Index, GPT_PARTITIO
     }
 
     Partition->SectorCount = Offset - Partition->FirstLBA + 1;
-    Partition->Attributes = GPTRead64(Entry + 48);
+    Partition->Attributes  = GPTRead64(Entry + 48);
     KMemCpy(Partition->TypeGUID, Entry, 16);
     Result = TRUE;
 Done:

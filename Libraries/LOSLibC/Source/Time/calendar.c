@@ -42,7 +42,7 @@ struct tm *gmtime_r(const time_t *Timer, struct tm *Result)
         return NULL;
     }
 
-    long Days = *Timer / 86400;
+    long Days    = *Timer / 86400;
     long Seconds = *Timer % 86400;
 
     if (Seconds < 0)
@@ -58,8 +58,8 @@ struct tm *gmtime_r(const time_t *Timer, struct tm *Result)
         return NULL;
     }
 
-    Result->tm_sec = Seconds % 60;
-    Result->tm_min = Seconds / 60 % 60;
+    Result->tm_sec  = Seconds % 60;
+    Result->tm_min  = Seconds / 60 % 60;
     Result->tm_hour = Seconds / 3600;
     Result->tm_wday = (Days % 7 + 11) % 7;
 
@@ -84,11 +84,11 @@ struct tm *gmtime_r(const time_t *Timer, struct tm *Result)
         Year++;
     }
 
-    Result->tm_year = Year - 1900;
-    Result->tm_yday = Days;
-    Result->tm_isdst = 0;
+    Result->tm_year   = Year - 1900;
+    Result->tm_yday   = Days;
+    Result->tm_isdst  = 0;
     Result->tm_gmtoff = 0;
-    Result->tm_zone = "UTC";
+    Result->tm_zone   = "UTC";
 
     int Month = 0;
 
@@ -109,7 +109,7 @@ struct tm *gmtime_r(const time_t *Timer, struct tm *Result)
         Days -= Length;
     }
 
-    Result->tm_mon = Month;
+    Result->tm_mon  = Month;
     Result->tm_mday = Days + 1;
 
     return Result;

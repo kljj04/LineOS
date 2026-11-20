@@ -72,7 +72,7 @@ STATIC INT64 DeviceDiscard(TASK *Task, VOID *State, UINT64 *Offset, UINT64 Buffe
 STATIC INT64 DeviceZeroRead(TASK *Task, VOID *State, UINT64 *Offset, UINT64 Buffer, UINT64 Count)
 {
     UINT8  Bytes[256] = {0};
-    UINT64 Total = 0;
+    UINT64 Total      = 0;
 
     (VOID) State;
     (VOID) Offset;
@@ -198,7 +198,7 @@ STATIC INT64 FramebufferMap(TASK *Task, VOID *State, UINT64 Length, UINT64 Prote
 
 STATIC INT64 FramebufferData(TASK *Task, UINT64 *Offset, UINT64 Buffer, UINT64 Count, BOOLEAN Write)
 {
-    VIRTIO_GPU_INFO *GPU = VirtIOGPUGetInfo();
+    VIRTIO_GPU_INFO *GPU   = VirtIOGPUGetInfo();
     UINT64           Total = 0;
     UINT64           Size;
 
@@ -222,7 +222,7 @@ STATIC INT64 FramebufferData(TASK *Task, UINT64 *Offset, UINT64 Buffer, UINT64 C
     while (Total < Count)
     {
         UINT64  Length = Count - Total > 4096 ? 4096 : Count - Total;
-        UINT64  Flags = VirtIOGPUAcquireRenderLock();
+        UINT64  Flags  = VirtIOGPUAcquireRenderLock();
         BOOLEAN Copied = Write ? VMMCopyFromUser(Task->Process->AddressSpace, (UINT8 *) GPU->FrameBuffer + *Offset + Total, Buffer + Total, Length) : VMMCopyToUser(Task->Process->AddressSpace, Buffer + Total, (UINT8 *) GPU->FrameBuffer + *Offset + Total, Length);
 
         VirtIOGPUReleaseRenderLock(Flags);
@@ -281,11 +281,11 @@ STATIC INT64 FramebufferIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
 
         Info.XRes = Info.XResVirtual = GPU->FrameBufferWidth;
         Info.YRes = Info.YResVirtual = GPU->FrameBufferHeight;
-        Info.BitsPerPixel = 32;
-        Info.Red.Offset = 16;
-        Info.Green.Offset = 8;
-        Info.Blue.Offset = 0;
-        Info.Transp.Offset = 24;
+        Info.BitsPerPixel            = 32;
+        Info.Red.Offset              = 16;
+        Info.Green.Offset            = 8;
+        Info.Blue.Offset             = 0;
+        Info.Transp.Offset           = 24;
         Info.Red.Length = Info.Green.Length = Info.Blue.Length = Info.Transp.Length = 8;
         Info.Height = Info.Width = UINT32_MAX;
 
@@ -297,9 +297,9 @@ STATIC INT64 FramebufferIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
         FB_FIX_SCREENINFO Info = {0};
 
         KMemCpy(Info.ID, "LineOS VirtIO", 13);
-        Info.SmemLen = GPU->FrameBufferWidth * GPU->FrameBufferHeight * sizeof(UINT32);
+        Info.SmemLen    = GPU->FrameBufferWidth * GPU->FrameBufferHeight * sizeof(UINT32);
         Info.LineLength = GPU->FrameBufferWidth * sizeof(UINT32);
-        Info.Visual = 2;
+        Info.Visual     = 2;
 
         return VMMCopyToUser(Task->Process->AddressSpace, Argument, &Info, sizeof(Info)) ? 0 : -EFAULT;
     }
@@ -407,7 +407,7 @@ STATIC INT64 DevicePointerIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 
     }
 
     MOUSE_STATUS Status = GetMouseStatus();
-    POINTER_INFO Info = {Status.X, Status.Y, 0, Status.Wheel};
+    POINTER_INFO Info   = {Status.X, Status.Y, 0, Status.Wheel};
 
     if (Status.LeftButton)
     {
@@ -485,7 +485,7 @@ typedef struct
 } VIRGL_FILE_STATE;
 
 STATIC UINT64 NextVirGLResourceId = 0x80000000ULL;
-STATIC UINT64 NextVirGLContextId = 0x80000000ULL;
+STATIC UINT64 NextVirGLContextId  = 0x80000000ULL;
 
 STATIC INT64 VirGLDeviceOpen(TASK *Task, UINT64 Flags, VOID **State)
 {
@@ -512,7 +512,7 @@ STATIC INT64 VirGLDeviceOpen(TASK *Task, UINT64 Flags, VOID **State)
 
 STATIC INT64 VirGLDeviceClose(VOID *State)
 {
-    VIRGL_FILE_STATE *File = State;
+    VIRGL_FILE_STATE *File   = State;
     INT64             Result = 0;
 
     if (File != NULL)
@@ -570,7 +570,7 @@ STATIC INT64 VirGLDeviceCreateContext(VIRGL_FILE_STATE *File)
 
 STATIC INT64 VirGLDeviceCreateBuffer(TASK *Task, VIRGL_FILE_STATE *File, UINT32 ContextId, UINT64 Argument, BOOLEAN ColorTarget)
 {
-    LOS_VIRGL_BUFFER_CREATE Query = {0};
+    LOS_VIRGL_BUFFER_CREATE Query  = {0};
     LOS_VIRGL_TARGET_CREATE Target = {0};
 
     if (!VMMCopyFromUser(Task->Process->AddressSpace, ColorTarget ? (VOID *) &Target : (VOID *) &Query, Argument, ColorTarget ? sizeof(Target) : sizeof(Query)))
@@ -599,14 +599,14 @@ STATIC INT64 VirGLDeviceCreateBuffer(TASK *Task, VIRGL_FILE_STATE *File, UINT32 
             return -EIO;
         }
 
-        Buffer->ResourceId = (UINT32) Id;
-        Buffer->Size = Query.Size;
+        Buffer->ResourceId  = (UINT32) Id;
+        Buffer->Size        = Query.Size;
         Buffer->ColorTarget = ColorTarget;
-        Buffer->Width = Target.Width;
-        Buffer->Height = Target.Height;
-        BOOLEAN Attached = VirGLAttachResource(ContextId, Buffer->ResourceId);
-        Query.Handle = Buffer->ResourceId;
-        Target.Handle = Buffer->ResourceId;
+        Buffer->Width       = Target.Width;
+        Buffer->Height      = Target.Height;
+        BOOLEAN Attached    = VirGLAttachResource(ContextId, Buffer->ResourceId);
+        Query.Handle        = Buffer->ResourceId;
+        Target.Handle       = Buffer->ResourceId;
 
         if (Attached && VMMCopyToUser(Task->Process->AddressSpace, Argument, ColorTarget ? (VOID *) &Target : (VOID *) &Query, ColorTarget ? sizeof(Target) : sizeof(Query)))
         {
@@ -632,7 +632,7 @@ STATIC INT64 VirGLDeviceCreateBuffer(TASK *Task, VIRGL_FILE_STATE *File, UINT32 
 STATIC INT64 VirGLDeviceBufferIoctl(TASK *Task, VIRGL_FILE_STATE *File, UINT64 Request, UINT64 Argument)
 {
     UINT32                 ContextId = ATOMIC_LOAD(&File->ContextId, ATOMIC_ACQUIRE);
-    LOS_VIRGL_BUFFER_WRITE Query = {0};
+    LOS_VIRGL_BUFFER_WRITE Query     = {0};
 
     if (ContextId < 0x80000000U)
     {
@@ -726,7 +726,7 @@ STATIC INT64 VirGLDeviceSubmit(TASK *Task, VIRGL_FILE_STATE *File, UINT64 Argume
         return -EINVAL;
     }
 
-    UINT32  Size = Request.Words * sizeof(UINT32);
+    UINT32  Size     = Request.Words * sizeof(UINT32);
     UINT32 *Commands = KAlloc(Size);
 
     if (Commands == NULL)
@@ -757,7 +757,7 @@ STATIC INT64 VirGLDeviceSubmit(TASK *Task, VIRGL_FILE_STATE *File, UINT64 Argume
         }
         else if (Request.Words == 15 && Commands[0] == 0x00020000U && Commands[3] == 0x000C0008U && Commands[4] == 0 && Commands[5] == 3 && Commands[6] == 4 && Commands[7] == 0 && Commands[8] == 1 && Commands[9] == 0 && Commands[10] == 0 && Commands[11] == 0 && Commands[12] == 0 && Commands[13] == 0 && Commands[14] == 2)
         {
-            VIRGL_FILE_BUFFER *Target = NULL;
+            VIRGL_FILE_BUFFER *Target   = NULL;
             VIRGL_FILE_BUFFER *Vertices = NULL;
 
             for (UINT32 Index = 0; Index < LOS_VIRGL_BUFFER_LIMIT; Index++)
@@ -825,7 +825,7 @@ STATIC INT64 VirGLDeviceReadTarget(TASK *Task, VIRGL_FILE_STATE *File, UINT64 Ar
             continue;
         }
 
-        UINT32 Size = Buffer->Width * Buffer->Height * 4;
+        UINT32 Size  = Buffer->Width * Buffer->Height * 4;
         UINTN  Pages = (Size + 4095) / 4096;
 
         if (Request.Capacity < Size || Buffer->Backing != NULL)
@@ -842,8 +842,8 @@ STATIC INT64 VirGLDeviceReadTarget(TASK *Task, VIRGL_FILE_STATE *File, UINT64 Ar
 
         BOOLEAN CanFree;
         UINT32  ContextId = ATOMIC_LOAD(&File->ContextId, ATOMIC_ACQUIRE);
-        BOOLEAN Success = VirGLReadColorTarget(ContextId, Buffer->ResourceId, Buffer->Width, Buffer->Height, Buffer->Backing, &CanFree);
-        INT64   Result = Success ? (VMMCopyToUser(Task->Process->AddressSpace, Request.Address, Buffer->Backing, Size) ? 0 : -EFAULT) : -EIO;
+        BOOLEAN Success   = VirGLReadColorTarget(ContextId, Buffer->ResourceId, Buffer->Width, Buffer->Height, Buffer->Backing, &CanFree);
+        INT64   Result    = Success ? (VMMCopyToUser(Task->Process->AddressSpace, Request.Address, Buffer->Backing, Size) ? 0 : -EFAULT) : -EIO;
 
         if (CanFree)
         {
@@ -898,7 +898,7 @@ STATIC INT64 VirGLDeviceIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
         }
 
         Query.MaxVersion = Info.MaxVersion;
-        Query.MaxSize = Info.MaxSize;
+        Query.MaxSize    = Info.MaxSize;
 
         return VMMCopyToUser(Task->Process->AddressSpace, Argument, &Query, sizeof(Query)) ? 0 : -EFAULT;
     }
@@ -938,14 +938,14 @@ STATIC INT64 VirGLDeviceIoctl(TASK *Task, VOID *State, UINT64 Request, UINT64 Ar
     return -ENOTTY;
 }
 
-STATIC CONST DEVICE_OPERATIONS VirGLOperations = {VirGLDeviceOpen, NULL, NULL, VirGLDeviceClose, NULL, VirGLDeviceIoctl};
-STATIC CONST DEVICE_OPERATIONS NullOperations = {DeviceOpen, DeviceNullRead, DeviceDiscard, DeviceClose, NULL, DeviceNoIoctl};
-STATIC CONST DEVICE_OPERATIONS ZeroOperations = {DeviceOpen, DeviceZeroRead, DeviceDiscard, DeviceClose, NULL, DeviceNoIoctl};
-STATIC CONST DEVICE_OPERATIONS FullOperations = {DeviceOpen, DeviceZeroRead, DeviceFullWrite, DeviceClose, NULL, DeviceNoIoctl};
-STATIC CONST DEVICE_OPERATIONS TerminalOperations = {DeviceTerminalOpen, DeviceTerminalRead, DeviceTerminalWrite, DeviceTerminalClose, NULL, DeviceTerminalIoctl};
-STATIC CONST DEVICE_OPERATIONS MasterOperations = {DeviceMasterOpen, DeviceMasterRead, DeviceMasterWrite, DeviceMasterClose, NULL, DeviceMasterIoctl};
+STATIC CONST DEVICE_OPERATIONS VirGLOperations       = {VirGLDeviceOpen, NULL, NULL, VirGLDeviceClose, NULL, VirGLDeviceIoctl};
+STATIC CONST DEVICE_OPERATIONS NullOperations        = {DeviceOpen, DeviceNullRead, DeviceDiscard, DeviceClose, NULL, DeviceNoIoctl};
+STATIC CONST DEVICE_OPERATIONS ZeroOperations        = {DeviceOpen, DeviceZeroRead, DeviceDiscard, DeviceClose, NULL, DeviceNoIoctl};
+STATIC CONST DEVICE_OPERATIONS FullOperations        = {DeviceOpen, DeviceZeroRead, DeviceFullWrite, DeviceClose, NULL, DeviceNoIoctl};
+STATIC CONST DEVICE_OPERATIONS TerminalOperations    = {DeviceTerminalOpen, DeviceTerminalRead, DeviceTerminalWrite, DeviceTerminalClose, NULL, DeviceTerminalIoctl};
+STATIC CONST DEVICE_OPERATIONS MasterOperations      = {DeviceMasterOpen, DeviceMasterRead, DeviceMasterWrite, DeviceMasterClose, NULL, DeviceMasterIoctl};
 STATIC CONST DEVICE_OPERATIONS FramebufferOperations = {FramebufferOpen, FramebufferRead, FramebufferWrite, DeviceClose, FramebufferMap, FramebufferIoctl};
-STATIC CONST DEVICE_NODE       DeviceNodes[] = {{(CONST CHAR8 *) "null", 0666, FALSE, &NullOperations}, {(CONST CHAR8 *) "zero", 0666, FALSE, &ZeroOperations}, {(CONST CHAR8 *) "full", 0666, FALSE, &FullOperations}, {(CONST CHAR8 *) "lsh1", 0666, FALSE, &TerminalOperations}, {(CONST CHAR8 *) "lsh1-master", 0600, FALSE, &MasterOperations}, {(CONST CHAR8 *) "fb0", 0666, TRUE, &FramebufferOperations}, {(CONST CHAR8 *) "virgl0", 0444, FALSE, &VirGLOperations}};
+STATIC CONST DEVICE_NODE       DeviceNodes[]         = {{(CONST CHAR8 *) "null", 0666, FALSE, &NullOperations}, {(CONST CHAR8 *) "zero", 0666, FALSE, &ZeroOperations}, {(CONST CHAR8 *) "full", 0666, FALSE, &FullOperations}, {(CONST CHAR8 *) "lsh1", 0666, FALSE, &TerminalOperations}, {(CONST CHAR8 *) "lsh1-master", 0600, FALSE, &MasterOperations}, {(CONST CHAR8 *) "fb0", 0666, TRUE, &FramebufferOperations}, {(CONST CHAR8 *) "virgl0", 0444, FALSE, &VirGLOperations}};
 
 CONST DEVICE_NODE *DeviceFSGetNode(UINT32 Number)
 {
@@ -955,11 +955,11 @@ CONST DEVICE_NODE *DeviceFSGetNode(UINT32 Number)
 STATIC VOID DeviceFSNode(UINT32 Number, VFS_NODE *Node)
 {
     KMemSet(Node, 0, sizeof(*Node));
-    Node->Number = Number;
+    Node->Number     = Number;
     Node->AccessTime = DeviceMountTime;
     Node->ModifyTime = DeviceMountTime;
     Node->ChangeTime = DeviceMountTime;
-    Node->Mode = Number == 1 ? VFS_MODE_DIRECTORY | 0755 : 0x2000U | DeviceFSGetNode(Number)->Mode;
+    Node->Mode       = Number == 1 ? VFS_MODE_DIRECTORY | 0755 : 0x2000U | DeviceFSGetNode(Number)->Mode;
 }
 
 STATIC VFS_ERROR DeviceFSRoot(VOID *Backend, CONST VFS_CREDENTIALS *Credentials, VFS_NODE *Node)
@@ -1041,7 +1041,7 @@ STATIC VFS_ERROR DeviceFSReadDirectory(VOID *Backend, CONST VFS_CREDENTIALS *Cre
         return VFS_OK;
     }
 
-    CONST CHAR8 *Name = *Cursor == 0 ? (CONST CHAR8 *) "." : *Cursor == 1 ? (CONST CHAR8 *) ".." : DeviceNodes[*Cursor - 2].Name;
+    CONST CHAR8 *Name   = *Cursor == 0 ? (CONST CHAR8 *) "." : *Cursor == 1 ? (CONST CHAR8 *) ".." : DeviceNodes[*Cursor - 2].Name;
     UINT32       Length = 0;
 
     while (Name[Length] != 0)
@@ -1074,7 +1074,7 @@ VFS_ERROR DeviceFSMount(VFS_REGISTRY *Registry)
 
     if (Error == VFS_OK)
     {
-        DeviceMountTime = (UINT32) ClockGetUnixTime();
+        DeviceMountTime           = (UINT32) ClockGetUnixTime();
         Registry->DevicePartition = Partition;
     }
 

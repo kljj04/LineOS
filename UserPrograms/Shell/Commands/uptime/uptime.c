@@ -74,7 +74,7 @@ INT32 main(INT32 Argc, char **Argv)
     }
 
     BOOLEAN Pretty = FALSE;
-    BOOLEAN Since = FALSE;
+    BOOLEAN Since  = FALSE;
 
     for (INT32 Index = 1; Index < Argc; Index++)
     {

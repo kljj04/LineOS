@@ -32,9 +32,9 @@ BOOLEAN SudoAllowed(CONST char *Username)
     }
 
     char    Line[USER_DB_NAME_MAX + 2];
-    UINTN   Length = 0;
+    UINTN   Length   = 0;
     BOOLEAN Overflow = FALSE;
-    BOOLEAN Allowed = FALSE;
+    BOOLEAN Allowed  = FALSE;
     char    Byte;
 
     for (;;)
@@ -61,7 +61,7 @@ BOOLEAN SudoAllowed(CONST char *Username)
                 Allowed = TRUE;
             }
 
-            Length = 0;
+            Length   = 0;
             Overflow = FALSE;
 
             if (Count == 0)
@@ -93,9 +93,9 @@ BOOLEAN SudoAllowed(CONST char *Username)
 BOOLEAN SudoAuthenticate(CONST char *Username, USER_DB_ACCOUNT *Account)
 {
     char    Password[USER_DB_PASSWORD_MAX + 1] = {0};
-    UINTN   Length = 0;
-    BOOLEAN Valid = TRUE;
-    BOOLEAN Complete = FALSE;
+    UINTN   Length                             = 0;
+    BOOLEAN Valid                              = TRUE;
+    BOOLEAN Complete                           = FALSE;
     UINT8   Byte;
 
     printf(gettext("[sudo] password for %s: "), Username);

@@ -14,7 +14,7 @@ STATIC char   Output[131072];
 STATIC char   Previous[131072];
 STATIC char   Changes[262144];
 STATIC UINTN  PreviousLength;
-STATIC char  *Target = Output;
+STATIC char  *Target   = Output;
 STATIC UINTN  Capacity = sizeof(Output);
 STATIC UINTN  OutputLength;
 STATIC UINT32 FrameRow;
@@ -77,8 +77,8 @@ STATIC VOID BtopBar(UINT64 Percent, UINT32 Width)
     }
 
     STATIC CONST char *CONST Blocks[] = {"░", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"};
-    UINT32                   Units = Percent * Width * 8 / 100;
-    UINT32                   Filled = Units / 8;
+    UINT32                   Units    = Percent * Width * 8 / 100;
+    UINT32                   Filled   = Units / 8;
     UINT32                   Fraction = Units % 8;
 
     BtopText(" \033[38;2;79;208;176m");
@@ -110,7 +110,7 @@ VOID BtopSort(BTOP *Monitor)
 {
     for (UINT32 Index = 1; Index < Monitor->Info.TasksReturned; Index++)
     {
-        SYSTEM_TASK_INFO Entry = Monitor->Info.Tasks[Index];
+        SYSTEM_TASK_INFO Entry    = Monitor->Info.Tasks[Index];
         UINT32           Position = Index;
 
         while (Position != 0)
@@ -157,7 +157,7 @@ STATIC VOID BtopTasks(CONST BTOP *Monitor)
     BtopText("\033[0m\n");
 
     UINT32 Start = Monitor->TaskPage * Monitor->TaskRows;
-    UINT32 End = Start + Monitor->TaskRows;
+    UINT32 End   = Start + Monitor->TaskRows;
 
     if (End > Monitor->Info.TasksReturned)
     {
@@ -185,7 +185,7 @@ STATIC VOID BtopTasks(CONST BTOP *Monitor)
         }
 
         UINTN Length = 0;
-        UINTN Width = 0;
+        UINTN Width  = 0;
 
         while (State[Length] != 0)
         {
@@ -264,10 +264,10 @@ STATIC VOID BtopTasks(CONST BTOP *Monitor)
 
 INT32 BtopRender(CONST BTOP *Monitor)
 {
-    Target = Output;
-    Capacity = sizeof(Output);
+    Target       = Output;
+    Capacity     = sizeof(Output);
     OutputLength = 0;
-    FrameRow = 0;
+    FrameRow     = 0;
     BtopText("\033[38;2;80;227;194mLineOS btop\033[0m  ");
 
     struct timespec Time;
@@ -302,7 +302,7 @@ INT32 BtopRender(CONST BTOP *Monitor)
     for (UINTN Index = 0; Index < HistoryWidth; Index++)
     {
         UINTN  Position = (Monitor->HistoryPosition + BTOP_HISTORY_SIZE - HistoryWidth + Index) % BTOP_HISTORY_SIZE;
-        UINT32 Value = Monitor->History[Position];
+        UINT32 Value    = Monitor->History[Position];
 
         if (Value > 100)
         {
@@ -315,7 +315,7 @@ INT32 BtopRender(CONST BTOP *Monitor)
     BtopCharacter('\n');
 
     UINT32 CoreStart = Monitor->CorePage * Monitor->CoresPerPage;
-    UINT32 CoreEnd = CoreStart + Monitor->CoresPerPage;
+    UINT32 CoreEnd   = CoreStart + Monitor->CoresPerPage;
 
     if (CoreEnd > Monitor->Info.CPUCount)
     {
@@ -352,14 +352,14 @@ INT32 BtopRender(CONST BTOP *Monitor)
     }
 
     UINT64 Total = Monitor->Info.ManagedBytes;
-    UINT64 Free = Monitor->Info.FreeBytes;
+    UINT64 Free  = Monitor->Info.FreeBytes;
 
     if (Free > Total)
     {
         Free = Total;
     }
 
-    UINT64 Used = Total - Free;
+    UINT64 Used    = Total - Free;
     UINT64 Percent = Total == 0 ? 0 : Used * 100 / Total;
 
     BtopText("\nPMM  ");
@@ -395,19 +395,19 @@ INT32 BtopRender(CONST BTOP *Monitor)
 
     UINTN FrameLength = OutputLength;
 
-    Target = Changes;
-    Capacity = sizeof(Changes);
+    Target       = Changes;
+    Capacity     = sizeof(Changes);
     OutputLength = 0;
     BtopText("\033[?2026h");
 
     UINTN  Current = 0;
-    UINTN  Old = 0;
-    UINT32 Row = 1;
+    UINTN  Old     = 0;
+    UINT32 Row     = 1;
 
     while (Current < FrameLength || Old < PreviousLength)
     {
         UINTN CurrentEnd = Current;
-        UINTN OldEnd = Old;
+        UINTN OldEnd     = Old;
 
         while (CurrentEnd < FrameLength && Output[CurrentEnd] != '\n')
         {
@@ -420,7 +420,7 @@ INT32 BtopRender(CONST BTOP *Monitor)
         }
 
         UINTN CurrentSize = CurrentEnd - Current;
-        UINTN OldSize = OldEnd - Old;
+        UINTN OldSize     = OldEnd - Old;
 
         if (CurrentSize != OldSize || memcmp(Output + Current, Previous + Old, CurrentSize) != 0)
         {
@@ -435,7 +435,7 @@ INT32 BtopRender(CONST BTOP *Monitor)
         }
 
         Current = CurrentEnd;
-        Old = OldEnd;
+        Old     = OldEnd;
 
         if (Current < FrameLength)
         {

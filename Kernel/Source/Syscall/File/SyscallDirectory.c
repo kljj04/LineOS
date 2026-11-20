@@ -31,7 +31,7 @@ INT64 SyscallMkdir(UINT64 Path, UINT64 Mode)
 
 INT64 SyscallGetDents64(UINT64 FD, UINT64 Buffer, UINT64 Count)
 {
-    TASK      *Task = LBPWRRGetCurrentTask();
+    TASK      *Task                                    = LBPWRRGetCurrentTask();
     OPEN_FILE *File __attribute__((cleanup(FileDrop))) = FileAcquire(Task, (UINT64) FD);
 
     if (Task == NULL || File == NULL)
@@ -91,7 +91,7 @@ INT64 SyscallGetDents64(UINT64 FD, UINT64 Buffer, UINT64 Count)
         }
 
         UINT8  Record[280] = {0};
-        UINT64 Number = Entry.Node.Number;
+        UINT64 Number      = Entry.Node.Number;
 
         KMemCpy(Record, &Number, 8);
         KMemCpy(Record + 8, &Cursor, 8);

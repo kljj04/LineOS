@@ -35,10 +35,10 @@ INT32 main(VOID)
 
     Manager.Running = TRUE;
 
-    UINT64  NextFrame = 0;
+    UINT64  NextFrame   = 0;
     UINT64  StartupTime = 0;
-    BOOLEAN KeyWaiting = FALSE;
-    UINT8   WaitingKey = 0;
+    BOOLEAN KeyWaiting  = FALSE;
+    UINT8   WaitingKey  = 0;
 
     while (Manager.Running)
     {
@@ -99,7 +99,7 @@ INT32 main(VOID)
             goto Cleanup;
         }
 
-        UINT64       Now = (UINT64) Clock.tv_sec * 1000000000ULL + Clock.tv_nsec;
+        UINT64       Now    = (UINT64) Clock.tv_sec * 1000000000ULL + Clock.tv_nsec;
         CONST UINT64 Period = 1000000000ULL / 120U;
 
         if (StartupTime == 0)
@@ -128,7 +128,7 @@ INT32 main(VOID)
             goto Cleanup;
         }
 
-        Now = (UINT64) Clock.tv_sec * 1000000000ULL + Clock.tv_nsec;
+        Now         = (UINT64) Clock.tv_sec * 1000000000ULL + Clock.tv_nsec;
         UINT64 Wait = NextFrame > Now ? NextFrame - Now : 1000000ULL;
 
         if (!Manager.Dirty)

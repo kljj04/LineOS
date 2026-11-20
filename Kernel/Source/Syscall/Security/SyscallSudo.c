@@ -45,9 +45,9 @@ INT64 SyscallSudoCache(UINT64 Operation)
         return 0;
     }
 
-    UINT64            Now = ClockGetUptimeMls();
-    UINT64            Flags = SpinLockAcquireIRQSave(&SudoCacheLock);
-    SUDO_CACHE_ENTRY *Found = NULL;
+    UINT64            Now    = ClockGetUptimeMls();
+    UINT64            Flags  = SpinLockAcquireIRQSave(&SudoCacheLock);
+    SUDO_CACHE_ENTRY *Found  = NULL;
     SUDO_CACHE_ENTRY *Oldest = &SudoCache[0];
 
     for (UINTN Index = 0; Index < SUDO_CACHE_LIMIT; Index++)
@@ -88,7 +88,7 @@ INT64 SyscallSudoCache(UINT64 Operation)
             }
 
             Found->Session = Task->Process->AuthSession;
-            Found->UID = Task->Process->RealUID;
+            Found->UID     = Task->Process->RealUID;
             Found->Expires = Now + SUDO_CACHE_TIMEOUT_MLS;
             break;
         }

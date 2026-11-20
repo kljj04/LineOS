@@ -37,10 +37,10 @@ VOID NetworkDHCPStopLocked(VOID)
 
 STATIC VOID StartDiscover(VOID)
 {
-    DHCP.State = NETWORK_DHCP_DISCOVER;
+    DHCP.State       = NETWORK_DHCP_DISCOVER;
     DHCP.Transaction = (UINT32) RDTSC();
-    DHCP.Server = 0;
-    DHCP.Attempts = 0;
+    DHCP.Server      = 0;
+    DHCP.Attempts    = 0;
     KMemSet(&DHCP.Offer, 0, sizeof(DHCP.Offer));
     DHCP.NextSend = 0;
     DHCP.RetryMls = 1000;
@@ -49,8 +49,8 @@ STATIC VOID StartDiscover(VOID)
 STATIC VOID SendDHCP(VOID)
 {
     UINT8   Packet[300] = {0};
-    UINT32  Offset = 240;
-    BOOLEAN Renew = DHCP.State == NETWORK_DHCP_RENEW || DHCP.State == NETWORK_DHCP_REBIND;
+    UINT32  Offset      = 240;
+    BOOLEAN Renew       = DHCP.State == NETWORK_DHCP_RENEW || DHCP.State == NETWORK_DHCP_REBIND;
     UINT32  Destination = UINT32_MAX;
 
     Packet[0] = 1;
@@ -95,7 +95,7 @@ STATIC VOID SendDHCP(VOID)
     Packet[Offset++] = 51;
     Packet[Offset++] = 58;
     Packet[Offset++] = 59;
-    Packet[Offset] = 255;
+    Packet[Offset]   = 255;
 
     if (DHCP.State == NETWORK_DHCP_RENEW)
     {
@@ -119,7 +119,7 @@ VOID NetworkDHCPTick(VOID)
     }
 
     Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
-    Now = NetworkNow();
+    Now   = NetworkNow();
 
     if (!DHCP.Enabled)
     {
@@ -140,14 +140,14 @@ VOID NetworkDHCPTick(VOID)
     }
     else if (DHCP.State == NETWORK_DHCP_BOUND && Now >= DHCP.RenewAt)
     {
-        DHCP.State = NETWORK_DHCP_RENEW;
+        DHCP.State       = NETWORK_DHCP_RENEW;
         DHCP.Transaction = (UINT32) RDTSC();
-        DHCP.NextSend = 0;
-        DHCP.RetryMls = 1000;
+        DHCP.NextSend    = 0;
+        DHCP.RetryMls    = 1000;
     }
     else if (DHCP.State == NETWORK_DHCP_RENEW && Now >= DHCP.RebindAt)
     {
-        DHCP.State = NETWORK_DHCP_REBIND;
+        DHCP.State    = NETWORK_DHCP_REBIND;
         DHCP.NextSend = 0;
     }
 
@@ -170,12 +170,12 @@ VOID NetworkDHCPTick(VOID)
 VOID NetworkDHCPInputLocked(UINT32 Source, CONST UINT8 *Packet, UINT32 Length)
 {
     UINT32         Offset = 240;
-    UINT32         Type = 0;
+    UINT32         Type   = 0;
     UINT32         Server = 0;
-    UINT32         Lease = 0;
-    UINT32         T1 = 0;
-    UINT32         T2 = 0;
-    BOOLEAN        End = FALSE;
+    UINT32         Lease  = 0;
+    UINT32         T1     = 0;
+    UINT32         T2     = 0;
+    BOOLEAN        End    = FALSE;
     NETWORK_CONFIG Config = DHCP.Offer;
 
     if (!DHCP.Enabled || Length < 240 || Packet[0] != 2 || Packet[1] != 1 || Packet[2] != 6 || NetworkRead32(Packet + 4) != DHCP.Transaction || NetworkRead32(Packet + 236) != 0x63825363)
@@ -277,9 +277,9 @@ VOID NetworkDHCPInputLocked(UINT32 Source, CONST UINT8 *Packet, UINT32 Length)
 
     if (Type == 2 && DHCP.State == NETWORK_DHCP_DISCOVER && Config.Address != 0 && Config.Netmask != 0)
     {
-        DHCP.Offer = Config;
-        DHCP.Server = Server;
-        DHCP.State = NETWORK_DHCP_REQUEST;
+        DHCP.Offer    = Config;
+        DHCP.Server   = Server;
+        DHCP.State    = NETWORK_DHCP_REQUEST;
         DHCP.Attempts = 0;
         DHCP.NextSend = 0;
         DHCP.RetryMls = 1000;
@@ -306,15 +306,15 @@ VOID NetworkDHCPInputLocked(UINT32 Source, CONST UINT8 *Packet, UINT32 Length)
 
         if (T2 <= T1 || T2 >= Lease)
             T2 = (UINT32) ((UINT64) Lease * 7 / 8);
-        DHCP.Offer = Config;
+        DHCP.Offer  = Config;
         DHCP.Server = Server;
-        DHCP.State = NETWORK_DHCP_BOUND;
+        DHCP.State  = NETWORK_DHCP_BOUND;
 
         UINT64 Now = NetworkNow();
 
-        DHCP.RenewAt = Now + (UINT64) T1 * 1000;
+        DHCP.RenewAt  = Now + (UINT64) T1 * 1000;
         DHCP.RebindAt = Now + (UINT64) T2 * 1000;
-        DHCP.Expires = Now + (UINT64) Lease * 1000;
+        DHCP.Expires  = Now + (UINT64) Lease * 1000;
     }
 }
 

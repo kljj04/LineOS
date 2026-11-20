@@ -63,9 +63,9 @@ BOOLEAN TerminalHistorySave(CONST TERMINAL_TEXT_LINE *Line)
     TERMINAL_HISTORY_LINE *Saved = (TERMINAL_HISTORY_LINE *) (CurrentChunk->Data + CurrentChunk->Used);
 
     CurrentChunk->Used += Size;
-    Saved->Previous = Last;
-    Saved->Next = NULL;
-    Saved->Text = *Line;
+    Saved->Previous   = Last;
+    Saved->Next       = NULL;
+    Saved->Text       = *Line;
     Saved->Text.Cells = Saved->Cells;
     memcpy(Saved->Cells, Line->Cells, (UINTN) Line->Length * sizeof(TERMINAL_TEXT_CELL));
 
@@ -88,7 +88,7 @@ BOOLEAN TerminalHistorySave(CONST TERMINAL_TEXT_LINE *Line)
 VOID TerminalHistorySelect(VOID)
 {
     Selected = NULL;
-    LiveRow = 0;
+    LiveRow  = 0;
 
     if (Offset != 0)
     {
@@ -184,7 +184,7 @@ BOOLEAN TerminalScrollPointer(DISPLAY_INFO *Info, UINT32 X, UINT32 Y, BOOLEAN Pr
 
     UINT64 Previous = Offset;
 
-    Offset = HistoryCount * (Info->Height - 1 - Y) / (Info->Height - 1);
+    Offset      = HistoryCount * (Info->Height - 1 - Y) / (Info->Height - 1);
     ScrollDirty = ScrollDirty || Previous != Offset;
 
     return TRUE;
@@ -201,16 +201,16 @@ VOID TerminalScrollReset(VOID)
     }
 
     CurrentChunk = NULL;
-    Last = NULL;
-    Selected = NULL;
+    Last         = NULL;
+    Selected     = NULL;
     HistoryCount = 0;
-    Offset = 0;
-    ScrollDirty = TRUE;
+    Offset       = 0;
+    ScrollDirty  = TRUE;
 }
 
 UINT32 *TerminalScrollView(DISPLAY_INFO *Info)
 {
-    UINT32 Rows = TerminalScreenRows();
+    UINT32 Rows        = TerminalScreenRows();
     UINT32 ThumbHeight = (UINT32) ((UINT64) Info->Height * Rows / (HistoryCount + Rows));
 
     if (ThumbHeight < 16)
@@ -227,9 +227,9 @@ UINT32 *TerminalScrollView(DISPLAY_INFO *Info)
     if (ThumbTop != PreviousThumbTop || ThumbHeight != PreviousThumbHeight || Info->Height != PreviousHeight)
     {
         TerminalDamage(0, Info->Height);
-        PreviousThumbTop = ThumbTop;
+        PreviousThumbTop    = ThumbTop;
         PreviousThumbHeight = ThumbHeight;
-        PreviousHeight = Info->Height;
+        PreviousHeight      = Info->Height;
     }
 
     for (UINT32 Row = 0; Row < Info->Height; Row++)

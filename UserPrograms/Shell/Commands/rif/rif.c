@@ -77,13 +77,13 @@ STATIC BOOLEAN RIFReaderReadByte(RIF_READER *Reader, UINT8 *Character)
         ssize_t Count = ReadBytes(Reader->FD, Reader->Buffer, sizeof(Reader->Buffer));
         if (Count <= 0)
         {
-            Reader->HasEOF = Count == 0;
+            Reader->HasEOF   = Count == 0;
             Reader->HasError = Count < 0;
             return FALSE;
         }
 
         Reader->Position = 0;
-        Reader->Length = (UINTN) Count;
+        Reader->Length   = (UINTN) Count;
     }
 
     *Character = Reader->Buffer[Reader->Position++];
@@ -273,7 +273,7 @@ STATIC INT32 ReadLiteral(RIF_READER *Reader, UINT8 *Buffer, UINTN Capacity, UINT
                     }
 
                     INT32 HighValue = RIFHexValue(High);
-                    INT32 LowValue = RIFHexValue(Low);
+                    INT32 LowValue  = RIFHexValue(Low);
 
                     if (HighValue < 0 || LowValue < 0)
                     {
@@ -301,7 +301,7 @@ STATIC INT32 ReadLiteral(RIF_READER *Reader, UINT8 *Buffer, UINTN Capacity, UINT
 STATIC BOOLEAN ReadNumber(RIF_READER *Reader, UINT64 *Count, BOOLEAN Required)
 {
     UINT8   Character;
-    UINT64  Value = 0;
+    UINT64  Value     = 0;
     BOOLEAN HasDigits = FALSE;
 
     if (Reader == NULL || Count == NULL)
@@ -428,7 +428,7 @@ STATIC BOOLEAN WriteRepeatedLiteral(RIF_WRITER *Writer, CONST UINT8 *Buffer, UIN
     for (UINTN Filled = Length; Filled < BatchLength;)
     {
         UINTN Remaining = BatchLength - Filled;
-        UINTN Chunk = Filled < Remaining ? Filled : Remaining;
+        UINTN Chunk     = Filled < Remaining ? Filled : Remaining;
         memcpy(RIFRepeat + Filled, RIFRepeat, Chunk);
         Filled += Chunk;
     }
@@ -449,7 +449,7 @@ STATIC BOOLEAN DecodeLiteral(RIF_READER *Reader, RIF_WRITER *Writer)
 {
     UINT8  Buffer[RIF_MAX_LITERAL_SIZE];
     UINTN  Length = 0;
-    UINT64 Count = 1;
+    UINT64 Count  = 1;
 
     if (Reader == NULL)
     {
@@ -721,7 +721,7 @@ STATIC BOOLEAN DecodeArchive(RIF_READER *Reader)
 {
     char    Name[RIF_MAX_SECTION_NAME];
     UINT8   Character;
-    BOOLEAN HasRO = FALSE;
+    BOOLEAN HasRO   = FALSE;
     BOOLEAN HasFile = FALSE;
 
     if (!ReadHeader(Reader))
@@ -763,10 +763,10 @@ STATIC BOOLEAN DecodeArchive(RIF_READER *Reader)
             return FALSE;
         }
 
-        HasFile = TRUE;
-        RIFWriter.FD = FD;
+        HasFile          = TRUE;
+        RIFWriter.FD     = FD;
         RIFWriter.Length = 0;
-        BOOLEAN Success = DecodeSection(Reader, &RIFWriter, &RIFROTable) && FlushWriter(&RIFWriter);
+        BOOLEAN Success  = DecodeSection(Reader, &RIFWriter, &RIFROTable) && FlushWriter(&RIFWriter);
 
         if (close(FD) < 0)
         {
@@ -854,13 +854,13 @@ STATIC BOOLEAN EncodeLiteral(RIF_WRITER *Writer, CONST UINT8 *Data, UINTN Length
 
 STATIC BOOLEAN EncodeBlock(RIF_WRITER *Writer, CONST UINT8 *Data, UINTN Length)
 {
-    UINTN Literal = 0;
+    UINTN Literal  = 0;
     UINTN Position = 0;
 
     while (Position < Length)
     {
         UINTN Pattern = 1;
-        UINTN Count = 1;
+        UINTN Count   = 1;
 
         for (; Pattern <= RIF_MAX_PATTERN_SIZE && Pattern * 2 <= Length - Position; Pattern++)
         {
@@ -938,7 +938,7 @@ STATIC CONST char *FileName(CONST char *Path)
 STATIC BOOLEAN EncodeFile(RIF_WRITER *Writer, CONST char *Path)
 {
     CONST char *Name = FileName(Path);
-    INT32       FD = open(Path, O_RDONLY);
+    INT32       FD   = open(Path, O_RDONLY);
 
     if (FD < 0)
     {
@@ -1026,7 +1026,7 @@ STATIC BOOLEAN EncodeArchive(CONST char *Archive, INT32 FileCount, char **Paths)
         return FALSE;
     }
 
-    RIFWriter.FD = FD;
+    RIFWriter.FD    = FD;
     BOOLEAN Success = WriteBytes(&RIFWriter, "RIF1\n", 5);
 
     for (INT32 Index = 0; Success && Index < FileCount; Index++)
@@ -1069,7 +1069,7 @@ INT32 main(INT32 Argc, char **Argv)
             return 1;
         }
 
-        RIFReader.FD = FD;
+        RIFReader.FD    = FD;
         BOOLEAN Success = DecodeArchive(&RIFReader);
         if (close(FD) < 0)
         {

@@ -28,12 +28,12 @@ STATIC UINT32 EXT2NameLength(CONST CHAR8 *Name)
 
 STATIC BOOLEAN EXT2DirectoryScan(EXT2_VOLUME *Volume, EXT2_INODE *Directory, CONST CHAR8 *Name, UINT32 *Number, UINT32 Need, UINT32 *SlotBlock, UINT32 *SlotOffset)
 {
-    UINT64 Size = EXT2InodeSize(Directory);
+    UINT64 Size       = EXT2InodeSize(Directory);
     UINT32 NameLength = EXT2NameLength(Name);
     UINT8  Buffer[EXT2_MAX_BLOCK_SIZE];
 
-    *Number = 0;
-    *SlotBlock = 0;
+    *Number     = 0;
+    *SlotBlock  = 0;
     *SlotOffset = 0;
 
     if (NameLength == 0 || (EXT2Load16(Directory->Raw) & EXT2_MODE_TYPE) != EXT2_MODE_DIRECTORY)
@@ -79,7 +79,7 @@ STATIC BOOLEAN EXT2DirectoryScan(EXT2_VOLUME *Volume, EXT2_INODE *Directory, CON
                 return EXT2Fail(Volume, EXT2_ERROR_CORRUPT);
             }
 
-            Inode = EXT2Load32(Entry);
+            Inode  = EXT2Load32(Entry);
             Record = EXT2Load16(Entry + 4);
             Length = Volume->FileType ? Entry[6] : EXT2Load16(Entry + 6);
 
@@ -125,7 +125,7 @@ STATIC BOOLEAN EXT2DirectoryScan(EXT2_VOLUME *Volume, EXT2_INODE *Directory, CON
 
             if (Need != 0 && *SlotBlock == 0 && Record - Used >= Need)
             {
-                *SlotBlock = Physical;
+                *SlotBlock  = Physical;
                 *SlotOffset = Offset;
             }
 
@@ -174,7 +174,7 @@ STATIC VOID EXT2SetEntry(EXT2_VOLUME *Volume, UINT8 *Data, UINT32 Number, UINT16
 BOOLEAN EXT2AddEntry(EXT2_VOLUME *Volume, EXT2_INODE *Directory, CONST CHAR8 *Name, UINT32 Number, UINT8 Type)
 {
     UINT32 Length = EXT2NameLength(Name);
-    UINT32 Need = (8 + Length + 3) & ~3U;
+    UINT32 Need   = (8 + Length + 3) & ~3U;
     UINT32 Existing;
     UINT32 Block;
     UINT32 Offset;
@@ -251,10 +251,10 @@ BOOLEAN EXT2Resolve(EXT2_VOLUME *Volume, CONST CHAR8 *Path, UINT32 *Number, EXT2
 {
     CHAR8  *Pending = KAlloc(8192);
     CHAR8  *Target;
-    UINT32  Length = 0;
+    UINT32  Length   = 0;
     UINT32  Position = 0;
-    UINT32  Links = 0;
-    BOOLEAN Result = FALSE;
+    UINT32  Links    = 0;
+    BOOLEAN Result   = FALSE;
 
     if (Pending == NULL)
     {
@@ -382,7 +382,7 @@ BOOLEAN EXT2Resolve(EXT2_VOLUME *Volume, CONST CHAR8 *Path, UINT32 *Number, EXT2
         else
         {
             *Number = Child;
-            *Inode = Next;
+            *Inode  = Next;
         }
     }
 
@@ -529,9 +529,9 @@ STATIC BOOLEAN EXT2EraseEntry(EXT2_VOLUME *Volume, EXT2_INODE *Directory, CONST 
 
         for (UINT32 Offset = 0; Offset < Volume->BlockSize;)
         {
-            UINT32  Record = EXT2Load16(Data + Offset + 4);
+            UINT32  Record      = EXT2Load16(Data + Offset + 4);
             UINT32  EntryLength = Volume->FileType ? Data[Offset + 6] : EXT2Load16(Data + Offset + 6);
-            BOOLEAN Equal = EXT2Load32(Data + Offset) == Number && EntryLength == Length;
+            BOOLEAN Equal       = EXT2Load32(Data + Offset) == Number && EntryLength == Length;
 
             for (UINT32 Index = 0; Equal && Index < Length; Index++)
             {
@@ -582,7 +582,7 @@ STATIC BOOLEAN EXT2EmptyDirectory(EXT2_VOLUME *Volume, EXT2_INODE *Inode, UINT32
         for (UINT32 Offset = 0; Offset < Volume->BlockSize; Offset += EXT2Load16(Buffer + Offset + 4))
         {
             UINT32  Length = Volume->FileType ? Buffer[Offset + 6] : EXT2Load16(Buffer + Offset + 6);
-            BOOLEAN Dot = Length == 1 && Buffer[Offset + 8] == '.';
+            BOOLEAN Dot    = Length == 1 && Buffer[Offset + 8] == '.';
             BOOLEAN DotDot = Length == 2 && Buffer[Offset + 8] == '.' && Buffer[Offset + 9] == '.';
 
             if (EXT2Load32(Buffer + Offset) != 0 && !Dot && !DotDot)
@@ -634,7 +634,7 @@ BOOLEAN EXT2RemoveEntry(EXT2_VOLUME *Volume, UINT32 Parent, CONST CHAR8 *Name, U
     }
 
     Directory = (EXT2Load16(Inode.Raw) & EXT2_MODE_TYPE) == EXT2_MODE_DIRECTORY;
-    Links = EXT2Load16(Inode.Raw + 26);
+    Links     = EXT2Load16(Inode.Raw + 26);
 
     if (Directory && (!EXT2EmptyDirectory(Volume, &Inode, Number, Parent) || Links != 2 || EXT2Load16(ParentInode.Raw + 26) < 3))
     {
@@ -717,7 +717,7 @@ BOOLEAN EXT2RenameEntry(EXT2_VOLUME *Volume, UINT32 OldParent, CONST CHAR8 *OldN
         return EXT2Fail(Volume, EXT2_ERROR_UNSUPPORTED);
     }
 
-    Type = EXT2Load16(Inode.Raw) & EXT2_MODE_TYPE;
+    Type      = EXT2Load16(Inode.Raw) & EXT2_MODE_TYPE;
     Directory = Type == EXT2_MODE_DIRECTORY;
 
     if (Type != EXT2_MODE_FILE && Type != EXT2_MODE_DIRECTORY && Type != EXT2_MODE_SYMLINK)
@@ -847,7 +847,7 @@ BOOLEAN EXT2LinkEntry(EXT2_VOLUME *Volume, UINT32 Parent, CONST CHAR8 *Name, UIN
         return FALSE;
     }
 
-    Type = EXT2Load16(Inode.Raw) & EXT2_MODE_TYPE;
+    Type  = EXT2Load16(Inode.Raw) & EXT2_MODE_TYPE;
     Links = EXT2Load16(Inode.Raw + 26);
 
     if (Number < Volume->FirstInode || Type == EXT2_MODE_DIRECTORY || (Type != EXT2_MODE_FILE && Type != EXT2_MODE_SYMLINK) || EXT2Load32(Inode.Raw + 32) != 0 || Links >= 32000)
@@ -956,12 +956,12 @@ BOOLEAN EXT2SymlinkEntry(EXT2_VOLUME *Volume, UINT32 Parent, CONST CHAR8 *Name, 
 
 BOOLEAN EXT2ValidateDirectories(EXT2_VOLUME *Volume)
 {
-    UINT64  Entries = (UINT64) Volume->InodeCount + 1;
+    UINT64  Entries    = (UINT64) Volume->InodeCount + 1;
     UINT32 *References = KAlloc(Entries * sizeof(UINT32));
-    UINT32 *Parents = KAlloc(Entries * sizeof(UINT32));
+    UINT32 *Parents    = KAlloc(Entries * sizeof(UINT32));
     UINT32 *DotParents = KAlloc(Entries * sizeof(UINT32));
-    UINT16 *Modes = KAlloc(Entries * sizeof(UINT16));
-    UINT16 *Links = KAlloc(Entries * sizeof(UINT16));
+    UINT16 *Modes      = KAlloc(Entries * sizeof(UINT16));
+    UINT16 *Links      = KAlloc(Entries * sizeof(UINT16));
     UINT8   Bitmap[EXT2_MAX_BLOCK_SIZE];
     UINT8   Buffer[EXT2_MAX_BLOCK_SIZE];
     BOOLEAN Result = FALSE;
@@ -1059,9 +1059,9 @@ BOOLEAN EXT2ValidateDirectories(EXT2_VOLUME *Volume)
 
             for (UINT32 Offset = 0; Offset < Volume->BlockSize; Offset += EXT2Load16(Buffer + Offset + 4))
             {
-                UINT32  Child = EXT2Load32(Buffer + Offset);
-                UINT32  Length = Volume->FileType ? Buffer[Offset + 6] : EXT2Load16(Buffer + Offset + 6);
-                BOOLEAN DotName = Length == 1 && Buffer[Offset + 8] == '.';
+                UINT32  Child      = EXT2Load32(Buffer + Offset);
+                UINT32  Length     = Volume->FileType ? Buffer[Offset + 6] : EXT2Load16(Buffer + Offset + 6);
+                BOOLEAN DotName    = Length == 1 && Buffer[Offset + 8] == '.';
                 BOOLEAN DotDotName = Length == 2 && Buffer[Offset + 8] == '.' && Buffer[Offset + 9] == '.';
                 UINT16  Type;
                 UINT8   FileType;
@@ -1071,7 +1071,7 @@ BOOLEAN EXT2ValidateDirectories(EXT2_VOLUME *Volume)
                     continue;
                 }
 
-                Type = Modes[Child];
+                Type     = Modes[Child];
                 FileType = Type == 0x8000 ? 1 : Type == 0x4000 ? 2 : Type == 0x2000 ? 3 : Type == 0x6000 ? 4 : Type == 0x1000 ? 5 : Type == 0xC000 ? 6 : 7;
 
                 if (Type == 0 || References[Child] == UINT32_MAX || (Volume->FileType && Buffer[Offset + 7] != 0 && Buffer[Offset + 7] != FileType))
@@ -1115,7 +1115,7 @@ BOOLEAN EXT2ValidateDirectories(EXT2_VOLUME *Volume)
         if (Modes[Number] == EXT2_MODE_DIRECTORY)
         {
             UINT32 Current = Number;
-            UINT32 Steps = 0;
+            UINT32 Steps   = 0;
 
             while (Current != 2 && Steps++ < Volume->InodeCount)
             {

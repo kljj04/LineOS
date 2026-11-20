@@ -29,9 +29,9 @@ INT64 SyscallDisplayInfo(UINT64 UserInfo)
         return -ENODEV;
     }
 
-    Info.Width = GPU->FrameBufferWidth;
+    Info.Width  = GPU->FrameBufferWidth;
     Info.Height = GPU->FrameBufferHeight;
-    Info.Pitch = Info.Width * sizeof(UINT32);
+    Info.Pitch  = Info.Width * sizeof(UINT32);
     Info.Format = DISPLAY_FORMAT_BGRA8888;
 
     if (!VMMCopyToUser(Task->Process->AddressSpace, UserInfo, &Info, sizeof(Info)))
@@ -164,7 +164,7 @@ INT64 SyscallDisplayPresentRect(UINT64 UserRect)
     for (Row = 0; Row < Rect.Height; Row++)
     {
         DestinationOffset = ((UINT64) (Rect.Y + Row) * GPU->FrameBufferWidth + Rect.X) * sizeof(UINT32);
-        SourceOffset = Rect.Buffer + Row * RowSize;
+        SourceOffset      = Rect.Buffer + Row * RowSize;
 
         if (!VMMCopyFromUser(Task->Process->AddressSpace, (UINT8 *) GPU->FrameBuffer + DestinationOffset, SourceOffset, RowSize))
         {

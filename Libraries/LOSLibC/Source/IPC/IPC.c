@@ -58,7 +58,7 @@ INT64 LOSIPCSend(UINT64 Endpoint, UINT64 Peer, CONST VOID *Data, UINT32 Size)
 INT64 LOSIPCReceive(UINT64 Endpoint, VOID *Data, UINT32 Capacity, LOS_IPC_REQUEST *Sender)
 {
     LOS_IPC_REQUEST Request = {.Endpoint = Endpoint, .Data = (UINT64) Data, .Size = Capacity};
-    INT64           Result = IPCCall(LOS_IPC_RECEIVE, &Request);
+    INT64           Result  = IPCCall(LOS_IPC_RECEIVE, &Request);
 
     if (Result >= 0 && Sender != NULL)
     {

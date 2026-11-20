@@ -101,17 +101,17 @@ STATIC INT64 CloneThread(TASK *Parent, INTERRUPT_FRAME *Frame, CONST CLONE_ARGS 
     }
 
     ASM("fxsave64 %0" : "=m"(Child->FPState)::"memory");
-    Child->FSBase = (Args->Flags & CLONE_SETTLS) != 0 ? Args->TLS : ReadMSR(IA32_FS_BASE);
+    Child->FSBase          = (Args->Flags & CLONE_SETTLS) != 0 ? Args->TLS : ReadMSR(IA32_FS_BASE);
     Child->ClearTIDAddress = (Args->Flags & CLONE_CHILD_CLEARTID) != 0 ? Args->ChildTID : 0;
     KMemCpy(&Child->Context, Frame, sizeof(Child->Context));
-    Child->Context.RSP = Stack;
-    Child->Context.RAX = 0;
+    Child->Context.RSP    = Stack;
+    Child->Context.RAX    = 0;
     Child->Context.RFLAGS = (Frame->RFLAGS & 0x240DD5) | 0x202;
-    Child->Context.RCX = Frame->RIP;
-    Child->Context.R11 = Child->Context.RFLAGS;
+    Child->Context.RCX    = Frame->RIP;
+    Child->Context.R11    = Child->Context.RFLAGS;
     KMemCpy((VOID *) Child->RSP, &Child->Context, sizeof(Child->Context));
 
-    UINT32 TID = Child->TID;
+    UINT32 TID    = Child->TID;
     INT64  Result = -EFAULT;
 
     if (((Args->Flags & CLONE_PARENT_SETTID) == 0 || VMMWriteUserWord(Parent->Process->AddressSpace, Args->ParentTID, TID)) && ((Args->Flags & CLONE_CHILD_SETTID) == 0 || VMMWriteUserWord(Parent->Process->AddressSpace, Args->ChildTID, TID)))
@@ -147,8 +147,8 @@ INT64 SyscallClone(INTERRUPT_FRAME *Frame)
 INT64 SyscallClone3(INTERRUPT_FRAME *Frame)
 {
     TASK      *Parent = LBPWRRGetCurrentTask();
-    UINT64     Size = Frame->RSI;
-    CLONE_ARGS Args = {0};
+    UINT64     Size   = Frame->RSI;
+    CLONE_ARGS Args   = {0};
 
     if (Parent == NULL || Parent->Process->AddressSpace == NULL || Parent->Process->Execution == NULL)
     {
@@ -236,9 +236,9 @@ INT64 SyscallFutex(UINT64 Address, UINT64 Operation, UINT64 Value, UINT64 Timeou
         }
 
         UINT64 Frequency = TSCGetFrequency();
-        UINT64 Fraction = ((UINT64) Duration.Nanoseconds * Frequency + 999999999) / 1000000000;
-        UINT64 Ticks = (UINT64) Duration.Seconds > (INT64_MAX - Fraction) / Frequency ? INT64_MAX : (UINT64) Duration.Seconds * Frequency + Fraction;
-        Deadline = RDTSC() + Ticks;
+        UINT64 Fraction  = ((UINT64) Duration.Nanoseconds * Frequency + 999999999) / 1000000000;
+        UINT64 Ticks     = (UINT64) Duration.Seconds > (INT64_MAX - Fraction) / Frequency ? INT64_MAX : (UINT64) Duration.Seconds * Frequency + Fraction;
+        Deadline         = RDTSC() + Ticks;
 
         if (Deadline == 0)
         {
@@ -262,7 +262,7 @@ INT64 SyscallFutex(UINT64 Address, UINT64 Operation, UINT64 Value, UINT64 Timeou
     else if (Operation == (FUTEX_PRIVATE_FLAG | FUTEX_WAKE))
     {
         FUTEX_KEY Key = {Task->Process, Address};
-        Result = WaitQueueWakeMatching(&FutexWaiters, (UINT32) Value, FutexMatch, &Key);
+        Result        = WaitQueueWakeMatching(&FutexWaiters, (UINT32) Value, FutexMatch, &Key);
     }
     else if (Word != (UINT32) Value)
     {
@@ -271,7 +271,7 @@ INT64 SyscallFutex(UINT64 Address, UINT64 Operation, UINT64 Value, UINT64 Timeou
     else
     {
         Task->FutexAddress = Address;
-        BOOLEAN TimedOut = FALSE;
+        BOOLEAN TimedOut   = FALSE;
 
         if (Deadline != 0 && (INT64) (RDTSC() - Deadline) >= 0)
         {
@@ -316,7 +316,7 @@ VOID SyscallClearTIDAddress(TASK *Task)
     if (Address != 0)
     {
         UINT64    Flags = SpinLockAcquireIRQSave(&FutexLock);
-        FUTEX_KEY Key = {Task->Process, Address};
+        FUTEX_KEY Key   = {Task->Process, Address};
 
         if (VMMWriteUserWord(Task->Process->AddressSpace, Address, 0))
         {
@@ -459,7 +459,7 @@ STATIC BOOLEAN FutexReleaseOwner(TASK *Task, UINT64 Entry, INT64 Offset, BOOLEAN
         if ((Owner == Task->TID && (Word & FUTEX_WAITERS) != 0) || (Pending && Owner == 0))
         {
             UINT64    Flags = SpinLockAcquireIRQSave(&FutexLock);
-            FUTEX_KEY Key = {Task->Process, Address};
+            FUTEX_KEY Key   = {Task->Process, Address};
 
             WaitQueueWakeMatching(&FutexWaiters, 1, FutexMatch, &Key);
             SpinLockReleaseIRQRestore(&FutexLock, Flags);

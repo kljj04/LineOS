@@ -50,7 +50,7 @@ TRUE_TYPE_FONT *TerminalMeasure(TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fallback, 
     }
 
     TRUE_TYPE_FONT *Selected = FindGlyphIndex(&Font->Info, (INT32) Codepoint) != 0 ? Font : Fallback;
-    FLOAT32         Scale = ScaleForPixelHeight(&Selected->Info, TERMINAL_FONT_HEIGHT);
+    FLOAT32         Scale    = ScaleForPixelHeight(&Selected->Info, TERMINAL_FONT_HEIGHT);
     INT32           Advance;
     INT32           Bearing;
 
@@ -61,10 +61,10 @@ TRUE_TYPE_FONT *TerminalMeasure(TRUE_TYPE_FONT *Font, TRUE_TYPE_FONT *Fallback, 
     Glyph->Advance = Width > 0 ? (UINT32) Width : 1U;
     GetCodepointBitmapBox(&Selected->Info, (INT32) Codepoint, Scale, Scale, &Glyph->Left, &Glyph->Top, &Glyph->Right, &Glyph->Bottom);
     Entry->Codepoint = Codepoint;
-    Entry->Primary = Font;
-    Entry->Fallback = Fallback;
-    Entry->Selected = Selected;
-    Entry->Glyph = *Glyph;
+    Entry->Primary   = Font;
+    Entry->Fallback  = Fallback;
+    Entry->Selected  = Selected;
+    Entry->Glyph     = *Glyph;
 
     return Selected;
 }

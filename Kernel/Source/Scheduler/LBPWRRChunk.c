@@ -23,7 +23,7 @@ STATIC BOOLEAN ChunkInsert(LBPWRR_RUNQUEUE *RunQueue, TASK *Task, UINT8 Weight)
         return FALSE;
     }
 
-    Chunk = &RunQueue->Chunk;
+    Chunk    = &RunQueue->Chunk;
     OldCount = Chunk->Count;
 
     if (OldCount > Chunk->Capacity || Weight > Chunk->Capacity - OldCount)
@@ -36,15 +36,15 @@ STATIC BOOLEAN ChunkInsert(LBPWRR_RUNQUEUE *RunQueue, TASK *Task, UINT8 Weight)
         return FALSE;
     }
 
-    NewCount = OldCount + Weight;
-    ReadIndex = OldCount;
+    NewCount        = OldCount + Weight;
+    ReadIndex       = OldCount;
     OldCurrentIndex = RunQueue->CurrentIndex;
     NewCurrentIndex = 0;
 
     for (Index = NewCount; Index > 0; Index--)
     {
         UINT32 Position = Index - 1;
-        UINT32 Target = (UINT32) ((UINT64) (Position + 1) * Weight / NewCount);
+        UINT32 Target   = (UINT32) ((UINT64) (Position + 1) * Weight / NewCount);
         UINT32 Previous = (UINT32) ((UINT64) Position * Weight / NewCount);
 
         if (Target != Previous)
@@ -64,7 +64,7 @@ STATIC BOOLEAN ChunkInsert(LBPWRR_RUNQUEUE *RunQueue, TASK *Task, UINT8 Weight)
         }
     }
 
-    Chunk->Count = NewCount;
+    Chunk->Count           = NewCount;
     RunQueue->CurrentIndex = NewCurrentIndex;
 
     return TRUE;
@@ -85,7 +85,7 @@ STATIC BOOLEAN ChunkRemove(LBPWRR_RUNQUEUE *RunQueue, TASK *Task)
         return FALSE;
     }
 
-    Chunk = &RunQueue->Chunk;
+    Chunk    = &RunQueue->Chunk;
     OldCount = Chunk->Count;
 
     if (OldCount > Chunk->Capacity)
@@ -98,10 +98,10 @@ STATIC BOOLEAN ChunkRemove(LBPWRR_RUNQUEUE *RunQueue, TASK *Task)
         return FALSE;
     }
 
-    WriteIndex = 0;
-    CurrentIndex = RunQueue->CurrentIndex;
+    WriteIndex      = 0;
+    CurrentIndex    = RunQueue->CurrentIndex;
     NewCurrentIndex = 0;
-    FoundBefore = FALSE;
+    FoundBefore     = FALSE;
 
     for (ReadIndex = 0; ReadIndex < OldCount; ReadIndex++)
     {
@@ -113,7 +113,7 @@ STATIC BOOLEAN ChunkRemove(LBPWRR_RUNQUEUE *RunQueue, TASK *Task)
         if (ReadIndex <= CurrentIndex)
         {
             NewCurrentIndex = WriteIndex;
-            FoundBefore = TRUE;
+            FoundBefore     = TRUE;
         }
 
         Chunk->Tasks[WriteIndex++] = Chunk->Tasks[ReadIndex];
@@ -161,7 +161,7 @@ STATIC BOOLEAN ChunkUpdate(LBPWRR_RUNQUEUE *RunQueue, TASK *Task, UINT8 Weight)
         return FALSE;
     }
 
-    Chunk = &RunQueue->Chunk;
+    Chunk    = &RunQueue->Chunk;
     OldCount = Chunk->Count;
 
     if (OldCount > Chunk->Capacity)
@@ -194,17 +194,17 @@ STATIC BOOLEAN ChunkUpdate(LBPWRR_RUNQUEUE *RunQueue, TASK *Task, UINT8 Weight)
         return ChunkInsert(RunQueue, Task, Weight - OldWeight);
     }
 
-    WriteIndex = 0;
-    SeenCount = 0;
-    CurrentIndex = RunQueue->CurrentIndex;
+    WriteIndex      = 0;
+    SeenCount       = 0;
+    CurrentIndex    = RunQueue->CurrentIndex;
     NewCurrentIndex = 0;
-    FoundBefore = FALSE;
+    FoundBefore     = FALSE;
 
     for (ReadIndex = 0; ReadIndex < OldCount; ReadIndex++)
     {
         if (Chunk->Tasks[ReadIndex] == Task)
         {
-            Target = (SeenCount + 1) * Weight / OldWeight;
+            Target   = (SeenCount + 1) * Weight / OldWeight;
             Previous = SeenCount * Weight / OldWeight;
             SeenCount++;
 
@@ -217,7 +217,7 @@ STATIC BOOLEAN ChunkUpdate(LBPWRR_RUNQUEUE *RunQueue, TASK *Task, UINT8 Weight)
         if (ReadIndex <= CurrentIndex)
         {
             NewCurrentIndex = WriteIndex;
-            FoundBefore = TRUE;
+            FoundBefore     = TRUE;
         }
 
         Chunk->Tasks[WriteIndex++] = Chunk->Tasks[ReadIndex];

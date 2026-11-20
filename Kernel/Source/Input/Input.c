@@ -20,7 +20,7 @@ STATIC UINT32 MouseMaxX = 32767;
 STATIC UINT32 MouseMinY = 0;
 STATIC UINT32 MouseMaxY = 32767;
 
-STATIC MOUSE_STATUS    MouseStatus = {0};
+STATIC MOUSE_STATUS    MouseStatus    = {0};
 STATIC KEYBOARD_STATUS KeyboardStatus = {0};
 
 STATIC SPIN_LOCK       MouseStatusLock;
@@ -36,10 +36,10 @@ STATIC BOOLEAN         KeyboardCapsPressed;
 
 STATIC SPIN_LOCK CursorLock;
 
-STATIC BOOLEAN CursorReady = FALSE;
+STATIC BOOLEAN CursorReady   = FALSE;
 STATIC BOOLEAN CursorVisible = FALSE;
-STATIC UINT32  CursorDrawX = 0;
-STATIC UINT32  CursorDrawY = 0;
+STATIC UINT32  CursorDrawX   = 0;
+STATIC UINT32  CursorDrawY   = 0;
 
 STATIC UINT32 ScalePointerCoordinate(UINT32 Value, UINT32 Min, UINT32 Max, UINT32 OutputMax)
 {
@@ -61,7 +61,7 @@ MOUSE_STATUS GetMouseStatus(VOID)
     MOUSE_STATUS Status;
     UINT64       Flags;
 
-    Flags = SpinLockAcquireIRQSave(&MouseStatusLock);
+    Flags  = SpinLockAcquireIRQSave(&MouseStatusLock);
     Status = MouseStatus;
     SpinLockReleaseIRQRestore(&MouseStatusLock, Flags);
 
@@ -73,7 +73,7 @@ KEYBOARD_STATUS GetKeyboardStatus(VOID)
     KEYBOARD_STATUS Status;
     UINT64          Flags;
 
-    Flags = SpinLockAcquireIRQSave(&KeyboardStatusLock);
+    Flags  = SpinLockAcquireIRQSave(&KeyboardStatusLock);
     Status = KeyboardStatus;
     SpinLockReleaseIRQRestore(&KeyboardStatusLock, Flags);
 
@@ -106,9 +106,9 @@ STATIC BOOLEAN InitHardwareCursor(VOID)
         return FALSE;
     }
 
-    CursorDrawX = Status.X;
-    CursorDrawY = Status.Y;
-    CursorReady = TRUE;
+    CursorDrawX   = Status.X;
+    CursorDrawY   = Status.Y;
+    CursorReady   = TRUE;
     CursorVisible = TRUE;
 
     return TRUE;
@@ -151,8 +151,8 @@ VOID ShowMouseCursor(VOID)
 
         if (VirtIOGPUUpdateCursor(Status.X, Status.Y))
         {
-            CursorDrawX = Status.X;
-            CursorDrawY = Status.Y;
+            CursorDrawX   = Status.X;
+            CursorDrawY   = Status.Y;
             CursorVisible = TRUE;
         }
     }
@@ -209,7 +209,7 @@ VOID InputMouseHandler(VOID)
         return;
     }
 
-    Flags = SpinLockAcquireIRQSave(&MouseStatusLock);
+    Flags         = SpinLockAcquireIRQSave(&MouseStatusLock);
     MouseStatus.X = GPU->FrameBufferWidth / 2;
     MouseStatus.Y = GPU->FrameBufferHeight / 2;
     SpinLockReleaseIRQRestore(&MouseStatusLock, Flags);
@@ -223,14 +223,14 @@ VOID InputMouseHandler(VOID)
             Status.X = ScalePointerCoordinate(PointerEvent.X, MouseMinX, MouseMaxX, GPU->FrameBufferWidth - 1);
             Status.Y = ScalePointerCoordinate(PointerEvent.Y, MouseMinY, MouseMaxY, GPU->FrameBufferHeight - 1);
 
-            Status.LeftButton = PointerEvent.LeftButton;
-            Status.RightButton = PointerEvent.RightButton;
-            Status.MiddleButton = PointerEvent.WheelButton;
-            Status.BackButton = PointerEvent.BackButton;
+            Status.LeftButton    = PointerEvent.LeftButton;
+            Status.RightButton   = PointerEvent.RightButton;
+            Status.MiddleButton  = PointerEvent.WheelButton;
+            Status.BackButton    = PointerEvent.BackButton;
             Status.ForwardButton = PointerEvent.ForwardButton;
-            Status.Wheel = PointerEvent.Wheel;
+            Status.Wheel         = PointerEvent.Wheel;
 
-            Flags = SpinLockAcquireIRQSave(&MouseStatusLock);
+            Flags       = SpinLockAcquireIRQSave(&MouseStatusLock);
             MouseStatus = Status;
             SpinLockReleaseIRQRestore(&MouseStatusLock, Flags);
 
@@ -284,12 +284,12 @@ VOID InputKeyboardHandler(VOID)
                 KeyboardCapsPressed = KeyEvent.Pressed;
             }
 
-            KeyboardStatus.KeyCode = KeyEvent.Code;
-            KeyboardStatus.Pressed = KeyEvent.Pressed;
+            KeyboardStatus.KeyCode   = KeyEvent.Code;
+            KeyboardStatus.Pressed   = KeyEvent.Pressed;
             KeyboardStatus.Modifiers = (KeyboardLeftShift || KeyboardRightShift ? 1 : 0) | (KeyboardCapsLock ? 2 : 0) | (KeyboardControl ? 4 : 0);
             TerminalKey(KeyboardStatus.KeyCode, KeyboardStatus.Pressed, KeyboardStatus.Modifiers);
             KeyboardEvents[KeyboardWriteIndex] = KeyboardStatus;
-            KeyboardWriteIndex = (KeyboardWriteIndex + 1) % 256;
+            KeyboardWriteIndex                 = (KeyboardWriteIndex + 1) % 256;
 
             if (KeyboardWriteIndex == KeyboardReadIndex)
             {
@@ -321,7 +321,7 @@ BOOLEAN InputGetKeyboardEvent(KEYBOARD_STATUS *Event)
         return FALSE;
     }
 
-    *Event = KeyboardEvents[KeyboardReadIndex];
+    *Event            = KeyboardEvents[KeyboardReadIndex];
     KeyboardReadIndex = (KeyboardReadIndex + 1) % 256;
     SpinLockReleaseIRQRestore(&KeyboardStatusLock, Flags);
 

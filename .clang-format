@@ -16,7 +16,12 @@ BinPackArguments: true
 BreakBeforeBraces: Allman
 SpaceBeforeParens: ControlStatements
 SpaceAfterCStyleCast: true
-AlignConsecutiveAssignments: None
+AlignConsecutiveAssignments:
+    Enabled: true
+    AcrossEmptyLines: false
+    AcrossComments: false
+    AlignCompound: false
+    PadOperators: true
 AlignConsecutiveDeclarations:
     Enabled: true
     AcrossEmptyLines: false

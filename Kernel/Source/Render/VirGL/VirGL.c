@@ -27,9 +27,9 @@ BOOLEAN VirGLGetCapsetInfo(UINT32 Id, VIRGL_CAPSET_INFO *Info)
 
         if (Response.CapsetId == Id && Response.CapsetMaxSize != 0)
         {
-            Info->Id = Response.CapsetId;
+            Info->Id         = Response.CapsetId;
             Info->MaxVersion = Response.CapsetMaxVersion;
-            Info->MaxSize = Response.CapsetMaxSize;
+            Info->MaxSize    = Response.CapsetMaxSize;
 
             return TRUE;
         }
@@ -47,7 +47,7 @@ BOOLEAN VirGLCreateContext(UINT32 Id, CONST CHAR8 *Name)
         return FALSE;
     }
 
-    Request.Header.Type = VIRTIO_GPU_CMD_CTX_CREATE;
+    Request.Header.Type      = VIRTIO_GPU_CMD_CTX_CREATE;
     Request.Header.ContextId = Id;
 
     if (Name != NULL)
@@ -71,7 +71,7 @@ BOOLEAN VirGLDestroyContext(UINT32 Id)
         return FALSE;
     }
 
-    Request.Type = VIRTIO_GPU_CMD_CTX_DESTROY;
+    Request.Type      = VIRTIO_GPU_CMD_CTX_DESTROY;
     Request.ContextId = Id;
 
     return VirtIOGPUSendVirGLCommand(&Request, sizeof(Request), L"virgl context destroy");
@@ -120,9 +120,9 @@ STATIC BOOLEAN VirGLResourceCommand(UINT32 Command, UINT32 ContextId, UINT32 Res
         return FALSE;
     }
 
-    Request.Header.Type = Command;
+    Request.Header.Type      = Command;
     Request.Header.ContextId = ContextId;
-    Request.ResourceId = ResourceId;
+    Request.ResourceId       = ResourceId;
 
     return VirtIOGPUSendVirGLCommand(&Request, sizeof(Request), L"virgl resource");
 }
@@ -137,16 +137,16 @@ STATIC BOOLEAN VirGLCreateTarget(UINT32 ResourceId, UINT32 Width, UINT32 Height,
     }
 
     Request.Header.Type = VIRTIO_GPU_CMD_RESOURCE_CREATE_3D;
-    Request.ResourceId = ResourceId;
-    Request.Target = VIRGL_TEXTURE_2D;
-    Request.Format = Format;
-    Request.Bind = Bind;
-    Request.Width = Width;
-    Request.Height = Height;
-    Request.Depth = 1;
-    Request.ArraySize = 1;
-    Request.Flags = 1;
-    Request.Samples = Samples;
+    Request.ResourceId  = ResourceId;
+    Request.Target      = VIRGL_TEXTURE_2D;
+    Request.Format      = Format;
+    Request.Bind        = Bind;
+    Request.Width       = Width;
+    Request.Height      = Height;
+    Request.Depth       = 1;
+    Request.ArraySize   = 1;
+    Request.Flags       = 1;
+    Request.Samples     = Samples;
 
     return VirtIOGPUSendVirGLCommand(&Request, sizeof(Request), L"virgl render target");
 }
@@ -169,7 +169,7 @@ BOOLEAN VirGLCreateMultisampleTarget(UINT32 ResourceId, UINT32 Width, UINT32 Hei
     }
 
     UINT32 Format = Depth ? VIRGL_FORMAT_Z32_FLOAT : VIRTIO_GPU_FORMAT_B8G8R8X8_UNORM;
-    UINT32 Bind = Depth ? VIRGL_BIND_DEPTH_STENCIL : VIRGL_BIND_RENDER_TARGET;
+    UINT32 Bind   = Depth ? VIRGL_BIND_DEPTH_STENCIL : VIRGL_BIND_RENDER_TARGET;
 
     return VirGLCreateTarget(ResourceId, Width, Height, Format, Bind, Samples);
 }
@@ -207,11 +207,11 @@ BOOLEAN VirGLSubmit(UINT32 ContextId, CONST UINT32 *Commands, UINT32 Size)
     }
 
     KMemSet(Request, 0, sizeof(*Request));
-    Request->Header.Type = VIRTIO_GPU_CMD_SUBMIT_3D;
-    Request->Header.Flags = VIRTIO_GPU_FLAG_FENCE;
-    Request->Header.FenceId = __atomic_add_fetch(&NextFenceId, 1, __ATOMIC_RELAXED);
+    Request->Header.Type      = VIRTIO_GPU_CMD_SUBMIT_3D;
+    Request->Header.Flags     = VIRTIO_GPU_FLAG_FENCE;
+    Request->Header.FenceId   = __atomic_add_fetch(&NextFenceId, 1, __ATOMIC_RELAXED);
     Request->Header.ContextId = ContextId;
-    Request->Size = Size;
+    Request->Size             = Size;
     KMemCpy(Request + 1, Commands, Size);
     Success = VirtIOGPUSubmitVirGL(Request, sizeof(*Request) + Size);
     KFree(Request);
@@ -233,7 +233,7 @@ BOOLEAN VirGLClearRenderTarget(UINT32 ContextId, UINT32 ResourceId, UINT32 Surfa
 BOOLEAN VirGLPresentRenderTarget(UINT32 ResourceId, UINT32 Width, UINT32 Height)
 {
     VIRTIO_GPU_SET_SCANOUT_REQUEST    Scanout = {0};
-    VIRTIO_GPU_RESOURCE_FLUSH_REQUEST Flush = {0};
+    VIRTIO_GPU_RESOURCE_FLUSH_REQUEST Flush   = {0};
     BOOLEAN                           Success;
     UINT64                            Flags;
 
@@ -243,20 +243,20 @@ BOOLEAN VirGLPresentRenderTarget(UINT32 ResourceId, UINT32 Width, UINT32 Height)
     }
 
     Scanout.Header.Type = VIRTIO_GPU_CMD_SET_SCANOUT;
-    Scanout.ResourceId = ResourceId;
-    Scanout.Rect.Width = Width;
+    Scanout.ResourceId  = ResourceId;
+    Scanout.Rect.Width  = Width;
     Scanout.Rect.Height = Height;
-    Flush.Header.Type = VIRTIO_GPU_CMD_RESOURCE_FLUSH;
-    Flush.ResourceId = ResourceId;
-    Flush.Rect = Scanout.Rect;
+    Flush.Header.Type   = VIRTIO_GPU_CMD_RESOURCE_FLUSH;
+    Flush.ResourceId    = ResourceId;
+    Flush.Rect          = Scanout.Rect;
 
-    Flags = VirtIOGPUAcquireRenderLock();
+    Flags   = VirtIOGPUAcquireRenderLock();
     Success = VirtIOGPUSendVirGLCommand(&Scanout, sizeof(Scanout), L"virgl scanout");
 
     if (Success)
     {
         VirtIOGPUGetInfo()->ScanoutSet = FALSE;
-        Success = VirtIOGPUSendVirGLCommand(&Flush, sizeof(Flush), L"virgl flush");
+        Success                        = VirtIOGPUSendVirGLCommand(&Flush, sizeof(Flush), L"virgl flush");
     }
 
     VirtIOGPUReleaseRenderLock(Flags);
@@ -358,7 +358,7 @@ STATIC BOOLEAN VirGLBlitColor(UINT32 ContextId, UINT32 SourceId, UINT32 TargetId
         return FALSE;
     }
 
-    CONST UINT32 Format = VIRTIO_GPU_FORMAT_B8G8R8X8_UNORM;
+    CONST UINT32 Format     = VIRTIO_GPU_FORMAT_B8G8R8X8_UNORM;
     CONST UINT32 Commands[] = {VIRGL_COMMAND(VIRGL_COMMAND_BLIT, 0, 21), VIRGL_BLIT_RGBA | (Filter << 8), 0, 0, TargetId, 0, Format, 0, 0, 0, Width, Height, 1, SourceId, 0, Format, 0, 0, 0, SourceWidth, SourceHeight, 1};
 
     return VirGLSubmit(ContextId, Commands, sizeof(Commands));
@@ -397,8 +397,8 @@ BOOLEAN VirGLGetAATarget(VIRGL_AA_MODE Mode, UINT32 Width, UINT32 Height, VIRGL_
         return FALSE;
     }
 
-    Target->Width = Width * Scale;
-    Target->Height = Height * Scale;
+    Target->Width   = Width * Scale;
+    Target->Height  = Height * Scale;
     Target->Samples = Mode == VirGLAAMsaa ? VirGLSelectSamples(VIRGL_DEFAULT_MSAA_SAMPLES) : 1;
 
     return TRUE;
@@ -438,7 +438,7 @@ BOOLEAN VirGLUploadTexture(UINT32 ContextId, UINT32 ResourceId, UINT32 Width, UI
     }
 
     TileWidth = Width < VIRGL_UPLOAD_MAX_PIXELS ? Width : VIRGL_UPLOAD_MAX_PIXELS;
-    Commands = KAlloc((VIRGL_UPLOAD_HEADER_WORDS + TileWidth) * sizeof(*Commands));
+    Commands  = KAlloc((VIRGL_UPLOAD_HEADER_WORDS + TileWidth) * sizeof(*Commands));
 
     if (Commands == NULL)
     {
@@ -483,14 +483,14 @@ BOOLEAN VirGLUploadTexture(UINT32 ContextId, UINT32 ResourceId, UINT32 Width, UI
 
 BOOLEAN VirGLInitTexturedRects(UINT32 ContextId, UINT32 TargetId, UINT32 VerticesId, UINT32 Width, UINT32 Height)
 {
-    STATIC CONST CHAR8 VertexShader[] = "VERT\nDCL IN[0]\nDCL IN[1]\nDCL OUT[0], POSITION\nDCL OUT[1], GENERIC[0]\nMOV OUT[0], IN[0]\nMOV OUT[1], IN[1]\nEND\n";
+    STATIC CONST CHAR8 VertexShader[]   = "VERT\nDCL IN[0]\nDCL IN[1]\nDCL OUT[0], POSITION\nDCL OUT[1], GENERIC[0]\nMOV OUT[0], IN[0]\nMOV OUT[1], IN[1]\nEND\n";
     STATIC CONST CHAR8 FragmentShader[] = "FRAG\nDCL IN[0], GENERIC[0], LINEAR\nDCL OUT[0], COLOR\nDCL SAMP[0]\nDCL TEMP[0]\nTEX TEMP[0], IN[0], SAMP[0], 2D\nMOV OUT[0].xyz, TEMP[0]\nMUL OUT[0].w, TEMP[0].wwww, IN[0].zzzz\nEND\n";
     if (ContextId == 0 || TargetId <= 2 || VerticesId <= 2 || TargetId == VerticesId || Width == 0 || Height == 0)
     {
         return FALSE;
     }
 
-    UINT32 HalfWidth = VirGLViewportHalf(Width);
+    UINT32 HalfWidth  = VirGLViewportHalf(Width);
     UINT32 HalfHeight = VirGLViewportHalf(Height);
     UINT32 Commands[] = {VIRGL_COMMAND(VIRGL_COMMAND_CREATE_OBJECT, VIRGL_OBJECT_SURFACE, 5), 1, TargetId, VIRTIO_GPU_FORMAT_B8G8R8X8_UNORM, 0, 0, VIRGL_COMMAND(VIRGL_COMMAND_SET_FRAMEBUFFER, 0, 3), 1, 0, 1, VIRGL_COMMAND(VIRGL_COMMAND_SET_VIEWPORT, 0, 7), 0, HalfWidth, HalfHeight, VIRGL_FLOAT_HALF, HalfWidth, HalfHeight, VIRGL_FLOAT_HALF, VIRGL_COMMAND(VIRGL_COMMAND_CREATE_OBJECT, VIRGL_OBJECT_BLEND, 11), 2, 0, 0, VIRGL_BLEND_SOURCE_OVER, 0, 0, 0, 0, 0, 0, 0, VIRGL_COMMAND(VIRGL_COMMAND_BIND_OBJECT, VIRGL_OBJECT_BLEND, 1), 2, VIRGL_COMMAND(VIRGL_COMMAND_CREATE_OBJECT, VIRGL_OBJECT_RASTERIZER, 9), 3, 0, VIRGL_FLOAT_ONE, 0, 0, 0, 0, 0, 0, VIRGL_COMMAND(VIRGL_COMMAND_BIND_OBJECT, VIRGL_OBJECT_RASTERIZER, 1), 3, VIRGL_COMMAND(VIRGL_COMMAND_CREATE_OBJECT, VIRGL_OBJECT_DSA, 5), 4, 0, 0, 0, 0, VIRGL_COMMAND(VIRGL_COMMAND_BIND_OBJECT, VIRGL_OBJECT_DSA, 1), 4, VIRGL_COMMAND(VIRGL_COMMAND_CREATE_OBJECT, VIRGL_OBJECT_VERTEX_ELEMENTS, 9), 5, 0, 0, 0, VIRGL_FORMAT_RGBA32_FLOAT, 16, 0, 0, VIRGL_FORMAT_RGBA32_FLOAT, VIRGL_COMMAND(VIRGL_COMMAND_BIND_OBJECT, VIRGL_OBJECT_VERTEX_ELEMENTS, 1), 5, VIRGL_COMMAND(VIRGL_COMMAND_SET_VERTICES, 0, 3), 32, 0, VerticesId, VIRGL_COMMAND(VIRGL_COMMAND_BIND_SHADER, 0, 2), 6, 0, VIRGL_COMMAND(VIRGL_COMMAND_BIND_SHADER, 0, 2), 7, 1, VIRGL_COMMAND(VIRGL_COMMAND_CREATE_OBJECT, VIRGL_OBJECT_SAMPLER_STATE, 9), 9, 0, 0, 0, 0, 0, 0, 0, 0, VIRGL_COMMAND(VIRGL_COMMAND_BIND_SAMPLER_STATES, 0, 3), 1, 0, 9};
 
@@ -504,10 +504,10 @@ STATIC UINT32 VirGLFixedFloat(INT64 Value)
         return 0;
     }
 
-    UINT32 Sign = Value < 0 ? 0x80000000U : 0;
+    UINT32 Sign      = Value < 0 ? 0x80000000U : 0;
     UINT64 Magnitude = Value < 0 ? -Value : Value;
-    UINT32 Exponent = 63U - (UINT32) __builtin_clzll(Magnitude);
-    UINT32 Mantissa = (UINT32) ((Magnitude << 23) >> Exponent);
+    UINT32 Exponent  = 63U - (UINT32) __builtin_clzll(Magnitude);
+    UINT32 Mantissa  = (UINT32) ((Magnitude << 23) >> Exponent);
 
     return Sign | ((Exponent + 103U) << 23) | (Mantissa & 0x7FFFFFU);
 }
@@ -519,12 +519,12 @@ BOOLEAN VirGLDrawTexturedRect(UINT32 ContextId, UINT32 VerticesId, UINT32 Textur
         return FALSE;
     }
 
-    CONST INT64 Unit = 1LL << 24;
-    UINT32      Left = VirGLFixedFloat(2 * Unit * X / TargetWidth - Unit);
-    UINT32      Right = VirGLFixedFloat(2 * Unit * (X + Width) / TargetWidth - Unit);
-    UINT32      Top = VirGLFixedFloat(Unit - 2 * Unit * Y / TargetHeight);
-    UINT32      Bottom = VirGLFixedFloat(Unit - 2 * Unit * (Y + Height) / TargetHeight);
-    UINT32      Alpha = VirGLFixedFloat(Unit * Opacity / 255);
+    CONST INT64 Unit       = 1LL << 24;
+    UINT32      Left       = VirGLFixedFloat(2 * Unit * X / TargetWidth - Unit);
+    UINT32      Right      = VirGLFixedFloat(2 * Unit * (X + Width) / TargetWidth - Unit);
+    UINT32      Top        = VirGLFixedFloat(Unit - 2 * Unit * Y / TargetHeight);
+    UINT32      Bottom     = VirGLFixedFloat(Unit - 2 * Unit * (Y + Height) / TargetHeight);
+    UINT32      Alpha      = VirGLFixedFloat(Unit * Opacity / 255);
     UINT32      Commands[] = {VIRGL_COMMAND(VIRGL_COMMAND_INLINE_WRITE, 0, 59), VerticesId, 0, 0, 0, 0, 0, 0, 0, 192, 1, 1, Left, Top, 0, VIRGL_FLOAT_ONE, 0, 0, Alpha, 0, Right, Top, 0, VIRGL_FLOAT_ONE, VIRGL_FLOAT_ONE, 0, Alpha, 0, Right, Bottom, 0, VIRGL_FLOAT_ONE, VIRGL_FLOAT_ONE, VIRGL_FLOAT_ONE, Alpha, 0, Left, Top, 0, VIRGL_FLOAT_ONE, 0, 0, Alpha, 0, Right, Bottom, 0, VIRGL_FLOAT_ONE, VIRGL_FLOAT_ONE, VIRGL_FLOAT_ONE, Alpha, 0, Left, Bottom, 0, VIRGL_FLOAT_ONE, 0, VIRGL_FLOAT_ONE, Alpha, 0, VIRGL_COMMAND(VIRGL_COMMAND_CREATE_OBJECT, VIRGL_OBJECT_SAMPLER_VIEW, 6), 8, TextureId, VIRGL_FORMAT_RGBA8_UNORM, 0, 0, VIRGL_SWIZZLE_RGBA, VIRGL_COMMAND(VIRGL_COMMAND_SET_SAMPLER_VIEWS, 0, 3), 1, 0, 8, VIRGL_COMMAND(VIRGL_COMMAND_DRAW, 0, 12), 0, 6, VIRGL_PRIMITIVE_TRIANGLES, 0, 1, 0, 0, 0, 0, 0, 5, 0, VIRGL_COMMAND(VIRGL_COMMAND_SET_SAMPLER_VIEWS, 0, 3), 1, 0, 0, VIRGL_COMMAND(VIRGL_COMMAND_DESTROY_OBJECT, VIRGL_OBJECT_SAMPLER_VIEW, 1), 8};
 
     return VirGLSubmit(ContextId, Commands, sizeof(Commands));
@@ -540,13 +540,13 @@ BOOLEAN VirGLCreateVertexBuffer(UINT32 ResourceId, UINT32 Size)
     }
 
     Request.Header.Type = VIRTIO_GPU_CMD_RESOURCE_CREATE_3D;
-    Request.ResourceId = ResourceId;
-    Request.Format = VIRGL_FORMAT_R8_UNORM;
-    Request.Bind = VIRGL_BIND_VERTEX_BUFFER;
-    Request.Width = Size;
-    Request.Height = 1;
-    Request.Depth = 1;
-    Request.ArraySize = 1;
+    Request.ResourceId  = ResourceId;
+    Request.Format      = VIRGL_FORMAT_R8_UNORM;
+    Request.Bind        = VIRGL_BIND_VERTEX_BUFFER;
+    Request.Width       = Size;
+    Request.Height      = 1;
+    Request.Depth       = 1;
+    Request.ArraySize   = 1;
 
     return VirtIOGPUSendVirGLCommand(&Request, sizeof(Request), L"virgl vertex buffer");
 }
@@ -558,7 +558,7 @@ BOOLEAN VirGLWriteVertexBuffer(UINT32 ContextId, UINT32 ResourceId, UINT32 Offse
         return FALSE;
     }
 
-    UINT32  Words = (Size + 3) / 4;
+    UINT32  Words    = (Size + 3) / 4;
     UINT32  Header[] = {VIRGL_COMMAND(VIRGL_COMMAND_INLINE_WRITE, 0, VIRGL_UPLOAD_HEADER_WORDS - 1 + Words), ResourceId, 0, 0, 0, 0, Offset, 0, 0, Size, 1, 1};
     UINT32 *Commands = KAlloc(sizeof(Header) + Words * sizeof(UINT32));
 
@@ -579,7 +579,7 @@ BOOLEAN VirGLWriteVertexBuffer(UINT32 ContextId, UINT32 ResourceId, UINT32 Offse
 BOOLEAN VirGLReadColorTarget(UINT32 ContextId, UINT32 ResourceId, UINT32 Width, UINT32 Height, VOID *Pixels, BOOLEAN *CanFree)
 {
     VIRTIO_GPU_RESOURCE_ATTACH_BACKING_REQUEST Backing = {0};
-    VIRTIO_GPU_RESOURCE_REQUEST                Detach = {0};
+    VIRTIO_GPU_RESOURCE_REQUEST                Detach  = {0};
     struct PACKED
     {
         VIRTIO_GPU_CTRL_HEADER Header;
@@ -588,46 +588,46 @@ BOOLEAN VirGLReadColorTarget(UINT32 ContextId, UINT32 ResourceId, UINT32 Width, 
         UINT32                 ResourceId, Level, Stride, LayerStride;
     } Transfer = {0};
 
-    *CanFree = FALSE;
-    Backing.Header.Type = VIRTIO_GPU_CMD_RESOURCE_ATTACH_BACKING;
-    Backing.ResourceId = ResourceId;
-    Backing.EntryCount = 1;
+    *CanFree              = FALSE;
+    Backing.Header.Type   = VIRTIO_GPU_CMD_RESOURCE_ATTACH_BACKING;
+    Backing.ResourceId    = ResourceId;
+    Backing.EntryCount    = 1;
     Backing.Entry.Address = (UINT64) Pixels;
-    Backing.Entry.Length = Width * Height * 4;
+    Backing.Entry.Length  = Width * Height * 4;
 
     if (!VirtIOGPUSendVirGLCommand(&Backing, sizeof(Backing), L"color backing"))
     {
         return FALSE;
     }
 
-    Transfer.Header.Type = 0x0206;
+    Transfer.Header.Type      = 0x0206;
     Transfer.Header.ContextId = ContextId;
-    Transfer.Header.Flags = VIRTIO_GPU_FLAG_FENCE;
-    Transfer.Header.FenceId = __atomic_add_fetch(&NextFenceId, 1, __ATOMIC_RELAXED);
-    Transfer.Width = Width;
-    Transfer.Height = Height;
-    Transfer.Depth = 1;
-    Transfer.ResourceId = ResourceId;
-    Transfer.Stride = Width * 4;
-    Transfer.LayerStride = Backing.Entry.Length;
-    BOOLEAN Success = VirtIOGPUSendVirGLCommand(&Transfer, sizeof(Transfer), L"color readback");
-    Detach.Header.Type = 0x0107;
-    Detach.ResourceId = ResourceId;
-    *CanFree = VirtIOGPUSendVirGLCommand(&Detach, sizeof(Detach), L"color detach backing");
+    Transfer.Header.Flags     = VIRTIO_GPU_FLAG_FENCE;
+    Transfer.Header.FenceId   = __atomic_add_fetch(&NextFenceId, 1, __ATOMIC_RELAXED);
+    Transfer.Width            = Width;
+    Transfer.Height           = Height;
+    Transfer.Depth            = 1;
+    Transfer.ResourceId       = ResourceId;
+    Transfer.Stride           = Width * 4;
+    Transfer.LayerStride      = Backing.Entry.Length;
+    BOOLEAN Success           = VirtIOGPUSendVirGLCommand(&Transfer, sizeof(Transfer), L"color readback");
+    Detach.Header.Type        = 0x0107;
+    Detach.ResourceId         = ResourceId;
+    *CanFree                  = VirtIOGPUSendVirGLCommand(&Detach, sizeof(Detach), L"color detach backing");
 
     return Success && *CanFree;
 }
 
 BOOLEAN VirGLDrawPositionTriangle(UINT32 ContextId, UINT32 TargetId, UINT32 VerticesId, UINT32 Width, UINT32 Height)
 {
-    STATIC CONST CHAR8 VertexShader[] = "VERT\nDCL IN[0]\nDCL OUT[0], POSITION\nMOV OUT[0], IN[0]\nEND\n";
+    STATIC CONST CHAR8 VertexShader[]   = "VERT\nDCL IN[0]\nDCL OUT[0], POSITION\nMOV OUT[0], IN[0]\nEND\n";
     STATIC CONST CHAR8 FragmentShader[] = "FRAG\nDCL OUT[0], COLOR\nIMM[0] FLT32 {1.0, 1.0, 1.0, 1.0}\nMOV OUT[0], IMM[0]\nEND\n";
     if (ContextId == 0 || TargetId <= 2 || VerticesId <= 2 || TargetId == VerticesId || Width == 0 || Height == 0)
     {
         return FALSE;
     }
 
-    UINT32 HalfWidth = VirGLViewportHalf(Width);
+    UINT32 HalfWidth  = VirGLViewportHalf(Width);
     UINT32 HalfHeight = VirGLViewportHalf(Height);
     UINT32 Commands[] = {VIRGL_COMMAND(VIRGL_COMMAND_CREATE_OBJECT, VIRGL_OBJECT_SURFACE, 5), 1, TargetId, VIRTIO_GPU_FORMAT_B8G8R8X8_UNORM, 0, 0, VIRGL_COMMAND(VIRGL_COMMAND_SET_FRAMEBUFFER, 0, 3), 1, 0, 1, VIRGL_COMMAND(VIRGL_COMMAND_SET_VIEWPORT, 0, 7), 0, HalfWidth, HalfHeight, VIRGL_FLOAT_HALF, HalfWidth, HalfHeight, VIRGL_FLOAT_HALF, VIRGL_COMMAND(VIRGL_COMMAND_CREATE_OBJECT, VIRGL_OBJECT_BLEND, 11), 2, 0, 0, VIRGL_BLEND_COLOR_MASK, 0, 0, 0, 0, 0, 0, 0, VIRGL_COMMAND(VIRGL_COMMAND_BIND_OBJECT, VIRGL_OBJECT_BLEND, 1), 2, VIRGL_COMMAND(VIRGL_COMMAND_CREATE_OBJECT, VIRGL_OBJECT_RASTERIZER, 9), 3, 0, VIRGL_FLOAT_ONE, 0, 0, 0, 0, 0, 0, VIRGL_COMMAND(VIRGL_COMMAND_BIND_OBJECT, VIRGL_OBJECT_RASTERIZER, 1), 3, VIRGL_COMMAND(VIRGL_COMMAND_CREATE_OBJECT, VIRGL_OBJECT_DSA, 5), 4, 0, 0, 0, 0, VIRGL_COMMAND(VIRGL_COMMAND_BIND_OBJECT, VIRGL_OBJECT_DSA, 1), 4, VIRGL_COMMAND(VIRGL_COMMAND_CREATE_OBJECT, VIRGL_OBJECT_VERTEX_ELEMENTS, 5), 5, 0, 0, 0, VIRGL_FORMAT_RGBA32_FLOAT, VIRGL_COMMAND(VIRGL_COMMAND_BIND_OBJECT, VIRGL_OBJECT_VERTEX_ELEMENTS, 1), 5, VIRGL_COMMAND(VIRGL_COMMAND_SET_VERTICES, 0, 3), 16, 0, VerticesId, VIRGL_COMMAND(VIRGL_COMMAND_BIND_SHADER, 0, 2), 6, 0, VIRGL_COMMAND(VIRGL_COMMAND_BIND_SHADER, 0, 2), 7, 1, VIRGL_COMMAND(VIRGL_COMMAND_DRAW, 0, 12), 0, 3, VIRGL_PRIMITIVE_TRIANGLES, 0, 1, 0, 0, 0, 0, 0, 2, 0};
 

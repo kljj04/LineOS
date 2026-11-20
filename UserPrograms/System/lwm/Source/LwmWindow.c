@@ -24,21 +24,21 @@ BOOLEAN LwmCreateWindow(LWM *Manager)
 
     LWM_WINDOW Window = {0};
 
-    Window.Stride = Manager->Width;
+    Window.Stride         = Manager->Width;
     Window.CapacityHeight = Manager->Height - LWM_DOCK_HEIGHT;
-    Window.Bytes = (UINT64) Window.Stride * Window.CapacityHeight * sizeof(UINT32);
-    Window.Pixels = mmap(NULL, Window.Bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    Window.Bytes          = (UINT64) Window.Stride * Window.CapacityHeight * sizeof(UINT32);
+    Window.Pixels         = mmap(NULL, Window.Bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
     if (Window.Pixels == MAP_FAILED)
     {
         return FALSE;
     }
 
-    Window.Rect.Width = Window.Stride < 720 ? Window.Stride : 720;
+    Window.Rect.Width  = Window.Stride < 720 ? Window.Stride : 720;
     Window.Rect.Height = Window.CapacityHeight < 400 ? Window.CapacityHeight : 400;
-    Window.Rect.X = (Manager->Width - Window.Rect.Width) / 2;
-    Window.Rect.Y = (Manager->Height - LWM_DOCK_HEIGHT - Window.Rect.Height) / 2;
-    Window.Dirty = TRUE;
+    Window.Rect.X      = (Manager->Width - Window.Rect.Width) / 2;
+    Window.Rect.Y      = (Manager->Height - LWM_DOCK_HEIGHT - Window.Rect.Height) / 2;
+    Window.Dirty       = TRUE;
 
     if (Manager->WindowCount != 0)
     {
@@ -46,14 +46,14 @@ BOOLEAN LwmCreateWindow(LWM *Manager)
     }
 
     Manager->Windows[Manager->WindowCount++] = Window;
-    Manager->Dirty = TRUE;
+    Manager->Dirty                           = TRUE;
 
     return TRUE;
 }
 
 VOID LwmPaintWindow(LWM *Manager, LWM_WINDOW *Window, BOOLEAN Focused)
 {
-    UINT32 Width = Window->Rect.Width;
+    UINT32 Width  = Window->Rect.Width;
     UINT32 Height = Window->Rect.Height;
 
     Manager->Surface = (TRUE_TYPE_SURFACE) {Window->Pixels, Window->Stride, Window->CapacityHeight};
@@ -70,7 +70,7 @@ VOID LwmPaintWindow(LWM *Manager, LWM_WINDOW *Window, BOOLEAN Focused)
     LwmText(Manager, "X", Width - 31, 29, 22, 0x00FFFFFFU, Width - 10);
     if (Window->Endpoint != 0)
     {
-        UINT32 ContentWidth = Width - 2;
+        UINT32 ContentWidth  = Width - 2;
         UINT32 ContentHeight = Height - LWM_TITLE_HEIGHT - 1;
 
         for (UINT32 Row = 0; Row < ContentHeight; Row++)
@@ -85,12 +85,12 @@ VOID LwmPaintWindow(LWM *Manager, LWM_WINDOW *Window, BOOLEAN Focused)
 
             for (UINT32 Column = 0; Column < ContentWidth; Column++)
             {
-                UINT32 SourceX = (UINT64) Column * Window->ClientWidth / ContentWidth;
+                UINT32 SourceX                                                                 = (UINT64) Column * Window->ClientWidth / ContentWidth;
                 Window->Pixels[(UINTN) (Row + LWM_TITLE_HEIGHT) * Window->Stride + Column + 1] = Window->ClientPixels[(UINTN) SourceY * Window->ClientWidth + SourceX];
             }
         }
 
-        Window->Dirty = FALSE;
+        Window->Dirty    = FALSE;
         Manager->Surface = (TRUE_TYPE_SURFACE) {Manager->Frame, Manager->Width, Manager->Height};
 
         return;
@@ -126,7 +126,7 @@ VOID LwmPaintWindow(LWM *Manager, LWM_WINDOW *Window, BOOLEAN Focused)
     LwmText(Manager, Digits, 196, Height - 42, 23, 0x0068CB61U, Width - 20);
     LwmFill(Manager, (LWM_RECT) {(INT32) Width - 14, (INT32) Height - 14, 12, 12}, 0x0050E3C2U);
 
-    Window->Dirty = FALSE;
+    Window->Dirty    = FALSE;
     Manager->Surface = (TRUE_TYPE_SURFACE) {Manager->Frame, Manager->Width, Manager->Height};
 }
 
@@ -154,17 +154,17 @@ VOID LwmPointer(LWM *Manager, CONST POINTER_INFO *Pointer)
 
     if (Manager->Grab >= 0 && Pressed)
     {
-        LWM_WINDOW *Window = &Manager->Windows[Manager->Grab];
+        LWM_WINDOW *Window   = &Manager->Windows[Manager->Grab];
         LWM_RECT    Previous = Window->Rect;
 
         if (Manager->Resizing)
         {
-            INT32    DX = (INT32) Pointer->X - Manager->GrabX;
-            INT32    DY = (INT32) Pointer->Y - Manager->GrabY;
-            LWM_RECT Base = Manager->GrabRect;
-            INT32    Left = Base.X;
-            INT32    Top = Base.Y;
-            INT32    Right = Base.X + (INT32) Base.Width;
+            INT32    DX     = (INT32) Pointer->X - Manager->GrabX;
+            INT32    DY     = (INT32) Pointer->Y - Manager->GrabY;
+            LWM_RECT Base   = Manager->GrabRect;
+            INT32    Left   = Base.X;
+            INT32    Top    = Base.Y;
+            INT32    Right  = Base.X + (INT32) Base.Width;
             INT32    Bottom = Base.Y + (INT32) Base.Height;
 
             if ((Manager->ResizeEdges & 1U) != 0)
@@ -187,7 +187,7 @@ VOID LwmPointer(LWM *Manager, CONST POINTER_INFO *Pointer)
                 Bottom = LwmClamp(Base.Y + (INT32) Base.Height + DY, Top + LWM_MIN_HEIGHT, Manager->Height - LWM_DOCK_HEIGHT);
             }
 
-            Window->Rect = (LWM_RECT) {Left, Top, (UINT32) (Right - Left), (UINT32) (Bottom - Top)};
+            Window->Rect  = (LWM_RECT) {Left, Top, (UINT32) (Right - Left), (UINT32) (Bottom - Top)};
             Window->Dirty = Window->Dirty || memcmp(&Window->Rect, &Previous, sizeof(Previous)) != 0;
         }
         else if (!Window->Maximized)
@@ -209,9 +209,9 @@ VOID LwmPointer(LWM *Manager, CONST POINTER_INFO *Pointer)
 
         if (!Window->Minimized && LwmContains(Window->Rect, Pointer))
         {
-            UINT32  X = Pointer->X - Window->Rect.X;
-            UINT32  Y = Pointer->Y - Window->Rect.Y;
-            UINT32  Inset = LwmRoundInset(Y, Window->Rect.Height, Window->Maximized ? 0 : 12);
+            UINT32  X      = Pointer->X - Window->Rect.X;
+            UINT32  Y      = Pointer->Y - Window->Rect.Y;
+            UINT32  Inset  = LwmRoundInset(Y, Window->Rect.Height, Window->Maximized ? 0 : 12);
             BOOLEAN Resize = Clicked && !Window->Maximized && (X < 6 || X >= Window->Rect.Width - 6 || Y < 6 || Y >= Window->Rect.Height - 6);
 
             if (!Resize && (X < Inset || X >= Window->Rect.Width - Inset))
@@ -227,7 +227,7 @@ VOID LwmPointer(LWM *Manager, CONST POINTER_INFO *Pointer)
     if (Clicked && Hit < 0)
     {
         Manager->ShellFocused = TRUE;
-        Manager->Dirty = TRUE;
+        Manager->Dirty        = TRUE;
 
         for (UINT32 Index = 0; Index < Manager->WindowCount; Index++)
         {
@@ -238,11 +238,11 @@ VOID LwmPointer(LWM *Manager, CONST POINTER_INFO *Pointer)
     if (Clicked && Hit >= 0)
     {
         Manager->ShellFocused = FALSE;
-        LWM_WINDOW Focused = Manager->Windows[Hit];
+        LWM_WINDOW Focused    = Manager->Windows[Hit];
 
         memmove(Manager->Windows + Hit, Manager->Windows + Hit + 1, (Manager->WindowCount - (UINT32) Hit - 1) * sizeof(Focused));
         Manager->Windows[Manager->WindowCount - 1] = Focused;
-        Hit = (INT32) Manager->WindowCount - 1;
+        Hit                                        = (INT32) Manager->WindowCount - 1;
 
         for (UINT32 Index = 0; Index < Manager->WindowCount; Index++)
         {
@@ -252,8 +252,8 @@ VOID LwmPointer(LWM *Manager, CONST POINTER_INFO *Pointer)
         Manager->Dirty = TRUE;
 
         LWM_WINDOW *Window = &Manager->Windows[Hit];
-        INT32       X = (INT32) Pointer->X - Window->Rect.X;
-        INT32       Y = (INT32) Pointer->Y - Window->Rect.Y;
+        INT32       X      = (INT32) Pointer->X - Window->Rect.X;
+        INT32       Y      = (INT32) Pointer->Y - Window->Rect.Y;
 
         if (LwmContains((LWM_RECT) {Window->Rect.X + (INT32) Window->Rect.Width - 38, Window->Rect.Y + 8, 28, 28}, Pointer))
         {
@@ -277,7 +277,7 @@ VOID LwmPointer(LWM *Manager, CONST POINTER_INFO *Pointer)
         if (Y >= 8 && Y < 36 && X >= (INT32) Window->Rect.Width - 110 && X < (INT32) Window->Rect.Width - 82)
         {
             Window->Minimized = TRUE;
-            Manager->Dirty = TRUE;
+            Manager->Dirty    = TRUE;
             return;
         }
 
@@ -311,18 +311,18 @@ VOID LwmPointer(LWM *Manager, CONST POINTER_INFO *Pointer)
 
         if (Edges != 0 && !Window->Maximized)
         {
-            Manager->Grab = Hit;
-            Manager->GrabX = (INT32) Pointer->X;
-            Manager->GrabY = (INT32) Pointer->Y;
-            Manager->GrabRect = Window->Rect;
+            Manager->Grab        = Hit;
+            Manager->GrabX       = (INT32) Pointer->X;
+            Manager->GrabY       = (INT32) Pointer->Y;
+            Manager->GrabRect    = Window->Rect;
             Manager->ResizeEdges = Edges;
-            Manager->Resizing = TRUE;
+            Manager->Resizing    = TRUE;
         }
         else if ((UINT32) Y < LWM_TITLE_HEIGHT)
         {
-            Manager->Grab = Hit;
-            Manager->GrabX = X;
-            Manager->GrabY = Y;
+            Manager->Grab     = Hit;
+            Manager->GrabX    = X;
+            Manager->GrabY    = Y;
             Manager->Resizing = FALSE;
         }
 
@@ -346,12 +346,12 @@ VOID LwmPointer(LWM *Manager, CONST POINTER_INFO *Pointer)
         }
 
         LWM_RECT Button = {Window->Rect.X + 24, Window->Rect.Y + (INT32) Window->Rect.Height - 72, 152, 44};
-        BOOLEAN  Hover = (INT32) Index == Hit && LwmContains(Button, Pointer);
+        BOOLEAN  Hover  = (INT32) Index == Hit && LwmContains(Button, Pointer);
 
         if (Window->Hover != Hover)
         {
-            Window->Hover = Hover;
-            Window->Dirty = TRUE;
+            Window->Hover  = Hover;
+            Window->Dirty  = TRUE;
             Manager->Dirty = TRUE;
         }
     }
@@ -408,10 +408,10 @@ VOID LwmMaximize(LWM *Manager, LWM_WINDOW *Window)
     else
     {
         Window->Restore = Window->Rect;
-        Window->Rect = (LWM_RECT) {0, 0, Manager->Width, Manager->Height - LWM_DOCK_HEIGHT};
+        Window->Rect    = (LWM_RECT) {0, 0, Manager->Width, Manager->Height - LWM_DOCK_HEIGHT};
     }
 
     Window->Maximized = !Window->Maximized;
-    Window->Dirty = TRUE;
-    Manager->Dirty = TRUE;
+    Window->Dirty     = TRUE;
+    Manager->Dirty    = TRUE;
 }

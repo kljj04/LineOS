@@ -80,7 +80,8 @@ KERN_FLOAT_CFLAGS = $(filter-out -mgeneral-regs-only,$(KERN_CFLAGS)) -msse2 -mfp
 KERN_OBJ_CFLAGS = $(KERN_CFLAGS)
 LOSLIBC_CFLAGS = $(USER_PROGRAM_CFLAGS)
 
-FORMAT_EXCLUDE_SRCS := BootLoader/EDK2/%
+FORMAT_EXCLUDE_SRCS := BootLoader/EDK2/% \
+					   Libraries/musl/%
 
 FORMAT_ALL_SRCS = $(call RWildcard,Libraries,*.c) $(call RWildcard,Libraries,*.h) \
                   $(call RWildcard,BootLoader,*.c) $(call RWildcard,BootLoader,*.h) \

@@ -33,10 +33,10 @@ INT32 main(VOID)
     FB_VAR_SCREENINFO Variable;
     FB_FIX_SCREENINFO Fixed;
     LOS_ASSET         FontAsset = {0};
-    INT32             Result = 1;
-    BOOLEAN           Graphics = FALSE;
-    INT32             TTY = open("/dev/lsh1", O_RDWR);
-    INT32             FB = open("/dev/fb0", O_RDWR);
+    INT32             Result    = 1;
+    BOOLEAN           Graphics  = FALSE;
+    INT32             TTY       = open("/dev/lsh1", O_RDWR);
+    INT32             FB        = open("/dev/fb0", O_RDWR);
 
     if (TTY < 0 || FB < 0)
     {
@@ -59,7 +59,7 @@ INT32 main(VOID)
         goto Cleanup;
     }
 
-    GUI.Width = Variable.XRes;
+    GUI.Width  = Variable.XRes;
     GUI.Height = Variable.YRes;
     GUI.Pixels = mmap(NULL, Fixed.SmemLen, PROT_READ | PROT_WRITE, MAP_SHARED, FB, 0);
 
@@ -86,7 +86,7 @@ INT32 main(VOID)
         goto Cleanup;
     }
 
-    TRUE_TYPE_SURFACE Surface = {GUI.Pixels, GUI.Width, GUI.Height};
+    TRUE_TYPE_SURFACE Surface   = {GUI.Pixels, GUI.Width, GUI.Height};
     TTF_ALLOCATOR     Allocator = {TestGUIAllocate, TestGUIFree, &GUI};
 
     if (!TrueTypeInit(&Allocator, &Surface) || !TrueTypeRegisterFont(&GUI.Font, FontAsset.Data))
@@ -96,12 +96,12 @@ INT32 main(VOID)
         goto Cleanup;
     }
 
-    GUI.Window.Width = GUI.Width < 800 ? GUI.Width - 64 : 736;
+    GUI.Window.Width  = GUI.Width < 800 ? GUI.Width - 64 : 736;
     GUI.Window.Height = 400;
-    GUI.Window.X = (GUI.Width - GUI.Window.Width) / 2;
-    GUI.Window.Y = (GUI.Height - GUI.Window.Height) / 2;
-    GUI.Close = (TEST_GUI_RECT) {GUI.Window.X + GUI.Window.Width - 56, GUI.Window.Y + 8, 44, 40};
-    GUI.Button = (TEST_GUI_RECT) {GUI.Window.X + 32, GUI.Window.Y + 265, 176, 58};
+    GUI.Window.X      = (GUI.Width - GUI.Window.Width) / 2;
+    GUI.Window.Y      = (GUI.Height - GUI.Window.Height) / 2;
+    GUI.Close         = (TEST_GUI_RECT) {GUI.Window.X + GUI.Window.Width - 56, GUI.Window.Y + 8, 44, 40};
+    GUI.Button        = (TEST_GUI_RECT) {GUI.Window.X + 32, GUI.Window.Y + 265, 176, 58};
 
     if (ioctl(TTY, LOS_TIO_GRAPHICS_BEGIN) < 0)
     {
@@ -144,7 +144,7 @@ INT32 main(VOID)
             break;
         }
 
-        BOOLEAN Hover = TestGUIContains(&GUI.Button, &Pointer);
+        BOOLEAN Hover  = TestGUIContains(&GUI.Button, &Pointer);
         BOOLEAN Redraw = Hover != GUI.Hover;
 
         GUI.Hover = Hover;

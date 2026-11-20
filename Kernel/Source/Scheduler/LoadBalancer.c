@@ -9,7 +9,7 @@
 
 VOID LoadBalancerBalance(VOID)
 {
-    UINT32 CPUCount = LBPWRRGetActiveCPUCount();
+    UINT32 CPUCount    = LBPWRRGetActiveCPUCount();
     UINT32 TargetCPUID = 0;
     UINTN  TargetUsage = 100;
 

@@ -32,18 +32,18 @@ BOOLEAN TSCCalibrate(VOID)
     }
 
     HPETStart = HPETReadCounter();
-    TSCStart = RDTSC();
+    TSCStart  = RDTSC();
 
     while ((HPETReadCounter() - HPETStart) < TSC_CALIBRATION_HPET_TICKS)
     {
         PAUSE();
     }
 
-    TSCEnd = RDTSC();
+    TSCEnd  = RDTSC();
     HPETEnd = HPETReadCounter();
 
     HPETDelta = HPETEnd - HPETStart;
-    TSCDelta = TSCEnd - TSCStart;
+    TSCDelta  = TSCEnd - TSCStart;
 
     if (HPETDelta == 0)
     {
@@ -113,7 +113,7 @@ STATIC VOID TSCSleepTicks(UINT128 Ticks)
 
     while (Ticks != 0)
     {
-        Chunk = Ticks > INT64_MAX ? INT64_MAX : (UINT64) Ticks;
+        Chunk    = Ticks > INT64_MAX ? INT64_MAX : (UINT64) Ticks;
         Deadline = RDTSC() + Chunk;
 
         if (Deadline == 0)

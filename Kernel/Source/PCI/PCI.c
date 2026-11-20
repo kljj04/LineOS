@@ -39,10 +39,10 @@ typedef struct PACKED
 } ACPI_MCFG_ALLOCATION;
 
 STATIC PCI_DEVICE       Devices[PCI_MAX_DEVICES];
-STATIC UINT32           DeviceCount = 0;
-STATIC ACPI_SDT_HEADER *MCFG = NULL;
+STATIC UINT32           DeviceCount    = 0;
+STATIC ACPI_SDT_HEADER *MCFG           = NULL;
 STATIC CONST CHAR16    *ScanMethodName = L"none";
-STATIC CONST CHAR16    *LastError = L"not initialized";
+STATIC CONST CHAR16    *LastError      = L"not initialized";
 STATIC SPIN_LOCK        ConfigIOLock;
 
 typedef struct
@@ -58,7 +58,7 @@ STATIC CONST PCI_VENDOR_NAME VendorNames[] = {
 STATIC BOOLEAN ChecksumValid(CONST VOID *Data, UINT32 Length)
 {
     CONST UINT8 *Bytes = (CONST UINT8 *) Data;
-    UINT8        Sum = 0;
+    UINT8        Sum   = 0;
 
     for (UINT32 Index = 0; Index < Length; Index++)
     {
@@ -99,7 +99,7 @@ STATIC ACPI_SDT_HEADER *FindTableInXSDT(ACPI_SDT_HEADER *XSDT, UINT32 Signature)
     }
 
     EntryCount = (XSDT->Length - sizeof(ACPI_SDT_HEADER)) / sizeof(UINT64);
-    Entries = (UINT64 *) ((UINT8 *) XSDT + sizeof(ACPI_SDT_HEADER));
+    Entries    = (UINT64 *) ((UINT8 *) XSDT + sizeof(ACPI_SDT_HEADER));
 
     for (UINT32 Index = 0; Index < EntryCount; Index++)
     {
@@ -125,7 +125,7 @@ STATIC ACPI_SDT_HEADER *FindTableInRSDT(ACPI_SDT_HEADER *RSDT, UINT32 Signature)
     }
 
     EntryCount = (RSDT->Length - sizeof(ACPI_SDT_HEADER)) / sizeof(UINT32);
-    Entries = (UINT32 *) ((UINT8 *) RSDT + sizeof(ACPI_SDT_HEADER));
+    Entries    = (UINT32 *) ((UINT8 *) RSDT + sizeof(ACPI_SDT_HEADER));
 
     for (UINT32 Index = 0; Index < EntryCount; Index++)
     {
@@ -199,15 +199,15 @@ STATIC VOID PCIAddDevice(UINT16 Segment, UINT8 Bus, UINT8 Device, UINT8 Function
         return;
     }
 
-    PCI = &Devices[DeviceCount++];
-    PCI->Segment = Segment;
-    PCI->Bus = Bus;
-    PCI->Device = Device;
-    PCI->Function = Function;
-    PCI->VendorId = VendorId;
-    PCI->DeviceId = DeviceId;
-    PCI->ProgIf = ProgIf;
-    PCI->SubClass = SubClass;
+    PCI            = &Devices[DeviceCount++];
+    PCI->Segment   = Segment;
+    PCI->Bus       = Bus;
+    PCI->Device    = Device;
+    PCI->Function  = Function;
+    PCI->VendorId  = VendorId;
+    PCI->DeviceId  = DeviceId;
+    PCI->ProgIf    = ProgIf;
+    PCI->SubClass  = SubClass;
     PCI->ClassCode = ClassCode;
 }
 
@@ -219,7 +219,7 @@ STATIC VOID PCIAddDeviceFromMCFG(ACPI_MCFG_ALLOCATION *Allocation, UINT8 Bus, UI
 STATIC VOID PCIScanFunctionMCFG(ACPI_MCFG_ALLOCATION *Allocation, UINT8 Bus, UINT8 Device, UINT8 Function)
 {
     UINT64 ConfigAddress = PCIGetConfigAddress(Allocation, Bus, Device, Function);
-    UINT16 VendorId = PCIRead16(ConfigAddress, 0x00);
+    UINT16 VendorId      = PCIRead16(ConfigAddress, 0x00);
 
     if (VendorId == PCI_VENDOR_INVALID)
     {
@@ -232,7 +232,7 @@ STATIC VOID PCIScanFunctionMCFG(ACPI_MCFG_ALLOCATION *Allocation, UINT8 Bus, UIN
 STATIC VOID PCIScanDeviceMCFG(ACPI_MCFG_ALLOCATION *Allocation, UINT8 Bus, UINT8 Device)
 {
     UINT64 ConfigAddress = PCIGetConfigAddress(Allocation, Bus, Device, 0);
-    UINT16 VendorId = PCIRead16(ConfigAddress, 0x00);
+    UINT16 VendorId      = PCIRead16(ConfigAddress, 0x00);
     UINT8  HeaderType;
     UINT8  FunctionCount;
 
@@ -241,7 +241,7 @@ STATIC VOID PCIScanDeviceMCFG(ACPI_MCFG_ALLOCATION *Allocation, UINT8 Bus, UINT8
         return;
     }
 
-    HeaderType = PCIRead8(ConfigAddress, 0x0E);
+    HeaderType    = PCIRead8(ConfigAddress, 0x0E);
     FunctionCount = (HeaderType & PCI_HEADER_TYPE_MULTI_FUNCTION) ? 8 : 1;
 
     for (UINT8 Function = 0; Function < FunctionCount; Function++)
@@ -263,7 +263,7 @@ STATIC VOID PCIScanMCFG(ACPI_SDT_HEADER *MCFGHeader)
     UINT32                EntryCount;
     ACPI_MCFG_ALLOCATION *Allocations;
 
-    EntryCount = (MCFGHeader->Length - sizeof(ACPI_SDT_HEADER) - 8) / sizeof(ACPI_MCFG_ALLOCATION);
+    EntryCount  = (MCFGHeader->Length - sizeof(ACPI_SDT_HEADER) - 8) / sizeof(ACPI_MCFG_ALLOCATION);
     Allocations = (ACPI_MCFG_ALLOCATION *) ((UINT8 *) MCFGHeader + sizeof(ACPI_SDT_HEADER) + 8);
 
     for (UINT32 Index = 0; Index < EntryCount; Index++)
@@ -353,7 +353,7 @@ STATIC VOID PCIScanDeviceIO(UINT8 Bus, UINT8 Device)
         return;
     }
 
-    HeaderType = PCIRead8IO(Bus, Device, 0, 0x0E);
+    HeaderType    = PCIRead8IO(Bus, Device, 0, 0x0E);
     FunctionCount = (HeaderType & PCI_HEADER_TYPE_MULTI_FUNCTION) ? 8 : 1;
 
     for (UINT8 Function = 0; Function < FunctionCount; Function++)
@@ -376,10 +376,10 @@ STATIC VOID PCIScanIO(VOID)
 BOOLEAN PCIInit(LINEOS_BOOT_INFO *BootInfo)
 {
     SpinLockInit(&ConfigIOLock);
-    DeviceCount = 0;
+    DeviceCount    = 0;
     ScanMethodName = L"none";
-    LastError = L"ok";
-    MCFG = FindACPITable(BootInfo, ACPI_MCFG_SIGNATURE);
+    LastError      = L"ok";
+    MCFG           = FindACPITable(BootInfo, ACPI_MCFG_SIGNATURE);
 
     if (MCFG != NULL)
     {
@@ -494,9 +494,9 @@ VOID PCIConfigWrite8(PCI_DEVICE *Device, UINT8 Offset, UINT8 Value)
         return;
     }
 
-    Shift = (Offset & 3) * 8;
-    Mask = 0xFFU << Shift;
-    Flags = SpinLockAcquireIRQSave(&ConfigIOLock);
+    Shift   = (Offset & 3) * 8;
+    Mask    = 0xFFU << Shift;
+    Flags   = SpinLockAcquireIRQSave(&ConfigIOLock);
     Current = PCIRead32IOUnlocked(Device->Bus, Device->Device, Device->Function, Offset);
     PCIWrite32IOUnlocked(Device->Bus, Device->Device, Device->Function, Offset, (Current & ~Mask) | ((UINT32) Value << Shift));
     SpinLockReleaseIRQRestore(&ConfigIOLock, Flags);
@@ -514,9 +514,9 @@ VOID PCIConfigWrite16(PCI_DEVICE *Device, UINT8 Offset, UINT16 Value)
         return;
     }
 
-    Shift = (Offset & 2) * 8;
-    Mask = 0xFFFFU << Shift;
-    Flags = SpinLockAcquireIRQSave(&ConfigIOLock);
+    Shift   = (Offset & 2) * 8;
+    Mask    = 0xFFFFU << Shift;
+    Flags   = SpinLockAcquireIRQSave(&ConfigIOLock);
     Current = PCIRead32IOUnlocked(Device->Bus, Device->Device, Device->Function, Offset);
     PCIWrite32IOUnlocked(Device->Bus, Device->Device, Device->Function, Offset, (Current & ~Mask) | ((UINT32) Value << Shift));
     SpinLockReleaseIRQRestore(&ConfigIOLock, Flags);
@@ -542,10 +542,10 @@ BOOLEAN PCIGetBAR(PCI_DEVICE *Device, UINT8 Index, PCI_BAR *BAR)
         return FALSE;
     }
 
-    Offset = (UINT8) (0x10 + (Index * 4));
-    Low = PCIConfigRead32(Device, Offset);
-    BAR->Type = PCI_BAR_TYPE_NONE;
-    BAR->Address = 0;
+    Offset            = (UINT8) (0x10 + (Index * 4));
+    Low               = PCIConfigRead32(Device, Offset);
+    BAR->Type         = PCI_BAR_TYPE_NONE;
+    BAR->Address      = 0;
     BAR->Prefetchable = FALSE;
 
     if (Low == 0 || Low == 0xFFFFFFFF)
@@ -555,7 +555,7 @@ BOOLEAN PCIGetBAR(PCI_DEVICE *Device, UINT8 Index, PCI_BAR *BAR)
 
     if ((Low & 1) != 0)
     {
-        BAR->Type = PCI_BAR_TYPE_IO;
+        BAR->Type    = PCI_BAR_TYPE_IO;
         BAR->Address = Low & 0xFFFFFFFCULL;
 
         return TRUE;
@@ -567,13 +567,13 @@ BOOLEAN PCIGetBAR(PCI_DEVICE *Device, UINT8 Index, PCI_BAR *BAR)
     {
         UINT32 High = PCIConfigRead32(Device, (UINT8) (Offset + 4));
 
-        BAR->Type = PCI_BAR_TYPE_MEMORY64;
+        BAR->Type    = PCI_BAR_TYPE_MEMORY64;
         BAR->Address = ((UINT64) High << 32) | (Low & 0xFFFFFFF0ULL);
 
         return TRUE;
     }
 
-    BAR->Type = PCI_BAR_TYPE_MEMORY32;
+    BAR->Type    = PCI_BAR_TYPE_MEMORY32;
     BAR->Address = Low & 0xFFFFFFF0ULL;
 
     return TRUE;

@@ -108,9 +108,9 @@ STATIC BOOLEAN IPCAllowed(IPC_ENDPOINT *Source, IPC_ENDPOINT *Target)
 
 BOOLEAN SyscallIPCOwns(TASK *Task, UINT64 ID)
 {
-    UINT64        Flags = SpinLockAcquireIRQSave(&IPCLock);
+    UINT64        Flags    = SpinLockAcquireIRQSave(&IPCLock);
     IPC_ENDPOINT *Endpoint = IPCFind(ID);
-    BOOLEAN       Owned = Endpoint != NULL && Endpoint->Owner == Task && Endpoint->PID == Task->Process->PID;
+    BOOLEAN       Owned    = Endpoint != NULL && Endpoint->Owner == Task && Endpoint->PID == Task->Process->PID;
 
     SpinLockReleaseIRQRestore(&IPCLock, Flags);
 
@@ -184,7 +184,7 @@ INT64 SyscallIPC(UINT64 Operation, UINT64 UserRequest, UINT64 Size)
         Outgoing->Size = Request.Size;
     }
 
-    UINT64 Flags = SpinLockAcquireIRQSave(&IPCLock);
+    UINT64 Flags  = SpinLockAcquireIRQSave(&IPCLock);
     INT64  Result = -EINVAL;
 
     IPCCollect();
@@ -222,9 +222,9 @@ INT64 SyscallIPC(UINT64 Operation, UINT64 UserRequest, UINT64 Size)
             }
 
             Free->Owner = Task;
-            Free->PID = Task->Process->PID;
-            Free->UID = Task->Process->RealUID;
-            Free->ID = NextID++;
+            Free->PID   = Task->Process->PID;
+            Free->UID   = Task->Process->RealUID;
+            Free->ID    = NextID++;
             KMemCpy(Free->Name, Request.Name, sizeof(Free->Name));
             Result = (INT64) Free->ID;
         }
@@ -269,8 +269,8 @@ INT64 SyscallIPC(UINT64 Operation, UINT64 UserRequest, UINT64 Size)
 
         Request.Size = Message->Size;
         Request.Peer = Message->Source;
-        Request.UID = Message->UID;
-        Request.PID = Message->PID;
+        Request.UID  = Message->UID;
+        Request.PID  = Message->PID;
 
         if (!VMMCopyToUser(Task->Process->AddressSpace, Request.Data, Message->Data, Message->Size) || !VMMCopyToUser(Task->Process->AddressSpace, UserRequest, &Request, sizeof(Request)))
         {
@@ -309,7 +309,7 @@ INT64 SyscallIPC(UINT64 Operation, UINT64 UserRequest, UINT64 Size)
             }
 
             Endpoint->Peer = Peer->ID;
-            Result = 0;
+            Result         = 0;
         }
         else if (!IPCAllowed(Endpoint, Peer))
         {
@@ -328,8 +328,8 @@ INT64 SyscallIPC(UINT64 Operation, UINT64 UserRequest, UINT64 Size)
             }
 
             Outgoing->Source = Endpoint->ID;
-            Outgoing->UID = Endpoint->UID;
-            Outgoing->PID = Endpoint->PID;
+            Outgoing->UID    = Endpoint->UID;
+            Outgoing->PID    = Endpoint->PID;
 
             if (Peer->Tail != NULL)
             {
@@ -344,7 +344,7 @@ INT64 SyscallIPC(UINT64 Operation, UINT64 UserRequest, UINT64 Size)
             Peer->Count++;
             QueuedBytes += Request.Size;
             Outgoing = NULL;
-            Result = 0;
+            Result   = 0;
         }
     }
 

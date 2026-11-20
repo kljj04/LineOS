@@ -48,7 +48,7 @@ STATIC UINT32 GetColorRGB(UINT32 Color)
 
 STATIC UINT32 BlendColor(UINT32 Background, UINT32 Color)
 {
-    UINT32 RGB = GetColorRGB(Color);
+    UINT32 RGB   = GetColorRGB(Color);
     UINT32 Alpha = GetColorAlpha(Color);
     UINT32 InverseAlpha;
     UINT32 Red;
@@ -66,9 +66,9 @@ STATIC UINT32 BlendColor(UINT32 Background, UINT32 Color)
     }
 
     InverseAlpha = 255 - Alpha;
-    Red = ((((RGB >> 16) & 0xFF) * Alpha) + (((Background >> 16) & 0xFF) * InverseAlpha)) / 255;
-    Green = ((((RGB >> 8) & 0xFF) * Alpha) + (((Background >> 8) & 0xFF) * InverseAlpha)) / 255;
-    Blue = (((RGB & 0xFF) * Alpha) + ((Background & 0xFF) * InverseAlpha)) / 255;
+    Red          = ((((RGB >> 16) & 0xFF) * Alpha) + (((Background >> 16) & 0xFF) * InverseAlpha)) / 255;
+    Green        = ((((RGB >> 8) & 0xFF) * Alpha) + (((Background >> 8) & 0xFF) * InverseAlpha)) / 255;
+    Blue         = (((RGB & 0xFF) * Alpha) + ((Background & 0xFF) * InverseAlpha)) / 255;
 
     return MakePixel((Red << 16) | (Green << 8) | Blue);
 }
@@ -115,7 +115,7 @@ VOID FillScreen(UINT32 Color)
         return;
     }
 
-    Alpha = GetColorAlpha(Color);
+    Alpha      = GetColorAlpha(Color);
     PixelCount = (UINT64) GPU->FrameBufferWidth * GPU->FrameBufferHeight;
 
     if (Alpha == 255)
@@ -226,9 +226,9 @@ VOID DrawLine(INT32 X1, INT32 Y1, INT32 X2, INT32 Y2, UINT32 Color)
 {
     INT32 DeltaX = Abs(X2 - X1);
     INT32 DeltaY = -Abs(Y2 - Y1);
-    INT32 StepX = X1 < X2 ? 1 : -1;
-    INT32 StepY = Y1 < Y2 ? 1 : -1;
-    INT32 Error = DeltaX + DeltaY;
+    INT32 StepX  = X1 < X2 ? 1 : -1;
+    INT32 StepY  = Y1 < Y2 ? 1 : -1;
+    INT32 Error  = DeltaX + DeltaY;
 
     while (1)
     {
@@ -273,10 +273,10 @@ STATIC VOID DrawPixelWithCoverage(INT32 X, INT32 Y, UINT32 Color, UINT32 Coverag
 
 VOID DrawCircle(INT32 CenterX, INT32 CenterY, UINT32 Radius, UINT32 Color)
 {
-    INT32 RadiusOuter = ((INT32) Radius * 4) + 2;
-    INT32 RadiusInner = ((INT32) Radius * 4) - 2;
-    INT32 OuterSquared = RadiusOuter * RadiusOuter;
-    INT32 InnerSquared = RadiusInner * RadiusInner;
+    INT32 RadiusOuter      = ((INT32) Radius * 4) + 2;
+    INT32 RadiusInner      = ((INT32) Radius * 4) - 2;
+    INT32 OuterSquared     = RadiusOuter * RadiusOuter;
+    INT32 InnerSquared     = RadiusInner * RadiusInner;
     INT32 SampleOffsets[4] = {-2, -1, 1, 2};
 
     if (Radius == 0)
@@ -296,8 +296,8 @@ VOID DrawCircle(INT32 CenterX, INT32 CenterY, UINT32 Radius, UINT32 Color)
             {
                 for (UINT32 SampleX = 0; SampleX < 4; SampleX++)
                 {
-                    INT32 SubX = (X * 4) + SampleOffsets[SampleX];
-                    INT32 SubY = (Y * 4) + SampleOffsets[SampleY];
+                    INT32 SubX     = (X * 4) + SampleOffsets[SampleX];
+                    INT32 SubY     = (Y * 4) + SampleOffsets[SampleY];
                     INT32 Distance = (SubX * SubX) + (SubY * SubY);
 
                     if (Distance <= OuterSquared && Distance >= InnerSquared)
@@ -314,8 +314,8 @@ VOID DrawCircle(INT32 CenterX, INT32 CenterY, UINT32 Radius, UINT32 Color)
 
 VOID FillCircle(INT32 CenterX, INT32 CenterY, UINT32 Radius, UINT32 Color)
 {
-    INT32 RadiusScaled = (INT32) Radius * 4;
-    INT32 RadiusSquared = RadiusScaled * RadiusScaled;
+    INT32 RadiusScaled     = (INT32) Radius * 4;
+    INT32 RadiusSquared    = RadiusScaled * RadiusScaled;
     INT32 SampleOffsets[4] = {-2, -1, 1, 2};
 
     for (INT32 Y = -(INT32) Radius; Y <= (INT32) Radius; Y++)
@@ -403,9 +403,9 @@ VOID CopyRect(UINT32 SourceX, UINT32 SourceY, UINT32 Width, UINT32 Height, UINT3
     {
         for (UINT32 RowIndex = Height; RowIndex > 0; RowIndex--)
         {
-            UINT32  CopyY = RowIndex - 1;
+            UINT32  CopyY       = RowIndex - 1;
             UINT32 *Destination = &GPU->FrameBuffer[FrameBufferOffset(GPU, TargetX, TargetY + CopyY)];
-            UINT32 *Source = &GPU->FrameBuffer[FrameBufferOffset(GPU, SourceX, SourceY + CopyY)];
+            UINT32 *Source      = &GPU->FrameBuffer[FrameBufferOffset(GPU, SourceX, SourceY + CopyY)];
 
             KMemMove(Destination, Source, CopySize);
         }
@@ -419,7 +419,7 @@ VOID CopyRect(UINT32 SourceX, UINT32 SourceY, UINT32 Width, UINT32 Height, UINT3
     for (UINT32 RowIndex = 0; RowIndex < Height; RowIndex++)
     {
         UINT32 *Destination = &GPU->FrameBuffer[FrameBufferOffset(GPU, TargetX, TargetY + RowIndex)];
-        UINT32 *Source = &GPU->FrameBuffer[FrameBufferOffset(GPU, SourceX, SourceY + RowIndex)];
+        UINT32 *Source      = &GPU->FrameBuffer[FrameBufferOffset(GPU, SourceX, SourceY + RowIndex)];
 
         if (Destination == Source)
         {

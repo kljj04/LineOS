@@ -40,7 +40,7 @@ STATIC BOOLEAN InitReadFont(CONST char *Path, UINT8 *Buffer, UINTN Capacity, UIN
         return FALSE;
     }
 
-    Total = 0;
+    Total  = 0;
     Result = FALSE;
 
     while (Total < Capacity)
@@ -96,7 +96,7 @@ STATIC BOOLEAN InitReadFont(CONST char *Path, UINT8 *Buffer, UINTN Capacity, UIN
     }
 
     *FileSize = Total;
-    Result = TRUE;
+    Result    = TRUE;
 
 Cleanup:
     if (close(FD) != 0)
@@ -151,7 +151,7 @@ INT32 main(VOID)
 
     if (Terminal == 0)
     {
-        char *Arguments[] = {"/sbin/Terminal.lix", NULL};
+        char *Arguments[]   = {"/sbin/Terminal.lix", NULL};
         char *Environment[] = {NULL};
 
         execve(Arguments[0], Arguments, Environment);
@@ -173,7 +173,7 @@ INT32 main(VOID)
 
     if (Login == 0)
     {
-        char *Arguments[] = {"/sbin/Login.lix", NULL};
+        char *Arguments[]   = {"/sbin/Login.lix", NULL};
         char *Environment[] = {NULL};
 
         execve(Arguments[0], Arguments, Environment);

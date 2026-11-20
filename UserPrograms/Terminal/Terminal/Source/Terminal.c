@@ -30,13 +30,13 @@ INT32 main(VOID)
     }
 
     DISPLAY_INFO      Info;
-    LOS_ASSET         FontAsset = {0};
+    LOS_ASSET         FontAsset     = {0};
     LOS_ASSET         FallbackAsset = {0};
-    TRUE_TYPE_FONT    Font = {0};
-    TRUE_TYPE_FONT    Fallback = {0};
-    TTF_ALLOCATOR     Allocator = {TerminalAllocate, TerminalFree, NULL};
-    UINT32            X = TERMINAL_MARGIN;
-    UINT32            Baseline = TERMINAL_MARGIN + TERMINAL_FONT_HEIGHT;
+    TRUE_TYPE_FONT    Font          = {0};
+    TRUE_TYPE_FONT    Fallback      = {0};
+    TTF_ALLOCATOR     Allocator     = {TerminalAllocate, TerminalFree, NULL};
+    UINT32            X             = TERMINAL_MARGIN;
+    UINT32            Baseline      = TERMINAL_MARGIN + TERMINAL_FONT_HEIGHT;
     FB_VAR_SCREENINFO Variable;
     FB_FIX_SCREENINFO Fixed;
 
@@ -49,9 +49,9 @@ INT32 main(VOID)
         return 1;
     }
 
-    Info.Width = Variable.XRes;
+    Info.Width  = Variable.XRes;
     Info.Height = Variable.YRes;
-    Info.Pitch = Fixed.LineLength;
+    Info.Pitch  = Fixed.LineLength;
     Info.Format = DISPLAY_FORMAT_BGRA8888;
 
     if (Info.Width < TERMINAL_MARGIN * 2U + TERMINAL_FONT_HEIGHT || Info.Height < TERMINAL_LINE_HEIGHT * 2U || Info.Width > TERMINAL_MAX_WIDTH || Info.Height > TERMINAL_MAX_HEIGHT || Info.Format != DISPLAY_FORMAT_BGRA8888 || LOSAssetAcquire("Fonts/JetBrainsMono", &FontAsset) != 0 || LOSAssetAcquire("Fonts/Pretendard", &FallbackAsset) != 0)
@@ -70,8 +70,8 @@ INT32 main(VOID)
         return 1;
     }
 
-    TerminalSurface.FrameBuffer = FrameBuffer;
-    TerminalSurface.FrameBufferWidth = Info.Width;
+    TerminalSurface.FrameBuffer       = FrameBuffer;
+    TerminalSurface.FrameBufferWidth  = Info.Width;
     TerminalSurface.FrameBufferHeight = Info.Height;
 
     if (!TrueTypeInit(&Allocator, &TerminalSurface) || !TrueTypeRegisterFont(&Font, FontAsset.Data) || !TrueTypeRegisterFont(&Fallback, FallbackAsset.Data))
@@ -111,8 +111,8 @@ INT32 main(VOID)
 
     struct winsize Size;
 
-    Size.ws_row = TerminalScreenRows();
-    Size.ws_col = (Info.Width - TERMINAL_MARGIN * 2U - TERMINAL_SCROLLBAR_WIDTH) / Glyphs[' '].Advance;
+    Size.ws_row    = TerminalScreenRows();
+    Size.ws_col    = (Info.Width - TERMINAL_MARGIN * 2U - TERMINAL_SCROLLBAR_WIDTH) / Glyphs[' '].Advance;
     Size.ws_xpixel = Info.Width;
     Size.ws_ypixel = Info.Height;
 

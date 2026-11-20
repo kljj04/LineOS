@@ -38,8 +38,8 @@ STATIC UINT32 KPrintUnsigned(UINT64 Value, UINT32 Base, BOOLEAN UpperCase, UINT3
     CHAR16             Buffer[32];
     STATIC CONST CHAR8 UpperDigits[] = "0123456789ABCDEF";
     STATIC CONST CHAR8 LowerDigits[] = "0123456789abcdef";
-    CONST CHAR8       *Digits = UpperCase ? UpperDigits : LowerDigits;
-    UINT32             Index = 0;
+    CONST CHAR8       *Digits        = UpperCase ? UpperDigits : LowerDigits;
+    UINT32             Index         = 0;
     UINT32             PaddingCount;
 
     do
@@ -77,7 +77,7 @@ STATIC UINT32 KPrintSigned(INT64 Value, UINT32 Width, CHAR16 Padding, BOOLEAN Le
     UINT32 PaddingCount;
 
     Magnitude = Value < 0 ? (UINT64) (-(Value + 1)) + 1 : (UINT64) Value;
-    Temp = Magnitude;
+    Temp      = Magnitude;
 
     while (Temp >= 10)
     {
@@ -181,22 +181,22 @@ VOID KPrint(CONST CHAR16 *Msg, UINT32 X, UINT32 Baseline, UINT32 Color, UINT32 P
             break;
         }
 
-        BOOLEAN LongValue = FALSE;
+        BOOLEAN LongValue     = FALSE;
         BOOLEAN LongLongValue = FALSE;
-        BOOLEAN LeftAlign = FALSE;
-        CHAR16  Padding = ' ';
-        UINT32  Width = 0;
+        BOOLEAN LeftAlign     = FALSE;
+        CHAR16  Padding       = ' ';
+        UINT32  Width         = 0;
 
         if (Ch == '-')
         {
             LeftAlign = TRUE;
-            Ch = *Msg++;
+            Ch        = *Msg++;
         }
 
         if (Ch == '0')
         {
             Padding = '0';
-            Ch = *Msg++;
+            Ch      = *Msg++;
         }
 
         while (Ch >= '0' && Ch <= '9')
@@ -223,12 +223,12 @@ VOID KPrint(CONST CHAR16 *Msg, UINT32 X, UINT32 Baseline, UINT32 Color, UINT32 P
         if (Ch == 'l')
         {
             LongValue = TRUE;
-            Ch = *Msg++;
+            Ch        = *Msg++;
 
             if (Ch == 'l')
             {
                 LongLongValue = TRUE;
-                Ch = *Msg++;
+                Ch            = *Msg++;
             }
         }
 

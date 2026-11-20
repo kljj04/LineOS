@@ -49,8 +49,8 @@ STATIC BUFFER NewBuf(CONST VOID *P, UINTN Size)
     BUFFER R;
 
     KAssert(Size < 0x40000000);
-    R.Data = (UINT8 *) P;
-    R.Size = (INT32) Size;
+    R.Data   = (UINT8 *) P;
+    R.Size   = (INT32) Size;
     R.Cursor = 0;
 
     return R;
@@ -141,7 +141,7 @@ STATIC BUFFER DictGet(BUFFER *B, INT32 Key)
         while (BufPeek8(B) >= 28)
             CffSkipOperand(B);
         End = B->Cursor;
-        Op = BufGet8(B);
+        Op  = BufGet8(B);
 
         if (Op == 12)
             Op = BufGet8(B) | 0x100;
@@ -171,13 +171,13 @@ STATIC BUFFER CffIndexGet(BUFFER B, INT32 I)
     INT32 Count, Offsize, Start, End;
 
     BufSeek(&B, 0);
-    Count = BUF_GET16(&B);
+    Count   = BUF_GET16(&B);
     Offsize = BufGet8(&B);
     KAssert(I >= 0 && I < Count);
     KAssert(Offsize >= 1 && Offsize <= 4);
     BufSkip(&B, I * Offsize);
     Start = BufGet(&B, Offsize);
-    End = BufGet(&B, Offsize);
+    End   = BufGet(&B, Offsize);
 
     return BufRange(&B, 2 + (Count + 1) * Offsize + Start, End - Start);
 }
@@ -223,9 +223,9 @@ STATIC INT32 Isfont(UINT8 *Font)
 }
 STATIC UINT32 FindTable(UINT8 *Data, UINT32 Fontstart, CONST VOID *TagName)
 {
-    CONST UINT8 *Tag = (CONST UINT8 *) TagName;
+    CONST UINT8 *Tag       = (CONST UINT8 *) TagName;
     INT32        NumTables = TTUSHORT(Data + Fontstart + 4);
-    UINT32       Tabledir = Fontstart + 12;
+    UINT32       Tabledir  = Fontstart + 12;
     INT32        I;
 
     for (I = 0; I < NumTables; ++I)
@@ -318,17 +318,17 @@ STATIC INT32 InitFontInternal(FONT_INFO *Info, UINT8 *Data, INT32 Fontstart)
     UINT32 Cmap, T;
     INT32  I, NumTables;
 
-    Info->Data = Data;
+    Info->Data      = Data;
     Info->FontStart = Fontstart;
-    Info->CFF = NewBuf(NULL, 0);
-    Cmap = FindTable(Data, Fontstart, "cmap");
-    Info->Loca = FindTable(Data, Fontstart, "loca");
-    Info->Head = FindTable(Data, Fontstart, "head");
-    Info->Glyf = FindTable(Data, Fontstart, "glyf");
-    Info->Hhea = FindTable(Data, Fontstart, "hhea");
-    Info->Hmtx = FindTable(Data, Fontstart, "hmtx");
-    Info->Kern = FindTable(Data, Fontstart, "kern");
-    Info->GPOS = FindTable(Data, Fontstart, "GPOS");
+    Info->CFF       = NewBuf(NULL, 0);
+    Cmap            = FindTable(Data, Fontstart, "cmap");
+    Info->Loca      = FindTable(Data, Fontstart, "loca");
+    Info->Head      = FindTable(Data, Fontstart, "head");
+    Info->Glyf      = FindTable(Data, Fontstart, "glyf");
+    Info->Hhea      = FindTable(Data, Fontstart, "hhea");
+    Info->Hmtx      = FindTable(Data, Fontstart, "hmtx");
+    Info->Kern      = FindTable(Data, Fontstart, "kern");
+    Info->GPOS      = FindTable(Data, Fontstart, "GPOS");
 
     if (!Cmap || !Info->Head || !Info->Hhea || !Info->Hmtx)
         return 0;
@@ -349,14 +349,14 @@ STATIC INT32 InitFontInternal(FONT_INFO *Info, UINT8 *Data, INT32 Fontstart)
         if (!Cff)
             return 0;
         Info->FontDicts = NewBuf(NULL, 0);
-        Info->FdSelect = NewBuf(NULL, 0);
-        Info->CFF = NewBuf(Data + Cff, 512 * 1024 * 1024);
-        B = Info->CFF;
+        Info->FdSelect  = NewBuf(NULL, 0);
+        Info->CFF       = NewBuf(Data + Cff, 512 * 1024 * 1024);
+        B               = Info->CFF;
         BufSkip(&B, 2);
         BufSeek(&B, BufGet8(&B));
         CffGetIndex(&B);
         Topdictidx = CffGetIndex(&B);
-        Topdict = CffIndexGet(Topdictidx, 0);
+        Topdict    = CffIndexGet(Topdictidx, 0);
         CffGetIndex(&B);
         Info->GSubrs = CffGetIndex(&B);
         DictGetInts(&Topdict, 17, 1, &Charstrings);
@@ -377,7 +377,7 @@ STATIC INT32 InitFontInternal(FONT_INFO *Info, UINT8 *Data, INT32 Fontstart)
                 return 0;
             BufSeek(&B, Fdarrayoff);
             Info->FontDicts = CffGetIndex(&B);
-            Info->FdSelect = BufRange(&B, Fdselectoff, B.Size - Fdselectoff);
+            Info->FdSelect  = BufRange(&B, Fdselectoff, B.Size - Fdselectoff);
         }
 
         BufSeek(&B, Charstrings);
@@ -390,8 +390,8 @@ STATIC INT32 InitFontInternal(FONT_INFO *Info, UINT8 *Data, INT32 Fontstart)
         Info->NumGlyphs = TTUSHORT(Data + T + 4);
     else
         Info->NumGlyphs = 0xffff;
-    Info->Svg = -1;
-    NumTables = TTUSHORT(Data + Cmap + 2);
+    Info->Svg      = -1;
+    NumTables      = TTUSHORT(Data + Cmap + 2);
     Info->IndexMap = 0;
 
     for (I = 0; I < NumTables; ++I)
@@ -425,9 +425,9 @@ STATIC INT32 InitFontInternal(FONT_INFO *Info, UINT8 *Data, INT32 Fontstart)
 }
 EXTERN INT32 FindGlyphIndex(CONST FONT_INFO *Info, INT32 UnicodeCodepoint)
 {
-    UINT8 *Data = Info->Data;
+    UINT8 *Data     = Info->Data;
     UINT32 IndexMap = Info->IndexMap;
-    UINT16 Format = TTUSHORT(Data + IndexMap + 0);
+    UINT16 Format   = TTUSHORT(Data + IndexMap + 0);
 
     if (Format == 0)
     {
@@ -456,12 +456,12 @@ EXTERN INT32 FindGlyphIndex(CONST FONT_INFO *Info, INT32 UnicodeCodepoint)
     }
     else if (Format == 4)
     {
-        UINT16 Segcount = TTUSHORT(Data + IndexMap + 6) >> 1;
-        UINT16 SearchRange = TTUSHORT(Data + IndexMap + 8) >> 1;
+        UINT16 Segcount      = TTUSHORT(Data + IndexMap + 6) >> 1;
+        UINT16 SearchRange   = TTUSHORT(Data + IndexMap + 8) >> 1;
         UINT16 EntrySelector = TTUSHORT(Data + IndexMap + 10);
-        UINT16 RangeShift = TTUSHORT(Data + IndexMap + 12) >> 1;
-        UINT32 EndCount = IndexMap + 14;
-        UINT32 Search = EndCount;
+        UINT16 RangeShift    = TTUSHORT(Data + IndexMap + 12) >> 1;
+        UINT32 EndCount      = IndexMap + 14;
+        UINT32 Search        = EndCount;
 
         if (UnicodeCodepoint > 0xffff)
             return 0;
@@ -488,7 +488,7 @@ EXTERN INT32 FindGlyphIndex(CONST FONT_INFO *Info, INT32 UnicodeCodepoint)
             UINT16 Item = (UINT16) ((Search - EndCount) >> 1);
 
             Start = TTUSHORT(Data + IndexMap + 14 + Segcount * 2 + 2 + 2 * Item);
-            Last = TTUSHORT(Data + EndCount + 2 * Item);
+            Last  = TTUSHORT(Data + EndCount + 2 * Item);
 
             if (UnicodeCodepoint < Start || UnicodeCodepoint > Last)
                 return 0;
@@ -505,14 +505,14 @@ EXTERN INT32 FindGlyphIndex(CONST FONT_INFO *Info, INT32 UnicodeCodepoint)
         UINT32 Ngroups = TTULONG(Data + IndexMap + 12);
         INT32  Low, High;
 
-        Low = 0;
+        Low  = 0;
         High = (INT32) Ngroups;
 
         while (Low < High)
         {
-            INT32  Mid = Low + ((High - Low) >> 1);
+            INT32  Mid       = Low + ((High - Low) >> 1);
             UINT32 StartChar = TTULONG(Data + IndexMap + 16 + Mid * 12);
-            UINT32 EndChar = TTULONG(Data + IndexMap + 16 + Mid * 12 + 4);
+            UINT32 EndChar   = TTULONG(Data + IndexMap + 16 + Mid * 12 + 4);
 
             if ((UINT32) UnicodeCodepoint < StartChar)
                 High = Mid;
@@ -544,10 +544,10 @@ EXTERN INT32 GetCodepointShape(CONST FONT_INFO *Info, INT32 UnicodeCodepoint, VE
 STATIC VOID Setvertex(VERTEX *V, UINT8 Type, INT32 X, INT32 Y, INT32 Cx, INT32 Cy)
 {
     V->Type = Type;
-    V->X = (INT16) X;
-    V->Y = (INT16) Y;
-    V->Cx = (INT16) Cx;
-    V->Cy = (INT16) Cy;
+    V->X    = (INT16) X;
+    V->Y    = (INT16) Y;
+    V->Cx   = (INT16) Cx;
+    V->Cy   = (INT16) Cy;
 }
 STATIC INT32 GetGlyfOffset(CONST FONT_INFO *Info, INT32 GlyphIndex)
 {
@@ -644,10 +644,10 @@ STATIC INT32 GetGlyphShapeTT(CONST FONT_INFO *Info, INT32 GlyphIndex, VERTEX **P
 {
     INT16   NumberOfContours;
     UINT8  *EndPtsOfContours;
-    UINT8  *Data = Info->Data;
-    VERTEX *Vertices = 0;
+    UINT8  *Data        = Info->Data;
+    VERTEX *Vertices    = 0;
     INT32   NumVertices = 0;
-    INT32   G = GetGlyfOffset(Info, GlyphIndex);
+    INT32   G           = GetGlyfOffset(Info, GlyphIndex);
 
     *Pvertices = NULL;
 
@@ -663,17 +663,17 @@ STATIC INT32 GetGlyphShapeTT(CONST FONT_INFO *Info, INT32 GlyphIndex, VERTEX **P
         UINT8 *Points;
 
         EndPtsOfContours = (Data + G + 10);
-        Ins = TTUSHORT(Data + G + 10 + NumberOfContours * 2);
-        Points = Data + G + 10 + NumberOfContours * 2 + 2 + Ins;
-        N = 1 + TTUSHORT(EndPtsOfContours + NumberOfContours * 2 - 2);
-        M = N + 2 * NumberOfContours;
-        Vertices = (VERTEX *) KTTFAlloc(M * sizeof(Vertices[0]), Info->UserData);
+        Ins              = TTUSHORT(Data + G + 10 + NumberOfContours * 2);
+        Points           = Data + G + 10 + NumberOfContours * 2 + 2 + Ins;
+        N                = 1 + TTUSHORT(EndPtsOfContours + NumberOfContours * 2 - 2);
+        M                = N + 2 * NumberOfContours;
+        Vertices         = (VERTEX *) KTTFAlloc(M * sizeof(Vertices[0]), Info->UserData);
 
         if (Vertices == 0)
             return 0;
-        NextMove = 0;
+        NextMove  = 0;
         Flagcount = 0;
-        Off = M - N;
+        Off       = M - N;
 
         for (I = 0; I < N; ++I)
         {
@@ -743,8 +743,8 @@ STATIC INT32 GetGlyphShapeTT(CONST FONT_INFO *Info, INT32 GlyphIndex, VERTEX **P
         for (I = 0; I < N; ++I)
         {
             Flags = Vertices[Off + I].Type;
-            X = (INT16) Vertices[Off + I].X;
-            Y = (INT16) Vertices[Off + I].Y;
+            X     = (INT16) Vertices[Off + I].X;
+            Y     = (INT16) Vertices[Off + I].Y;
 
             if (NextMove == I)
             {
@@ -776,7 +776,7 @@ STATIC INT32 GetGlyphShapeTT(CONST FONT_INFO *Info, INT32 GlyphIndex, VERTEX **P
                 }
 
                 Setvertex(&Vertices[NumVertices++], LINEOS_VMOVE, Sx, Sy, 0, 0);
-                WasOff = 0;
+                WasOff   = 0;
                 NextMove = 1 + TTUSHORT(EndPtsOfContours + J * 2);
                 ++J;
             }
@@ -786,8 +786,8 @@ STATIC INT32 GetGlyphShapeTT(CONST FONT_INFO *Info, INT32 GlyphIndex, VERTEX **P
                 {
                     if (WasOff)
                         Setvertex(&Vertices[NumVertices++], LINEOS_VCURVE, (Cx + X) >> 1, (Cy + Y) >> 1, Cx, Cy);
-                    Cx = X;
-                    Cy = Y;
+                    Cx     = X;
+                    Cy     = Y;
                     WasOff = 1;
                 }
                 else
@@ -809,7 +809,7 @@ STATIC INT32 GetGlyphShapeTT(CONST FONT_INFO *Info, INT32 GlyphIndex, VERTEX **P
         UINT8 *Comp = Data + G + 10;
 
         NumVertices = 0;
-        Vertices = 0;
+        Vertices    = 0;
 
         while (More)
         {
@@ -856,7 +856,7 @@ STATIC INT32 GetGlyphShapeTT(CONST FONT_INFO *Info, INT32 GlyphIndex, VERTEX **P
                 Mtx[0] = TTSHORT(Comp) / 16384.0f;
                 Comp += 2;
                 Mtx[1] = Mtx[2] = 0;
-                Mtx[3] = TTSHORT(Comp) / 16384.0f;
+                Mtx[3]          = TTSHORT(Comp) / 16384.0f;
                 Comp += 2;
             }
             else if (Flags & (1 << 7))
@@ -871,8 +871,8 @@ STATIC INT32 GetGlyphShapeTT(CONST FONT_INFO *Info, INT32 GlyphIndex, VERTEX **P
                 Comp += 2;
             }
 
-            M = (FLOAT32) KSqrt(Mtx[0] * Mtx[0] + Mtx[1] * Mtx[1]);
-            N = (FLOAT32) KSqrt(Mtx[2] * Mtx[2] + Mtx[3] * Mtx[3]);
+            M            = (FLOAT32) KSqrt(Mtx[0] * Mtx[0] + Mtx[1] * Mtx[1]);
+            N            = (FLOAT32) KSqrt(Mtx[2] * Mtx[2] + Mtx[3] * Mtx[3]);
             CompNumVerts = GetGlyphShape(Info, Gidx, &CompVerts);
 
             if (CompNumVerts > 0)
@@ -882,12 +882,12 @@ STATIC INT32 GetGlyphShapeTT(CONST FONT_INFO *Info, INT32 GlyphIndex, VERTEX **P
                     VERTEX     *V = &CompVerts[I];
                     VERTEX_TYPE X, Y;
 
-                    X = V->X;
-                    Y = V->Y;
-                    V->X = (VERTEX_TYPE) (M * (Mtx[0] * X + Mtx[2] * Y + Mtx[4]));
-                    V->Y = (VERTEX_TYPE) (N * (Mtx[1] * X + Mtx[3] * Y + Mtx[5]));
-                    X = V->Cx;
-                    Y = V->Cy;
+                    X     = V->X;
+                    Y     = V->Y;
+                    V->X  = (VERTEX_TYPE) (M * (Mtx[0] * X + Mtx[2] * Y + Mtx[4]));
+                    V->Y  = (VERTEX_TYPE) (N * (Mtx[1] * X + Mtx[3] * Y + Mtx[5]));
+                    X     = V->Cx;
+                    Y     = V->Cy;
                     V->Cx = (VERTEX_TYPE) (M * (Mtx[0] * X + Mtx[2] * Y + Mtx[4]));
                     V->Cy = (VERTEX_TYPE) (N * (Mtx[1] * X + Mtx[3] * Y + Mtx[5]));
                 }
@@ -1006,7 +1006,7 @@ STATIC VOID CsctxRccurveTo(CS_CONTEXT *Ctx, FLOAT32 Dx1, FLOAT32 Dy1, FLOAT32 Dx
 STATIC BUFFER GetSubr(BUFFER Idx, INT32 N)
 {
     INT32 Count = CffIndexCount(&Idx);
-    INT32 Bias = 107;
+    INT32 Bias  = 107;
 
     if (Count >= 33900)
         Bias = 32768;
@@ -1035,11 +1035,11 @@ STATIC BUFFER CidGetGlyphSubrs(CONST FONT_INFO *Info, INT32 GlyphIndex)
     else if (Fmt == 3)
     {
         Nranges = BUF_GET16(&Fdselect);
-        Start = BUF_GET16(&Fdselect);
+        Start   = BUF_GET16(&Fdselect);
 
         for (I = 0; I < Nranges; I++)
         {
-            V = BufGet8(&Fdselect);
+            V   = BufGet8(&Fdselect);
             End = BUF_GET16(&Fdselect);
 
             if (GlyphIndex >= Start && GlyphIndex < End)
@@ -1070,9 +1070,9 @@ STATIC INT32 RunCharstring(CONST FONT_INFO *Info, INT32 GlyphIndex, CS_CONTEXT *
 
     while (B.Cursor < B.Size)
     {
-        I = 0;
+        I          = 0;
         ClearStack = 1;
-        B0 = BufGet8(&B);
+        B0         = BufGet8(&B);
 
         switch (B0)
         {
@@ -1244,18 +1244,18 @@ STATIC INT32 RunCharstring(CONST FONT_INFO *Info, INT32 GlyphIndex, CS_CONTEXT *
                 if (SubrStackHeight >= 10)
                     return LINEOS_CSERR("recursion limit");
                 SubrStack[SubrStackHeight++] = B;
-                B = GetSubr(B0 == 0x0A ? Subrs : Info->GSubrs, V);
+                B                            = GetSubr(B0 == 0x0A ? Subrs : Info->GSubrs, V);
 
                 if (B.Size == 0)
                     return LINEOS_CSERR("subr not found");
-                B.Cursor = 0;
+                B.Cursor   = 0;
                 ClearStack = 0;
                 break;
 
             case 0x0B:
                 if (SubrStackHeight <= 0)
                     return LINEOS_CSERR("return outside subr");
-                B = SubrStack[--SubrStackHeight];
+                B          = SubrStack[--SubrStackHeight];
                 ClearStack = 0;
                 break;
 
@@ -1335,8 +1335,8 @@ STATIC INT32 RunCharstring(CONST FONT_INFO *Info, INT32 GlyphIndex, CS_CONTEXT *
                         Dx5 = S[8];
                         Dy5 = S[9];
                         Dx6 = Dy6 = S[10];
-                        Dx = Dx1 + Dx2 + Dx3 + Dx4 + Dx5;
-                        Dy = Dy1 + Dy2 + Dy3 + Dy4 + Dy5;
+                        Dx        = Dx1 + Dx2 + Dx3 + Dx4 + Dx5;
+                        Dy        = Dy1 + Dy2 + Dy3 + Dy4 + Dy5;
 
                         if (KFAbs(Dx) > KFAbs(Dy))
                             Dy6 = -Dy;
@@ -1369,7 +1369,7 @@ STATIC INT32 RunCharstring(CONST FONT_INFO *Info, INT32 GlyphIndex, CS_CONTEXT *
 
                 if (Sp >= 48)
                     return LINEOS_CSERR("push stack overflow");
-                S[Sp++] = F;
+                S[Sp++]    = F;
                 ClearStack = 0;
                 break;
         }
@@ -1383,12 +1383,12 @@ STATIC INT32 RunCharstring(CONST FONT_INFO *Info, INT32 GlyphIndex, CS_CONTEXT *
 }
 STATIC INT32 GetGlyphShapeT2(CONST FONT_INFO *Info, INT32 GlyphIndex, VERTEX **Pvertices)
 {
-    CS_CONTEXT CountCtx = LINEOS_CSCTX_INIT(1);
+    CS_CONTEXT CountCtx  = LINEOS_CSCTX_INIT(1);
     CS_CONTEXT OutputCtx = LINEOS_CSCTX_INIT(0);
 
     if (RunCharstring(Info, GlyphIndex, &CountCtx))
     {
-        *Pvertices = (VERTEX *) KTTFAlloc(CountCtx.NumVertices * sizeof(VERTEX), Info->UserData);
+        *Pvertices          = (VERTEX *) KTTFAlloc(CountCtx.NumVertices * sizeof(VERTEX), Info->UserData);
         OutputCtx.pvertices = *Pvertices;
 
         if (RunCharstring(Info, GlyphIndex, &OutputCtx))
@@ -1486,8 +1486,8 @@ EXTERN INT32 GetKerningTable(CONST FONT_INFO *Info, KERNING_ENTRY *Table, INT32 
 
     for (K = 0; K < Length; K++)
     {
-        Table[K].Glyph1 = TTUSHORT(Data + 18 + (K * 6));
-        Table[K].Glyph2 = TTUSHORT(Data + 20 + (K * 6));
+        Table[K].Glyph1  = TTUSHORT(Data + 18 + (K * 6));
+        Table[K].Glyph2  = TTUSHORT(Data + 20 + (K * 6));
         Table[K].Advance = TTSHORT(Data + 22 + (K * 6));
     }
 
@@ -1507,13 +1507,13 @@ STATIC INT32 GetGlyphKernInfoAdvance(CONST FONT_INFO *Info, INT32 Glyph1, INT32 
 
     if (TTUSHORT(Data + 8) != 1)
         return 0;
-    L = 0;
-    R = TTUSHORT(Data + 10) - 1;
+    L      = 0;
+    R      = TTUSHORT(Data + 10) - 1;
     Needle = Glyph1 << 16 | Glyph2;
 
     while (L <= R)
     {
-        M = (L + R) >> 1;
+        M     = (L + R) >> 1;
         Straw = TTULONG(Data + 18 + (M * 6));
 
         if (Needle < Straw)
@@ -1536,7 +1536,7 @@ STATIC INT32 GetCoverageIndex(UINT8 *CoverageTable, INT32 Glyph)
         case 1:
         {
             UINT16 GlyphCount = TTUSHORT(CoverageTable + 2);
-            INT32  L = 0, R = GlyphCount - 1, M;
+            INT32  L = 0, R      = GlyphCount - 1, M;
             INT32  Straw, Needle = Glyph;
 
             while (L <= R)
@@ -1544,9 +1544,9 @@ STATIC INT32 GetCoverageIndex(UINT8 *CoverageTable, INT32 Glyph)
                 UINT8 *GlyphArray = CoverageTable + 4;
                 UINT16 GlyphID;
 
-                M = (L + R) >> 1;
+                M       = (L + R) >> 1;
                 GlyphID = TTUSHORT(GlyphArray + 2 * M);
-                Straw = GlyphID;
+                Straw   = GlyphID;
 
                 if (Needle < Straw)
                     R = M - 1;
@@ -1572,10 +1572,10 @@ STATIC INT32 GetCoverageIndex(UINT8 *CoverageTable, INT32 Glyph)
             {
                 UINT8 *RangeRecord;
 
-                M = (L + R) >> 1;
+                M           = (L + R) >> 1;
                 RangeRecord = RangeArray + 6 * M;
-                StrawStart = TTUSHORT(RangeRecord);
-                StrawEnd = TTUSHORT(RangeRecord + 2);
+                StrawStart  = TTUSHORT(RangeRecord);
+                StrawEnd    = TTUSHORT(RangeRecord + 2);
 
                 if (Needle < StrawStart)
                     R = M - 1;
@@ -1606,8 +1606,8 @@ STATIC INT32 GetGlyphClass(UINT8 *ClassDefTable, INT32 Glyph)
     {
         case 1:
         {
-            UINT16 StartGlyphID = TTUSHORT(ClassDefTable + 2);
-            UINT16 GlyphCount = TTUSHORT(ClassDefTable + 4);
+            UINT16 StartGlyphID        = TTUSHORT(ClassDefTable + 2);
+            UINT16 GlyphCount          = TTUSHORT(ClassDefTable + 4);
             UINT8 *ClassDef1ValueArray = ClassDefTable + 6;
 
             if (Glyph >= StartGlyphID && Glyph < StartGlyphID + GlyphCount)
@@ -1617,7 +1617,7 @@ STATIC INT32 GetGlyphClass(UINT8 *ClassDefTable, INT32 Glyph)
 
         case 2:
         {
-            UINT16 ClassRangeCount = TTUSHORT(ClassDefTable + 2);
+            UINT16 ClassRangeCount   = TTUSHORT(ClassDefTable + 2);
             UINT8 *ClassRangeRecords = ClassDefTable + 4;
             INT32  L = 0, R = ClassRangeCount - 1, M;
             INT32  StrawStart, StrawEnd, Needle = Glyph;
@@ -1626,10 +1626,10 @@ STATIC INT32 GetGlyphClass(UINT8 *ClassDefTable, INT32 Glyph)
             {
                 UINT8 *ClassRangeRecord;
 
-                M = (L + R) >> 1;
+                M                = (L + R) >> 1;
                 ClassRangeRecord = ClassRangeRecords + 6 * M;
-                StrawStart = TTUSHORT(ClassRangeRecord);
-                StrawEnd = TTUSHORT(ClassRangeRecord + 2);
+                StrawStart       = TTUSHORT(ClassRangeRecord);
+                StrawEnd         = TTUSHORT(ClassRangeRecord + 2);
 
                 if (Needle < StrawStart)
                     R = M - 1;
@@ -1668,15 +1668,15 @@ STATIC INT32 GetGlyphGPOSInfoAdvance(CONST FONT_INFO *Info, INT32 Glyph1, INT32 
     if (TTUSHORT(Data + 2) != 0)
         return 0;
     LookupListOffset = TTUSHORT(Data + 8);
-    LookupList = Data + LookupListOffset;
-    LookupCount = TTUSHORT(LookupList);
+    LookupList       = Data + LookupListOffset;
+    LookupCount      = TTUSHORT(LookupList);
 
     for (I = 0; I < LookupCount; ++I)
     {
-        UINT16 LookupOffset = TTUSHORT(LookupList + 2 + 2 * I);
-        UINT8 *LookupTable = LookupList + LookupOffset;
-        UINT16 LookupType = TTUSHORT(LookupTable);
-        UINT16 SubTableCount = TTUSHORT(LookupTable + 4);
+        UINT16 LookupOffset    = TTUSHORT(LookupList + 2 + 2 * I);
+        UINT8 *LookupTable     = LookupList + LookupOffset;
+        UINT16 LookupType      = TTUSHORT(LookupTable);
+        UINT16 SubTableCount   = TTUSHORT(LookupTable + 4);
         UINT8 *SubTableOffsets = LookupTable + 6;
 
         if (LookupType != 2)
@@ -1685,10 +1685,10 @@ STATIC INT32 GetGlyphGPOSInfoAdvance(CONST FONT_INFO *Info, INT32 Glyph1, INT32 
         for (Sti = 0; Sti < SubTableCount; Sti++)
         {
             UINT16 SubtableOffset = TTUSHORT(SubTableOffsets + 2 * Sti);
-            UINT8 *Table = LookupTable + SubtableOffset;
-            UINT16 PosFormat = TTUSHORT(Table);
+            UINT8 *Table          = LookupTable + SubtableOffset;
+            UINT16 PosFormat      = TTUSHORT(Table);
             UINT16 CoverageOffset = TTUSHORT(Table + 2);
-            INT32  CoverageIndex = GetCoverageIndex(Table + CoverageOffset, Glyph1);
+            INT32  CoverageIndex  = GetCoverageIndex(Table + CoverageOffset, Glyph1);
 
             if (CoverageIndex == -1)
                 continue;
@@ -1705,27 +1705,27 @@ STATIC INT32 GetGlyphGPOSInfoAdvance(CONST FONT_INFO *Info, INT32 Glyph1, INT32 
                     if (ValueFormat1 == 4 && ValueFormat2 == 0)
                     {
                         INT32  ValueRecordPairSizeInBytes = 2;
-                        UINT16 PairSetCount = TTUSHORT(Table + 8);
-                        UINT16 PairPosOffset = TTUSHORT(Table + 10 + 2 * CoverageIndex);
-                        UINT8 *PairValueTable = Table + PairPosOffset;
-                        UINT16 PairValueCount = TTUSHORT(PairValueTable);
-                        UINT8 *PairValueArray = PairValueTable + 2;
+                        UINT16 PairSetCount               = TTUSHORT(Table + 8);
+                        UINT16 PairPosOffset              = TTUSHORT(Table + 10 + 2 * CoverageIndex);
+                        UINT8 *PairValueTable             = Table + PairPosOffset;
+                        UINT16 PairValueCount             = TTUSHORT(PairValueTable);
+                        UINT8 *PairValueArray             = PairValueTable + 2;
 
                         if (CoverageIndex >= PairSetCount)
                             return 0;
                         Needle = Glyph2;
-                        R = PairValueCount - 1;
-                        L = 0;
+                        R      = PairValueCount - 1;
+                        L      = 0;
 
                         while (L <= R)
                         {
                             UINT16 SecondGlyph;
                             UINT8 *PairValue;
 
-                            M = (L + R) >> 1;
-                            PairValue = PairValueArray + (2 + ValueRecordPairSizeInBytes) * M;
+                            M           = (L + R) >> 1;
+                            PairValue   = PairValueArray + (2 + ValueRecordPairSizeInBytes) * M;
                             SecondGlyph = TTUSHORT(PairValue);
-                            Straw = SecondGlyph;
+                            Straw       = SecondGlyph;
 
                             if (Needle < Straw)
                                 R = M - 1;
@@ -1754,10 +1754,10 @@ STATIC INT32 GetGlyphGPOSInfoAdvance(CONST FONT_INFO *Info, INT32 Glyph1, INT32 
                     {
                         UINT16 ClassDef1Offset = TTUSHORT(Table + 8);
                         UINT16 ClassDef2Offset = TTUSHORT(Table + 10);
-                        INT32  Glyph1Class = GetGlyphClass(Table + ClassDef1Offset, Glyph1);
-                        INT32  Glyph2Class = GetGlyphClass(Table + ClassDef2Offset, Glyph2);
-                        UINT16 Class1Count = TTUSHORT(Table + 12);
-                        UINT16 Class2Count = TTUSHORT(Table + 14);
+                        INT32  Glyph1Class     = GetGlyphClass(Table + ClassDef1Offset, Glyph1);
+                        INT32  Glyph2Class     = GetGlyphClass(Table + ClassDef2Offset, Glyph2);
+                        UINT16 Class1Count     = TTUSHORT(Table + 12);
+                        UINT16 Class2Count     = TTUSHORT(Table + 14);
                         UINT8 *Class1Records, *Class2Records;
                         INT16  XAdvance;
 
@@ -1768,7 +1768,7 @@ STATIC INT32 GetGlyphGPOSInfoAdvance(CONST FONT_INFO *Info, INT32 Glyph1, INT32 
                             return 0;
                         Class1Records = Table + 16;
                         Class2Records = Class1Records + 2 * (Glyph1Class * Class2Count);
-                        XAdvance = TTSHORT(Class2Records + 2 * Glyph2Class);
+                        XAdvance      = TTSHORT(Class2Records + 2 * Glyph2Class);
 
                         return XAdvance;
                     }
@@ -1863,10 +1863,10 @@ EXTERN VOID FreeShape(CONST FONT_INFO *Info, VERTEX *V)
 EXTERN UINT8 *FindSVGDoc(CONST FONT_INFO *Info, INT32 Gl)
 {
     INT32  I;
-    UINT8 *Data = Info->Data;
+    UINT8 *Data       = Info->Data;
     UINT8 *SVGDocList = Data + GetSVG((FONT_INFO *) Info);
     INT32  NumEntries = TTUSHORT(SVGDocList);
-    UINT8 *SVGDocs = SVGDocList + 2;
+    UINT8 *SVGDocs    = SVGDocList + 2;
 
     for (I = 0; I < NumEntries; I++)
     {
@@ -1972,12 +1972,12 @@ STATIC VOID *HheapAlloc(HHEAP *Hh, UINTN Size, VOID *Userdata)
         if (Hh->NumRemainingInHeadChunk == 0)
         {
             INT32        Count = (Size < 32 ? 2000 : Size < 128 ? 800 : 100);
-            HHEAP_CHUNK *C = (HHEAP_CHUNK *) KTTFAlloc(sizeof(HHEAP_CHUNK) + Size * Count, Userdata);
+            HHEAP_CHUNK *C     = (HHEAP_CHUNK *) KTTFAlloc(sizeof(HHEAP_CHUNK) + Size * Count, Userdata);
 
             if (C == NULL)
                 return NULL;
-            C->next = Hh->head;
-            Hh->head = C;
+            C->next                     = Hh->head;
+            Hh->head                    = C;
             Hh->NumRemainingInHeadChunk = Count;
         }
 
@@ -1988,7 +1988,7 @@ STATIC VOID *HheapAlloc(HHEAP *Hh, UINTN Size, VOID *Userdata)
 }
 STATIC VOID HheapFree(HHEAP *Hh, VOID *P)
 {
-    *(VOID **) P = Hh->FirstFree;
+    *(VOID **) P  = Hh->FirstFree;
     Hh->FirstFree = P;
 }
 STATIC VOID HheapCleanup(HHEAP *Hh, VOID *Userdata)
@@ -2018,7 +2018,7 @@ typedef struct ACTIVE_EDGE
 } ACTIVE_EDGE;
 STATIC ACTIVE_EDGE *NewActive(HHEAP *Hh, EDGE *E, INT32 OffX, FLOAT32 StartPoint, VOID *Userdata)
 {
-    ACTIVE_EDGE *Z = (ACTIVE_EDGE *) HheapAlloc(Hh, sizeof(*Z), Userdata);
+    ACTIVE_EDGE *Z    = (ACTIVE_EDGE *) HheapAlloc(Hh, sizeof(*Z), Userdata);
     FLOAT32      Dxdy = (E->x1 - E->x0) / (E->y1 - E->y0);
 
     KAssert(Z != NULL);
@@ -2027,12 +2027,12 @@ STATIC ACTIVE_EDGE *NewActive(HHEAP *Hh, EDGE *E, INT32 OffX, FLOAT32 StartPoint
         return Z;
     Z->fdx = Dxdy;
     Z->fdy = Dxdy != 0.0f ? (1.0f / Dxdy) : 0.0f;
-    Z->fx = E->x0 + Dxdy * (StartPoint - E->y0);
+    Z->fx  = E->x0 + Dxdy * (StartPoint - E->y0);
     Z->fx -= OffX;
     Z->direction = E->invert ? 1.0f : -1.0f;
-    Z->sy = E->y0;
-    Z->ey = E->y1;
-    Z->next = 0;
+    Z->sy        = E->y0;
+    Z->ey        = E->y1;
+    Z->next      = 0;
 
     return Z;
 }
@@ -2136,23 +2136,23 @@ STATIC VOID FillActiveEdgesNew(FLOAT32 *Scanline, FLOAT32 *ScanlineFill, INT32 L
             if (E->sy > YTop)
             {
                 XTop = X0 + Dx * (E->sy - YTop);
-                Sy0 = E->sy;
+                Sy0  = E->sy;
             }
             else
             {
                 XTop = X0;
-                Sy0 = YTop;
+                Sy0  = YTop;
             }
 
             if (E->ey < YBottom)
             {
                 XBottom = X0 + Dx * (E->ey - YTop);
-                Sy1 = E->ey;
+                Sy1     = E->ey;
             }
             else
             {
                 XBottom = Xb;
-                Sy1 = YBottom;
+                Sy1     = YBottom;
             }
 
             if (XTop >= 0 && XBottom >= 0 && XTop < Len && XBottom < Len)
@@ -2187,10 +2187,10 @@ STATIC VOID FillActiveEdgesNew(FLOAT32 *Scanline, FLOAT32 *ScanlineFill, INT32 L
 
                     KAssert(Dy >= 0);
                     KAssert(Dx >= 0);
-                    X1 = (INT32) XTop;
-                    X2 = (INT32) XBottom;
+                    X1        = (INT32) XTop;
+                    X2        = (INT32) XBottom;
                     YCrossing = YTop + Dy * (X1 + 1 - X0);
-                    YFinal = YTop + Dy * (X2 - X0);
+                    YFinal    = YTop + Dy * (X2 - X0);
 
                     if (YCrossing > YBottom)
                         YCrossing = YBottom;
@@ -2201,7 +2201,7 @@ STATIC VOID FillActiveEdgesNew(FLOAT32 *Scanline, FLOAT32 *ScanlineFill, INT32 L
                     if (YFinal > YBottom)
                     {
                         YFinal = YBottom;
-                        Dy = (YFinal - YCrossing) / (X2 - (X1 + 1));
+                        Dy     = (YFinal - YCrossing) / (X2 - (X1 + 1));
                     }
 
                     Step = Sign * Dy * 1;
@@ -2277,7 +2277,7 @@ STATIC VOID FillActiveEdgesNew(FLOAT32 *Scanline, FLOAT32 *ScanlineFill, INT32 L
 }
 STATIC VOID RasterizeSortedEdges(BITMAP *Result, EDGE *E, INT32 N, INT32 Vsubsample, INT32 OffX, INT32 OffY, VOID *Userdata)
 {
-    HHEAP        Hh = {0, 0, 0};
+    HHEAP        Hh     = {0, 0, 0};
     ACTIVE_EDGE *Active = NULL;
     INT32        Y, J = 0, I;
     FLOAT32      ScanlineData[129], *Scanline, *Scanline2;
@@ -2289,14 +2289,14 @@ STATIC VOID RasterizeSortedEdges(BITMAP *Result, EDGE *E, INT32 N, INT32 Vsubsam
     else
         Scanline = ScanlineData;
     Scanline2 = Scanline + Result->W;
-    Y = OffY;
-    E[N].y0 = (FLOAT32) (OffY + Result->H) + 1;
+    Y         = OffY;
+    E[N].y0   = (FLOAT32) (OffY + Result->H) + 1;
 
     while (J < Result->H)
     {
-        FLOAT32       ScanYTop = Y + 0.0f;
+        FLOAT32       ScanYTop    = Y + 0.0f;
         FLOAT32       ScanYBottom = Y + 1.0f;
-        ACTIVE_EDGE **Step = &Active;
+        ACTIVE_EDGE **Step        = &Active;
 
         KMemSet(Scanline, 0, Result->W * sizeof(Scanline[0]));
         KMemSet(Scanline2, 0, (Result->W + 1) * sizeof(Scanline[0]));
@@ -2336,7 +2336,7 @@ STATIC VOID RasterizeSortedEdges(BITMAP *Result, EDGE *E, INT32 N, INT32 Vsubsam
 
                     KAssert(Z->ey >= ScanYTop);
                     Z->next = Active;
-                    Active = Z;
+                    Active  = Z;
                 }
             }
 
@@ -2416,7 +2416,7 @@ STATIC VOID SortEdgesQuicksort(EDGE *P, INT32 N)
         EDGE  T;
         INT32 C01, C12, C, M, I, J;
 
-        M = N >> 1;
+        M   = N >> 1;
         C01 = LINEOS_COMPARE(&P[0], &P[M]);
         C12 = LINEOS_COMPARE(&P[M], &P[N - 1]);
 
@@ -2424,18 +2424,18 @@ STATIC VOID SortEdgesQuicksort(EDGE *P, INT32 N)
         {
             INT32 Z;
 
-            C = LINEOS_COMPARE(&P[0], &P[N - 1]);
-            Z = (C == C12) ? 0 : N - 1;
-            T = P[Z];
+            C    = LINEOS_COMPARE(&P[0], &P[N - 1]);
+            Z    = (C == C12) ? 0 : N - 1;
+            T    = P[Z];
             P[Z] = P[M];
             P[M] = T;
         }
 
-        T = P[0];
+        T    = P[0];
         P[0] = P[M];
         P[M] = T;
-        I = 1;
-        J = N - 1;
+        I    = 1;
+        J    = N - 1;
 
         for (;;)
         {
@@ -2453,7 +2453,7 @@ STATIC VOID SortEdgesQuicksort(EDGE *P, INT32 N)
 
             if (I >= J)
                 break;
-            T = P[I];
+            T    = P[I];
             P[I] = P[J];
             P[J] = T;
             ++I;
@@ -2565,16 +2565,16 @@ STATIC INT32 TesselateCurve(POINT *Points, INT32 *NumPoints, FLOAT32 X0, FLOAT32
 }
 STATIC VOID TesselateCubic(POINT *Points, INT32 *NumPoints, FLOAT32 X0, FLOAT32 Y0, FLOAT32 X1, FLOAT32 Y1, FLOAT32 X2, FLOAT32 Y2, FLOAT32 X3, FLOAT32 Y3, FLOAT32 ObjspaceFlatnessSquared, INT32 N)
 {
-    FLOAT32 Dx0 = X1 - X0;
-    FLOAT32 Dy0 = Y1 - Y0;
-    FLOAT32 Dx1 = X2 - X1;
-    FLOAT32 Dy1 = Y2 - Y1;
-    FLOAT32 Dx2 = X3 - X2;
-    FLOAT32 Dy2 = Y3 - Y2;
-    FLOAT32 Dx = X3 - X0;
-    FLOAT32 Dy = Y3 - Y0;
-    FLOAT32 Longlen = (FLOAT32) (KSqrt(Dx0 * Dx0 + Dy0 * Dy0) + KSqrt(Dx1 * Dx1 + Dy1 * Dy1) + KSqrt(Dx2 * Dx2 + Dy2 * Dy2));
-    FLOAT32 Shortlen = (FLOAT32) KSqrt(Dx * Dx + Dy * Dy);
+    FLOAT32 Dx0             = X1 - X0;
+    FLOAT32 Dy0             = Y1 - Y0;
+    FLOAT32 Dx1             = X2 - X1;
+    FLOAT32 Dy1             = Y2 - Y1;
+    FLOAT32 Dx2             = X3 - X2;
+    FLOAT32 Dy2             = Y3 - Y2;
+    FLOAT32 Dx              = X3 - X0;
+    FLOAT32 Dy              = Y3 - Y0;
+    FLOAT32 Longlen         = (FLOAT32) (KSqrt(Dx0 * Dx0 + Dy0 * Dy0) + KSqrt(Dx1 * Dx1 + Dy1 * Dy1) + KSqrt(Dx2 * Dx2 + Dy2 * Dy2));
+    FLOAT32 Shortlen        = (FLOAT32) KSqrt(Dx * Dx + Dy * Dy);
     FLOAT32 FlatnessSquared = Longlen * Longlen - Shortlen * Shortlen;
 
     if (N > 16)
@@ -2588,12 +2588,12 @@ STATIC VOID TesselateCubic(POINT *Points, INT32 *NumPoints, FLOAT32 X0, FLOAT32 
         FLOAT32 Y12 = (Y1 + Y2) / 2;
         FLOAT32 X23 = (X2 + X3) / 2;
         FLOAT32 Y23 = (Y2 + Y3) / 2;
-        FLOAT32 Xa = (X01 + X12) / 2;
-        FLOAT32 Ya = (Y01 + Y12) / 2;
-        FLOAT32 Xb = (X12 + X23) / 2;
-        FLOAT32 Yb = (Y12 + Y23) / 2;
-        FLOAT32 Mx = (Xa + Xb) / 2;
-        FLOAT32 My = (Ya + Yb) / 2;
+        FLOAT32 Xa  = (X01 + X12) / 2;
+        FLOAT32 Ya  = (Y01 + Y12) / 2;
+        FLOAT32 Xb  = (X12 + X23) / 2;
+        FLOAT32 Yb  = (Y12 + Y23) / 2;
+        FLOAT32 Mx  = (Xa + Xb) / 2;
+        FLOAT32 My  = (Ya + Yb) / 2;
 
         TesselateCubic(Points, NumPoints, X0, Y0, X01, Y01, Xa, Ya, Mx, My, ObjspaceFlatnessSquared, N + 1);
         TesselateCubic(Points, NumPoints, Mx, My, Xb, Yb, X23, Y23, X3, Y3, ObjspaceFlatnessSquared, N + 1);
@@ -2606,8 +2606,8 @@ STATIC VOID TesselateCubic(POINT *Points, INT32 *NumPoints, FLOAT32 X0, FLOAT32 
 }
 STATIC POINT *FlattenCurves(VERTEX *Vertices, INT32 NumVerts, FLOAT32 ObjspaceFlatness, INT32 **ContourLengths, INT32 *NumContours, VOID *Userdata)
 {
-    POINT  *Points = 0;
-    INT32   NumPoints = 0;
+    POINT  *Points                  = 0;
+    INT32   NumPoints               = 0;
     FLOAT32 ObjspaceFlatnessSquared = ObjspaceFlatness * ObjspaceFlatness;
     INT32   I, N = 0, Start = 0, Pass;
 
@@ -2640,7 +2640,7 @@ STATIC POINT *FlattenCurves(VERTEX *Vertices, INT32 NumVerts, FLOAT32 ObjspaceFl
         }
 
         NumPoints = 0;
-        N = -1;
+        N         = -1;
 
         for (I = 0; I < NumVerts; ++I)
         {
@@ -2680,16 +2680,16 @@ error:
     KTTFFree(Points, Userdata);
     KTTFFree(*ContourLengths, Userdata);
     *ContourLengths = 0;
-    *NumContours = 0;
+    *NumContours    = 0;
 
     return NULL;
 }
 EXTERN VOID Rasterize(BITMAP *Result, FLOAT32 FlatnessInPixels, VERTEX *Vertices, INT32 NumVerts, FLOAT32 ScaleX, FLOAT32 ScaleY, FLOAT32 ShiftX, FLOAT32 ShiftY, INT32 XOff, INT32 YOff, INT32 Invert, VOID *Userdata)
 {
-    FLOAT32 Scale = ScaleX > ScaleY ? ScaleY : ScaleX;
-    INT32   WindingCount = 0;
+    FLOAT32 Scale          = ScaleX > ScaleY ? ScaleY : ScaleX;
+    INT32   WindingCount   = 0;
     INT32  *WindingLengths = NULL;
-    POINT  *Windings = FlattenCurves(Vertices, NumVerts, FlatnessInPixels / Scale, &WindingLengths, &WindingCount, Userdata);
+    POINT  *Windings       = FlattenCurves(Vertices, NumVerts, FlatnessInPixels / Scale, &WindingLengths, &WindingCount, Userdata);
 
     if (Windings)
     {
@@ -2725,8 +2725,8 @@ EXTERN UINT8 *GetGlyphBitmapSubpixel(CONST FONT_INFO *Info, FLOAT32 ScaleX, FLOA
     }
 
     GetGlyphBitmapBoxSubpixel(Info, Glyph, ScaleX, ScaleY, ShiftX, ShiftY, &Ix0, &Iy0, &Ix1, &Iy1);
-    Gbm.W = (Ix1 - Ix0);
-    Gbm.H = (Iy1 - Iy0);
+    Gbm.W      = (Ix1 - Ix0);
+    Gbm.H      = (Iy1 - Iy0);
     Gbm.Pixels = NULL;
 
     if (Width)
@@ -2769,8 +2769,8 @@ EXTERN VOID MakeGlyphBitmapSubpixel(CONST FONT_INFO *Info, UINT8 *Output, INT32 
 
     GetGlyphBitmapBoxSubpixel(Info, Glyph, ScaleX, ScaleY, ShiftX, ShiftY, &Ix0, &Iy0, 0, 0);
     Gbm.Pixels = Output;
-    Gbm.W = OutW;
-    Gbm.H = OutH;
+    Gbm.W      = OutW;
+    Gbm.H      = OutH;
     Gbm.Stride = OutStride;
 
     if (Gbm.W && Gbm.H)
@@ -2812,9 +2812,9 @@ STATIC INT32 BakeFontBitmapInternal(UINT8 *Data, INT32 Offset, FLOAT32 PixelHeig
     if (!InitFont(&F, Data, Offset))
         return -1;
     KMemSet(Pixels, 0, Pw * Ph);
-    X = Y = 1;
+    X = Y   = 1;
     BottomY = 1;
-    Scale = ScaleForPixelHeight(&F, PixelHeight);
+    Scale   = ScaleForPixelHeight(&F, PixelHeight);
 
     for (I = 0; I < NumChars; ++I)
     {
@@ -2834,14 +2834,14 @@ STATIC INT32 BakeFontBitmapInternal(UINT8 *Data, INT32 Offset, FLOAT32 PixelHeig
         KAssert(X + Gw < Pw);
         KAssert(Y + Gh < Ph);
         MakeGlyphBitmap(&F, Pixels + X + Y * Pw, Gw, Gh, Pw, Scale, Scale, G);
-        Chardata[I].X0 = (INT16) X;
-        Chardata[I].Y0 = (INT16) Y;
-        Chardata[I].X1 = (INT16) (X + Gw);
-        Chardata[I].Y1 = (INT16) (Y + Gh);
+        Chardata[I].X0       = (INT16) X;
+        Chardata[I].Y0       = (INT16) Y;
+        Chardata[I].X1       = (INT16) (X + Gw);
+        Chardata[I].Y1       = (INT16) (Y + Gh);
         Chardata[I].Xadvance = Scale * Advance;
-        Chardata[I].Xoff = (FLOAT32) X0;
-        Chardata[I].Yoff = (FLOAT32) Y0;
-        X = X + Gw + 1;
+        Chardata[I].Xoff     = (FLOAT32) X0;
+        Chardata[I].Yoff     = (FLOAT32) Y0;
+        X                    = X + Gw + 1;
 
         if (Y + Gh + 1 > BottomY)
             BottomY = Y + Gh + 1;
@@ -2853,7 +2853,7 @@ EXTERN VOID GetBakedQuad(CONST BAKED_CHAR *Chardata, INT32 Pw, INT32 Ph, INT32 C
 {
     FLOAT32           D3DBias = OpenglFillrule ? 0 : -0.5f;
     FLOAT32           Ipw = 1.0f / Pw, Iph = 1.0f / Ph;
-    CONST BAKED_CHAR *B = Chardata + CharIndex;
+    CONST BAKED_CHAR *B      = Chardata + CharIndex;
     INT32             RoundX = KFloor((*Xpos + B->Xoff) + 0.5f);
     INT32             RoundY = KFloor((*Ypos + B->Yoff) + 0.5f);
 
@@ -2884,10 +2884,10 @@ struct STBRP_RECT
 };
 STATIC VOID STBRPInitTarget(STBRP_CONTEXT *Con, INT32 Pw, INT32 Ph, STBRP_NODE *Nodes, INT32 NumNodes)
 {
-    Con->width = Pw;
-    Con->height = Ph;
-    Con->x = 0;
-    Con->y = 0;
+    Con->width   = Pw;
+    Con->height  = Ph;
+    Con->x       = 0;
+    Con->y       = 0;
     Con->BottomY = 0;
     LINEOS_NOTUSED(Nodes);
     LINEOS_NOTUSED(NumNodes);
@@ -2906,8 +2906,8 @@ STATIC VOID STBRPPackRects(STBRP_CONTEXT *Con, STBRP_RECT *Rects, INT32 NumRects
 
         if (Con->y + Rects[I].h > Con->height)
             break;
-        Rects[I].x = Con->x;
-        Rects[I].y = Con->y;
+        Rects[I].x         = Con->x;
+        Rects[I].y         = Con->y;
         Rects[I].WasPacked = 1;
         Con->x += Rects[I].w;
 
@@ -2920,9 +2920,9 @@ STATIC VOID STBRPPackRects(STBRP_CONTEXT *Con, STBRP_RECT *Rects, INT32 NumRects
 }
 EXTERN INT32 PackBegin(PACK_CONTEXT *Spc, UINT8 *Pixels, INT32 Pw, INT32 Ph, INT32 StrideInBytes, INT32 Padding, VOID *AllocContext)
 {
-    STBRP_CONTEXT *Context = (STBRP_CONTEXT *) KTTFAlloc(sizeof(*Context), AllocContext);
+    STBRP_CONTEXT *Context  = (STBRP_CONTEXT *) KTTFAlloc(sizeof(*Context), AllocContext);
     INT32          NumNodes = Pw - Padding;
-    STBRP_NODE    *Nodes = (STBRP_NODE *) KTTFAlloc(sizeof(*Nodes) * NumNodes, AllocContext);
+    STBRP_NODE    *Nodes    = (STBRP_NODE *) KTTFAlloc(sizeof(*Nodes) * NumNodes, AllocContext);
 
     if (Context == NULL || Nodes == NULL)
     {
@@ -2936,16 +2936,16 @@ EXTERN INT32 PackBegin(PACK_CONTEXT *Spc, UINT8 *Pixels, INT32 Pw, INT32 Ph, INT
     }
 
     Spc->UserAllocatorContext = AllocContext;
-    Spc->Width = Pw;
-    Spc->Height = Ph;
-    Spc->Pixels = Pixels;
-    Spc->PackInfo = Context;
-    Spc->Nodes = Nodes;
-    Spc->Padding = Padding;
-    Spc->StrideInBytes = StrideInBytes != 0 ? StrideInBytes : Pw;
-    Spc->HOversample = 1;
-    Spc->VOversample = 1;
-    Spc->SkipMissing = 0;
+    Spc->Width                = Pw;
+    Spc->Height               = Ph;
+    Spc->Pixels               = Pixels;
+    Spc->PackInfo             = Context;
+    Spc->Nodes                = Nodes;
+    Spc->Padding              = Padding;
+    Spc->StrideInBytes        = StrideInBytes != 0 ? StrideInBytes : Pw;
+    Spc->HOversample          = 1;
+    Spc->VOversample          = 1;
+    Spc->SkipMissing          = 0;
     STBRPInitTarget(Context, Pw - Padding, Ph - Padding, Nodes, NumNodes);
 
     if (Pixels)
@@ -2997,7 +2997,7 @@ STATIC VOID HPrefilter(UINT8 *Pixels, INT32 W, INT32 H, INT32 StrideInBytes, UIN
                 {
                     Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
                     Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
-                    Pixels[I] = (UINT8) (Total / 2);
+                    Pixels[I]                                    = (UINT8) (Total / 2);
                 }
 
                 break;
@@ -3007,7 +3007,7 @@ STATIC VOID HPrefilter(UINT8 *Pixels, INT32 W, INT32 H, INT32 StrideInBytes, UIN
                 {
                     Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
                     Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
-                    Pixels[I] = (UINT8) (Total / 3);
+                    Pixels[I]                                    = (UINT8) (Total / 3);
                 }
 
                 break;
@@ -3017,7 +3017,7 @@ STATIC VOID HPrefilter(UINT8 *Pixels, INT32 W, INT32 H, INT32 StrideInBytes, UIN
                 {
                     Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
                     Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
-                    Pixels[I] = (UINT8) (Total / 4);
+                    Pixels[I]                                    = (UINT8) (Total / 4);
                 }
 
                 break;
@@ -3027,7 +3027,7 @@ STATIC VOID HPrefilter(UINT8 *Pixels, INT32 W, INT32 H, INT32 StrideInBytes, UIN
                 {
                     Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
                     Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
-                    Pixels[I] = (UINT8) (Total / 5);
+                    Pixels[I]                                    = (UINT8) (Total / 5);
                 }
 
                 break;
@@ -3037,7 +3037,7 @@ STATIC VOID HPrefilter(UINT8 *Pixels, INT32 W, INT32 H, INT32 StrideInBytes, UIN
                 {
                     Total += Pixels[I] - Buffer[I & LINEOS_OVER_MASK];
                     Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I];
-                    Pixels[I] = (UINT8) (Total / KernelWidth);
+                    Pixels[I]                                    = (UINT8) (Total / KernelWidth);
                 }
 
                 break;
@@ -3076,7 +3076,7 @@ STATIC VOID VPrefilter(UINT8 *Pixels, INT32 W, INT32 H, INT32 StrideInBytes, UIN
                 {
                     Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
                     Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
-                    Pixels[I * StrideInBytes] = (UINT8) (Total / 2);
+                    Pixels[I * StrideInBytes]                    = (UINT8) (Total / 2);
                 }
 
                 break;
@@ -3086,7 +3086,7 @@ STATIC VOID VPrefilter(UINT8 *Pixels, INT32 W, INT32 H, INT32 StrideInBytes, UIN
                 {
                     Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
                     Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
-                    Pixels[I * StrideInBytes] = (UINT8) (Total / 3);
+                    Pixels[I * StrideInBytes]                    = (UINT8) (Total / 3);
                 }
 
                 break;
@@ -3096,7 +3096,7 @@ STATIC VOID VPrefilter(UINT8 *Pixels, INT32 W, INT32 H, INT32 StrideInBytes, UIN
                 {
                     Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
                     Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
-                    Pixels[I * StrideInBytes] = (UINT8) (Total / 4);
+                    Pixels[I * StrideInBytes]                    = (UINT8) (Total / 4);
                 }
 
                 break;
@@ -3106,7 +3106,7 @@ STATIC VOID VPrefilter(UINT8 *Pixels, INT32 W, INT32 H, INT32 StrideInBytes, UIN
                 {
                     Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
                     Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
-                    Pixels[I * StrideInBytes] = (UINT8) (Total / 5);
+                    Pixels[I * StrideInBytes]                    = (UINT8) (Total / 5);
                 }
 
                 break;
@@ -3116,7 +3116,7 @@ STATIC VOID VPrefilter(UINT8 *Pixels, INT32 W, INT32 H, INT32 StrideInBytes, UIN
                 {
                     Total += Pixels[I * StrideInBytes] - Buffer[I & LINEOS_OVER_MASK];
                     Buffer[(I + KernelWidth) & LINEOS_OVER_MASK] = Pixels[I * StrideInBytes];
-                    Pixels[I * StrideInBytes] = (UINT8) (Total / KernelWidth);
+                    Pixels[I * StrideInBytes]                    = (UINT8) (Total / KernelWidth);
                 }
 
                 break;
@@ -3148,7 +3148,7 @@ EXTERN INT32 PackFontRangesGatherRects(PACK_CONTEXT *Spc, CONST FONT_INFO *Info,
 
     for (I = 0; I < NumRanges; ++I)
     {
-        FLOAT32 Fh = Ranges[I].FontSize;
+        FLOAT32 Fh    = Ranges[I].FontSize;
         FLOAT32 Scale = Fh > 0 ? ScaleForPixelHeight(Info, Fh) : ScaleForMappingEmToPixels(Info, -Fh);
 
         Ranges[I].HOversample = (UINT8) Spc->HOversample;
@@ -3158,7 +3158,7 @@ EXTERN INT32 PackFontRangesGatherRects(PACK_CONTEXT *Spc, CONST FONT_INFO *Info,
         {
             INT32 X0, Y0, X1, Y1;
             INT32 Codepoint = Ranges[I].ArrayOfUnicodeCodepoints == NULL ? Ranges[I].FirstUnicodeCodepointInRange + J : Ranges[I].ArrayOfUnicodeCodepoints[J];
-            INT32 Glyph = FindGlyphIndex(Info, Codepoint);
+            INT32 Glyph     = FindGlyphIndex(Info, Codepoint);
 
             if (Glyph == 0 && (Spc->SkipMissing || MissingGlyphAdded))
             {
@@ -3202,16 +3202,16 @@ EXTERN INT32 PackFontRangesRenderIntoRects(PACK_CONTEXT *Spc, CONST FONT_INFO *I
 
     for (I = 0; I < NumRanges; ++I)
     {
-        FLOAT32 Fh = Ranges[I].FontSize;
+        FLOAT32 Fh    = Ranges[I].FontSize;
         FLOAT32 Scale = Fh > 0 ? ScaleForPixelHeight(Info, Fh) : ScaleForMappingEmToPixels(Info, -Fh);
         FLOAT32 RecipH, RecipV, SubX, SubY;
 
         Spc->HOversample = Ranges[I].HOversample;
         Spc->VOversample = Ranges[I].VOversample;
-        RecipH = 1.0f / Spc->HOversample;
-        RecipV = 1.0f / Spc->VOversample;
-        SubX = OversampleShift(Spc->HOversample);
-        SubY = OversampleShift(Spc->VOversample);
+        RecipH           = 1.0f / Spc->HOversample;
+        RecipV           = 1.0f / Spc->VOversample;
+        SubX             = OversampleShift(Spc->HOversample);
+        SubY             = OversampleShift(Spc->VOversample);
 
         for (J = 0; J < Ranges[I].NumChars; ++J)
         {
@@ -3222,8 +3222,8 @@ EXTERN INT32 PackFontRangesRenderIntoRects(PACK_CONTEXT *Spc, CONST FONT_INFO *I
                 PACKED_CHAR *Bc = &Ranges[I].ChardataForRange[J];
                 INT32        Advance, Lsb, X0, Y0, X1, Y1;
                 INT32        Codepoint = Ranges[I].ArrayOfUnicodeCodepoints == NULL ? Ranges[I].FirstUnicodeCodepointInRange + J : Ranges[I].ArrayOfUnicodeCodepoints[J];
-                INT32        Glyph = FindGlyphIndex(Info, Codepoint);
-                STBRP_COORD  Pad = (STBRP_COORD) Spc->Padding;
+                INT32        Glyph     = FindGlyphIndex(Info, Codepoint);
+                STBRP_COORD  Pad       = (STBRP_COORD) Spc->Padding;
 
                 R->x += Pad;
                 R->y += Pad;
@@ -3238,15 +3238,15 @@ EXTERN INT32 PackFontRangesRenderIntoRects(PACK_CONTEXT *Spc, CONST FONT_INFO *I
 
                 if (Spc->VOversample > 1)
                     VPrefilter(Spc->Pixels + R->x + R->y * Spc->StrideInBytes, R->w, R->h, Spc->StrideInBytes, Spc->VOversample);
-                Bc->X0 = (INT16) R->x;
-                Bc->Y0 = (INT16) R->y;
-                Bc->X1 = (INT16) (R->x + R->w);
-                Bc->Y1 = (INT16) (R->y + R->h);
+                Bc->X0       = (INT16) R->x;
+                Bc->Y0       = (INT16) R->y;
+                Bc->X1       = (INT16) (R->x + R->w);
+                Bc->Y1       = (INT16) (R->y + R->h);
                 Bc->Xadvance = Scale * Advance;
-                Bc->Xoff = (FLOAT32) X0 * RecipH + SubX;
-                Bc->Yoff = (FLOAT32) Y0 * RecipV + SubY;
-                Bc->Xoff2 = (X0 + R->w) * RecipH + SubX;
-                Bc->Yoff2 = (Y0 + R->h) * RecipV + SubY;
+                Bc->Xoff     = (FLOAT32) X0 * RecipH + SubX;
+                Bc->Yoff     = (FLOAT32) Y0 * RecipV + SubY;
+                Bc->Xoff2    = (X0 + R->w) * RecipH + SubX;
+                Bc->Yoff2    = (Y0 + R->h) * RecipV + SubY;
 
                 if (Glyph == 0)
                     MissingGlyph = J;
@@ -3308,10 +3308,10 @@ EXTERN INT32 PackFontRange(PACK_CONTEXT *Spc, CONST UINT8 *Fontdata, INT32 FontI
     PACK_RANGE Range;
 
     Range.FirstUnicodeCodepointInRange = FirstUnicodeCodepointInRange;
-    Range.ArrayOfUnicodeCodepoints = NULL;
-    Range.NumChars = NumCharsInRange;
-    Range.ChardataForRange = ChardataForRange;
-    Range.FontSize = FontSize;
+    Range.ArrayOfUnicodeCodepoints     = NULL;
+    Range.NumChars                     = NumCharsInRange;
+    Range.ChardataForRange             = ChardataForRange;
+    Range.FontSize                     = FontSize;
 
     return PackFontRanges(Spc, Fontdata, FontIndex, &Range, 1);
 }
@@ -3324,7 +3324,7 @@ EXTERN VOID GetScaledFontVMetrics(CONST UINT8 *Fontdata, INT32 Index, FLOAT32 Si
     InitFont(&Info, Fontdata, GetFontOffsetForIndex(Fontdata, Index));
     Scale = Size > 0 ? ScaleForPixelHeight(&Info, Size) : ScaleForMappingEmToPixels(&Info, -Size);
     GetFontVMetrics(&Info, &IAscent, &IDescent, &ILineGap);
-    *Ascent = (FLOAT32) IAscent * Scale;
+    *Ascent  = (FLOAT32) IAscent * Scale;
     *Descent = (FLOAT32) IDescent * Scale;
     *LineGap = (FLOAT32) ILineGap * Scale;
 }
@@ -3365,9 +3365,9 @@ STATIC INT32 RayIntersectBezier(FLOAT32 Orig[2], FLOAT32 Ray[2], FLOAT32 Q0[2], 
     FLOAT32 Q1perp = Q1[1] * Ray[0] - Q1[0] * Ray[1];
     FLOAT32 Q2perp = Q2[1] * Ray[0] - Q2[0] * Ray[1];
     FLOAT32 Roperp = Orig[1] * Ray[0] - Orig[0] * Ray[1];
-    FLOAT32 A = Q0perp - 2 * Q1perp + Q2perp;
-    FLOAT32 B = Q1perp - Q0perp;
-    FLOAT32 C = Q0perp - Roperp;
+    FLOAT32 A      = Q0perp - 2 * Q1perp + Q2perp;
+    FLOAT32 B      = Q1perp - Q0perp;
+    FLOAT32 C      = Q0perp - Roperp;
     FLOAT32 S0 = 0., S1 = 0.;
     INT32   NumS = 0;
 
@@ -3378,7 +3378,7 @@ STATIC INT32 RayIntersectBezier(FLOAT32 Orig[2], FLOAT32 Ray[2], FLOAT32 Q0[2], 
         if (Discr > 0.0)
         {
             FLOAT32 Rcpna = -1 / A;
-            FLOAT32 D = (FLOAT32) KSqrt(Discr);
+            FLOAT32 D     = (FLOAT32) KSqrt(Discr);
 
             S0 = (B + D) * Rcpna;
             S1 = (B - D) * Rcpna;
@@ -3408,10 +3408,10 @@ STATIC INT32 RayIntersectBezier(FLOAT32 Orig[2], FLOAT32 Ray[2], FLOAT32 Q0[2], 
     {
         FLOAT32 RcpLen2 = 1 / (Ray[0] * Ray[0] + Ray[1] * Ray[1]);
         FLOAT32 RaynX = Ray[0] * RcpLen2, RaynY = Ray[1] * RcpLen2;
-        FLOAT32 Q0d = Q0[0] * RaynX + Q0[1] * RaynY;
-        FLOAT32 Q1d = Q1[0] * RaynX + Q1[1] * RaynY;
-        FLOAT32 Q2d = Q2[0] * RaynX + Q2[1] * RaynY;
-        FLOAT32 Rod = Orig[0] * RaynX + Orig[1] * RaynY;
+        FLOAT32 Q0d  = Q0[0] * RaynX + Q0[1] * RaynY;
+        FLOAT32 Q1d  = Q1[0] * RaynX + Q1[1] * RaynY;
+        FLOAT32 Q2d  = Q2[0] * RaynX + Q2[1] * RaynY;
+        FLOAT32 Rod  = Orig[0] * RaynX + Orig[1] * RaynY;
         FLOAT32 Q10d = Q1d - Q0d;
         FLOAT32 Q20d = Q2d - Q0d;
         FLOAT32 Q0rd = Q0d - Rod;
@@ -3531,11 +3531,11 @@ STATIC FLOAT32 Cuberoot(FLOAT32 X)
 }
 STATIC INT32 SolveCubic(FLOAT32 A, FLOAT32 B, FLOAT32 C, FLOAT32 *R)
 {
-    FLOAT32 S = -A / 3;
-    FLOAT32 P = B - A * A / 3;
-    FLOAT32 Q = A * (2 * A * A - 9 * B) / 27 + C;
+    FLOAT32 S  = -A / 3;
+    FLOAT32 P  = B - A * A / 3;
+    FLOAT32 Q  = A * (2 * A * A - 9 * B) / 27 + C;
     FLOAT32 P3 = P * P * P;
-    FLOAT32 D = Q * Q + 4 * P3 / 27;
+    FLOAT32 D  = Q * Q + 4 * P3 / 27;
 
     if (D >= 0)
     {
@@ -3543,8 +3543,8 @@ STATIC INT32 SolveCubic(FLOAT32 A, FLOAT32 B, FLOAT32 C, FLOAT32 *R)
         FLOAT32 U = (-Q + Z) / 2;
         FLOAT32 V = (-Q - Z) / 2;
 
-        U = Cuberoot(U);
-        V = Cuberoot(V);
+        U    = Cuberoot(U);
+        V    = Cuberoot(V);
         R[0] = S + U + V;
 
         return 1;
@@ -3602,7 +3602,7 @@ EXTERN UINT8 *GetGlyphSDF(CONST FONT_INFO *Info, FLOAT32 Scale, INT32 Glyph, INT
         VERTEX       *Verts;
         INT32         NumVerts = GetGlyphShape(Info, Glyph, &Verts);
 
-        Data = (UINT8 *) KTTFAlloc(W * H, Info->UserData);
+        Data       = (UINT8 *) KTTFAlloc(W * H, Info->UserData);
         Precompute = (FLOAT32 *) KTTFAlloc(NumVerts * sizeof(FLOAT32), Info->UserData);
 
         for (I = 0, J = NumVerts - 1; I < NumVerts; J = I++)
@@ -3638,8 +3638,8 @@ EXTERN UINT8 *GetGlyphSDF(CONST FONT_INFO *Info, FLOAT32 Scale, INT32 Glyph, INT
             {
                 FLOAT32 Val;
                 FLOAT32 MinDist = 999999.0f;
-                FLOAT32 Sx = (FLOAT32) X + 0.5f;
-                FLOAT32 Sy = (FLOAT32) Y + 0.5f;
+                FLOAT32 Sx      = (FLOAT32) X + 0.5f;
+                FLOAT32 Sy      = (FLOAT32) Y + 0.5f;
                 FLOAT32 XGspace = (Sx / ScaleX);
                 FLOAT32 YGspace = (Sy / ScaleY);
                 INT32   Winding = ComputeCrossingsX(XGspace, YGspace, NumVerts, Verts);
@@ -3651,7 +3651,7 @@ EXTERN UINT8 *GetGlyphSDF(CONST FONT_INFO *Info, FLOAT32 Scale, INT32 Glyph, INT
                     if (Verts[I].Type == LINEOS_VLINE && Precompute[I] != 0.0f)
                     {
                         FLOAT32 X1 = Verts[I - 1].X * ScaleX, Y1 = Verts[I - 1].Y * ScaleY;
-                        FLOAT32 Dist, Dist2 = (X0 - Sx) * (X0 - Sx) + (Y0 - Sy) * (Y0 - Sy);
+                        FLOAT32 Dist, Dist2                      = (X0 - Sx) * (X0 - Sx) + (Y0 - Sy) * (Y0 - Sy);
 
                         if (Dist2 < MinDist * MinDist)
                             MinDist = (FLOAT32) KSqrt(Dist2);
@@ -3712,7 +3712,7 @@ EXTERN UINT8 *GetGlyphSDF(CONST FONT_INFO *Info, FLOAT32 Scale, INT32 Glyph, INT
 
                                         Res[0] = (-B - Root) / (2 * A);
                                         Res[1] = (-B + Root) / (2 * A);
-                                        Num = 2;
+                                        Num    = 2;
                                     }
                                 }
                             }
@@ -3733,8 +3733,8 @@ EXTERN UINT8 *GetGlyphSDF(CONST FONT_INFO *Info, FLOAT32 Scale, INT32 Glyph, INT
                             if (Num >= 1 && Res[0] >= 0.0f && Res[0] <= 1.0f)
                             {
                                 T = Res[0], It = 1.0f - T;
-                                Px = It * It * X0 + 2 * T * It * X1 + T * T * X2;
-                                Py = It * It * Y0 + 2 * T * It * Y1 + T * T * Y2;
+                                Px    = It * It * X0 + 2 * T * It * X1 + T * T * X2;
+                                Py    = It * It * Y0 + 2 * T * It * Y1 + T * T * Y2;
                                 Dist2 = (Px - Sx) * (Px - Sx) + (Py - Sy) * (Py - Sy);
 
                                 if (Dist2 < MinDist * MinDist)
@@ -3744,8 +3744,8 @@ EXTERN UINT8 *GetGlyphSDF(CONST FONT_INFO *Info, FLOAT32 Scale, INT32 Glyph, INT
                             if (Num >= 2 && Res[1] >= 0.0f && Res[1] <= 1.0f)
                             {
                                 T = Res[1], It = 1.0f - T;
-                                Px = It * It * X0 + 2 * T * It * X1 + T * T * X2;
-                                Py = It * It * Y0 + 2 * T * It * Y1 + T * T * Y2;
+                                Px    = It * It * X0 + 2 * T * It * X1 + T * T * X2;
+                                Py    = It * It * Y0 + 2 * T * It * Y1 + T * T * Y2;
                                 Dist2 = (Px - Sx) * (Px - Sx) + (Py - Sy) * (Py - Sy);
 
                                 if (Dist2 < MinDist * MinDist)
@@ -3755,8 +3755,8 @@ EXTERN UINT8 *GetGlyphSDF(CONST FONT_INFO *Info, FLOAT32 Scale, INT32 Glyph, INT
                             if (Num >= 3 && Res[2] >= 0.0f && Res[2] <= 1.0f)
                             {
                                 T = Res[2], It = 1.0f - T;
-                                Px = It * It * X0 + 2 * T * It * X1 + T * T * X2;
-                                Py = It * It * Y0 + 2 * T * It * Y1 + T * T * Y2;
+                                Px    = It * It * X0 + 2 * T * It * X1 + T * T * X2;
+                                Py    = It * It * Y0 + 2 * T * It * Y1 + T * T * Y2;
                                 Dist2 = (Px - Sx) * (Px - Sx) + (Py - Sy) * (Py - Sy);
 
                                 if (Dist2 < MinDist * MinDist)

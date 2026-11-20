@@ -155,7 +155,7 @@ STATIC UINT8 LSTypeFromMode(UINT32 Mode)
 
 STATIC VOID LSPrintEntry(CONST CHAR8 *Name, UINT8 Type, CONST LS_OPTIONS *Options)
 {
-    CONST char *Color = "\033[0m";
+    CONST char *Color  = "\033[0m";
     CONST char *Suffix = "";
 
     if (Type == LS_TYPE_DIRECTORY)
@@ -219,9 +219,9 @@ STATIC UINTN      NameCount;
 STATIC VOID LSLoadNames(VOID)
 {
     char    Line[512];
-    UINTN   Length = 0;
+    UINTN   Length   = 0;
     BOOLEAN Overflow = FALSE;
-    int     FD = open("/etc/passwd", O_RDONLY);
+    int     FD       = open("/etc/passwd", O_RDONLY);
 
     if (FD < 0)
     {
@@ -257,7 +257,7 @@ STATIC VOID LSLoadNames(VOID)
             if (Position == NULL)
             {
                 memset(Line, 0, sizeof(Line));
-                Length = 0;
+                Length   = 0;
                 Overflow = FALSE;
                 continue;
             }
@@ -265,7 +265,7 @@ STATIC VOID LSLoadNames(VOID)
             Position++;
 
             UINT64  IDs[2] = {0};
-            BOOLEAN Valid = TRUE;
+            BOOLEAN Valid  = TRUE;
 
             for (UINTN Index = 0; Index < 2; Index++)
             {
@@ -295,14 +295,14 @@ STATIC VOID LSLoadNames(VOID)
             {
                 memcpy(Names[NameCount], Line, First - Line);
                 Names[NameCount][First - Line] = 0;
-                UserIDs[NameCount] = IDs[0];
-                GroupIDs[NameCount] = IDs[1];
+                UserIDs[NameCount]             = IDs[0];
+                GroupIDs[NameCount]            = IDs[1];
                 NameCount++;
             }
         }
 
         memset(Line, 0, sizeof(Line));
-        Length = 0;
+        Length   = 0;
         Overflow = FALSE;
     }
 
@@ -467,9 +467,9 @@ STATIC VOID LSPrintLongEntry(CONST CHAR8 *Name, CONST struct stat *Info, CONST L
 STATIC BOOLEAN LSBuildPath(CONST CHAR8 *Directory, CONST CHAR8 *Name, CHAR8 *Result, UINTN Capacity)
 {
     UINTN   DirectoryLength = strlen((CONST char *) Directory);
-    UINTN   NameLength = strlen((CONST char *) Name);
-    BOOLEAN Separator = DirectoryLength != 0 && Directory[DirectoryLength - 1] != '/';
-    UINTN   Required = DirectoryLength + (Separator ? 1 : 0) + NameLength + 1;
+    UINTN   NameLength      = strlen((CONST char *) Name);
+    BOOLEAN Separator       = DirectoryLength != 0 && Directory[DirectoryLength - 1] != '/';
+    UINTN   Required        = DirectoryLength + (Separator ? 1 : 0) + NameLength + 1;
 
     if (Required > Capacity)
     {
@@ -522,7 +522,7 @@ STATIC INT32 LSListDirectoryPass(CONST CHAR8 *Path, CONST LS_OPTIONS *Options, B
 {
     UINT8 Buffer[LS_BUFFER_SIZE];
     INT32 Status = 0;
-    INT32 FD = open((CONST char *) Path, O_RDONLY);
+    INT32 FD     = open((CONST char *) Path, O_RDONLY);
 
     if (FD < 0)
     {
@@ -682,9 +682,9 @@ INT32 main(INT32 Argc, CHAR8 **Argv)
         setlocale(LC_ALL, "C");
     }
 
-    LS_OPTIONS Options = {0};
-    INT32      FirstPath = 1;
-    INT32      Status = 0;
+    LS_OPTIONS Options    = {0};
+    INT32      FirstPath  = 1;
+    INT32      Status     = 0;
     BOOLEAN    EndOptions = FALSE;
 
     while (FirstPath < Argc)
@@ -716,7 +716,7 @@ INT32 main(INT32 Argc, CHAR8 **Argv)
             {
                 case 'a':
                 {
-                    Options.All = TRUE;
+                    Options.All       = TRUE;
                     Options.AlmostAll = FALSE;
                     break;
                 }
@@ -724,7 +724,7 @@ INT32 main(INT32 Argc, CHAR8 **Argv)
                 case 'A':
                 {
                     Options.AlmostAll = TRUE;
-                    Options.All = FALSE;
+                    Options.All       = FALSE;
                     break;
                 }
 

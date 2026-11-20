@@ -60,7 +60,7 @@ int main(void)
             struct timespec StartTime;
             struct timespec CurrentTime;
 
-            volatile uint64_t Value = 0x123456789ABCDEF0ULL;
+            volatile uint64_t Value      = 0x123456789ABCDEF0ULL;
             uint32_t          Iterations = 0;
 
             if (clock_gettime(CLOCK_MONOTONIC, &StartTime) != 0)

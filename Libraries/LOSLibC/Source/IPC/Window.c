@@ -104,7 +104,7 @@ INT32 LOSWindowOpen(LOS_WINDOW *Window, UINT64 Server, CONST char *Title, UINT32
     }
 
     Window->Server = (UINT64) Found;
-    Found = LOSIPCCreate(NULL);
+    Found          = LOSIPCCreate(NULL);
 
     if (Found < 0)
     {
@@ -112,8 +112,8 @@ INT32 LOSWindowOpen(LOS_WINDOW *Window, UINT64 Server, CONST char *Title, UINT32
     }
 
     Window->Endpoint = (UINT64) Found;
-    Window->Width = Width;
-    Window->Height = Height;
+    Window->Width    = Width;
+    Window->Height   = Height;
     Window->Transfer = mmap(NULL, LOS_IPC_MESSAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
     if (Window->Transfer == MAP_FAILED)
@@ -192,8 +192,8 @@ INT32 LOSWindowPresentRows(LOS_WINDOW *Window, CONST UINT32 *Pixels, UINT32 Begi
         return -1;
     }
 
-    UINT32 First = Window->Presented ? Window->Height : 0;
-    UINT32 Last = Window->Presented ? 0 : Window->Height;
+    UINT32 First    = Window->Presented ? Window->Height : 0;
+    UINT32 Last     = Window->Presented ? 0 : Window->Height;
     UINT32 RowBytes = Window->Width * sizeof(UINT32);
 
     if (Window->Presented)
@@ -219,7 +219,7 @@ INT32 LOSWindowPresentRows(LOS_WINDOW *Window, CONST UINT32 *Pixels, UINT32 Begi
         return 0;
     }
 
-    UINT32 Row = First;
+    UINT32 Row   = First;
     UINT32 Batch = (LOS_IPC_MESSAGE_SIZE - sizeof(LOS_WINDOW_MESSAGE)) / RowBytes;
 
     while (Row < Last)
@@ -235,10 +235,10 @@ INT32 LOSWindowPresentRows(LOS_WINDOW *Window, CONST UINT32 *Pixels, UINT32 Begi
 
         memset(Message, 0, sizeof(*Message));
         Message->Version = LOS_WINDOW_VERSION;
-        Message->Type = LOS_WINDOW_PIXELS;
-        Message->Width = Window->Width;
-        Message->Height = Rows;
-        Message->Y = Row;
+        Message->Type    = LOS_WINDOW_PIXELS;
+        Message->Width   = Window->Width;
+        Message->Height  = Rows;
+        Message->Y       = Row;
 
         memcpy(Window->Transfer + sizeof(*Message), Pixels + (UINTN) Row * Window->Width, (UINTN) Rows * RowBytes);
 

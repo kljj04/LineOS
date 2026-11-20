@@ -56,13 +56,13 @@ STATIC VOID TerminalSetGraphicsOwner(TASK *Owner)
 
     if (Owner == NULL)
     {
-        TerminalInput.Head = 0;
+        TerminalInput.Head   = 0;
         TerminalInput.Length = 0;
 
         while (TerminalWindowInput.Length != 0 && TerminalInput.Length < TERMINAL_CAPACITY)
         {
             TerminalInput.Data[(TerminalInput.Head + TerminalInput.Length++) % TERMINAL_CAPACITY] = TerminalWindowInput.Data[TerminalWindowInput.Head];
-            TerminalWindowInput.Head = (TerminalWindowInput.Head + 1) % TERMINAL_CAPACITY;
+            TerminalWindowInput.Head                                                              = (TerminalWindowInput.Head + 1) % TERMINAL_CAPACITY;
             TerminalWindowInput.Length--;
         }
     }
@@ -184,7 +184,7 @@ STATIC VOID TerminalDebugByte(UINT8 Byte)
             if (Byte == '[')
             {
                 TerminalDebugParameter = 0;
-                TerminalDebugState = TERMINAL_DEBUG_CSI;
+                TerminalDebugState     = TERMINAL_DEBUG_CSI;
             }
             else if (Byte == ']' || Byte == 'P' || Byte == 'X' || Byte == '^' || Byte == '_')
             {
@@ -301,9 +301,9 @@ BOOLEAN TerminalAttach(VOID)
     SpinLockRelease(&TerminalInput.Lock);
     SpinLockAcquire(&TerminalOutput.Lock);
     TerminalOutput.Closed = FALSE;
-    TerminalDebugState = TERMINAL_DEBUG_TEXT;
-    TerminalDebugLength = 0;
-    TerminalDebugCursor = 0;
+    TerminalDebugState    = TERMINAL_DEBUG_TEXT;
+    TerminalDebugLength   = 0;
+    TerminalDebugCursor   = 0;
     SpinLockRelease(&TerminalOutput.Lock);
     SpinLockReleaseIRQRestore(&TerminalControlLock, Flags);
 
@@ -312,7 +312,7 @@ BOOLEAN TerminalAttach(VOID)
 
 VOID TerminalDetach(VOID)
 {
-    UINT64          Flags = SpinLockAcquireIRQSave(&TerminalControlLock);
+    UINT64          Flags     = SpinLockAcquireIRQSave(&TerminalControlLock);
     TERMINAL_QUEUE *Queues[3] = {&TerminalInput, &TerminalWindowInput, &TerminalOutput};
 
     for (UINTN Index = 0; Index < 2; Index++)
@@ -411,7 +411,7 @@ INT64 TerminalWrite(TASK *Task, BOOLEAN Master, UINT64 Buffer, UINT64 Count)
     while (Total < Count)
     {
         UINT32 Length = Count - Total > TERMINAL_CHUNK ? TERMINAL_CHUNK : (UINT32) (Count - Total);
-        UINT32 Done = 0;
+        UINT32 Done   = 0;
 
         if (!VMMCopyFromUser(Task->Process->AddressSpace, Bytes, Buffer + Total, Length))
         {
@@ -500,7 +500,7 @@ VOID TerminalKey(UINT16 Code, BOOLEAN Pressed, UINT8 Modifiers)
     }
     else if (Code == 100 || Code == 122)
     {
-        UINTN   Index = Code == 100 ? 0 : 1;
+        UINTN   Index    = Code == 100 ? 0 : 1;
         BOOLEAN Previous = TogglePressed[Index];
 
         TogglePressed[Index] = Pressed;
@@ -540,7 +540,7 @@ VOID TerminalKey(UINT16 Code, BOOLEAN Pressed, UINT8 Modifiers)
     Flags = SpinLockAcquireIRQSave(&TerminalInput.Lock);
 
     UINT32 Length = 1;
-    UINT8  Final = 0;
+    UINT8  Final  = 0;
 
     switch (Code)
     {
@@ -621,7 +621,7 @@ INT64 TerminalWaitOutput(UINT32 TimeoutMls)
     for (;;)
     {
         UINT64  ControlFlags = SpinLockAcquireIRQSave(&TerminalControlLock);
-        BOOLEAN Graphics = TerminalGraphicsOwner != NULL;
+        BOOLEAN Graphics     = TerminalGraphicsOwner != NULL;
 
         TerminalGraphicsPaused = Graphics;
         SpinLockReleaseIRQRestore(&TerminalControlLock, ControlFlags);
@@ -633,8 +633,8 @@ INT64 TerminalWaitOutput(UINT32 TimeoutMls)
             return 2;
         }
 
-        UINT64  Flags = SpinLockAcquireIRQSave(&TerminalOutput.Lock);
-        BOOLEAN Ready = TerminalOutput.Length != 0;
+        UINT64  Flags  = SpinLockAcquireIRQSave(&TerminalOutput.Lock);
+        BOOLEAN Ready  = TerminalOutput.Length != 0;
         BOOLEAN Closed = TerminalOutput.Closed;
 
         SpinLockReleaseIRQRestore(&TerminalOutput.Lock, Flags);
@@ -664,7 +664,7 @@ INT64 TerminalWaitOutput(UINT32 TimeoutMls)
 
 INT64 TerminalGraphics(TASK *Task, BOOLEAN Begin)
 {
-    UINT64 Flags = SpinLockAcquireIRQSave(&TerminalControlLock);
+    UINT64 Flags  = SpinLockAcquireIRQSave(&TerminalControlLock);
     INT64  Result = 0;
 
     if (Begin)
@@ -698,7 +698,7 @@ INT64 TerminalGraphics(TASK *Task, BOOLEAN Begin)
         {
             Flags = SpinLockAcquireIRQSave(&TerminalControlLock);
 
-            BOOLEAN Ready = TerminalGraphicsPaused;
+            BOOLEAN Ready  = TerminalGraphicsPaused;
             BOOLEAN Active = TerminalMasterActive;
 
             SpinLockReleaseIRQRestore(&TerminalControlLock, Flags);
@@ -793,7 +793,7 @@ INT64 TerminalCompositor(TASK *Task, UINT64 UserEndpoint, BOOLEAN Set)
         return -EINVAL;
     }
 
-    UINT64 Flags = SpinLockAcquireIRQSave(&TerminalControlLock);
+    UINT64 Flags  = SpinLockAcquireIRQSave(&TerminalControlLock);
     INT64  Result = 0;
 
     if (Set)
@@ -831,7 +831,7 @@ INT64 TerminalInjectCLI(TASK *Task, UINT64 UserByte)
         return -EFAULT;
     }
 
-    UINT64 Flags = SpinLockAcquireIRQSave(&TerminalControlLock);
+    UINT64 Flags  = SpinLockAcquireIRQSave(&TerminalControlLock);
     INT64  Result = 0;
 
     if (TerminalGraphicsOwner != Task)

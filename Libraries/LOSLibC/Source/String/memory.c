@@ -12,7 +12,7 @@ void *memset(void *Destination, int Value, size_t Size)
     size_t         Index;
 
     Bytes = (unsigned char *) Destination;
-    Byte = (unsigned char) Value;
+    Byte  = (unsigned char) Value;
 
     for (Index = 0; Index < Size; Index++)
     {
@@ -29,7 +29,7 @@ void *memcpy(void *Destination, const void *Source, size_t Size)
     size_t               Index;
 
     DestinationBytes = (unsigned char *) Destination;
-    SourceBytes = (const unsigned char *) Source;
+    SourceBytes      = (const unsigned char *) Source;
 
     for (Index = 0; Index < Size; Index++)
     {
@@ -46,7 +46,7 @@ void *memmove(void *Destination, const void *Source, size_t Size)
     size_t               Index;
 
     DestinationBytes = (unsigned char *) Destination;
-    SourceBytes = (const unsigned char *) Source;
+    SourceBytes      = (const unsigned char *) Source;
 
     if (Destination == Source || Size == 0)
     {
@@ -77,7 +77,7 @@ int memcmp(const void *Left, const void *Right, size_t Size)
     const unsigned char *RightBytes;
     size_t               Index;
 
-    LeftBytes = (const unsigned char *) Left;
+    LeftBytes  = (const unsigned char *) Left;
     RightBytes = (const unsigned char *) Right;
 
     for (Index = 0; Index < Size; Index++)
