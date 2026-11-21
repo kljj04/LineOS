@@ -2,7 +2,7 @@
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
-#include <LOSLib/TypeInfo.h>
+#include <Userspace/TypeInfo.h>
 #include <errno.h>
 #include <dirent.h>
 #include <limits.h>

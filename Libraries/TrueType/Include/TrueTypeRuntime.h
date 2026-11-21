@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <LOSLib/TypeInfo.h>
+#include <Userspace/TypeInfo.h>
 
 typedef struct
 {

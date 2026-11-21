@@ -6,7 +6,7 @@
 
 #include <locale.h>
 
-#include <LOSLib/TypeInfo.h>
+#include <Userspace/TypeInfo.h>
 #include <Syscall/Time/TimeZone.h>
 #include <fcntl.h>
 #include <unistd.h>

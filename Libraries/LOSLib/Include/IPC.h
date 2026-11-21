@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <LOSLib/TypeInfo.h>
+#include <Userspace/TypeInfo.h>
 #include <Syscall/IPC/IPC.h>
 
 INT64 LOSIPCCreate(CONST char *Name);

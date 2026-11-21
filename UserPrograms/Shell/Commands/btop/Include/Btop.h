@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <LOSLib/TypeInfo.h>
+#include <Userspace/TypeInfo.h>
 #include <SystemMonitor.h>
 
 #define BTOP_HISTORY_SIZE 240U

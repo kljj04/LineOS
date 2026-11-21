@@ -3,7 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #pragma once
-#include <LOSLib/TypeInfo.h>
+#include <Userspace/TypeInfo.h>
 #include <Syscall/Numbers.h>
 
 __attribute__((visibility("hidden"))) UINT64 LOSSyscall1(UINT64 Number, UINT64 Arg1);

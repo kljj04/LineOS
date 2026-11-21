@@ -3,7 +3,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #pragma once
-#include <LOSLib/TypeInfo.h>
+#include <Userspace/TypeInfo.h>
 
 typedef struct
 {

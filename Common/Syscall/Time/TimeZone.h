@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <LOSLib/TypeInfo.h>
+#include <Userspace/TypeInfo.h>
 
 #define TIMEZONE_PATH               "/etc/timezone"
 #define TIMEZONE_NAME_CAPACITY      64U

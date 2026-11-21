@@ -6,7 +6,7 @@
 
 #include <locale.h>
 
-#include <LOSLib/TypeInfo.h>
+#include <Userspace/TypeInfo.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>

@@ -185,7 +185,7 @@ def Generate(Root, Program, Output):
     if Config is None:
         raise ConfigError(f'unknown or disabled program: {Program}')
     if not Config['Assets'] and not Config['Publish']:
-        Text = '#include <LOSLib/TypeInfo.h>\n'
+        Text = '#include <Userspace/TypeInfo.h>\n'
     else:
         Text = (Root / 'Scripts/Backend/ProgramRuntime.c.in').read_text()
         Text = Text.replace('@ASSETS@', ',\n'.join('    ' + json.dumps(Name) for Name in Config['Assets']) or '    NULL')

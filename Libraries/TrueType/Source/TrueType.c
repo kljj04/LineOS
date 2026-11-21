@@ -4,7 +4,7 @@
 
 #include <TrueType.h>
 #include <TrueTypeRuntime.h>
-#include <LOSLib/TypeInfo.h>
+#include <Userspace/TypeInfo.h>
 #include <string.h>
 
 #define LINEOS_MAX_OVERSAMPLE 8

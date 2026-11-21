@@ -7,7 +7,7 @@
 #include <locale.h>
 
 #include <TerminalScreen.h>
-#include <LOSLib/TypeInfo.h>
+#include <Userspace/TypeInfo.h>
 #include <TrueTypeEngine.h>
 #include <Display.h>
 #include <ANSI.h>

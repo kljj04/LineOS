@@ -4,7 +4,7 @@
 
 #include <LOSLocale.h>
 
-#include <LOSLib/TypeInfo.h>
+#include <Userspace/TypeInfo.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stddef.h>

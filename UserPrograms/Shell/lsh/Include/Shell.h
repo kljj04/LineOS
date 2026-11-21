@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <LOSLib/TypeInfo.h>
+#include <Userspace/TypeInfo.h>
 #include <IME.h>
 
 #define SHELL_INPUT_CAPACITY  4096U

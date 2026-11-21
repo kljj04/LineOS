@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <LOSLib/TypeInfo.h>
+#include <Userspace/TypeInfo.h>
 
 CONST char *LOSLocaleNormalize(CONST char *Name);
 char       *LOSLocaleRefresh(VOID);

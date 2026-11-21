@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <LOSLib/TypeInfo.h>
+#include <Userspace/TypeInfo.h>
 
 #define LOS_UTIME_NOW  1073741823L
 #define LOS_UTIME_OMIT 1073741822L

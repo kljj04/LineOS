@@ -1,4 +1,4 @@
-// Common/LOSLib/TypeInfo.h
+// Common/Userspace/TypeInfo.h
 // LineOS Project
 // Copyright (C) 2026 LineOS Developer kljj04
 
@@ -73,6 +73,31 @@ typedef float              FLOAT32;
 typedef double             FLOAT64;
 typedef unsigned char      BOOLEAN;
 typedef void               VOID;
+typedef UINT64             SIZE;
+typedef INT64              SSIZE;
+typedef VOID              *PVOID;
+typedef CONST VOID        *PCVOID;
+typedef intptr_t           INTPTR;
+typedef uintptr_t          UINTPTR;
+typedef CHAR8             *PCHAR8;
+typedef CHAR16            *PCHAR16;
+typedef UINT8             *PUINT8;
+typedef UINT32            *PUINT32;
+typedef VOID             **PPVOID;
+typedef CHAR8             *STRING8;
+typedef CHAR16            *STRING16;
+typedef INT32              PID;
+typedef INT32              TID;
+typedef INT32              FD;
+typedef UINT32             UID;
+typedef UINT32             GID;
+typedef CONST CHAR8       *PCCHAR8;
+typedef CONST CHAR16      *PCCHAR16;
+typedef CONST UINT8       *PCUINT8;
+typedef CONST UINT32      *PCUINT32;
+typedef INT64              OFFSET;
+typedef UINT64             COUNT;
+typedef UINT64             INDEX;
 
 #define UINT128_MAX ((UINT128) 340282366920938463463374607431768211455)
 #define INT128_MAX  ((INT128) 170141183460469231731687303715884105727)

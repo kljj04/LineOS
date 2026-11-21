@@ -4,7 +4,7 @@
 // Copyright (C) 2026 LineOS Developer kljj04
 
 #include <sys/sysinfo.h>
-#include <LOSLib/TypeInfo.h>
+#include <Userspace/TypeInfo.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
