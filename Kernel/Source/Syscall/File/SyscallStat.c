@@ -75,6 +75,13 @@ INT64 SyscallFstat(SYSCALL_CONTEXT *Context)
         return -EBADF;
     }
 
+    if (File->Socket)
+    {
+        Node.Mode   = 0xC1FF;
+        Node.Number = (UINT32) FD;
+        return FileStat(Task, &Node, Buffer);
+    }
+
     INT64 Result = SyscallVFSError(VFSLookup(Task->Process->FileContext, File->Path, &Node));
 
     if (Result < 0)

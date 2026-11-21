@@ -8,6 +8,8 @@
 #include <Memory/PMM.h>
 
 #include <Syscall/Memory/Memory.h>
+#include <Syscall/Network/SyscallSocket.h>
+#include <Network/NetworkInternal.h>
 
 #define FILE_OPEN_LARGEFILE 0100000ULL
 #define FILE_BUFFER_SIZE    (1024U * 1024U)
@@ -932,13 +934,13 @@ INT64 SyscallFcntl(SYSCALL_CONTEXT *Context)
         Result = File->Flags & (VFS_OPEN_ACCMODE | VFS_OPEN_APPEND | FILE_OPEN_NONBLOCK | FILE_OPEN_LARGEFILE);
         if (Command == FILE_F_SETFL)
         {
-            if ((Argument & (FILE_OPEN_ASYNC | FILE_OPEN_DIRECT)) != 0 || (File->Device != NULL && (Argument & FILE_OPEN_NONBLOCK) != 0))
+            if ((Argument & (FILE_OPEN_ASYNC | FILE_OPEN_DIRECT)) != 0 || (File->Device != NULL && !File->Socket && (Argument & FILE_OPEN_NONBLOCK) != 0))
             {
                 Result = -EOPNOTSUPP;
             }
             else
             {
-                File->Flags  = (File->Flags & ~(VFS_OPEN_APPEND | FILE_OPEN_NONBLOCK)) | ((UINT32) Argument & (VFS_OPEN_APPEND | FILE_OPEN_NONBLOCK));
+                ATOMIC_STORE(&File->Flags, (File->Flags & ~(VFS_OPEN_APPEND | FILE_OPEN_NONBLOCK)) | ((UINT32) Argument & (VFS_OPEN_APPEND | FILE_OPEN_NONBLOCK)), ATOMIC_RELEASE);
                 File->Append = (File->Flags & VFS_OPEN_APPEND) != 0;
                 Result       = 0;
             }
@@ -951,17 +953,15 @@ INT64 SyscallFcntl(SYSCALL_CONTEXT *Context)
 
 INT64 SyscallPoll(SYSCALL_CONTEXT *Context)
 {
-    UINT64 Descriptors = Context->Args.RDI;
-    UINT64 Count       = Context->Args.RSI;
-    INT32  Timeout     = (INT32) Context->Args.RDX;
-
     typedef struct
     {
         INT32 FD;
         INT16 Events;
         INT16 Returned;
     } FILE_POLL;
-    TASK *Task = LBPWRRGetCurrentTask();
+    TASK  *Task    = LBPWRRGetCurrentTask();
+    UINT64 Count   = Context->Args.RSI;
+    INT32  Timeout = (INT32) Context->Args.RDX;
     if (Task == NULL || Task->Process->AddressSpace == NULL)
     {
         return -ESRCH;
@@ -970,41 +970,75 @@ INT64 SyscallPoll(SYSCALL_CONTEXT *Context)
     {
         return -EINVAL;
     }
-    if (Timeout != 0)
-    {
-        return -EOPNOTSUPP;
-    }
-    if (Count == 0)
-    {
-        return 0;
-    }
-    FILE_POLL *Items = KAlloc(Count * sizeof(*Items));
+    FILE_POLL *Items = KAlloc(Count == 0 ? 1 : Count * sizeof(*Items));
     if (Items == NULL)
     {
         return -ENOMEM;
     }
     INT64 Result = -EFAULT;
-    if (!VMMCopyFromUser(Task->Process->AddressSpace, Items, Descriptors, Count * sizeof(*Items)))
+    if (Count != 0 && !VMMCopyFromUser(Task->Process->AddressSpace, Items, Context->Args.RDI, Count * sizeof(*Items)))
     {
         goto Done;
     }
-    Result = 0;
-    for (UINT64 Index = 0; Index < Count; Index++)
+    UINT64 Start = NetworkNow();
+    for (;;)
     {
-        if (Items[Index].Events != 0)
+        NetworkPoll();
+        Result = 0;
+        for (UINT64 Index = 0; Index < Count; Index++)
         {
-            Result = -EOPNOTSUPP;
-            goto Done;
+            OPEN_FILE *File __attribute__((cleanup(FileDrop))) = Items[Index].FD >= 0 ? FileAcquire(Task, (UINT32) Items[Index].FD) : NULL;
+            INT64      Events                                  = 0;
+            if (Items[Index].FD >= 0 && File == NULL)
+            {
+                Events = 0x20;
+            }
+            else if (File != NULL && File->Socket)
+            {
+                Events = SyscallSocketPoll(File, (UINT16) Items[Index].Events);
+            }
+            else if (File != NULL && File->Device == NULL)
+            {
+                Events = Items[Index].Events & (((File->Access & FILE_READ) != 0 ? 1 : 0) | ((File->Access & FILE_WRITE) != 0 ? 4 : 0));
+            }
+            else if (File != NULL && Items[Index].Events != 0)
+            {
+                Result = -EOPNOTSUPP;
+                goto Done;
+            }
+            Items[Index].Returned = (INT16) Events;
+            Result += Events != 0;
         }
-        OPEN_FILE *File __attribute__((cleanup(FileDrop))) = Items[Index].FD >= 0 ? FileAcquire(Task, (UINT32) Items[Index].FD) : NULL;
-        Items[Index].Returned                              = Items[Index].FD >= 0 && File == NULL ? 0x20 : 0;
-        Result += Items[Index].Returned != 0;
+        if (Result != 0 || Timeout == 0 || (Timeout > 0 && NetworkNow() - Start >= (UINT32) Timeout))
+        {
+            break;
+        }
+        NetworkWait();
     }
-    if (!VMMCopyToUser(Task->Process->AddressSpace, Descriptors, Items, Count * sizeof(*Items)))
+    if (Count != 0 && !VMMCopyToUser(Task->Process->AddressSpace, Context->Args.RDI, Items, Count * sizeof(*Items)))
     {
         Result = -EFAULT;
     }
 Done:
     KFree(Items);
+    return Result;
+}
+
+INT64 FileInstall(TASK *Task, OPEN_FILE *File, BOOLEAN CloseOnExec)
+{
+    PROCESS *Process = Task->Process;
+    UINT64   Flags   = SpinLockAcquireIRQSave(&Process->FileTableLock);
+    INT64    Result  = -EMFILE;
+    for (UINT32 Index = 0; Index < TASK_FILE_LIMIT; Index++)
+    {
+        if (Process->Files[Index] == NULL && (Process->ReservedFiles & (1U << Index)) == 0)
+        {
+            Process->Files[Index]     = File;
+            Process->CloseOnExecFiles = (Process->CloseOnExecFiles & ~(1U << Index)) | (CloseOnExec ? 1U << Index : 0);
+            Result                    = Index;
+            break;
+        }
+    }
+    SpinLockReleaseIRQRestore(&Process->FileTableLock, Flags);
     return Result;
 }

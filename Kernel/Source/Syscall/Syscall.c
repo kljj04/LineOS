@@ -29,6 +29,7 @@
 #include <Syscall/System/SyscallMonitor.h>
 #include <Syscall/IPC/SyscallIPC.h>
 #include <Syscall/System/SyscallAffinity.h>
+#include <Syscall/Network/SyscallSocket.h>
 
 #include <Arch/AMD64/CPU.h>
 #include <Debug/Panic.h>
@@ -87,6 +88,19 @@ STATIC CONST SYSCALL_ENTRY SyscallTable[] = {
     {SYSCALL_YIELD,                SyscallYield             },
     {SYSCALL_NANOSLEEP,            SyscallNanosleep         },
     {SYSCALL_GETPID,               SyscallGetPID            },
+    {SYSCALL_SOCKET,               SyscallSocket            },
+    {SYSCALL_CONNECT,              SyscallConnect           },
+    {SYSCALL_ACCEPT,               SyscallAccept            },
+    {SYSCALL_ACCEPT4,              SyscallAccept            },
+    {SYSCALL_SENDTO,               SyscallSendTo            },
+    {SYSCALL_RECVFROM,             SyscallRecvFrom          },
+    {SYSCALL_SHUTDOWN,             SyscallShutdown          },
+    {SYSCALL_BIND,                 SyscallBind              },
+    {SYSCALL_LISTEN,               SyscallListen            },
+    {SYSCALL_GETSOCKNAME,          SyscallSocketName        },
+    {SYSCALL_GETPEERNAME,          SyscallSocketName        },
+    {SYSCALL_SETSOCKOPT,           SyscallSocketOption      },
+    {SYSCALL_GETSOCKOPT,           SyscallSocketOption      },
     {SYSCALL_CLONE,                SyscallClone             },
     {SYSCALL_FORK,                 SyscallFork              },
     {SYSCALL_EXECVE,               SyscallExecVE            },

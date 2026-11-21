@@ -324,10 +324,10 @@ INT32 main(VOID)
     };
     assert(SyscallPoll(&(SYSCALL_CONTEXT) {.Args.RDI = (UINT64) (PATH(Poll)), .Args.RSI = (UINT64) (3), .Args.RDX = (UINT64) (INT32) (0)}) == 1 && Poll[0].Returned == 0 && Poll[1].Returned == 0x20 && Poll[2].Returned == 0);
     Poll[0].Events = 1;
-    assert(SyscallPoll(&(SYSCALL_CONTEXT) {.Args.RDI = (UINT64) (PATH(Poll)), .Args.RSI = (UINT64) (3), .Args.RDX = (UINT64) (INT32) (0)}) == -EOPNOTSUPP);
+    assert(SyscallPoll(&(SYSCALL_CONTEXT) {.Args.RDI = (UINT64) (PATH(Poll)), .Args.RSI = (UINT64) (3), .Args.RDX = (UINT64) (INT32) (0)}) == 2 && Poll[0].Returned == 1);
     assert(SyscallPoll(&(SYSCALL_CONTEXT) {.Args.RDI = (UINT64) (1), .Args.RSI = (UINT64) (3), .Args.RDX = (UINT64) (INT32) (0)}) == -EFAULT);
     assert(SyscallPoll(&(SYSCALL_CONTEXT) {.Args.RDI = (UINT64) (PATH(Poll)), .Args.RSI = (UINT64) (33), .Args.RDX = (UINT64) (INT32) (0)}) == -EINVAL);
-    assert(SyscallPoll(&(SYSCALL_CONTEXT) {.Args.RDI = (UINT64) (0), .Args.RSI = (UINT64) (0), .Args.RDX = (UINT64) (INT32) (0)}) == 0 && SyscallPoll(&(SYSCALL_CONTEXT) {.Args.RDI = (UINT64) (0), .Args.RSI = (UINT64) (0), .Args.RDX = (UINT64) (INT32) (1)}) == -EOPNOTSUPP);
+    assert(SyscallPoll(&(SYSCALL_CONTEXT) {.Args.RDI = (UINT64) (0), .Args.RSI = (UINT64) (0), .Args.RDX = (UINT64) (INT32) (0)}) == 0 && SyscallPoll(&(SYSCALL_CONTEXT) {.Args.RDI = (UINT64) (0), .Args.RSI = (UINT64) (0), .Args.RDX = (UINT64) (INT32) (1)}) == 0);
     assert(!VFSIsTrustedPath(&Context, (CONST CHAR8 *) "/lib/libc.so.6"));
     TrustedOwner = TRUE;
     assert(VFSIsTrustedPath(&Context, (CONST CHAR8 *) "/lib/libc.so.6"));

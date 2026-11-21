@@ -53,3 +53,28 @@ BOOLEAN       NetworkTCPReceive(UINT32 Socket, VOID *Buffer, UINT32 Capacity, UI
 BOOLEAN       NetworkTCPClose(UINT32 Socket, UINT32 TimeoutMls);
 BOOLEAN       NetworkTCPAbort(UINT32 Socket);
 CONST CHAR16 *NetworkGetLastError(VOID);
+
+typedef struct
+{
+    UINT32  Address;
+    UINT32  LocalAddress;
+    UINT16  Port;
+    UINT16  LocalPort;
+    UINT16  Events;
+    UINT32  Available;
+    INT32   Error;
+    BOOLEAN Connected;
+    BOOLEAN Connecting;
+    BOOLEAN Listening;
+} NETWORK_TCP_SOCKET_STATE;
+
+INT64 NetworkTCPOpenSocket(UINT32 *Socket);
+INT64 NetworkTCPBind(UINT32 Socket, UINT32 Address, UINT16 Port, BOOLEAN Reuse);
+INT64 NetworkTCPListen(UINT32 Socket, UINT32 Backlog);
+INT64 NetworkTCPAccept(UINT32 Socket, UINT32 *Child);
+INT64 NetworkTCPStartConnect(UINT32 Socket, UINT32 Address, UINT16 Port);
+INT64 NetworkTCPReadSocket(UINT32 Socket, VOID *Buffer, UINT32 Length, BOOLEAN Peek);
+INT64 NetworkTCPWriteSocket(UINT32 Socket, CONST VOID *Buffer, UINT32 Length);
+INT64 NetworkTCPShutdown(UINT32 Socket, UINT32 How);
+VOID  NetworkTCPReleaseSocket(UINT32 Socket);
+INT64 NetworkTCPGetSocketState(UINT32 Socket, NETWORK_TCP_SOCKET_STATE *State, BOOLEAN ClearError);

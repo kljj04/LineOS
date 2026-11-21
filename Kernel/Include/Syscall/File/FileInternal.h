@@ -20,6 +20,7 @@ struct OPEN_FILE
     WAIT_QUEUE         Waiters;
     UINT32             Access;
     BOOLEAN            Directory;
+    BOOLEAN            Socket;
     BOOLEAN            Append;
     UINT32             Flags;
     UINT64             Offset;
@@ -45,3 +46,5 @@ INT64 FileResolvePath(TASK *Task, INT32 FD, UINT64 Path, BOOLEAN Empty, CHAR8 **
 #define FILE_AT_NO_AUTOMOUNT     0x800U
 #define FILE_AT_EMPTY_PATH       0x1000U
 #define FILE_OPEN_CLOEXEC        0x80000U
+
+INT64 FileInstall(TASK *Task, OPEN_FILE *File, BOOLEAN CloseOnExec);

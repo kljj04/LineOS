@@ -12,7 +12,7 @@ source = source.replace('ASM("pushfq; popq %0; cli" : "=r"(Flags) : : "memory");
 source = source.replace('ASM("sti" :: : "memory");', '')
 pathlib.Path(sys.argv[1]).write_text(source)
 PY
-clang -g -O1 -DLINEOS_KERNEL_BUILD -ICommon -IKernel/Include -ffunction-sections -fdata-sections -fsanitize=address,undefined -Wno-pointer-sign -Wl,--gc-sections Scripts/Validation/LinuxSyscalls/Test.c "$Work/VFS.c" Kernel/Source/Syscall/SyscallError.c Kernel/Source/Syscall/File/SyscallFile.c Kernel/Source/Syscall/File/SyscallStat.c Kernel/Source/Syscall/Memory/SyscallMemory.c Kernel/Source/Syscall/Memory/SyscallDeviceMap.c Kernel/Source/Syscall/Process/SyscallThread.c Kernel/Source/Syscall/Device/SyscallIoctl.c -o "$Work/Test"
+clang -g -O1 -fshort-wchar -DLINEOS_KERNEL_BUILD -ICommon -IKernel/Include -ffunction-sections -fdata-sections -fsanitize=address,undefined -Wno-pointer-sign -Wl,--gc-sections "${NetworkTestSource:-Scripts/Validation/LinuxSyscalls/Test.c}" Scripts/Validation/Network/Mock.c Kernel/Source/Network/TCP.c Kernel/Source/Syscall/Network/SyscallSocket.c "$Work/VFS.c" Kernel/Source/Syscall/SyscallError.c Kernel/Source/Syscall/File/SyscallFile.c Kernel/Source/Syscall/File/SyscallStat.c Kernel/Source/Syscall/Memory/SyscallMemory.c Kernel/Source/Syscall/Memory/SyscallDeviceMap.c Kernel/Source/Syscall/Process/SyscallThread.c Kernel/Source/Syscall/Device/SyscallIoctl.c -o "$Work/Test"
 "$Work/Test"
-clang -g -O1 -DLINEOS_KERNEL_BUILD -ICommon -IKernel/Include -ffunction-sections -fdata-sections -fsanitize=address,undefined -Wl,--gc-sections Scripts/Validation/LinuxSyscalls/Generation.c Kernel/Source/FS/EXT2/EXT2Inode.c -o "$Work/Generation"
+clang -g -O1 -fshort-wchar -DLINEOS_KERNEL_BUILD -ICommon -IKernel/Include -ffunction-sections -fdata-sections -fsanitize=address,undefined -Wl,--gc-sections Scripts/Validation/LinuxSyscalls/Generation.c Kernel/Source/FS/EXT2/EXT2Inode.c -o "$Work/Generation"
 "$Work/Generation"

@@ -5,6 +5,7 @@
 #include <Network/NetworkInternal.h>
 #include <Memory/PMM.h>
 #include <Arch/AMD64/CPU.h>
+#include <Syscall/Errno.h>
 
 #define NETWORK_TCP_FIN 0x01
 #define NETWORK_TCP_SYN 0x02
@@ -15,10 +16,28 @@
 
 typedef struct
 {
+    BOOLEAN SocketAPI;
+    BOOLEAN Listening;
+    BOOLEAN Connecting;
+    BOOLEAN SynReceived;
+    BOOLEAN PendingAccept;
+    BOOLEAN Detached;
+    BOOLEAN ReadClosed;
+    BOOLEAN WriteClosed;
+    UINT32  Parent;
+    UINT32  Backlog;
+    INT32   Error;
+    UINT64  Started;
+    UINT64  SentAt;
+    UINT32  RetryMls;
+    UINT32  TxSequence;
+    UINT32  TxLength;
+    UINT8   TxData[NETWORK_TCP_MSS];
     UINT32  Generation;
     BOOLEAN Writing;
     BOOLEAN Reading;
     BOOLEAN Closing;
+    UINT32  BoundAddress;
     UINT32  Address;
     UINT16  Port;
     UINT16  LocalPort;
@@ -41,6 +60,9 @@ typedef struct
 } NETWORK_TCP_CONNECTION;
 
 STATIC NETWORK_TCP_CONNECTION Connections[NETWORK_TCP_SOCKET_COUNT];
+
+STATIC NETWORK_TCP_CONNECTION *PassiveOpen(UINT32 Address, CONST UINT8 *Packet, UINT32 Length);
+STATIC VOID                    SocketTickLocked(VOID);
 
 #define NETWORK_TCP_TIME_WAIT_COUNT 64
 
@@ -80,7 +102,19 @@ VOID NetworkTCPResetLocked(VOID)
 {
     for (UINT32 Index = 0; Index < NETWORK_TCP_SOCKET_COUNT; Index++)
     {
-        ResetConnection(&Connections[Index]);
+        NETWORK_TCP_CONNECTION *Entry = &Connections[Index];
+        if (Entry->Active && Entry->SocketAPI && !Entry->Connected && !Entry->Connecting && !Entry->SynReceived && Entry->BoundAddress == 0)
+        {
+            continue;
+        }
+        if (Entry->Active && Entry->SocketAPI && !Entry->PendingAccept && !Entry->Detached)
+        {
+            Entry->Reset     = TRUE;
+            Entry->Error     = ENETRESET;
+            Entry->Listening = FALSE;
+            continue;
+        }
+        ResetConnection(Entry);
     }
 
     KMemSet(TimeWait, 0, sizeof(TimeWait));
@@ -196,7 +230,7 @@ BOOLEAN NetworkTCPActiveLocked(VOID)
 {
     for (UINT32 Index = 0; Index < NETWORK_TCP_SOCKET_COUNT; Index++)
     {
-        if (Connections[Index].Active)
+        if (Connections[Index].Active && (!Connections[Index].SocketAPI || Connections[Index].Connected || Connections[Index].Connecting || Connections[Index].SynReceived))
         {
             return TRUE;
         }
@@ -243,6 +277,11 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
 
     if (Connection == NULL)
     {
+        Connection = PassiveOpen(Address, Packet, Length);
+        if (Connection != NULL)
+        {
+            return;
+        }
         HandleTimeWait(Address, Packet, Length);
 
         return;
@@ -254,6 +293,37 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
     Flags          = Packet[13];
     DataLength     = Length - HeaderLength;
 
+    if (Connection->SocketAPI && Connection->SynReceived)
+    {
+        if ((Flags & NETWORK_TCP_RST) != 0)
+        {
+            if (Sequence != Connection->ReceiveNext)
+            {
+                return;
+            }
+            ResetConnection(Connection);
+            return;
+        }
+        if ((Flags & NETWORK_TCP_SYN) != 0 && Sequence + 1 == Connection->ReceiveNext)
+        {
+            SendSegment(Connection, Connection->SendNext - 1, NETWORK_TCP_SYN | NETWORK_TCP_ACK, NULL, 0);
+            return;
+        }
+        if (Flags != NETWORK_TCP_ACK && Flags != (NETWORK_TCP_ACK | NETWORK_TCP_PSH))
+        {
+            return;
+        }
+        if (Sequence != Connection->ReceiveNext || Acknowledgment != Connection->SendNext)
+        {
+            return;
+        }
+        Connection->SynReceived        = FALSE;
+        Connection->Connected          = TRUE;
+        Connection->SendUnacknowledged = Acknowledgment;
+        Connection->PeerWindow         = NetworkRead16(Packet + 14);
+        Connection->WindowSequence     = Sequence;
+        Connection->WindowACK          = Acknowledgment;
+    }
     if (!Connection->Connected)
     {
         if ((Flags & NETWORK_TCP_ACK) == 0 || Acknowledgment != Connection->SendNext)
@@ -264,6 +334,7 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
         if ((Flags & NETWORK_TCP_RST) != 0)
         {
             Connection->Reset = TRUE;
+            Connection->Error = ECONNREFUSED;
 
             return;
         }
@@ -320,6 +391,7 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
         Connection->WindowSequence     = Sequence;
         Connection->WindowACK          = Acknowledgment;
         Connection->Connected          = TRUE;
+        Connection->Connecting         = FALSE;
         SendSegment(Connection, Connection->SendNext, NETWORK_TCP_ACK, NULL, 0);
 
         return;
@@ -330,6 +402,7 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
         if (Sequence == Connection->ReceiveNext)
         {
             Connection->Reset = TRUE;
+            Connection->Error = ECONNRESET;
         }
         else
         {
@@ -395,7 +468,7 @@ VOID NetworkTCPInputLocked(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
                 Connection->Buffer[(Connection->Head + Connection->Count + Index) % NETWORK_TCP_BUFFER_SIZE] = Packet[HeaderLength + Skip + Index];
             }
 
-            Connection->Count += NewLength;
+            Connection->Count += Connection->ReadClosed ? 0 : NewLength;
             Connection->ReceiveNext += NewLength;
         }
 
@@ -984,4 +1057,486 @@ BOOLEAN NetworkTCPAbort(UINT32 Socket)
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
 
     return TRUE;
+}
+
+STATIC NETWORK_TCP_CONNECTION *SocketAllocateLocked(UINT32 *Handle)
+{
+    for (UINT32 Index = 0; Index < NETWORK_TCP_SOCKET_COUNT; Index++)
+    {
+        NETWORK_TCP_CONNECTION *Entry = &Connections[Index];
+        if (!Entry->Active && !Entry->Writing && !Entry->Reading && !Entry->Closing)
+        {
+            UINT32 Generation = (Entry->Generation + 1) & 0xFFFFFFU;
+            KMemSet(Entry, 0, sizeof(*Entry));
+            Entry->Generation = Generation == 0 ? 1 : Generation;
+            Entry->Active     = TRUE;
+            Entry->SocketAPI  = TRUE;
+            Entry->PeerMSS    = NETWORK_TCP_MSS;
+            Entry->Parent     = UINT32_MAX;
+            Entry->RetryMls   = 1000;
+            *Handle           = (Entry->Generation << 8) | Index;
+            return Entry;
+        }
+    }
+    return NULL;
+}
+
+STATIC NETWORK_TCP_CONNECTION *PassiveOpen(UINT32 Address, CONST UINT8 *Packet, UINT32 Length)
+{
+    if (Packet[13] != NETWORK_TCP_SYN || Length != (UINT32) (Packet[12] >> 4) * 4)
+    {
+        return NULL;
+    }
+    for (UINT32 Index = 0; Index < NETWORK_TCP_SOCKET_COUNT; Index++)
+    {
+        NETWORK_TCP_CONNECTION *Listener = &Connections[Index];
+        if (!Listener->Active || !Listener->Listening || Listener->LocalPort != NetworkRead16(Packet + 2))
+        {
+            continue;
+        }
+        UINT32 Parent  = (Listener->Generation << 8) | Index;
+        UINT32 Pending = 0;
+        for (UINT32 Other = 0; Other < NETWORK_TCP_SOCKET_COUNT; Other++)
+        {
+            Pending += Connections[Other].Active && Connections[Other].PendingAccept && Connections[Other].Parent == Parent;
+        }
+        if (Pending >= Listener->Backlog)
+        {
+            return NULL;
+        }
+        UINT32                  Handle;
+        NETWORK_TCP_CONNECTION *Child = SocketAllocateLocked(&Handle);
+        if (Child == NULL)
+        {
+            return NULL;
+        }
+        Child->Address            = Address;
+        Child->Port               = NetworkRead16(Packet);
+        Child->LocalPort          = Listener->LocalPort;
+        Child->Parent             = Parent;
+        Child->PendingAccept      = TRUE;
+        Child->SynReceived        = TRUE;
+        Child->Started            = NetworkNow();
+        Child->ReceiveNext        = NetworkRead32(Packet + 4) + 1;
+        Child->SendUnacknowledged = (UINT32) RDTSC();
+        Child->SendNext           = Child->SendUnacknowledged + 1;
+        Child->PeerWindow         = NetworkRead16(Packet + 14);
+        for (UINT32 Offset = 20; Offset < Length;)
+        {
+            UINT8 Kind = Packet[Offset];
+            if (Kind == 0)
+            {
+                break;
+            }
+            if (Kind == 1)
+            {
+                Offset++;
+                continue;
+            }
+            if (Offset + 2 > Length || Packet[Offset + 1] < 2 || Offset + Packet[Offset + 1] > Length)
+            {
+                ResetConnection(Child);
+                return NULL;
+            }
+            if (Kind == 2)
+            {
+                if (Packet[Offset + 1] != 4 || NetworkRead16(Packet + Offset + 2) == 0)
+                {
+                    ResetConnection(Child);
+                    return NULL;
+                }
+                UINT16 MSS     = NetworkRead16(Packet + Offset + 2);
+                Child->PeerMSS = MSS < NETWORK_TCP_MSS ? MSS : NETWORK_TCP_MSS;
+            }
+            Offset += Packet[Offset + 1];
+        }
+        SendSegment(Child, Child->SendUnacknowledged, NETWORK_TCP_SYN | NETWORK_TCP_ACK, NULL, 0);
+        Child->SentAt = NetworkNow();
+        return Child;
+    }
+    return NULL;
+}
+
+VOID NetworkTCPTickLocked(VOID)
+{
+    SocketTickLocked();
+}
+
+STATIC VOID SocketTickLocked(VOID)
+{
+    UINT64 Now = NetworkNow();
+    for (UINT32 Index = 0; Index < NETWORK_TCP_SOCKET_COUNT; Index++)
+    {
+        NETWORK_TCP_CONNECTION *Entry = &Connections[Index];
+        if (!Entry->Active || !Entry->SocketAPI || Entry->Listening)
+        {
+            continue;
+        }
+        if ((Entry->Connecting || Entry->SynReceived || Entry->TxLength != 0 || Entry->Detached || Entry->FINSent) && Now - Entry->Started >= 30000)
+        {
+            Entry->Reset = TRUE;
+            Entry->Error = ETIMEDOUT;
+        }
+        if (Entry->Reset)
+        {
+            if (Entry->PendingAccept || Entry->Detached)
+            {
+                AbortConnectionLocked(Entry);
+            }
+            continue;
+        }
+        if (Entry->TxLength != 0 && !SequenceBefore(Entry->SendUnacknowledged, Entry->TxSequence + Entry->TxLength))
+        {
+            Entry->TxLength = 0;
+        }
+        if (Entry->Connected && Entry->WriteClosed && Entry->TxLength == 0 && !Entry->FINSent)
+        {
+            Entry->FINSent = TRUE;
+            Entry->Started = Now;
+            Entry->SendNext++;
+            Entry->SentAt = Now - Entry->RetryMls;
+        }
+        if (Entry->Detached && Entry->PeerFIN && Entry->FINSent && Entry->SendUnacknowledged == Entry->SendNext)
+        {
+            FinishClose(Entry);
+            continue;
+        }
+        if (Now - Entry->SentAt < Entry->RetryMls)
+        {
+            continue;
+        }
+        if (Entry->Connecting || Entry->SynReceived)
+        {
+            if (!NetworkResolveReadyLocked(Entry->Address))
+            {
+                continue;
+            }
+            {
+                SendSegment(Entry, Entry->SendNext - 1, NETWORK_TCP_SYN | (Entry->SynReceived ? NETWORK_TCP_ACK : 0), NULL, 0);
+            }
+        }
+        else if (Entry->TxLength != 0)
+        {
+            UINT32 Skip = SequenceBefore(Entry->TxSequence, Entry->SendUnacknowledged) ? Entry->SendUnacknowledged - Entry->TxSequence : 0;
+            SendSegment(Entry, Entry->TxSequence + Skip, NETWORK_TCP_ACK | NETWORK_TCP_PSH, Entry->TxData + Skip, Entry->TxLength - Skip);
+        }
+        else if (Entry->FINSent && Entry->SendUnacknowledged != Entry->SendNext)
+        {
+            SendSegment(Entry, Entry->SendNext - 1, NETWORK_TCP_FIN | NETWORK_TCP_ACK, NULL, 0);
+        }
+        else
+        {
+            continue;
+        }
+        Entry->SentAt   = Now;
+        Entry->RetryMls = Entry->RetryMls < 8000 ? Entry->RetryMls * 2 : 8000;
+        NetworkState.Stats.Retransmitted++;
+    }
+}
+
+INT64 NetworkTCPOpenSocket(UINT32 *Socket)
+{
+    UINT64 Flags  = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    INT64  Result = SocketAllocateLocked(Socket) == NULL ? -ENOBUFS : 0;
+    SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+    return Result;
+}
+
+INT64 NetworkTCPBind(UINT32 Socket, UINT32 Address, UINT16 Port, BOOLEAN Reuse)
+{
+    UINT64                  Flags  = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    NETWORK_TCP_CONNECTION *Entry  = FindConnection(Socket);
+    INT64                   Result = 0;
+    if (Entry == NULL || Entry->LocalPort != 0)
+    {
+        Result = -EINVAL;
+    }
+    else if (Address != 0 && (!NetworkState.Configured || Address != NetworkState.Config.Address))
+    {
+        Result = -EADDRNOTAVAIL;
+    }
+    else
+    {
+        UINT16 Selected = Port == 0 ? NetworkAllocatePortLocked() : Port;
+        if (Selected == 0)
+        {
+            Result = -EADDRINUSE;
+        }
+        for (UINT32 Index = 0; Result == 0 && Index < NETWORK_TCP_SOCKET_COUNT; Index++)
+        {
+            if (Connections[Index].Active && &Connections[Index] != Entry && Connections[Index].LocalPort == Selected)
+            {
+                Result = -EADDRINUSE;
+            }
+        }
+        if (Result == 0 && !Reuse && NetworkTCPPortInUseLocked(Selected))
+        {
+            Result = -EADDRINUSE;
+        }
+        if (Result == 0)
+        {
+            Entry->LocalPort    = Selected;
+            Entry->BoundAddress = Address;
+        }
+    }
+    SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+    return Result;
+}
+
+INT64 NetworkTCPListen(UINT32 Socket, UINT32 Backlog)
+{
+    UINT64                  Flags  = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    NETWORK_TCP_CONNECTION *Entry  = FindConnection(Socket);
+    INT64                   Result = 0;
+    if (Entry == NULL || Entry->Connecting || Entry->Connected)
+    {
+        Result = -EINVAL;
+    }
+    else
+    {
+        if (Entry->LocalPort == 0)
+        {
+            Entry->LocalPort = NetworkAllocatePortLocked();
+        }
+        if (Entry->LocalPort == 0)
+        {
+            Result = -EADDRINUSE;
+        }
+        else
+        {
+            Entry->Listening = TRUE;
+            Entry->Backlog   = Backlog == 0 ? 1 : Backlog > NETWORK_TCP_SOCKET_COUNT ? NETWORK_TCP_SOCKET_COUNT : Backlog;
+        }
+    }
+    SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+    return Result;
+}
+
+INT64 NetworkTCPAccept(UINT32 Socket, UINT32 *Child)
+{
+    UINT64                  Flags    = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    NETWORK_TCP_CONNECTION *Listener = FindConnection(Socket);
+    INT64                   Result   = Listener == NULL || !Listener->Listening ? -EINVAL : -EAGAIN;
+    if (Result == -EAGAIN)
+    {
+        for (UINT32 Index = 0; Index < NETWORK_TCP_SOCKET_COUNT; Index++)
+        {
+            NETWORK_TCP_CONNECTION *Entry = &Connections[Index];
+            if (Entry->Active && Entry->Connected && !Entry->Reset && Entry->PendingAccept && Entry->Parent == Socket)
+            {
+                Entry->PendingAccept = FALSE;
+                Entry->Parent        = UINT32_MAX;
+                *Child               = (Entry->Generation << 8) | Index;
+                Result               = 0;
+                break;
+            }
+        }
+    }
+    SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+    return Result;
+}
+
+INT64 NetworkTCPStartConnect(UINT32 Socket, UINT32 Address, UINT16 Port)
+{
+    UINT64                  Flags  = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    NETWORK_TCP_CONNECTION *Entry  = FindConnection(Socket);
+    INT64                   Result = 0;
+    if (!NetworkState.Ready || !NetworkState.Configured)
+    {
+        Result = -ENETUNREACH;
+    }
+    else if (Entry == NULL || Entry->Listening || Port == 0 || Address == 0 || Address == UINT32_MAX || Address == NetworkState.Config.Address || (Address >> 24) == 127)
+    {
+        Result = -EINVAL;
+    }
+    else if (Entry->Connected || Entry->Connecting)
+    {
+        Result = Entry->Connected ? -EISCONN : -EALREADY;
+    }
+    else
+    {
+        if (Entry->LocalPort == 0)
+        {
+            Entry->LocalPort = NetworkAllocatePortLocked();
+        }
+        if (Entry->LocalPort == 0)
+        {
+            Result = -EADDRINUSE;
+        }
+        else
+        {
+            Entry->Address            = Address;
+            Entry->Port               = Port;
+            Entry->Connecting         = TRUE;
+            Entry->Started            = NetworkNow();
+            Entry->SentAt             = Entry->Started;
+            Entry->SendUnacknowledged = (UINT32) RDTSC();
+            Entry->SendNext           = Entry->SendUnacknowledged + 1;
+            if (NetworkResolveReadyLocked(Address))
+            {
+                SendSegment(Entry, Entry->SendUnacknowledged, NETWORK_TCP_SYN, NULL, 0);
+            }
+            else
+            {
+                Entry->SentAt -= Entry->RetryMls;
+            }
+        }
+    }
+    SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+    return Result;
+}
+
+INT64 NetworkTCPReadSocket(UINT32 Socket, VOID *Buffer, UINT32 Length, BOOLEAN Peek)
+{
+    UINT64                  Flags  = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    NETWORK_TCP_CONNECTION *Entry  = FindConnection(Socket);
+    INT64                   Result = -ENOTCONN;
+    if (Entry != NULL && Entry->Connected)
+    {
+        UINT32 Count = Entry->Count < Length ? Entry->Count : Length;
+        for (UINT32 Index = 0; Index < Count; Index++)
+        {
+            ((UINT8 *) Buffer)[Index] = Entry->Buffer[(Entry->Head + Index) % NETWORK_TCP_BUFFER_SIZE];
+        }
+        if (!Peek && Count != 0)
+        {
+            Entry->Count -= Count;
+            Entry->Head = (Entry->Head + Count) % NETWORK_TCP_BUFFER_SIZE;
+            SendSegment(Entry, Entry->SendNext, NETWORK_TCP_ACK, NULL, 0);
+        }
+        Result = Count != 0 || Length == 0 || Entry->PeerFIN || Entry->ReadClosed ? (INT64) Count : Entry->Reset ? -ECONNRESET : -EAGAIN;
+    }
+    SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+    return Result;
+}
+
+INT64 NetworkTCPWriteSocket(UINT32 Socket, CONST VOID *Buffer, UINT32 Length)
+{
+    UINT64                  Flags  = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    NETWORK_TCP_CONNECTION *Entry  = FindConnection(Socket);
+    INT64                   Result = -ENOTCONN;
+    if (Entry != NULL && Entry->Connected)
+    {
+        if (Entry->Reset || Entry->WriteClosed)
+        {
+            Result = -EPIPE;
+        }
+        else if (Length == 0)
+        {
+            Result = 0;
+        }
+        else if (Entry->TxLength != 0 || Entry->PeerWindow == 0)
+        {
+            Result = -EAGAIN;
+        }
+        else
+        {
+            UINT32 Count = Length < Entry->PeerMSS ? Length : Entry->PeerMSS;
+            Count        = Count < Entry->PeerWindow ? Count : Entry->PeerWindow;
+            KMemCpy(Entry->TxData, Buffer, Count);
+            Entry->TxLength   = Count;
+            Entry->TxSequence = Entry->SendNext;
+            Entry->SendNext += Count;
+            Entry->Started  = NetworkNow();
+            Entry->SentAt   = Entry->Started;
+            Entry->RetryMls = 1000;
+            SendSegment(Entry, Entry->TxSequence, NETWORK_TCP_ACK | NETWORK_TCP_PSH, Entry->TxData, Count);
+            Result = Count;
+        }
+    }
+    SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+    return Result;
+}
+
+INT64 NetworkTCPShutdown(UINT32 Socket, UINT32 How)
+{
+    UINT64                  Flags  = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    NETWORK_TCP_CONNECTION *Entry  = FindConnection(Socket);
+    INT64                   Result = Entry == NULL || !Entry->Connected ? -ENOTCONN : 0;
+    if (Result == 0)
+    {
+        if (How != 1)
+        {
+            Entry->ReadClosed = TRUE;
+            Entry->Count      = 0;
+        }
+        if (How != 0)
+        {
+            Entry->WriteClosed = TRUE;
+        }
+        SocketTickLocked();
+    }
+    SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+    return Result;
+}
+
+VOID NetworkTCPReleaseSocket(UINT32 Socket)
+{
+    UINT64                  Flags = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    NETWORK_TCP_CONNECTION *Entry = FindConnection(Socket);
+    if (Entry != NULL)
+    {
+        if (Entry->Listening)
+        {
+            for (UINT32 Index = 0; Index < NETWORK_TCP_SOCKET_COUNT; Index++)
+            {
+                if (Connections[Index].Active && Connections[Index].PendingAccept && Connections[Index].Parent == Socket)
+                {
+                    AbortConnectionLocked(&Connections[Index]);
+                }
+            }
+        }
+        if (!Entry->Connected || Entry->Reset)
+        {
+            AbortConnectionLocked(Entry);
+        }
+        else
+        {
+            Entry->Detached    = TRUE;
+            Entry->WriteClosed = TRUE;
+            Entry->Started     = NetworkNow();
+            SocketTickLocked();
+        }
+    }
+    SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+}
+
+INT64 NetworkTCPGetSocketState(UINT32 Socket, NETWORK_TCP_SOCKET_STATE *State, BOOLEAN ClearError)
+{
+    UINT64                  Flags  = SpinLockAcquireIRQSave(&NetworkState.Lock);
+    NETWORK_TCP_CONNECTION *Entry  = FindConnection(Socket);
+    INT64                   Result = Entry == NULL ? -EBADF : 0;
+    if (Entry != NULL)
+    {
+        KMemSet(State, 0, sizeof(*State));
+        State->Address      = Entry->Address;
+        State->Port         = Entry->Port;
+        State->LocalPort    = Entry->LocalPort;
+        State->LocalAddress = Entry->Connected || Entry->Connecting ? NetworkState.Config.Address : Entry->BoundAddress;
+        State->Connected    = Entry->Connected;
+        State->Connecting   = Entry->Connecting;
+        State->Listening    = Entry->Listening;
+        State->Error        = Entry->Error;
+        State->Available    = Entry->Count;
+        State->Events       = Entry->Reset ? 0x10 | (Entry->Error != 0 ? 8 : 0) : 0;
+        if (Entry->Listening)
+        {
+            for (UINT32 Index = 0; Index < NETWORK_TCP_SOCKET_COUNT; Index++)
+            {
+                State->Events |= Connections[Index].Active && Connections[Index].Connected && !Connections[Index].Reset && Connections[Index].PendingAccept && Connections[Index].Parent == Socket ? 1 : 0;
+            }
+        }
+        else if (Entry->Connected)
+        {
+            State->Events |= Entry->Count != 0 || Entry->PeerFIN || Entry->ReadClosed ? 1 : 0;
+            State->Events |= !Entry->Reset && !Entry->WriteClosed && Entry->TxLength == 0 && Entry->PeerWindow != 0 ? 4 : 0;
+            State->Events |= Entry->PeerFIN ? 0x2000 : 0;
+        }
+        if (ClearError)
+        {
+            Entry->Error = 0;
+        }
+    }
+    SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
+    return Result;
 }

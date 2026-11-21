@@ -433,6 +433,7 @@ VOID NetworkPoll(VOID)
         }
     }
 
+    NetworkTCPTickLocked();
     SpinLockReleaseIRQRestore(&NetworkState.Lock, Flags);
 }
 
@@ -690,4 +691,26 @@ BOOLEAN NetworkPing(UINT32 Address, UINT32 TimeoutMls, UINT32 *RoundTripMls)
     NetworkError(Result ? L"ok" : L"ICMP echo timeout");
 
     return Result;
+}
+
+BOOLEAN NetworkResolveReadyLocked(UINT32 Address)
+{
+    if (!NetworkState.Configured || !IsValidDestination(Address))
+    {
+        return FALSE;
+    }
+    UINT32 Hop = NextHop(Address);
+    if (FindARP(Hop) != NULL)
+    {
+        return TRUE;
+    }
+    STATIC UINT32 RequestedAddress;
+    STATIC UINT64 RequestedAt;
+    if (RequestedAddress != Hop || NetworkNow() - RequestedAt >= 1000)
+    {
+        SendARP(1, Hop, NULL);
+        RequestedAddress = Hop;
+        RequestedAt      = NetworkNow();
+    }
+    return FALSE;
 }

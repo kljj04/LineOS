@@ -72,3 +72,6 @@ VOID    NetworkClearConfigLocked(VOID);
 
 VOID NetworkDHCPInputLocked(UINT32 Source, CONST UINT8 *Packet, UINT32 Length);
 VOID NetworkTCPResetLocked(VOID);
+
+VOID    NetworkTCPTickLocked(VOID);
+BOOLEAN NetworkResolveReadyLocked(UINT32 Address);
