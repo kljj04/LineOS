@@ -8,7 +8,8 @@ ImageRoot="$(cd -- "$ImageDir/../.." && pwd)"
 
 ImageCreate()
 (
-    local ImagePath="$ImageRoot/$DiskImage"
+    local ImagePath
+    ImagePath=$(ConfigPath "$ImageRoot" "$DiskImage") || return 1
     local TemporaryImage=""
     local LoopDevice=""
     local Command

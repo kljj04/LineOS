@@ -152,6 +152,15 @@ VOID MS_ABI KMain(LINEOS_BOOT_INFO *BootInfo)
 
     KMemSet(&InitExecution, 0, sizeof(InitExecution));
 
+    TASK *NetworkWorkerTask = TaskCreate(NetworkTask);
+
+    if (NetworkWorkerTask == NULL || !LBPWRRAddTask(NetworkWorkerTask))
+    {
+        Panic(L"Network Task Failed");
+    }
+
+    KMemCpy(NetworkWorkerTask->Process->Name, "networkk", sizeof("networkk"));
+
     if (!ELF64ExecuteInit(&RootContext, (CONST CHAR8 *) "/sbin/Init.lix", &InitExecution))
     {
         Panic(L"Init Failed");

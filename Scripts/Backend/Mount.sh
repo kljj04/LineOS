@@ -21,7 +21,8 @@ MountPrivilege()
 
 MountReleaseManaged()
 {
-    local ImagePath="$MountRoot/$DiskImage"
+    local ImagePath
+    ImagePath=$(ConfigPath "$MountRoot" "$DiskImage") || return 1
     local MountBase="$MountRoot/LineOS/Mount"
     local Existing LoopDevice Partition MountPoint IDs ManagedIDs
     local Found
@@ -98,7 +99,7 @@ MountPrepareQEMU()
 {
     local Existing
 
-    if ! Existing=$(losetup --associated "$MountRoot/$DiskImage" --noheadings --output NAME); then
+    if ! Existing=$(losetup --associated "$(ConfigPath "$MountRoot" "$DiskImage")" --noheadings --output NAME); then
         return 1
     fi
 
@@ -115,7 +116,8 @@ MountPrepareQEMU()
 
 MountOpen()
 (
-    local ImagePath="$MountRoot/$DiskImage"
+    local ImagePath
+    ImagePath=$(ConfigPath "$MountRoot" "$DiskImage") || return 1
     local MountBase="$MountRoot/LineOS/Mount"
     local LoopDevice=""
     local MountStage=""
@@ -340,7 +342,8 @@ MountProgramFileExists()
 
 MountUpdate()
 (
-    local ImagePath="$MountRoot/$DiskImage"
+    local ImagePath
+    ImagePath=$(ConfigPath "$MountRoot" "$DiskImage") || return 1
     local BootFile="$MountRoot/LineOS/EFI/BOOT/BOOTX64.EFI"
     local KernelFile="$MountRoot/LineOS/KERNEL/LINEOS_KERNEL.ELF"
     local ProgramsDir="$MountRoot/LineOS/Programs"

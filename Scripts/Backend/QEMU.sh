@@ -13,14 +13,14 @@ QEMUCheck()
 
     case "$Check" in
         Binary)
-            if ! command -v qemu-system-x86_64 >/dev/null 2>&1; then
-                printf 'qemu-system-x86_64 not found.\n' >&2
+            if ! command -v "$QEMUBinary" >/dev/null 2>&1; then
+                printf 'Configured QEMU binary not found.\n' >&2
                 return 1
             fi
 
             ;;
         Firmware)
-            for File in "$QEMURoot/UEFI/OVMF_CODE.fd" "$QEMURoot/UEFI/OVMF_VARS.fd"; do
+            for File in "$(ConfigPath "$QEMURoot" "$FirmwareCode")" "$(ConfigPath "$QEMURoot" "$FirmwareVars")"; do
                 if [[ ! -r "$File" ]]; then
                     printf 'Unreadable firmware: %s\n' "$File" >&2
                     return 1
@@ -29,7 +29,7 @@ QEMUCheck()
 
             ;;
         Disk)
-            File="$QEMURoot/$DiskImage"
+            File=$(ConfigPath "$QEMURoot" "$DiskImage") || return 1
 
             if ! [[ -f "$File" && -r "$File" && -w "$File" ]]; then
                 printf 'Disk image must be readable and writable: %s\n' "$File" >&2
@@ -38,7 +38,7 @@ QEMUCheck()
 
             ;;
         Acceleration)
-            if [[ "$MachineAcceleration" == kvm ]]; then
+            if [[ ",$Machine," == *,accel=kvm,* ]]; then
                 if ! [[ -r /dev/kvm && -w /dev/kvm ]]; then
                     printf 'KVM is not accessible to the current user.\n' >&2
                     return 1
@@ -54,10 +54,11 @@ QEMUCheck()
 
 QEMUAnalyze()
 {
-    local LogDir="$QEMURoot/Logs"
+    local LogDir
+    LogDir=$(ConfigPath "$QEMURoot" "$DebugLogDir") || return 1
     local File Bytes
 
-    if [[ -r "$LogDir/QEMU.log" ]]; then
+    if [[ -r "$LogDir/$DebugLogFile" ]]; then
         awk '
             BEGIN {
                 Reads = 0
@@ -91,20 +92,73 @@ QEMUAnalyze()
             END {
                 printf "Invalid reads|%d\nInvalid writes|%d\nTriple faults|%d\nCPU reset logs|%d\n", Reads, Writes, Faults, Resets
             }
-        ' "$LogDir/QEMU.log"
+        ' "$LogDir/$DebugLogFile"
     fi
 
-    for File in DebugCon.log QEMUProcess.log; do
+    for File in "$DebugConsoleFile" "$DebugProcessFile"; do
         if Bytes=$(stat -c %s -- "$LogDir/$File" 2>/dev/null); then
             case "$File" in
-                DebugCon.log)
+                "$DebugConsoleFile")
                     printf 'Debug bytes|%s B\n' "$Bytes"
                     ;;
-                QEMUProcess.log)
+                "$DebugProcessFile")
                     printf 'Process bytes|%s B\n' "$Bytes"
                     ;;
             esac
         fi
+    done
+}
+
+QEMUBuildOptions()
+{
+    local ImagePath
+    local CodePath="$1"
+    local VarsPath="$2"
+    local LogDir="$3"
+    local Argument
+    local DebugLogPath="$LogDir/$DebugLogFile"
+    local DebugConsolePath="$LogDir/$DebugConsoleFile"
+
+    ConfigValidate || return 1
+    ImagePath=$(ConfigPath "$QEMURoot" "$DiskImage") || return 1
+    ImagePath=${ImagePath//,/,,}
+    CodePath=${CodePath//,/,,}
+    VarsPath=${VarsPath//,/,,}
+    local -a RawOptions=()
+
+    if [[ -n "$Debug" ]]; then
+        RawOptions+=(-D "$Debug")
+    fi
+    if [[ -n "$DebugConsole" ]]; then
+        RawOptions+=(-debugcon "$DebugConsole")
+    fi
+    if [[ -n "$DebugGlobal" ]]; then
+        RawOptions+=(-global "$DebugGlobal")
+    fi
+    RawOptions+=(-serial "$Serial" -monitor "$Monitor" -machine "$Machine" -cpu "$CPU" -smp "$CPUCount" -m "$Memory" -rtc "$RTC" -drive "$DiskDrive" -device "$DiskDevice" -vga "$GraphicsVGA" -device "$GraphicsDevice" -fw_cfg "$GraphicsFirmware" -display "$GraphicsDisplay" -device "$InputKeyboard" -device "$InputMouse")
+    if [[ "$NetworkBackend" == none ]]; then
+        RawOptions+=(-nic none)
+    else
+        RawOptions+=(-netdev "$NetworkBackend" -device "$NetworkDevice")
+    fi
+    RawOptions+=(-drive "$FirmwareCodeDrive" -drive "$FirmwareVarsDrive")
+    if [[ -n "$DebugFlags" ]]; then
+        RawOptions+=(-d "$DebugFlags")
+    fi
+    if [[ "$DebugNoReboot" == true ]]; then
+        RawOptions+=(-no-reboot)
+    fi
+    if [[ "$DebugNoShutdown" == true ]]; then
+        RawOptions+=(-no-shutdown)
+    fi
+    Options=()
+    for Argument in "${RawOptions[@]}"; do
+        Argument=${Argument//\{DiskImage\}/"$ImagePath"}
+        Argument=${Argument//\{FirmwareCode\}/"$CodePath"}
+        Argument=${Argument//\{FirmwareVars\}/"$VarsPath"}
+        Argument=${Argument//\{DebugLogPath\}/"$DebugLogPath"}
+        Argument=${Argument//\{DebugConsolePath\}/"$DebugConsolePath"}
+        Options+=("$Argument")
     done
 }
 
@@ -115,18 +169,17 @@ QEMURun()
         return 1
     fi
 
-    local ImagePath="$QEMURoot/$DiskImage"
-    local OVMFCode="$QEMURoot/UEFI/OVMF_CODE.fd"
-    local OVMFVars="$QEMURoot/UEFI/OVMF_VARS.fd"
-    local CPUOptions="$CPUModel"
-    local DebugOptions=""
-    local Flag
+    local ImagePath
+    ImagePath=$(ConfigPath "$QEMURoot" "$DiskImage") || return 1
+    local OVMFCode="$(ConfigPath "$QEMURoot" "$FirmwareCode")"
+    local OVMFVars="$(ConfigPath "$QEMURoot" "$FirmwareVars")"
     local Options=()
 
     local File TempDir Status
     local QEMUPID=""
     local Interrupted=0
-    local LogDir="$QEMURoot/Logs"
+    local LogDir
+    LogDir=$(ConfigPath "$QEMURoot" "$DebugLogDir") || return 1
 
     for File in "$ImagePath" "$OVMFCode" "$OVMFVars"; do
         if [[ ! -r "$File" ]]; then
@@ -146,13 +199,8 @@ QEMURun()
         return 1
     fi
 
-    if ! command -v qemu-system-x86_64 >/dev/null 2>&1; then
-        printf 'qemu-system-x86_64 not found.\n' >&2
-        return 1
-    fi
-
-    if ! [[ "$GraphicsResolution" =~ ^[1-9][0-9]*x[1-9][0-9]*$ ]]; then
-        printf 'Invalid graphics resolution: %s\n' "$GraphicsResolution" >&2
+    if ! command -v "$QEMUBinary" >/dev/null 2>&1; then
+        printf 'Configured QEMU binary not found.\n' >&2
         return 1
     fi
 
@@ -160,7 +208,7 @@ QEMURun()
         return 1
     fi
 
-    for File in QEMU.log DebugCon.log QEMUProcess.log; do
+    for File in "$DebugLogFile" "$DebugConsoleFile" "$DebugProcessFile"; do
         if ! : > "$LogDir/$File"; then
             printf 'Cannot write QEMU log: %s\n' "$LogDir/$File" >&2
             return 1
@@ -184,51 +232,7 @@ QEMURun()
 
     OVMFVars="$TempDir/OVMF_VARS.fd"
 
-    for Flag in "${CPUFlags[@]}"; do
-        CPUOptions+=",$Flag"
-    done
-
-    DebugOptions=$(
-        IFS=,
-        printf '%s' "${DebugFlags[*]}"
-    )
-
-    Options+=(
-        -D "$LogDir/QEMU.log"
-        -debugcon "file:$LogDir/DebugCon.log"
-        -global isa-debugcon.iobase=0xe9
-        -serial none
-        -monitor none
-        -machine "$MachineType,accel=$MachineAcceleration"
-        -cpu "$CPUOptions"
-        -smp "$CPUCount"
-        -m "$MemorySize"
-        -rtc "base=$RTCBase,clock=$RTCClock"
-        -drive "if=none,id=drive0,file=$ImagePath,format=raw"
-        -device "virtio-blk-pci,drive=drive0,bootindex=0"
-        -vga none
-        -device "$GraphicsDevice,xres=${GraphicsResolution%x*},yres=${GraphicsResolution#*x},hostmem=$GraphicsHostMemory"
-        -fw_cfg "name=opt/org.tianocore/GraphicsResolution,string=$GraphicsResolution"
-        -display "$GraphicsDisplay"
-        -device "$InputKeyboard"
-        -device "$InputMouse"
-        -netdev "$NetworkBackend,id=net0"
-        -device "virtio-net-pci,netdev=net0,mac=$NetworkMAC"
-        -drive "if=pflash,format=raw,readonly=on,file=$OVMFCode"
-        -drive "if=pflash,format=raw,file=$OVMFVars"
-    )
-
-    if [[ -n "$DebugOptions" ]]; then
-        Options+=(-d "$DebugOptions")
-    fi
-
-    if [[ "$DebugNoReboot" == true ]]; then
-        Options+=(-no-reboot)
-    fi
-
-    if [[ "$DebugNoShutdown" == true ]]; then
-        Options+=(-no-shutdown)
-    fi
+    QEMUBuildOptions "$OVMFCode" "$OVMFVars" "$LogDir" || return 1
 
     QEMUStop()
     {
@@ -246,7 +250,7 @@ QEMURun()
     trap 'QEMUStop 130' INT
     trap 'QEMUStop 143' TERM
 
-    qemu-system-x86_64 "${Options[@]}" > "$LogDir/QEMUProcess.log" 2>&1 &
+    "$QEMUBinary" "${Options[@]}" > "$LogDir/$DebugProcessFile" 2>&1 &
     QEMUPID=$!
 
     if (( Interrupted != 0 )); then
@@ -267,8 +271,8 @@ QEMURun()
     fi
 
     if (( Status != 0 )); then
-        printf 'QEMU failed (exit %s). See %s/QEMUProcess.log\n' "$Status" "$LogDir" >&2
-        tail -n 20 "$LogDir/QEMUProcess.log" >&2
+        printf 'QEMU failed (exit %s). See %s/%s\n' "$Status" "$LogDir" "$DebugProcessFile" >&2
+        tail -n 20 "$LogDir/$DebugProcessFile" >&2
     fi
 
     return "$Status"
